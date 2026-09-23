@@ -5,13 +5,12 @@
 
 | Component | Owner | Status | Folder |
 |---|---|---|---|
-| 1 — Screen Monitoring | IT23377844 | Stub only | `component1_screen_monitoring/` |
-| 2 — Hate-Speech Detection | IT23209152 | Stub only | `component2_hate_speech_detection/` |
-| 3 — Socratic Educator | IT23155466 | **2 PP1 functions implemented + tested** | `component3_socratic_educator/` |
-| 4 — Behavioral Profiling / XAI | IT23135116 | Stub only | `component4_profiling_xai/` |
+| 1 — Screen Monitoring | IT23377844 | `component1_screen_monitoring/` |
+| 2 — Hate-Speech Detection | IT23209152 | `component2_hate_speech_detection/` |
+| 3 — Socratic Educator | IT23155466 | `component3_socratic_educator/` |
+| 4 — Behavioral Profiling / XAI | IT23135116 | `component4_profiling_xai/` |
 
-Update this table every week — it's the fastest way for your supervisor
-to see real progress at a glance.
+
 
 ## Run the whole system (this is "the software")
 
