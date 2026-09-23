@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+venv/
+.venv/
+
+# Local model weights - never commit these, too large for git
+*.gguf
+*.bin
+*.safetensors
+models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

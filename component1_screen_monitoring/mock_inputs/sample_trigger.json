@@ -1,0 +1,12 @@
+{
+  "session_id": "placeholder-overwritten-at-runtime",
+  "timestamp": "placeholder-overwritten-at-runtime",
+  "source_component": "component1_screen_monitoring",
+  "content_type": "image",
+  "risk_category": "explicit_visual",
+  "confidence_score": 0.88,
+  "context_metadata": {
+    "app_or_window": "browser",
+    "duration_visible_ms": 3800
+  }
+}

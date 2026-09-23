@@ -1,0 +1,10 @@
+{
+  "session_id": "sess-demo-0001",
+  "timestamp": "2026-09-23T19:33:00+00:00",
+  "risk_level": "high",
+  "emotional_state": "calm",
+  "self_regulation_shown": true,
+  "escalation_flag": true,
+  "dialogue_turns": 3,
+  "dialogue_summary": "3 turns; risk_category=explicit_visual"
+}

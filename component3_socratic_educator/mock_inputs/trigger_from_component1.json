@@ -1,0 +1,12 @@
+{
+  "session_id": "sess-demo-0001",
+  "timestamp": "2026-09-23T19:30:00+00:00",
+  "source_component": "component1_screen_monitoring",
+  "content_type": "image",
+  "risk_category": "explicit_visual",
+  "confidence_score": 0.91,
+  "context_metadata": {
+    "app_or_window": "browser",
+    "duration_visible_ms": 4200
+  }
+}

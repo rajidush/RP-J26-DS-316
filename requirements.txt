@@ -1,0 +1,10 @@
+# One shared environment is enough for a laptop demo -- this just
+# aggregates each component's own requirements.txt. If a component later
+# needs something heavy and conflicting (e.g. a specific torch build),
+# split it into its own virtual environment at that point, not before.
+
+jsonschema>=4.20
+pytest>=8.0
+
+# Component 3, once the real on-device model is wired in:
+# llama-cpp-python>=0.2

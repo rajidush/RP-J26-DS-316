@@ -1,0 +1,12 @@
+{
+  "session_id": "placeholder-overwritten-at-runtime",
+  "timestamp": "placeholder-overwritten-at-runtime",
+  "source_component": "component2_hate_speech_detection",
+  "content_type": "text_message",
+  "risk_category": "cyberbullying",
+  "confidence_score": 0.71,
+  "context_metadata": {
+    "platform": "group_chat",
+    "language_detected": "en"
+  }
+}

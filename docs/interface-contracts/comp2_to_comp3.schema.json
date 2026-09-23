@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "comp2_to_comp3.schema.json",
+  "title": "TriggerPayload (Hate-Speech Detection -> Socratic Educator)",
+  "description": "Payload Component 2 sends when it detects harmful language in text/audio. Carries a category label, never the verbatim flagged text, so Component 3 never has to repeat or re-expose it to the child.",
+  "type": "object",
+  "required": ["session_id", "timestamp", "source_component", "content_type", "risk_category", "confidence_score"],
+  "properties": {
+    "session_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "source_component": { "const": "component2_hate_speech_detection" },
+    "content_type": { "type": "string", "enum": ["text_message", "voice_transcript"] },
+    "risk_category": { "type": "string", "enum": ["hate_speech", "cyberbullying", "grooming_language", "self_harm_language"] },
+    "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "context_metadata": {
+      "type": "object",
+      "properties": {
+        "platform": { "type": "string" },
+        "language_detected": { "type": "string" }
+      }
+    }
+  }
+}

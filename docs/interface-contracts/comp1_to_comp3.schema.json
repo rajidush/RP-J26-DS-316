@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "comp1_to_comp3.schema.json",
+  "title": "TriggerPayload (Screen Monitoring -> Socratic Educator)",
+  "description": "Payload Component 1 sends when it detects a screen-content risk. Never includes raw flagged media - only classification metadata, so Component 3 can start a conversation without re-exposing the child to the content.",
+  "type": "object",
+  "required": ["session_id", "timestamp", "source_component", "content_type", "risk_category", "confidence_score"],
+  "properties": {
+    "session_id": { "type": "string", "description": "UUID shared across all 4 components for one incident" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "source_component": { "const": "component1_screen_monitoring" },
+    "content_type": { "type": "string", "enum": ["image", "video_frame", "on_screen_text"] },
+    "risk_category": { "type": "string", "enum": ["explicit_visual", "violence", "self_harm_imagery", "unknown_flagged"] },
+    "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "context_metadata": {
+      "type": "object",
+      "description": "Non-identifying context only - no raw image/video is ever passed downstream",
+      "properties": {
+        "app_or_window": { "type": "string" },
+        "duration_visible_ms": { "type": "integer" }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+jsonschema>=4.20
+pytest>=8.0
+
+# Uncomment once you wire in the real on-device model (see the TODO in
+# src/grammar_decoder.py). Pick whichever matches your LM Studio / local
+# runtime setup -- llama-cpp-python is the common choice for a quantized
+# GGUF model running fully offline on a laptop.
+# llama-cpp-python>=0.2

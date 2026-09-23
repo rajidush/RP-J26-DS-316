@@ -1,0 +1,12 @@
+{
+  "session_id": "sess-demo-0002",
+  "timestamp": "2026-09-23T19:45:00+00:00",
+  "source_component": "component2_hate_speech_detection",
+  "content_type": "text_message",
+  "risk_category": "cyberbullying",
+  "confidence_score": 0.63,
+  "context_metadata": {
+    "platform": "group_chat",
+    "language_detected": "en"
+  }
+}

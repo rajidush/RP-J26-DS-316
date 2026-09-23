@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "comp3_to_comp4.schema.json",
+  "title": "EvaluateOutput (Socratic Educator -> Profiling/XAI)",
+  "description": "Structured record produced at the end of every dialogue session. Enumerated/boolean fields only (no free text about the conversation itself) so Component 4 can cluster and report without re-parsing natural language.",
+  "type": "object",
+  "required": ["session_id", "timestamp", "risk_level", "emotional_state", "self_regulation_shown", "escalation_flag", "dialogue_turns"],
+  "properties": {
+    "session_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "risk_level": { "type": "string", "enum": ["low", "moderate", "high"] },
+    "emotional_state": { "type": "string", "enum": ["calm", "defensive", "distressed", "unclear"] },
+    "self_regulation_shown": { "type": "boolean", "description": "Did the child articulate their own safer alternative during Inquire?" },
+    "escalation_flag": { "type": "boolean", "description": "True if Contract state determined this session needs parent review" },
+    "dialogue_turns": { "type": "integer", "minimum": 1 },
+    "dialogue_summary": {
+      "type": "string",
+      "description": "Short, redacted, parent-safe summary. Never contains the raw flagged content."
+    }
+  }
+}
