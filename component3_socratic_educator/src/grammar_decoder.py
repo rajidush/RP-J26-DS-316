@@ -92,7 +92,8 @@ class GrammarConstrainedGenerator:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
         # Deterministic pick for now (reproducible for the 100-dialogue
         # test set); swap for real generation per the TODO above.
-        idx = hash(risk_category.value) % len(pool)
+        # idx = hash(risk_category.value) % len(pool)
+        idx = list(RiskCategory).index(risk_category) % len(pool)
         return pool[idx]
 
     def validate(self, state: str, text: str) -> bool:
