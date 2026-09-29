@@ -68,7 +68,7 @@ class FSMController:
 
         while state != DialogueState.DONE:
             if state == DialogueState.INTERCEPT:
-                system_text = self.generator.generate("INTERCEPT", trigger.risk_category)
+                system_text = self.opening_question(trigger)
                 child_text = respond(system_text)
                 transcript.add(Turn(state, system_text, child_text))
                 last_child_text = child_text
@@ -104,6 +104,11 @@ class FSMController:
 
     # -- helpers -------------------------------------------------------
 
+
+    def opening_question(self, trigger: TriggerPayload) -> str:
+        """Intercept state: open the conversation without naming the flagged content."""
+        return self.generator.generate("INTERCEPT", trigger.risk_category)
+    
     def _is_complete(self, child_text: str) -> bool:
         return len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
 
