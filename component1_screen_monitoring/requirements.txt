@@ -2,7 +2,7 @@
 # Runtime dependencies
 
 # Screenshot capture (uncomment the backend you target)
-# mss>=9.0.1              # cross-platform, fastest
+mss>=9.0.1              # cross-platform, fastest
 # pyautogui>=0.9.54       # fallback, also provides mouse/keyboard control
 Pillow>=10.3.0            # image I/O and basic processing
 
