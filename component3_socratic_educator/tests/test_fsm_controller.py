@@ -3,6 +3,8 @@ Function 1 tests. Run with: pytest component3_socratic_educator/tests -v
 """
 import sys
 from pathlib import Path
+import pytest
+from component3_socratic_educator.src.schemas import RiskCategory
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -55,3 +57,17 @@ def test_low_confidence_trigger_does_not_escalate():
     trigger = make_trigger(confidence=0.2)
     result, _ = controller.run(trigger, respond=lambda _: "I was just looking around, nothing serious")
     assert result.escalation_flag is False
+
+@pytest.mark.parametrize("rc", list(RiskCategory))
+def test_intercept_never_names_flagged_content(rc):
+    controller = FSMController()
+    trigger = make_trigger(risk_category=rc)
+    text = controller.opening_question(trigger).lower()
+    # neither the category label nor its words may appear
+    for word in rc.value.split("_"):
+        assert word not in text
+
+def test_intercept_is_reproducible():
+    controller = FSMController()
+    trigger = make_trigger()
+    assert controller.opening_question(trigger) == controller.opening_question(trigger)
