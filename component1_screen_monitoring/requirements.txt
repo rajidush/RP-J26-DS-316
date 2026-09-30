@@ -6,10 +6,11 @@ mss>=9.0.1              # cross-platform, fastest
 # pyautogui>=0.9.54       # fallback, also provides mouse/keyboard control
 Pillow>=10.3.0            # image I/O and basic processing
 
-# ML / classification (add real model framework here)
-# torch>=2.2.0
-# transformers>=4.40.0
-# onnxruntime>=1.18.0
+# ML / classification
+torch>=2.2.0
+torchvision>=0.17.0
+transformers>=4.40.0
+# onnxruntime>=1.18.0     # uncomment if using ONNX export
 
 # Data handling
 numpy>=1.26.0
