@@ -3,7 +3,7 @@
 **Project:** J26-DS-316 — Fully On-Device AI for Detecting Harmful Content and Guiding Children's Digital Safety  
 **Owner:** Liyanage D. S. (IT23209152)  
 **Proposal:** `IT23209152.pdf` (Hate Speech Analyzer)  
-**Status:** Step 1 done — stub output is validated against the shared JSON schema at runtime. Keyword layer is next.
+**Status:** Step 2 done — auditable keyword layer can classify live text; outputs stay schema-validated. Pretrained cascade is next.
 
 ---
 
@@ -97,12 +97,18 @@ Proposal FR2 names (threat, bullying, identity-based hate, sexual harassment, st
 
 ```python
 from component2_hate_speech_detection.src.component2 import analyze_text
+from component2_hate_speech_detection.src.keywords import screen_keywords
 
-payload = analyze_text()  # stub today; later: analyze_text(text=..., age_band=..., ...)
-# payload must pass jsonschema against comp2_to_comp3.schema.json
+payload = analyze_text()                          # mock path — integration / demo
+payload = analyze_text("you are so stupid")       # keyword path — schema trigger or None
+result = screen_keywords("gg well played")        # screen only; matched=False on clean chat
 ```
 
-Keep this return shape stable so C3/integration do not need rewrites when internals change.
+- Mock path (`text=None`) always returns a schema-valid dict (demo).
+- Live path returns a schema-valid dict on a keyword hit, or **`None`** when clean (do not wake C3).
+- Evidence in `context_metadata.matched_families` is **family IDs only** — never the raw flagged text.
+
+Keep the return shape stable so C3/integration do not need rewrites when internals change.
 
 ---
 
@@ -114,8 +120,8 @@ Do **not** jump to heavy models or OCR first. Proposal Section 4.6 order:
 |---|---|---|---|
 | 0 | Stub + mock trigger so end-to-end demo works | Integration | Done |
 | 1 | Runtime validation against shared JSON schema + tests | FR9, NFR9 | Done |
-| 2 | Auditable **keyword / pattern layer** (explainable matches) | SO1 (first half) | Next |
-| 3 | Wire **two pretrained** on-device scorers + **corroboration** rule | SO1, FR3 | Planned |
+| 2 | Auditable **keyword / pattern layer** (explainable matches) | SO1 (first half) | Done |
+| 3 | Wire **two pretrained** on-device scorers + **corroboration** rule | SO1, FR3 | Next |
 | 4 | **Framing check** (report / quote / condemn vs commit) | SO2, FR4 | Planned |
 | 5 | Escalation **gate** + age-band thresholds | SO4, FR6 | Planned |
 | 6 | Evidence / explanation record + child-safe summary | FR7, FR8 | Planned |
@@ -137,9 +143,9 @@ component2_hate_speech_detection/
 ├── mock_inputs/              ← schema-shaped fixtures for isolated work
 │   └── sample_analysis.json
 ├── src/
-│   └── component2.py         ← public API (stub today)
+│   ├── component2.py         ← public API (mock + keyword path)
+│   ├── keywords.py           ← auditable pattern layer (Step 2)
 │   # planned as steps land:
-│   # keywords.py             ← auditable pattern layer
 │   # models.py               ← pretrained scorers + corroboration
 │   # framing.py              ← report/quote/condemn gate
 │   # fuse.py                 ← raise-never-lower combination
@@ -217,10 +223,10 @@ Child-context test set and ablations of the three design rules are owned by this
 
 ## Current known limitations (be explicit in demos)
 
-- `analyze_text()` still loads `mock_inputs/sample_analysis.json`; it does not classify live text yet.
+- Live classification is **keyword-only** — no pretrained models or corroboration yet (Step 3).
+- Pattern list is intentionally small and auditable; it will miss implicit hate (expected until models land).
 - Schema validation is real: invalid payloads raise before leaving C2.
-- OCR, ASR, image path, framing, corroboration, and age bands are **designed but not implemented**.
+- OCR, ASR, image path, framing, and age bands are **designed but not implemented**.
 - No child-context evaluation set checked in yet.
-- Prototype evidence in the proposal appendix was exploratory (pretrained, no fine-tune); measured claims come after the evaluation harness lands.
 
 When a step lands, update the **Status** column in the roadmap table and shorten this section so demos stay honest.
