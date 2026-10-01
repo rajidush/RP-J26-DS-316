@@ -83,17 +83,18 @@ class GrammarConstrainedGenerator:
         "INQUIRE": [
             "That makes sense. Can you say a bit more about that?",
             "Thanks for telling me. What do you think might happen next?",
+            "I understand. Is there another way you could've reacted?",
         ],
     }
 
-    def _candidate(self, state: str, risk_category: RiskCategory) -> str:
+    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
         pool = self._CANDIDATES.get(state, [])
         if not pool:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
-        # Deterministic pick for now (reproducible for the 100-dialogue
-        # test set); swap for real generation per the TODO above.
-        # idx = hash(risk_category.value) % len(pool)
-        idx = list(RiskCategory).index(risk_category) % len(pool)
+        # Deterministic pick for reproducible test sets; offset by attempt so repeated
+        # inquire rounds cycle through diverse follow-up questions instead of repeating.
+        base_idx = list(RiskCategory).index(risk_category)
+        idx = (base_idx + attempt) % len(pool)
         return pool[idx]
 
     def validate(self, state: str, text: str) -> bool:
@@ -104,8 +105,8 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    def generate(self, state: str, risk_category: RiskCategory) -> str:
-        candidate = self._candidate(state, risk_category)
+    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+        candidate = self._candidate(state, risk_category, attempt=attempt)
         if not self.validate(state, candidate):
             # This is the safety guarantee: if generation ever produces
             # something outside the grammar, we never let it reach the
