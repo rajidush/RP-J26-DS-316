@@ -75,14 +75,9 @@ class FSMController:
                 state = DialogueState.INQUIRE
 
             elif state == DialogueState.INQUIRE:
-                if self._is_complete(last_child_text) or inquire_attempts >= config.MAX_INQUIRE_ATTEMPTS:
-                    state = DialogueState.EVALUATE
-                    continue
-                system_text = self.generator.generate("INQUIRE", trigger.risk_category)
-                child_text = respond(system_text)
-                transcript.add(Turn(state, system_text, child_text))
-                last_child_text = child_text
-                inquire_attempts += 1
+                responses = self.inquire_loop(trigger, respond, transcript)
+                last_child_text = responses[-1] if responses else last_child_text
+                state = DialogueState.EVALUATE
 
             elif state == DialogueState.EVALUATE:
                 evaluate_output = self._evaluate(trigger, transcript, last_child_text)
@@ -108,6 +103,20 @@ class FSMController:
     def opening_question(self, trigger: TriggerPayload) -> str:
         """Intercept state: open the conversation without naming the flagged content."""
         return self.generator.generate("INTERCEPT", trigger.risk_category)
+    
+    def inquire_loop(self, trigger: TriggerPayload, respond, transcript: SessionTranscript) -> list[str]:
+        """Inquire state: follow up until completeness or max attempts."""
+        responses = []
+        attempts = 0
+        while attempts < config.MAX_INQUIRE_ATTEMPTS:
+            prompt = self.generator.generate("INQUIRE", trigger.risk_category)
+            answer = respond(prompt)
+            transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
+            responses.append(answer)
+            attempts += 1
+            if self._is_complete(answer):
+                break
+        return responses
     
     def _is_complete(self, child_text: str) -> bool:
         return len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
