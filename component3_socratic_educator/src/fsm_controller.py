@@ -109,7 +109,7 @@ class FSMController:
         responses = []
         attempts = 0
         while attempts < config.MAX_INQUIRE_ATTEMPTS:
-            prompt = self.generator.generate("INQUIRE", trigger.risk_category)
+            prompt = self.generator.generate("INQUIRE", trigger.risk_category, attempt=attempts)
             answer = respond(prompt)
             transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
             responses.append(answer)

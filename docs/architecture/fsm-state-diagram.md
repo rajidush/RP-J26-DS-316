@@ -1,4 +1,4 @@
-# Component 3 — FSM State Diagram
+# Component 3 - FSM State Diagram
 
 ​```mermaid
 stateDiagram-v2
