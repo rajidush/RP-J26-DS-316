@@ -4,6 +4,8 @@ Function 1 tests. Run with: pytest component3_socratic_educator/tests -v
 import sys
 from pathlib import Path
 import pytest
+from component3_socratic_educator.src.fsm_controller import FSMController, SessionTranscript
+from component3_socratic_educator.src import config
 from component3_socratic_educator.src.schemas import RiskCategory
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -71,3 +73,32 @@ def test_intercept_is_reproducible():
     controller = FSMController()
     trigger = make_trigger()
     assert controller.opening_question(trigger) == controller.opening_question(trigger)
+    
+def test_inquire_stops_at_max_attempts_with_short_answers():
+    controller = FSMController()
+    trigger = make_trigger()
+    transcript = SessionTranscript(trigger=trigger)
+    responses = controller.inquire_loop(trigger, respond=lambda _: "no", transcript=transcript)
+    assert len(responses) == config.MAX_INQUIRE_ATTEMPTS
+
+def test_inquire_stops_early_on_complete_answer():
+    controller = FSMController()
+    trigger = make_trigger()
+    transcript = SessionTranscript(trigger=trigger)
+    answers = iter(["no", "I was just curious about it"])
+    responses = controller.inquire_loop(trigger, respond=lambda _: next(answers), transcript=transcript)
+    assert len(responses) == 2
+    
+def test_inquire_logs_turns_to_transcript():
+    controller = FSMController()
+    trigger = make_trigger()
+    transcript = SessionTranscript(trigger=trigger)
+    controller.inquire_loop(trigger, respond=lambda _: "no", transcript=transcript)
+    assert len(transcript.turns) == config.MAX_INQUIRE_ATTEMPTS
+    
+def test_run_actually_uses_inquire_loop():
+    controller = FSMController()
+    trigger = make_trigger()
+    _, transcript = controller.run(trigger, respond=lambda _: "no")
+    inquire_turns = [t for t in transcript.turns if t.state.name == "INQUIRE"]
+    assert len(inquire_turns) == config.MAX_INQUIRE_ATTEMPTS
