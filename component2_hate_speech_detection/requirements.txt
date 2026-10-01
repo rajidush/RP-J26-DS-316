@@ -1,0 +1,8 @@
+# Component 2 — keep this CPU-friendly. Add model deps only when that step lands.
+jsonschema>=4.20
+pytest>=8.0
+
+# Planned (do not uncomment until the matching roadmap step):
+# torch          # step 3 — pretrained scorers (CPU build)
+# transformers   # step 3
+# # OCR / ASR packages when step 7 starts
