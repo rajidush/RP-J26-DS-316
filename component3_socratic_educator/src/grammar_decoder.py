@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from .schemas import RiskCategory
-
+from .model_client import call_local_model
 
 class ConstraintViolation(Exception):
     """Raised when a candidate response fails the grammar for its state."""
@@ -83,17 +83,18 @@ class GrammarConstrainedGenerator:
         "INQUIRE": [
             "That makes sense. Can you say a bit more about that?",
             "Thanks for telling me. What do you think might happen next?",
+            "I understand. Is there another way you could've reacted?",
         ],
     }
 
-    def _candidate(self, state: str, risk_category: RiskCategory) -> str:
+    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
         pool = self._CANDIDATES.get(state, [])
         if not pool:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
-        # Deterministic pick for now (reproducible for the 100-dialogue
-        # test set); swap for real generation per the TODO above.
-        # idx = hash(risk_category.value) % len(pool)
-        idx = list(RiskCategory).index(risk_category) % len(pool)
+        # Deterministic pick for reproducible test sets; offset by attempt so repeated
+        # inquire rounds cycle through diverse follow-up questions instead of repeating.
+        base_idx = list(RiskCategory).index(risk_category)
+        idx = (base_idx + attempt) % len(pool)
         return pool[idx]
 
     def validate(self, state: str, text: str) -> bool:
@@ -104,14 +105,36 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    def generate(self, state: str, risk_category: RiskCategory) -> str:
-        candidate = self._candidate(state, risk_category)
+    # def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+    #     candidate = self._candidate(state, risk_category, attempt=attempt)
+    #     if not self.validate(state, candidate):
+    #         # This is the safety guarantee: if generation ever produces
+    #         # something outside the grammar, we never let it reach the
+    #         # child -- we fall back to a fixed, pre-validated safe line.
+    #         return self._safe_fallback(state)
+    #     return candidate
+    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+        # --- Monday 5 Oct Task: Wire SLM into INTERCEPT (unconstrained first) ---
+        if state == "INTERCEPT":
+            try:
+                prompt = (
+                    "You are a calm Socratic educator for child digital safety. "
+                    "A flagged item was detected on the child's screen. "
+                    "Ask ONE gentle opening question without naming or describing the inappropriate content. "
+                    "Keep it under 20 words."
+                )
+                text, _ = call_local_model(prompt)
+                return text.strip().strip('"')
+            except Exception:
+                # Fallback to safe template if LM Studio is offline
+                pass
+
+        # --- Everything else (INQUIRE) remains on candidate pool untouched ---
+        candidate = self._candidate(state, risk_category, attempt=attempt)
         if not self.validate(state, candidate):
-            # This is the safety guarantee: if generation ever produces
-            # something outside the grammar, we never let it reach the
-            # child -- we fall back to a fixed, pre-validated safe line.
             return self._safe_fallback(state)
         return candidate
+
 
     def _safe_fallback(self, state: str) -> str:
         fallback = {
