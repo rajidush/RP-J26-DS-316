@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from .schemas import RiskCategory
-
+from .model_client import call_local_model
 
 class ConstraintViolation(Exception):
     """Raised when a candidate response fails the grammar for its state."""
@@ -105,14 +105,36 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
+    # def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+    #     candidate = self._candidate(state, risk_category, attempt=attempt)
+    #     if not self.validate(state, candidate):
+    #         # This is the safety guarantee: if generation ever produces
+    #         # something outside the grammar, we never let it reach the
+    #         # child -- we fall back to a fixed, pre-validated safe line.
+    #         return self._safe_fallback(state)
+    #     return candidate
     def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+        # --- Monday 5 Oct Task: Wire SLM into INTERCEPT (unconstrained first) ---
+        if state == "INTERCEPT":
+            try:
+                prompt = (
+                    "You are a calm Socratic educator for child digital safety. "
+                    "A flagged item was detected on the child's screen. "
+                    "Ask ONE gentle opening question without naming or describing the inappropriate content. "
+                    "Keep it under 20 words."
+                )
+                text, _ = call_local_model(prompt)
+                return text.strip().strip('"')
+            except Exception:
+                # Fallback to safe template if LM Studio is offline
+                pass
+
+        # --- Everything else (INQUIRE) remains on candidate pool untouched ---
         candidate = self._candidate(state, risk_category, attempt=attempt)
         if not self.validate(state, candidate):
-            # This is the safety guarantee: if generation ever produces
-            # something outside the grammar, we never let it reach the
-            # child -- we fall back to a fixed, pre-validated safe line.
             return self._safe_fallback(state)
         return candidate
+
 
     def _safe_fallback(self, state: str) -> str:
         fallback = {
