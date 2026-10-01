@@ -3,7 +3,7 @@
 **Project:** J26-DS-316 — Fully On-Device AI for Detecting Harmful Content and Guiding Children's Digital Safety  
 **Owner:** Liyanage D. S. (IT23209152)  
 **Proposal:** `IT23209152.pdf` (Hate Speech Analyzer)  
-**Status:** Early scaffold — stub emits a schema-valid trigger so the full system can demo. Real cascade is built step by step below.
+**Status:** Step 1 done — stub output is validated against the shared JSON schema at runtime. Keyword layer is next.
 
 ---
 
@@ -113,8 +113,8 @@ Do **not** jump to heavy models or OCR first. Proposal Section 4.6 order:
 | Step | Deliverable | Maps to | Status |
 |---|---|---|---|
 | 0 | Stub + mock trigger so end-to-end demo works | Integration | Done |
-| 1 | Runtime validation against shared JSON schema + tests | FR9, NFR9 | Next / in progress on feature branch |
-| 2 | Auditable **keyword / pattern layer** (explainable matches) | SO1 (first half) | Planned |
+| 1 | Runtime validation against shared JSON schema + tests | FR9, NFR9 | Done |
+| 2 | Auditable **keyword / pattern layer** (explainable matches) | SO1 (first half) | Next |
 | 3 | Wire **two pretrained** on-device scorers + **corroboration** rule | SO1, FR3 | Planned |
 | 4 | **Framing check** (report / quote / condemn vs commit) | SO2, FR4 | Planned |
 | 5 | Escalation **gate** + age-band thresholds | SO4, FR6 | Planned |
@@ -218,6 +218,7 @@ Child-context test set and ablations of the three design rules are owned by this
 ## Current known limitations (be explicit in demos)
 
 - `analyze_text()` still loads `mock_inputs/sample_analysis.json`; it does not classify live text yet.
+- Schema validation is real: invalid payloads raise before leaving C2.
 - OCR, ASR, image path, framing, corroboration, and age bands are **designed but not implemented**.
 - No child-context evaluation set checked in yet.
 - Prototype evidence in the proposal appendix was exploratory (pretrained, no fine-tune); measured claims come after the evaluation harness lands.
