@@ -9,13 +9,17 @@ transitions and the structured record it produces at the end.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Callable, Optional
 
-from . import config
+from . import config, emotion_rules
 from .grammar_decoder import GrammarConstrainedGenerator
-from .schemas import EmotionalState, EvaluateOutput, RiskLevel, TriggerPayload
+from .schemas import EvaluateOutput, RiskLevel, TriggerPayload
+
+
+_SELF_REGULATION_PATTERN = re.compile(r"\b(instead|next time|should have|i could)\b")
 
 
 class DialogueState(Enum):
@@ -123,23 +127,23 @@ class FSMController:
 
     def _evaluate(self, trigger: TriggerPayload, transcript: SessionTranscript, last_child_text: str) -> EvaluateOutput:
         """
-        Placeholder evaluation heuristic (word-count / keyword based) so
-        the FSM is fully runnable and testable today. This is the
-        function to upgrade first once real dialogue data is available --
-        swap the body for a classifier over the transcript, keep the
-        EvaluateOutput contract identical.
+        Rule-based evaluation so the FSM is fully runnable and testable
+        today: risk from detector confidence, emotional_state from
+        emotion_rules.classify(), self-regulation from keywords. Upgrade
+        path: swap in a trained classifier over the transcript, keeping
+        the EvaluateOutput contract identical.
         """
+        # Whole-word match: "i could" must not fire inside "i couldn't".
         self_regulation_shown = any(
-            kw in (t.child_response or "").lower()
+            _SELF_REGULATION_PATTERN.search((t.child_response or "").lower())
             for t in transcript.turns
-            for kw in ("instead", "next time", "should have", "i could")
         )
         risk_level = RiskLevel.HIGH if trigger.confidence_score >= 0.85 else (
             RiskLevel.MODERATE if trigger.confidence_score >= 0.5 else RiskLevel.LOW
         )
-        emotional_state = EmotionalState.UNCLEAR if not last_child_text else (
-            EmotionalState.DEFENSIVE if len(last_child_text.split()) <= 2 else EmotionalState.CALM
-        )
+        # Rule-based classifier over every reply the child gave (src/emotion_rules.py).
+        child_replies = [t.child_response for t in transcript.turns if t.child_response is not None]
+        emotional_state = emotion_rules.classify(child_replies).state
         return EvaluateOutput(
             session_id=trigger.session_id,
             risk_level=risk_level,

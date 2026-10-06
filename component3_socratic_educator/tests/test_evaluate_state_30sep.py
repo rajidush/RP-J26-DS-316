@@ -140,36 +140,34 @@ class TestRiskLevelThresholds:
 
 class TestEmotionalStateHeuristic:
     """
-    _evaluate() uses `last_child_text`, which is the final response from the
-    INQUIRE loop (updated on FSMController.run() L79). We supply enough replies
-    so that the last reply from the iterator is the one the heuristic sees —
-    the iterator provides one reply for INTERCEPT + up to MAX_INQUIRE_ATTEMPTS
-    for INQUIRE. We use `next(replies, <last_value>)` semantics by supplying
-    exactly (1 + MAX_INQUIRE_ATTEMPTS) replies so the last INQUIRE reply is
-    controlled. MAX_INQUIRE_ATTEMPTS = 3, so we supply 4 replies total.
+    Updated 6 Oct: the original word-count heuristic (<=2 words -> defensive)
+    was replaced by the rule-based classifier in src/emotion_rules.py, which
+    reads every child reply in the session. Bare minimal replies are now
+    `unclear` (a refusal alone is not evidence of defensiveness).
+    Classifier-level cases live in tests/test_emotion_rules.py.
     """
 
     def test_empty_response_gives_unclear(self):
-        # Last INQUIRE reply is "" → split() = [] → len 0 → UNCLEAR
-        result, _ = run_session(child_replies=["okay", "no", "no", ""])
+        result, _ = run_session(child_replies=["", "", "", ""])
         assert result.emotional_state == EmotionalState.UNCLEAR
 
-    def test_one_word_response_gives_defensive(self):
-        # Last INQUIRE reply is 1 word → DEFENSIVE
+    def test_one_word_replies_give_unclear(self):
         result, _ = run_session(child_replies=["okay", "no", "no", "no"])
-        assert result.emotional_state == EmotionalState.DEFENSIVE
+        assert result.emotional_state == EmotionalState.UNCLEAR
 
-    def test_two_word_response_gives_defensive(self):
-        # Last INQUIRE reply is 2 words → still DEFENSIVE (boundary is > 2)
+    def test_two_word_replies_give_unclear(self):
         result, _ = run_session(child_replies=["okay", "no", "no", "not sure"])
+        assert result.emotional_state == EmotionalState.UNCLEAR
+
+    def test_deflection_gives_defensive(self):
+        result, _ = run_session(child_replies=["whatever", "it's not my fault"])
         assert result.emotional_state == EmotionalState.DEFENSIVE
 
-    def test_long_response_gives_calm(self):
-        # Last INQUIRE reply is > 2 words → CALM
-        # The inquire loop exits early when _is_complete() is True (≥4 words),
-        # so a 4+ word last reply may end the loop before all 3 attempts.
-        # We place the long reply as the first INQUIRE reply so it triggers
-        # early exit — last_child_text seen by _evaluate is this reply.
+    def test_fear_gives_distressed(self):
+        result, _ = run_session(child_replies=["I feel so scared", "I don't want to look anymore"])
+        assert result.emotional_state == EmotionalState.DISTRESSED
+
+    def test_plain_explanation_gives_calm(self):
         result, _ = run_session(
             child_replies=["okay", "I was just looking at something interesting online"]
         )
