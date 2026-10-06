@@ -1,0 +1,14 @@
+# Component 4 -- Behavioral Profiling / XAI
+# scikit-learn is pinned to the exact version used in Colab to train the
+# behavioral anomaly artifacts in models/ (OneClassSVM + StandardScaler).
+# Unpickling under a different version is not guaranteed to be correct.
+scikit-learn==1.6.1
+
+# Used directly by src/behavioral_anomaly.py. Lower bounds are the minimums
+# scikit-learn 1.6.1 itself supports, so they stay compatible with the pin.
+joblib>=1.2.0             # loads the .pkl artifacts
+numpy>=1.19.5             # numeric type checks, scaled arrays
+pandas>=1.1.5             # named one-row input for the fitted scaler
+
+# Testing
+pytest>=8.0
