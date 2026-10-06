@@ -8,3 +8,10 @@ pytest>=8.0
 
 # Component 3, once the real on-device model is wired in:
 # llama-cpp-python>=0.2
+
+# Component 4 (see component4_profiling_xai/requirements.txt). scikit-learn
+# must match the version the behavioral anomaly models were trained with:
+scikit-learn==1.6.1
+joblib>=1.2.0
+numpy>=1.19.5
+pandas>=1.1.5
