@@ -144,3 +144,23 @@ def test_chunking_and_append(tmp_path, schema):
         jsonschema.validate(instance=r_copy, schema=schema)
 
 
+
+
+def test_rescore_dedupes_seeds_and_reproduces_records(tmp_path):
+    out_dir = tmp_path / "rescore_out"
+    first = g.run(offline=True, stub_generator=True, children=2, out=str(out_dir))
+    sessions_before = (out_dir / "educator_sessions.jsonl").read_text(encoding="utf-8")
+    replies_before = (out_dir / "child_replies.jsonl").read_text(encoding="utf-8")
+
+    # Simulate a crashed chunk re-run that appended its seeds a second time.
+    seeds_csv = out_dir / "scenario_seeds.csv"
+    lines = seeds_csv.read_text(encoding="utf-8").splitlines(keepends=True)
+    seeds_csv.write_text("".join(lines + lines[1:4]), encoding="utf-8")
+
+    result = g.run(rescore=True, out=str(out_dir))
+
+    assert result["changes"] == []
+    assert len(result["records"]) == len(first["records"])
+    assert (out_dir / "educator_sessions.jsonl").read_text(encoding="utf-8") == sessions_before
+    assert (out_dir / "child_replies.jsonl").read_text(encoding="utf-8") == replies_before
+    assert len(seeds_csv.read_text(encoding="utf-8").splitlines()) - 1 == len(first["seeds"])

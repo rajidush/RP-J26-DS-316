@@ -16,6 +16,7 @@ Usage
     python generate_educator_dataset.py --offline --stub-generator     # no LLM anywhere, smoke test
     python generate_educator_dataset.py --stub-generator               # distilabel + LM Studio (default backend)
     python generate_educator_dataset.py --backend ollama --model gemma3:1b
+    python generate_educator_dataset.py --rescore --out out           # re-score saved replies after FSM changes
 Outputs (in --out, default ./out)
     scenario_seeds.csv, child_replies.jsonl, educator_sessions.jsonl, educator_sessions.csv, seed_vs_output.csv
 """
@@ -351,6 +352,9 @@ def build_parser():
     ap.add_argument("--host", default="http://localhost:11434", help="Ollama host (--backend ollama)")
     ap.add_argument("--out", default="out")
     ap.add_argument("--limit", type=int, default=0, help="only run the first N sessions (for smoke tests)")
+    ap.add_argument("--rescore", action="store_true",
+                    help="re-run the FSM over the seeds + replies already saved in --out (no model calls) "
+                         "and rewrite the session outputs; use after changing FSM/evaluation logic")
     ap.add_argument("--mock-dir", default=str(DEFAULT_MOCK_DIR),
                     help="folder with trigger_from_component1.json / trigger_from_component2.json")
     return ap
@@ -369,6 +373,8 @@ def run(**overrides):
 
 
 def _run(a):
+    if a.rescore:
+        return _rescore(a)
     t0 = time.time()
     rng = random.Random(a.seed)
     out = Path(a.out)
@@ -377,7 +383,6 @@ def _run(a):
     seeds = build_seeds(a.children, a.weeks, rng, start_child=a.start_child, total_population=a.total_population)
     if a.limit:
         seeds = seeds[: a.limit]
-    write_csv(out / "scenario_seeds.csv", seeds, append=a.append)
 
     # Step 2: ALL child replies first ...
     if a.offline:
@@ -392,6 +397,11 @@ def _run(a):
         print(f"child replies: {reply_source}")
         replies = replies_distilabel(seeds, make_llm(a.backend, model, a.base_url, a.host), batch_size=a.batch_size)
     t_replies = time.time() - t0
+    # Seeds and replies are written together, only once the replies exist: if
+    # distilabel crashes, nothing is written, so re-running the chunk with
+    # --append cannot duplicate its seeds. If the FSM step below fails instead,
+    # use --rescore rather than regenerating the replies.
+    write_csv(out / "scenario_seeds.csv", seeds, append=a.append)
     jsonl_mode = "a" if a.append else "w"
     with open(out / "child_replies.jsonl", jsonl_mode, encoding="utf-8") as f:
         for s in seeds:
@@ -400,13 +410,65 @@ def _run(a):
 
     # Step 3: ... then the sessions (no overlap with distilabel's model calls).
     records = run_sessions(seeds, replies, load_templates(a.mock_dir), stub_generator=a.stub_generator)
+    export, cmp_rows = write_session_outputs(out, seeds, records, append=a.append)
 
+    print(f"child replies: {reply_source} | generator: {'stub (template INTERCEPT)' if a.stub_generator else 'real (LM Studio INTERCEPT)'}")
+    print_summary(out, seeds, cmp_rows)
+    print(f"time: replies {t_replies:.1f}s, total {time.time() - t0:.1f}s")
+    return {"seeds": seeds, "replies": replies, "records": records, "export": export,
+            "comparison": cmp_rows, "out": out}
+
+
+def _rescore(a):
+    """--rescore: re-run the FSM over the seeds + child replies already saved in
+    --out, without calling any model. Use it after changing FSM/evaluation logic
+    so the existing (LLM-written) replies are re-scored rather than regenerated.
+    Rewrites educator_sessions.*, seed_vs_output.csv and a de-duplicated
+    scenario_seeds.csv; child_replies.jsonl is left untouched."""
+    out = Path(a.out)
+    seeds, seen = [], set()
+    with open(out / "scenario_seeds.csv", newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row["session_id"] not in seen:  # chunk re-runs could append a seed twice
+                seen.add(row["session_id"])
+                row["confidence_score"] = float(row["confidence_score"])
+                seeds.append(row)
+    with open(out / "child_replies.jsonl", encoding="utf-8") as f:
+        replies = {r["session_id"]: r["replies"] for r in map(json.loads, f)}
+    missing = [s["session_id"] for s in seeds if s["session_id"] not in replies]
+    if missing:
+        raise ValueError(f"{len(missing)} seeds have no saved replies, e.g. {missing[:3]}")
+    old_path = out / "educator_sessions.jsonl"
+    old = {}
+    if old_path.exists():
+        with open(old_path, encoding="utf-8") as f:
+            old = {r["session_id"]: r for r in map(json.loads, f)}
+
+    # No EvaluateOutput field depends on the INTERCEPT text, so the network-free
+    # stub generator gives the same records as the live one.
+    records = run_sessions(seeds, replies, load_templates(a.mock_dir), stub_generator=True)
+    write_csv(out / "scenario_seeds.csv", seeds)
+    export, cmp_rows = write_session_outputs(out, seeds, records, append=False)
+
+    changes = [(r["session_id"], k, old[r["session_id"]][k], r[k])
+               for r in records if r["session_id"] in old
+               for k in r if k in old[r["session_id"]] and old[r["session_id"]][k] != r[k]]
+    print(f"rescored {len(records)} sessions from saved replies (no model calls)")
+    print(f"field changes vs previous educator_sessions.jsonl: {len(changes)}")
+    for sid, k, before, after in changes:
+        print(f"  {sid} {k}: {before} -> {after}")
+    print_summary(out, seeds, cmp_rows)
+    return {"seeds": seeds, "replies": replies, "records": records, "export": export,
+            "comparison": cmp_rows, "out": out, "changes": changes}
+
+
+def write_session_outputs(out, seeds, records, append=False):
     child_of = {s["session_id"]: s["child_id"] for s in seeds}
     export = [{"child_id": child_of[r["session_id"]], **r} for r in records]  # child_id added by harness
-    with open(out / "educator_sessions.jsonl", jsonl_mode, encoding="utf-8") as f:
+    with open(out / "educator_sessions.jsonl", "a" if append else "w", encoding="utf-8") as f:
         for r in export:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    write_csv(out / "educator_sessions.csv", export, append=a.append)
+    write_csv(out / "educator_sessions.csv", export, append=append)
 
     by_sid = {r["session_id"]: r for r in records}
     cmp_rows = [{
@@ -414,13 +476,15 @@ def _run(a):
         "intended_state": ARCHETYPES[s["archetype"]][1], "output_state": by_sid[s["session_id"]]["emotional_state"],
         "intended_risk": s["intended_risk_level"], "output_risk": by_sid[s["session_id"]]["risk_level"],
     } for s in seeds]
-    write_csv(out / "seed_vs_output.csv", cmp_rows, append=a.append)
+    write_csv(out / "seed_vs_output.csv", cmp_rows, append=append)
+    return export, cmp_rows
 
+
+def print_summary(out, seeds, cmp_rows):
     n = len(cmp_rows)
     state_ok = sum(r["intended_state"] == r["output_state"] for r in cmp_rows)
     risk_ok = sum(r["intended_risk"] == r["output_risk"] for r in cmp_rows)
     print(f"{n} sessions, {len({s['child_id'] for s in seeds})} children -> {out}/")
-    print(f"child replies: {reply_source} | generator: {'stub (template INTERCEPT)' if a.stub_generator else 'real (LM Studio INTERCEPT)'}")
     print("emotional_state counts:", dict(Counter(r["output_state"] for r in cmp_rows)))
     print("risk_level counts     :", dict(Counter(r["output_risk"] for r in cmp_rows)))
     print(f"intended vs output emotional_state agreement: {state_ok / n:.1%}")
@@ -430,9 +494,6 @@ def _run(a):
         if rows:
             got = dict(Counter(r["output_state"] for r in rows))
             print(f"  {arch:<16} intended={ARCHETYPES[arch][1]:<10} n={len(rows):<4} output={got}")
-    print(f"time: replies {t_replies:.1f}s, total {time.time() - t0:.1f}s")
-    return {"seeds": seeds, "replies": replies, "records": records, "export": export,
-            "comparison": cmp_rows, "out": out}
 
 
 def main():
