@@ -1,0 +1,9 @@
+# Only needed for generate_educator_dataset.py (building the Component 4
+# dataset), not for running Component 3 itself. Install on top of
+# requirements.txt:  pip install -r requirements.txt -r requirements-datagen.txt
+#
+# You only need ONE backend:
+#   [openai] -> LM Studio's OpenAI-compatible server (default: --backend lmstudio)
+#   [ollama] -> Ollama                                (--backend ollama)
+distilabel[openai]
+distilabel[ollama]
