@@ -15,6 +15,10 @@ transformers>=4.40.0,<5   # fine-tuned checkpoint saved with 4.57; 5.x breaks lo
 # Data handling
 numpy>=1.26.0
 
+# Output payload validation (comp1_to_comp3.schema.json)
+jsonschema>=4.20
+rfc3339-validator>=0.1.4  # enables jsonschema's "date-time" format check
+
 # Testing
 pytest>=8.0.0
 pytest-cov>=5.0.0

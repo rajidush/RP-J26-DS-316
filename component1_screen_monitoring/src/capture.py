@@ -29,6 +29,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+try:
+    from .config import THRESHOLD                     # imported as package
+except ImportError:
+    from config import THRESHOLD                      # run as script from src/
+
 
 # ---------------------------------------------------------------------------
 # Data container
@@ -203,8 +208,8 @@ def capture_loop(
 #: Discovered empirically: index 0 = Non Violence, index 1 = Violence.
 _IDX_TO_CATEGORY: dict[int, str] = {0: "non_violence", 1: "violence"}
 
-#: Confidence threshold above which a frame is considered flagged.
-CONFIDENCE_THRESHOLD: float = 0.70
+#: Confidence threshold above which a frame is considered flagged (shared config).
+CONFIDENCE_THRESHOLD: float = THRESHOLD
 
 
 def make_detector_callback(

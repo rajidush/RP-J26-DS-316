@@ -26,8 +26,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-COMPONENT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL_DIR = COMPONENT_ROOT / "models" / "violence-vit-screen-ft-v1"
+try:
+    from .config import MODEL_DIR, THRESHOLD          # imported as package
+except ImportError:
+    from config import MODEL_DIR, THRESHOLD           # run as script from src/
+
+DEFAULT_MODEL_DIR = MODEL_DIR
 
 
 @dataclass
@@ -58,7 +62,7 @@ class ViolenceDetector:
     def __init__(
         self,
         model_dir: str | Path = DEFAULT_MODEL_DIR,
-        threshold: float = 0.5,
+        threshold: float = THRESHOLD,
         device: str | None = None,
     ) -> None:
         import torch
@@ -133,7 +137,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Component 1 violence detector")
     ap.add_argument("image", nargs="?", help="image file to classify")
     ap.add_argument("--model-dir", default=str(DEFAULT_MODEL_DIR))
-    ap.add_argument("--threshold", type=float, default=0.5)
+    ap.add_argument("--threshold", type=float, default=THRESHOLD)
     ap.add_argument("--device", default=None, help="cpu / mps / cuda (default: auto)")
     ap.add_argument("--benchmark", type=int, metavar="N", help="capture + classify N live frames")
     args = ap.parse_args()
