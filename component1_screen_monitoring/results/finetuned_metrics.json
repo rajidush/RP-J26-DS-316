@@ -1,0 +1,37 @@
+{
+  "checkpoint": "/content/drive/MyDrive/pp1_component1/checkpoints/violence-vit-screen-ft-v1",
+  "val": {
+    "n": 1661,
+    "accuracy": 0.9921733895243829,
+    "precision": 0.9954075774971297,
+    "recall": 0.9897260273972602,
+    "f1": 0.9925586720091586,
+    "confusion_matrix": [
+      [
+        781,
+        4
+      ],
+      [
+        9,
+        867
+      ]
+    ]
+  },
+  "test": {
+    "n": 1661,
+    "accuracy": 0.9909692956050572,
+    "precision": 0.9988412514484357,
+    "recall": 0.9840182648401826,
+    "f1": 0.9913743530764807,
+    "confusion_matrix": [
+      [
+        784,
+        1
+      ],
+      [
+        14,
+        862
+      ]
+    ]
+  }
+}
