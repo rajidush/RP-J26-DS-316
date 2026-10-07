@@ -17,8 +17,11 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from component4_profiling_xai.src import behavioral_anomaly  # noqa: E402
 from component4_profiling_xai.src.behavioral_anomaly import (  # noqa: E402
     FEATURES_PATH,
+    MODEL_PATH,
+    SCALER_PATH,
     load_artifacts,
     predict_behavioral_anomaly,
     preprocess_behavioral_input,
@@ -65,6 +68,44 @@ def test_artifacts_describe_13_features_in_the_same_order(artifacts, feature_nam
     assert scaler.n_features_in_ == 13
     assert list(scaler.feature_names_in_) == feature_names
     assert model.n_features_in_ == 13
+
+
+def test_artifact_paths_are_the_notebook_variation_files():
+    # Step 21 of the training notebook saves these exact file names.
+    assert MODEL_PATH.name == "behavioral_anomaly_ocsvm_variation.pkl"
+    assert SCALER_PATH.name == "behavioral_scaler_variation.pkl"
+    assert FEATURES_PATH.name == "behavioral_features_variation.pkl"
+    for path in (MODEL_PATH, SCALER_PATH, FEATURES_PATH):
+        assert path.is_absolute() and path.is_file()
+
+
+def test_feature_list_matches_training_notebook(feature_names):
+    assert feature_names == [
+        "Daily_Usage_Hours",
+        "Sleep_Hours",
+        "Academic_Performance",
+        "Social_Interactions",
+        "Exercise_Hours",
+        "Screen_Time_Before_Bed",
+        "Phone_Checks_Per_Day",
+        "Apps_Used_Daily",
+        "Time_on_Social_Media",
+        "Time_on_Gaming",
+        "Time_on_Education",
+        "Family_Communication",
+        "Weekend_Usage_Hours",
+    ]
+
+
+def test_model_has_tuned_notebook_hyperparameters(artifacts):
+    model, _, _ = artifacts
+    params = model.get_params()
+    assert (params["kernel"], params["nu"], params["gamma"]) == ("rbf", 0.02, 0.05)
+
+
+def test_missing_artifact_raises_clear_error(tmp_path):
+    with pytest.raises(FileNotFoundError, match="missing.pkl"):
+        behavioral_anomaly._load_artifact(tmp_path / "missing.pkl")
 
 
 # --- A. valid input ----------------------------------------------------------
@@ -215,6 +256,27 @@ def test_more_unusual_record_has_higher_anomaly_score(normal_record, unusual_rec
     normal = predict_behavioral_anomaly(normal_record)
     unusual = predict_behavioral_anomaly(unusual_record)
     assert unusual["anomaly_score"] > normal["anomaly_score"]
+
+
+@pytest.mark.parametrize(
+    "pattern",
+    [
+        # The three synthetic anomaly patterns from the training notebook
+        # (values beyond its 95th / 5th percentile thresholds).
+        pytest.param({"Daily_Usage_Hours": 10.0, "Sleep_Hours": 3.5,
+                      "Phone_Checks_Per_Day": 148}, id="high_usage_low_sleep"),
+        pytest.param({"Screen_Time_Before_Bed": 2.3, "Time_on_Social_Media": 4.7,
+                      "Sleep_Hours": 3.5}, id="night_social_low_sleep"),
+        pytest.param({"Weekend_Usage_Hours": 12.0, "Time_on_Gaming": 3.7,
+                      "Daily_Usage_Hours": 10.0}, id="weekend_gaming_high_usage"),
+    ],
+)
+def test_notebook_anomaly_pattern_raises_anomaly_score(normal_record, pattern):
+    # Only a relative check: with every other feature at its mean, the SVM
+    # may still place the record inside the boundary (notebook recall ~0.8).
+    baseline = predict_behavioral_anomaly(normal_record)["anomaly_score"]
+    patterned = predict_behavioral_anomaly({**normal_record, **pattern})["anomaly_score"]
+    assert patterned > baseline
 
 
 # --- no fitting --------------------------------------------------------------

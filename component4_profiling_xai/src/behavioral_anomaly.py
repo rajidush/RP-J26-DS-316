@@ -23,39 +23,69 @@ import pandas as pd
 _SRC_DIR = Path(__file__).resolve().parent
 MODELS_DIR = _SRC_DIR.parent / "models"
 
-MODEL_PATH = MODELS_DIR / "behavioral_anomaly_ocsvm.pkl"
-SCALER_PATH = MODELS_DIR / "behavioral_scaler.pkl"
-FEATURES_PATH = MODELS_DIR / "behavioral_features.pkl"
+# Artifact names as saved in Step 21 of
+# notebooks/Function_2_–_Behavioral_Anomaly_Detection_variation.ipynb.
+MODEL_PATH = MODELS_DIR / "behavioral_anomaly_ocsvm_variation.pkl"
+SCALER_PATH = MODELS_DIR / "behavioral_scaler_variation.pkl"
+FEATURES_PATH = MODELS_DIR / "behavioral_features_variation.pkl"
 
 
 def load_artifacts():
     """Load and return (model, scaler, feature_names) from the models directory.
 
     feature_names keeps the exact order stored at training time; the model
-    expects input columns in that order.
+    expects input columns in that order. Raises FileNotFoundError if an
+    artifact is missing, or RuntimeError if the artifacts disagree with
+    each other on the feature set.
     """
     model = _load_model()
     scaler = _load_scaler()
     feature_names = list(_required_features())
+    _check_artifacts_consistent(model, scaler, feature_names)
     return model, scaler, feature_names
+
+
+def _load_artifact(path: Path):
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Behavioral anomaly artifact not found: {path}. Copy the files "
+            f"saved by the Function 2 training notebook into {MODELS_DIR}."
+        )
+    return joblib.load(path)
+
+
+def _check_artifacts_consistent(model, scaler, feature_names) -> None:
+    """The scaler was fitted on a DataFrame with these columns, the SVM on
+    the scaled array; all three must describe the same features in order."""
+    scaler_names = list(getattr(scaler, "feature_names_in_", feature_names))
+    if scaler_names != feature_names:
+        raise RuntimeError(
+            "Scaler feature names do not match behavioral_features_variation.pkl: "
+            f"{scaler_names} vs {feature_names}"
+        )
+    if model.n_features_in_ != len(feature_names):
+        raise RuntimeError(
+            f"Model expects {model.n_features_in_} features but the feature "
+            f"list has {len(feature_names)}"
+        )
 
 
 @lru_cache(maxsize=1)
 def _required_features() -> tuple[str, ...]:
-    """Feature names from behavioral_features.pkl, in stored order (loaded once)."""
-    return tuple(joblib.load(FEATURES_PATH))
+    """Feature names from the features .pkl, in stored order (loaded once)."""
+    return tuple(_load_artifact(FEATURES_PATH))
 
 
 @lru_cache(maxsize=1)
 def _load_scaler():
-    """The StandardScaler fitted in Colab (loaded once, never refitted)."""
-    return joblib.load(SCALER_PATH)
+    """The StandardScaler fitted in the notebook (loaded once, never refitted)."""
+    return _load_artifact(SCALER_PATH)
 
 
 @lru_cache(maxsize=1)
 def _load_model():
-    """The One-Class SVM trained in Colab (loaded once, never refitted)."""
-    return joblib.load(MODEL_PATH)
+    """The One-Class SVM trained in the notebook (loaded once, never refitted)."""
+    return _load_artifact(MODEL_PATH)
 
 
 def _is_valid_number(value) -> bool:
@@ -71,7 +101,7 @@ def validate_behavioral_input(input_data) -> pd.DataFrame:
     """Check a single behavioral record and return it as model-ready input.
 
     input_data must be a dict containing every feature in
-    behavioral_features.pkl, each a finite real number (bools, NaN and
+    behavioral_features_variation.pkl, each a finite real number (bools, NaN and
     +/-inf are rejected). Extra keys are ignored.
 
     Returns a one-row DataFrame whose columns are exactly the required
@@ -129,16 +159,18 @@ def predict_behavioral_anomaly(input_data) -> dict:
     Returns:
         status:         "Normal" or "Anomaly"
         anomaly_flag:   0 (normal) or 1 (anomaly)
-        decision_score: signed distance from the SVM boundary; negative
+        decision_score: model.decision_function, the signed distance from
+                        the SVM boundary; the boundary is 0 and negative
                         values fall outside the learned normal region
-        anomaly_score:  -decision_score, so higher means more anomalous.
+        anomaly_score:  -decision_score (the notebook's anomaly_score()),
+                        so higher means more anomalous.
                         A relative ranking value only -- not a probability,
                         percentage, confidence or clinical risk score.
 
     Raises the same errors as validate_behavioral_input.
     """
     scaled = preprocess_behavioral_input(input_data)
-    model = _load_model()
+    model, _, _ = load_artifacts()
 
     prediction = int(model.predict(scaled)[0])
     decision_score = float(model.decision_function(scaled)[0])
