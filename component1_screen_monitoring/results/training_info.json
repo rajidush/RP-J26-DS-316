@@ -1,0 +1,112 @@
+{
+  "created": "2026-10-07T03:15:28",
+  "base_model": "jaranohaal/vit-base-violence-detection",
+  "base_violent_output_index": 1,
+  "labels": {
+    "0": "safe",
+    "1": "violent"
+  },
+  "data": {
+    "train": 7751,
+    "val": 1661,
+    "test": 1661,
+    "split_file": "outputs/splits.csv",
+    "seed": 42,
+    "group_sep": null
+  },
+  "hyperparameters": {
+    "unfreeze_last_n_blocks": 2,
+    "epochs": 5,
+    "learning_rate": 3e-05,
+    "batch_size": 16,
+    "weight_decay": 0.01,
+    "scheduler": "cosine",
+    "fp16": true,
+    "trainable_params": 14178818,
+    "total_params": 85800194
+  },
+  "final_val_f1": 0.9925586720091586,
+  "training_minutes": 8.3,
+  "gpu": "Tesla T4",
+  "baseline": {
+    "val": {
+      "n": 1661,
+      "accuracy": 0.9957856712823601,
+      "precision": 0.9943117178612059,
+      "recall": 0.997716894977169,
+      "f1": 0.996011396011396,
+      "confusion_matrix": [
+        [
+          780,
+          5
+        ],
+        [
+          2,
+          874
+        ]
+      ]
+    },
+    "test": {
+      "n": 1661,
+      "accuracy": 0.9963877182420229,
+      "precision": 0.9988532110091743,
+      "recall": 0.9942922374429224,
+      "f1": 0.9965675057208238,
+      "confusion_matrix": [
+        [
+          784,
+          1
+        ],
+        [
+          5,
+          871
+        ]
+      ]
+    }
+  },
+  "finetuned": {
+    "val": {
+      "n": 1661,
+      "accuracy": 0.9921733895243829,
+      "precision": 0.9954075774971297,
+      "recall": 0.9897260273972602,
+      "f1": 0.9925586720091586,
+      "confusion_matrix": [
+        [
+          781,
+          4
+        ],
+        [
+          9,
+          867
+        ]
+      ]
+    },
+    "test": {
+      "n": 1661,
+      "accuracy": 0.9909692956050572,
+      "precision": 0.9988412514484357,
+      "recall": 0.9840182648401826,
+      "f1": 0.9913743530764807,
+      "confusion_matrix": [
+        [
+          784,
+          1
+        ],
+        [
+          14,
+          862
+        ]
+      ]
+    }
+  },
+  "colab_latency": {
+    "cpu_ms_per_image": 1197.1,
+    "gpu_ms_per_image": 67.3
+  },
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "4.57.6",
+    "accelerate": "1.15.0"
+  }
+}
