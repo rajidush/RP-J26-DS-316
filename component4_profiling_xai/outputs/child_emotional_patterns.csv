@@ -1,0 +1,41 @@
+child_id,sessions,cluster,pattern
+C001,12,2,Defensive
+C002,23,1,Calm / reflective
+C003,23,2,Defensive
+C004,24,1,Calm / reflective
+C005,15,3,Withdrawn / unclear
+C006,24,0,Distressed
+C007,25,1,Calm / reflective
+C008,13,1,Calm / reflective
+C009,14,3,Withdrawn / unclear
+C010,25,3,Withdrawn / unclear
+C011,13,2,Defensive
+C012,16,0,Distressed
+C013,25,0,Distressed
+C014,16,2,Defensive
+C015,18,0,Distressed
+C016,19,1,Calm / reflective
+C017,16,0,Distressed
+C018,19,2,Defensive
+C019,21,0,Distressed
+C020,21,2,Defensive
+C021,19,3,Withdrawn / unclear
+C022,14,0,Distressed
+C023,23,0,Distressed
+C024,16,1,Calm / reflective
+C025,15,1,Calm / reflective
+C026,12,2,Defensive
+C027,24,0,Distressed
+C028,25,3,Withdrawn / unclear
+C029,20,1,Calm / reflective
+C030,24,2,Defensive
+C031,22,3,Withdrawn / unclear
+C032,16,2,Defensive
+C033,15,2,Defensive
+C034,19,2,Defensive
+C035,16,1,Calm / reflective
+C036,17,1,Calm / reflective
+C037,22,1,Calm / reflective
+C038,16,1,Calm / reflective
+C039,13,0,Distressed
+C040,24,2,Defensive
