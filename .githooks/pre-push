@@ -1,6 +1,5 @@
 #!/bin/sh
-# Before push: reject any of YOUR commits that still have a bad author email.
-# (Does not rewrite teammates' commits.)
+# Before push: reject commits with placeholder / tool author emails.
 
 EXPECT_EMAIL=$(git config --get user.email || true)
 ROOT=$(git rev-parse --show-toplevel)
@@ -25,31 +24,42 @@ do
     range="$remote_sha..$local_sha"
   fi
 
-  # Flag commits authored with placeholder / tool emails in the push range.
-  while IFS= read -r line; do
-    echo "ERROR: bad author on commit about to be pushed:"
-    echo "  $line"
+  # Flag commits with placeholder / tool emails in the push range.
+  git log --format='%h %an <%ae> %s' "$range" 2>/dev/null \
+    | grep -Ei 'example\.com|@cursor\.com|cursoragent|your-email@' \
+    | while IFS= read -r line
+      do
+        [ -n "$line" ] || continue
+        echo "ERROR: bad author on commit about to be pushed:"
+        echo "  $line"
+        exit 2
+      done
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
     bad=1
-  done <<EOF
-$(git log --format='%h %an <%ae> %s' "$range" 2>/dev/null | grep -Ei 'example\.com|@cursor\.com|cursoragent|your-email@' || true)
-EOF
+  fi
 
-  # Also flag if Dilnuka-named commits are not using the expected email.
+  # Dilnuka-named commits must use the expected email.
   if [ -n "$EXPECT_EMAIL" ]; then
-    while IFS= read -r line; do
-      echo "ERROR: Dilnuka commit not using required email ($EXPECT_EMAIL):"
-      echo "  $line"
+    git log --format='%h %an <%ae> %s' --author='Dilnuka' "$range" 2>/dev/null \
+      | grep -v "<$EXPECT_EMAIL>" \
+      | while IFS= read -r line
+        do
+          [ -n "$line" ] || continue
+          echo "ERROR: Dilnuka commit not using required email ($EXPECT_EMAIL):"
+          echo "  $line"
+          exit 2
+        done
+    rc=$?
+    if [ "$rc" -eq 2 ]; then
       bad=1
-    done <<EOF
-$(git log --format='%h %an <%ae> %s' --author='Dilnuka' "$range" 2>/dev/null | grep -v "<$EXPECT_EMAIL>" || true)
-EOF
+    fi
   fi
 done
 
 if [ "$bad" -ne 0 ]; then
   echo ""
   echo "Push blocked. Fix identity with scripts/setup_git_identity.(sh|ps1)"
-  echo "Do not push commits with placeholder emails or tool co-authors."
   exit 1
 fi
 
