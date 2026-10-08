@@ -1,0 +1,51 @@
+#!/bin/sh
+# Block commits that would use a placeholder or tool email instead of your configured Git identity.
+
+NAME=$(git config --get user.name || true)
+EMAIL=$(git config --get user.email || true)
+
+if [ -z "$NAME" ] || [ -z "$EMAIL" ]; then
+  echo "ERROR: git user.name / user.email is not set."
+  echo "Run:  bash scripts/setup_git_identity.sh"
+  echo "   or: powershell -File scripts/setup_git_identity.ps1"
+  exit 1
+fi
+
+case "$EMAIL" in
+  *example.com*|*@cursor.com*|cursoragent*|your-email@*)
+    echo "ERROR: refusing commit — user.email looks invalid: $EMAIL"
+    echo "Fix with scripts/setup_git_identity.(sh|ps1)"
+    exit 1
+    ;;
+esac
+
+IDENT=$(git var GIT_AUTHOR_IDENT 2>/dev/null || true)
+case "$IDENT" in
+  *example.com*|*@cursor.com*|*[Cc]ursor[Aa]gent*)
+    echo "ERROR: refusing commit — author identity is wrong:"
+    echo "  $IDENT"
+    echo "Your configured identity should be:"
+    echo "  $NAME <$EMAIL>"
+    exit 1
+    ;;
+esac
+
+# If this repo has an expected identity file, enforce it (Dilnuka machine setup).
+ROOT=$(git rev-parse --show-toplevel)
+EXPECT="$ROOT/.gitidentity"
+if [ -f "$EXPECT" ]; then
+  EXP_NAME=$(grep -E '^name=' "$EXPECT" | head -1 | cut -d= -f2-)
+  EXP_EMAIL=$(grep -E '^email=' "$EXPECT" | head -1 | cut -d= -f2-)
+  if [ -n "$EXP_EMAIL" ] && [ "$EMAIL" != "$EXP_EMAIL" ]; then
+    echo "ERROR: user.email must be '$EXP_EMAIL' (got '$EMAIL')"
+    echo "Run scripts/setup_git_identity.(sh|ps1) so commits link to your GitHub profile."
+    exit 1
+  fi
+  if [ -n "$EXP_NAME" ] && [ "$NAME" != "$EXP_NAME" ]; then
+    echo "ERROR: user.name must be '$EXP_NAME' (got '$NAME')"
+    echo "Run scripts/setup_git_identity.(sh|ps1)"
+    exit 1
+  fi
+fi
+
+exit 0

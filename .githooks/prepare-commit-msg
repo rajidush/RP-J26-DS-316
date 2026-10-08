@@ -1,0 +1,15 @@
+#!/bin/sh
+# Strip unwanted co-author / tool trailers so commits stay under the real author only.
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+
+# Remove common auto-inserted co-author / attribution lines (case-insensitive).
+# Portable: prefer sed -i.bak then remove backup (works on Git Bash / macOS / Linux).
+tmp="${MSG_FILE}.tmp.$$"
+grep -viE \
+  -e '^[[:space:]]*Co-authored-by:[[:space:]].*(cursoragent|@cursor\.com)' \
+  -e '^[[:space:]]*Made-with:[[:space:]]*Cursor' \
+  -e '^[[:space:]]*Made with Cursor' \
+  "$MSG_FILE" > "$tmp" 2>/dev/null || cp "$MSG_FILE" "$tmp"
+mv "$tmp" "$MSG_FILE"
+exit 0

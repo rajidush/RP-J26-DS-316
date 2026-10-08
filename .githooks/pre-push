@@ -1,0 +1,66 @@
+#!/bin/sh
+# Before push: reject commits with placeholder / tool author emails.
+
+EXPECT_EMAIL=$(git config --get user.email || true)
+ROOT=$(git rev-parse --show-toplevel)
+if [ -f "$ROOT/.gitidentity" ]; then
+  EXPECT_EMAIL=$(grep -E '^email=' "$ROOT/.gitidentity" | head -1 | cut -d= -f2-)
+fi
+
+[ -n "$EXPECT_EMAIL" ] || exit 0
+
+zero=0000000000000000000000000000000000000000
+bad=0
+
+while read -r local_ref local_sha remote_ref remote_sha
+do
+  [ -n "$local_sha" ] || continue
+  if [ "$local_sha" = "$zero" ]; then
+    continue
+  fi
+  if [ "$remote_sha" = "$zero" ] || [ -z "$remote_sha" ]; then
+    range="$local_sha"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  # Flag commits with placeholder / tool emails in the push range.
+  git log --format='%h %an <%ae> %s' "$range" 2>/dev/null \
+    | grep -Ei 'example\.com|@cursor\.com|cursoragent|your-email@' \
+    | while IFS= read -r line
+      do
+        [ -n "$line" ] || continue
+        echo "ERROR: bad author on commit about to be pushed:"
+        echo "  $line"
+        exit 2
+      done
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    bad=1
+  fi
+
+  # Dilnuka-named commits must use the expected email.
+  if [ -n "$EXPECT_EMAIL" ]; then
+    git log --format='%h %an <%ae> %s' --author='Dilnuka' "$range" 2>/dev/null \
+      | grep -v "<$EXPECT_EMAIL>" \
+      | while IFS= read -r line
+        do
+          [ -n "$line" ] || continue
+          echo "ERROR: Dilnuka commit not using required email ($EXPECT_EMAIL):"
+          echo "  $line"
+          exit 2
+        done
+    rc=$?
+    if [ "$rc" -eq 2 ]; then
+      bad=1
+    fi
+  fi
+done
+
+if [ "$bad" -ne 0 ]; then
+  echo ""
+  echo "Push blocked. Fix identity with scripts/setup_git_identity.(sh|ps1)"
+  exit 1
+fi
+
+exit 0
