@@ -275,7 +275,7 @@ def assemble_rows(header, scenarios, replies, test_ids, start=FIRST_NEW_EXAMPLE)
 
 
 # ---------------------------------------------------------------- distilabel
-def make_llm(backend, model, temperature):
+def make_llm(backend, model, temperature, max_new_tokens=8192):
     # Written against distilabel 1.5.x; check import paths if your version differs.
     from distilabel.models import OpenAILLM
     if backend == "colab":
@@ -287,9 +287,10 @@ def make_llm(backend, model, temperature):
     else:  # aistudio: free Gemini API key, OpenAI-compatible endpoint
         key = os.environ.get("GEMINI_API_KEY") or sys.exit("GEMINI_API_KEY not set")
         base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-    # Generous token budget: Gemini thinking tokens can count against it.
+    # Thinking tokens can count against max_new_tokens, and Colab reserves quota by it, so
+    # lower it (--max-new-tokens) when the proxy answers 403 "exceeds your available quota".
     return OpenAILLM(model=model, base_url=base_url, api_key=key, timeout=300, max_retries=3,
-                     generation_kwargs={"temperature": temperature, "max_new_tokens": 8192})
+                     generation_kwargs={"temperature": temperature, "max_new_tokens": max_new_tokens})
 
 
 def expand_requests(prompts, copies):
@@ -320,6 +321,7 @@ def run_generation(llm, prompts, num_generations=1, name="inquire-drafts", batch
 
 def provenance(args):
     return {"model": args.model, "backend": args.backend, "temperature": args.temperature,
+            "max_new_tokens": args.max_new_tokens,
             "drafting_prompt_version": DRAFT_PROMPT_VERSION,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
@@ -335,7 +337,7 @@ def stage_scenarios(args, seed_rows, out):
                 for r in seed_rows if r["example_id"].startswith("INQ")]
     existing = list(dict.fromkeys(existing))
     quota = category_quota(RISK_CATEGORIES, NEW_SCENARIOS)
-    llm = make_llm(args.backend, args.model, args.temperature)
+    llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
     raw = run_generation(llm, {c: build_scenario_request(c, n, existing) for c, n in quota.items()},
                          name="inquire-scenarios")
     drafted, problems = {}, []
@@ -368,7 +370,7 @@ def stage_replies(args, seed_rows, out):
     if not todo:
         print("all replies drafted")
         return
-    llm = make_llm(args.backend, args.model, args.temperature)
+    llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
     raw = run_generation(llm, {s["scenario_id"]: build_replies_request(s) for s in todo}, name="inquire-replies")
     failed = []
     for s in todo:
@@ -398,7 +400,7 @@ def stage_drafts(args, seed_rows, out):
         r["provenance"].setdefault("replies", replies[r["scenario_id"]]["provenance"])
     todo = [r for r in rows if len([x for x in r["drafts"] if x]) < DRAFTS_PER_ROW]
     if todo:
-        llm = make_llm(args.backend, args.model, args.temperature)
+        llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
         raw = run_generation(llm, {r["example_id"]: build_draft_request(r["prompt"][0]["content"], r["reply_type"], shots)
                                    for r in todo}, num_generations=DRAFTS_PER_ROW, name="inquire-educator-drafts")
         for r in todo:
@@ -419,6 +421,8 @@ def build_parser():
     ap.add_argument("--backend", choices=["colab", "aistudio"], default="colab")
     ap.add_argument("--model", default="google/gemini-3.1-pro-preview")
     ap.add_argument("--temperature", type=float, default=0.9)
+    ap.add_argument("--max-new-tokens", type=int, default=8192,
+                    help="lower (e.g. 2048) if Colab reports the estimated cost exceeds your quota")
     return ap
 
 

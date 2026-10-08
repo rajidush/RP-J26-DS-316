@@ -161,6 +161,7 @@ def test_three_stages_run_end_to_end_and_resume(tmp_path, monkeypatch):
     assert sum(r["split"] == "test" for r in rows) == 50
     assert all(len(r["drafts"]) == 2 and not r["drafts"][0].startswith('"') for r in rows)
     assert rows[0]["provenance"]["drafts"]["drafting_prompt_version"] == d.DRAFT_PROMPT_VERSION
+    assert rows[0]["provenance"]["drafts"]["max_new_tokens"] == 8192
 
 
 def test_draft_request_embeds_training_prompt_and_reply_type(seed_rows):
