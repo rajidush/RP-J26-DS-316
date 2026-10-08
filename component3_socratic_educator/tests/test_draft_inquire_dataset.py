@@ -126,6 +126,34 @@ def test_each_draft_is_its_own_request_and_regroups_in_order():
                                             "INQ031": ["INQ031#0", "INQ031#1"]}
 
 
+def test_aistudio_llm_drops_fields_gemini_rejects():
+    import asyncio
+    pytest.importorskip("distilabel")
+    llm = d.AIStudioLLM(model="gemini-x", base_url="https://example.invalid/v1", api_key="k")
+    llm.load()
+    sent = {}
+
+    async def record(**kwargs):
+        sent.update(kwargs)
+        return "ok"
+
+    llm._aclient.chat.completions.create = d._without_unsupported_fields(record)
+    asyncio.run(llm._aclient.chat.completions.create(
+        model="gemini-x", messages=[], max_tokens=10, temperature=0.9,
+        logprobs=False, top_logprobs=None, frequency_penalty=0.0, presence_penalty=0.0,
+        stop=None, extra_body=None))
+    assert not set(d.GEMINI_UNSUPPORTED_FIELDS) & set(sent)
+    assert None not in sent.values()  # Gemini: 400 "Value is not a string: null" for stop=None
+    assert sent["max_tokens"] == 10 and sent["temperature"] == 0.9
+
+
+def test_aistudio_llm_wraps_its_client_on_load():
+    pytest.importorskip("distilabel")
+    llm = d.AIStudioLLM(model="gemini-x", base_url="https://example.invalid/v1", api_key="k")
+    llm.load()
+    assert getattr(llm._aclient.chat.completions.create, "drops_unsupported_fields", False)
+
+
 def _fake_generation(llm, prompts, num_generations=1, name="", batch_size=8):
     """Stands in for distilabel: answers each stage's request in the shape Gemini is asked for."""
     out = {}

@@ -275,9 +275,40 @@ def assemble_rows(header, scenarios, replies, test_ids, start=FIRST_NEW_EXAMPLE)
 
 
 # ---------------------------------------------------------------- distilabel
+# distilabel's OpenAILLM always sends these; AI Studio's OpenAI-compatible endpoint
+# rejects them with 400 INVALID_ARGUMENT "Unknown name" (8 Oct). It also rejects
+# explicit nulls (stop=None -> "Value is not a string: null"), so unset fields go too.
+GEMINI_UNSUPPORTED_FIELDS = ("logprobs", "top_logprobs", "frequency_penalty", "presence_penalty")
+
+
+def _without_unsupported_fields(create):
+    async def create_for_gemini(**kwargs):
+        kwargs = {k: v for k, v in kwargs.items() if v is not None and k not in GEMINI_UNSUPPORTED_FIELDS}
+        return await create(**kwargs)
+    create_for_gemini.drops_unsupported_fields = True
+    return create_for_gemini
+
+
+try:  # optional at import time so the pure helpers stay testable without distilabel
+    from distilabel.models import OpenAILLM as _OpenAILLM
+except ImportError:  # pragma: no cover
+    _OpenAILLM = None
+
+if _OpenAILLM is not None:
+    class AIStudioLLM(_OpenAILLM):
+        """OpenAILLM for AI Studio's Gemini endpoint: strips request fields Gemini rejects."""
+
+        def load(self):
+            super().load()
+            completions = self._aclient.chat.completions
+            completions.create = _without_unsupported_fields(completions.create)
+
+
 def make_llm(backend, model, temperature, max_new_tokens=8192):
     # Written against distilabel 1.5.x; check import paths if your version differs.
     from distilabel.models import OpenAILLM
+    if backend == "aistudio":
+        OpenAILLM = AIStudioLLM
     if backend == "colab":
         host, key = os.environ.get("MODEL_PROXY_HOST"), os.environ.get("MODEL_PROXY_API_KEY")
         if not (host and key):
@@ -287,8 +318,8 @@ def make_llm(backend, model, temperature, max_new_tokens=8192):
     else:  # aistudio: free Gemini API key, OpenAI-compatible endpoint
         key = os.environ.get("GEMINI_API_KEY") or sys.exit("GEMINI_API_KEY not set")
         base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-    # Thinking tokens can count against max_new_tokens, and Colab reserves quota by it, so
-    # lower it (--max-new-tokens) when the proxy answers 403 "exceeds your available quota".
+    # Thinking tokens can count against max_new_tokens. Colab's proxy reserved quota as if no limit was
+    # sent (65,536 tokens, 8 Oct), and the reservation multiplies by --batch-size concurrent requests.
     return OpenAILLM(model=model, base_url=base_url, api_key=key, timeout=300, max_retries=3,
                      generation_kwargs={"temperature": temperature, "max_new_tokens": max_new_tokens})
 
@@ -321,7 +352,7 @@ def run_generation(llm, prompts, num_generations=1, name="inquire-drafts", batch
 
 def provenance(args):
     return {"model": args.model, "backend": args.backend, "temperature": args.temperature,
-            "max_new_tokens": args.max_new_tokens,
+            "max_new_tokens": args.max_new_tokens, "batch_size": args.batch_size,
             "drafting_prompt_version": DRAFT_PROMPT_VERSION,
             "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
 
@@ -339,7 +370,7 @@ def stage_scenarios(args, seed_rows, out):
     quota = category_quota(RISK_CATEGORIES, NEW_SCENARIOS)
     llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
     raw = run_generation(llm, {c: build_scenario_request(c, n, existing) for c, n in quota.items()},
-                         name="inquire-scenarios")
+                         name="inquire-scenarios", batch_size=args.batch_size)
     drafted, problems = {}, []
     for category, n in quota.items():
         try:
@@ -371,7 +402,8 @@ def stage_replies(args, seed_rows, out):
         print("all replies drafted")
         return
     llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
-    raw = run_generation(llm, {s["scenario_id"]: build_replies_request(s) for s in todo}, name="inquire-replies")
+    raw = run_generation(llm, {s["scenario_id"]: build_replies_request(s) for s in todo},
+                         name="inquire-replies", batch_size=args.batch_size)
     failed = []
     for s in todo:
         try:
@@ -402,7 +434,8 @@ def stage_drafts(args, seed_rows, out):
     if todo:
         llm = make_llm(args.backend, args.model, args.temperature, args.max_new_tokens)
         raw = run_generation(llm, {r["example_id"]: build_draft_request(r["prompt"][0]["content"], r["reply_type"], shots)
-                                   for r in todo}, num_generations=DRAFTS_PER_ROW, name="inquire-educator-drafts")
+                                   for r in todo}, num_generations=DRAFTS_PER_ROW, name="inquire-educator-drafts",
+                             batch_size=args.batch_size)
         for r in todo:
             r["drafts"] = [g.strip().strip('"') for g in raw.get(r["example_id"], []) if g]
             r["provenance"]["drafts"] = provenance(args)
@@ -422,7 +455,9 @@ def build_parser():
     ap.add_argument("--model", default="google/gemini-3.1-pro-preview")
     ap.add_argument("--temperature", type=float, default=0.9)
     ap.add_argument("--max-new-tokens", type=int, default=8192,
-                    help="lower (e.g. 2048) if Colab reports the estimated cost exceeds your quota")
+                    help="output token cap sent to the model (recorded in provenance)")
+    ap.add_argument("--batch-size", type=int, default=8,
+                    help="concurrent requests; lower (e.g. 2) if Colab reports the estimated cost exceeds your quota")
     return ap
 
 

@@ -1,0 +1,175 @@
+{
+  "provenance": {
+    "model": "google/gemini-3.1-pro-preview",
+    "backend": "colab",
+    "temperature": 0.9,
+    "drafting_prompt_version": "inquire-draft-v1",
+    "generated_at": "2026-10-08T07:54:27+00:00"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "S027",
+      "risk_category": "explicit_visual",
+      "context": "A risk trigger was received for an unsolicited explicit image sent to the child via a direct messaging app; the content was intercepted and hidden."
+    },
+    {
+      "scenario_id": "S028",
+      "risk_category": "explicit_visual",
+      "context": "A risk trigger was received for explicit user-generated artwork displayed on a custom avatar in a multiplayer sandbox game."
+    },
+    {
+      "scenario_id": "S029",
+      "risk_category": "explicit_visual",
+      "context": "A risk trigger was received for adult visual material masquerading as a children's animation on a video-sharing platform; playback was immediately blocked."
+    },
+    {
+      "scenario_id": "S030",
+      "risk_category": "explicit_visual",
+      "context": "A risk trigger was received for a sexually explicit banner advertisement loading on the sidebar of a free gaming website."
+    },
+    {
+      "scenario_id": "S031",
+      "risk_category": "violence",
+      "context": "A risk trigger was received for search queries regarding the construction of homemade weapons; the browser blocked the results."
+    },
+    {
+      "scenario_id": "S032",
+      "risk_category": "violence",
+      "context": "A risk trigger was received for detailed descriptions of physical violence typed into a collaborative school document."
+    },
+    {
+      "scenario_id": "S033",
+      "risk_category": "violence",
+      "context": "A risk trigger was received for a video compilation of real-world physical altercations appearing on a social media timeline."
+    },
+    {
+      "scenario_id": "S034",
+      "risk_category": "violence",
+      "context": "A risk trigger was received for excessively bloody user-generated modifications loaded into a sandbox game."
+    },
+    {
+      "scenario_id": "S035",
+      "risk_category": "self_harm_imagery",
+      "context": "A risk trigger was received for visual content promoting self-injury on a photo-sharing platform; the image was blurred by the system."
+    },
+    {
+      "scenario_id": "S036",
+      "risk_category": "self_harm_imagery",
+      "context": "A risk trigger was received for an image depicting self-harm shared within a private group chat."
+    },
+    {
+      "scenario_id": "S037",
+      "risk_category": "self_harm_imagery",
+      "context": "A risk trigger was received for artwork romanticizing self-injury discovered on an online community art board."
+    },
+    {
+      "scenario_id": "S038",
+      "risk_category": "self_harm_imagery",
+      "context": "A risk trigger was received for a short-form video montage containing self-harm imagery; playback was immediately blocked."
+    },
+    {
+      "scenario_id": "S039",
+      "risk_category": "hate_speech",
+      "context": "A risk trigger was received for discriminatory audio detected over voice chat in a multiplayer game lobby."
+    },
+    {
+      "scenario_id": "S040",
+      "risk_category": "hate_speech",
+      "context": "A risk trigger was received for an image containing hateful symbols shared in a private social media group chat."
+    },
+    {
+      "scenario_id": "S041",
+      "risk_category": "hate_speech",
+      "context": "A risk trigger was received for targeted derogatory comments appearing below a trending short-form video."
+    },
+    {
+      "scenario_id": "S042",
+      "risk_category": "hate_speech",
+      "context": "A risk trigger was received for prejudiced remarks directed at a marginalized group within a shared school document."
+    },
+    {
+      "scenario_id": "S043",
+      "risk_category": "cyberbullying",
+      "context": "A risk trigger was received for intentionally embarrassing edited photos shared in a peer group message."
+    },
+    {
+      "scenario_id": "S044",
+      "risk_category": "cyberbullying",
+      "context": "A risk trigger was received for mocking and derogatory notes left on a shared school collaboration document."
+    },
+    {
+      "scenario_id": "S045",
+      "risk_category": "cyberbullying",
+      "context": "A risk trigger was received for a barrage of anonymous insults submitted through a social media profile link."
+    },
+    {
+      "scenario_id": "S046",
+      "risk_category": "cyberbullying",
+      "context": "A risk trigger was received for aggressive verbal harassment detected in a live team voice channel; the offending user was automatically muted."
+    },
+    {
+      "scenario_id": "S047",
+      "risk_category": "grooming_language",
+      "context": "A risk trigger was received for manipulative grooming language; an unknown user repeatedly complimented the child's maturity on a social media post."
+    },
+    {
+      "scenario_id": "S048",
+      "risk_category": "grooming_language",
+      "context": "A risk trigger was received for isolating grooming language in a gaming chat where a stranger claimed that the child's parents do not understand them."
+    },
+    {
+      "scenario_id": "S049",
+      "risk_category": "grooming_language",
+      "context": "A risk trigger was received for potential grooming behavior involving an unfamiliar contact offering to buy the child digital gift cards on a fan forum."
+    },
+    {
+      "scenario_id": "S050",
+      "risk_category": "grooming_language",
+      "context": "A risk trigger was received for invasive grooming questions on a messaging app asking the child about their daily schedule and when they are home alone."
+    },
+    {
+      "scenario_id": "S051",
+      "risk_category": "self_harm_language",
+      "context": "A risk trigger was received for self-harm language drafted in a direct message; the system flagged the text before it was sent."
+    },
+    {
+      "scenario_id": "S052",
+      "risk_category": "self_harm_language",
+      "context": "A risk trigger was received for concerning language about self-injury shared in a multiplayer game's team chat."
+    },
+    {
+      "scenario_id": "S053",
+      "risk_category": "self_harm_language",
+      "context": "A risk trigger was received for text indicating self-harm ideation typed into a cloud-synced educational journaling app."
+    },
+    {
+      "scenario_id": "S054",
+      "risk_category": "unknown_flagged",
+      "context": "A risk trigger was received for broadcasting real-time GPS location to unverified followers on a social mapping app."
+    },
+    {
+      "scenario_id": "S055",
+      "risk_category": "unknown_flagged",
+      "context": "A risk trigger was received for an inappropriate webpage link pasted into a collaborative school document."
+    },
+    {
+      "scenario_id": "S056",
+      "risk_category": "unknown_flagged",
+      "context": "A risk trigger was received for intense profanity and verbal harassment detected in a multiplayer voice lobby; the audio feed was muted."
+    }
+  ],
+  "test_scenario_ids": [
+    "S028",
+    "S029",
+    "S031",
+    "S033",
+    "S034",
+    "S035",
+    "S036",
+    "S041",
+    "S049",
+    "S056"
+  ],
+  "test_split_seed": 20261008,
+  "near_duplicates_for_review": []
+}
