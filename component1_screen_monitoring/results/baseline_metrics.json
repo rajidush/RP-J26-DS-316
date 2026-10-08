@@ -1,0 +1,38 @@
+{
+  "model": "jaranohaal/vit-base-violence-detection",
+  "violent_output_index": 1,
+  "val": {
+    "n": 1661,
+    "accuracy": 0.9957856712823601,
+    "precision": 0.9943117178612059,
+    "recall": 0.997716894977169,
+    "f1": 0.996011396011396,
+    "confusion_matrix": [
+      [
+        780,
+        5
+      ],
+      [
+        2,
+        874
+      ]
+    ]
+  },
+  "test": {
+    "n": 1661,
+    "accuracy": 0.9963877182420229,
+    "precision": 0.9988532110091743,
+    "recall": 0.9942922374429224,
+    "f1": 0.9965675057208238,
+    "confusion_matrix": [
+      [
+        784,
+        1
+      ],
+      [
+        5,
+        871
+      ]
+    ]
+  }
+}

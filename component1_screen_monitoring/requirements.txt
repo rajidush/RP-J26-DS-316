@@ -9,7 +9,7 @@ Pillow>=10.3.0            # image I/O and basic processing
 # ML / classification
 torch>=2.2.0
 torchvision>=0.17.0
-transformers>=4.40.0
+transformers>=4.40.0,<5   # fine-tuned checkpoint saved with 4.57; 5.x breaks loading
 # onnxruntime>=1.18.0     # uncomment if using ONNX export
 
 # Data handling
