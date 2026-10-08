@@ -30,12 +30,22 @@ means here and why no server/container setup is needed.
 pytest -v
 ```
 
+## Git identity (Component 2 / Dilnuka)
+
+Always commit as your GitHub-linked identity so contributions show under **Dilnuka**.
+See `docs/git-commit-identity.md`. One-time setup:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_git_identity.ps1
+```
+
 ## Repo layout
 
 ```
 ├── docs/
 │   ├── architecture/            diagrams
 │   ├── interface-contracts/     the shared schemas every component is built against
+│   ├── git-commit-identity.md   Dilnuka commit/push identity rules
 │   └── meeting-notes/
 ├── component1_screen_monitoring/
 ├── component2_hate_speech_detection/

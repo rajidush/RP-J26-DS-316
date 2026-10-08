@@ -1,0 +1,5 @@
+# Expected Git identity for Dilnuka (IT23209152) on this machine.
+# Used by .githooks to block wrong author/email before commit/push.
+name=Dilnuka Liyanage
+email=114978797+Dilnuka@users.noreply.github.com
+github=Dilnuka
