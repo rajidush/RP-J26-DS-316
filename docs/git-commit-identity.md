@@ -28,7 +28,13 @@ or:
 bash scripts/setup_git_identity.sh
 ```
 
-This sets **local** `user.name` / `user.email` for this repo and enables `.githooks`.
+This sets **local** `user.name` / `user.email` for this repo and copies the hooks in
+`.githooks/` into `.git/hooks/`.
+
+The hooks are copied rather than enabled with `core.hooksPath .githooks` on purpose:
+`.githooks/` is versioned, so with `hooksPath` the hook in force would change on every
+checkout, and a branch cut from an older `main` would bring old hook bugs back.
+**Re-run the setup script whenever `.githooks/` changes.**
 
 ## What the hooks enforce
 
