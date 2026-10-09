@@ -2,6 +2,9 @@
 jsonschema>=4.20
 pytest>=8.0
 
+# Annotation data download only (annotation/fetch_data.py), not needed at runtime:
+# kagglehub>=0.3
+
 # Planned (do not uncomment until the matching roadmap step):
 # torch          # step 3 — pretrained scorers (CPU build)
 # transformers   # step 3

@@ -21,3 +21,6 @@ Thumbs.db
 .idea/
 component3_socratic_educator/skills/five-week-plan.md
 component3_socratic_educator/skills/model-fine-tuning-context.md
+
+# C2 meme dataset + labels: public repo, licence forbids redistribution
+component2_hate_speech_detection/data/
