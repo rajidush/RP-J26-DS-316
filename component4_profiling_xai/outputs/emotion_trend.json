@@ -1,0 +1,1722 @@
+{
+  "C001": {
+    "trend": "not enough data",
+    "worsening": false,
+    "severity_change": null,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C002": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 9,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C003": {
+    "trend": "improving",
+    "worsening": false,
+    "severity_change": -1.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C004": {
+    "trend": "worsening",
+    "worsening": true,
+    "severity_change": 1.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C005": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C006": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 8,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 0,
+        "reliable": false,
+        "pattern": "No sessions"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C007": {
+    "trend": "improving",
+    "worsening": false,
+    "severity_change": -1.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C008": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C009": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C010": {
+    "trend": "improving",
+    "worsening": false,
+    "severity_change": -2.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 8,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C011": {
+    "trend": "not enough data",
+    "worsening": false,
+    "severity_change": null,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C012": {
+    "trend": "worsening",
+    "worsening": true,
+    "severity_change": 1.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C013": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C014": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C015": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C016": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C017": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C018": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 8,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C019": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 8,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C020": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C021": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C022": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C023": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C024": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C025": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C026": {
+    "trend": "not enough data",
+    "worsening": false,
+    "severity_change": null,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C027": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C028": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C029": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C030": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 8,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C031": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      }
+    ],
+    "overall_pattern": "Withdrawn / unclear"
+  },
+  "C032": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C033": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": -0.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 0,
+        "reliable": false,
+        "pattern": "No sessions"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C034": {
+    "trend": "improving",
+    "worsening": false,
+    "severity_change": -1.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  },
+  "C035": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C036": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C037": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": -0.5,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 9,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C038": {
+    "trend": "not enough data",
+    "worsening": false,
+    "severity_change": null,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 5,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 0,
+        "reliable": false,
+        "pattern": "No sessions"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C039": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 0,
+        "reliable": false,
+        "pattern": "No sessions"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
+      }
+    ],
+    "overall_pattern": "Distressed"
+  },
+  "C040": {
+    "trend": "stable",
+    "worsening": false,
+    "severity_change": 0.0,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-20",
+        "sessions": 10,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-03",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-17",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-08-31",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-14",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Defensive"
+      }
+    ],
+    "overall_pattern": "Defensive"
+  }
+}
