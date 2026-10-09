@@ -14,6 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 from jsonschema import Draft7Validator, ValidationError
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -32,13 +33,14 @@ T0 = datetime(2026, 10, 7, 10, 0, 0, tzinfo=timezone.utc)
 
 def _frame(seconds=0.0):
     ts = (T0 + timedelta(seconds=seconds)).isoformat()
-    return RawFrame(image=object(), timestamp=ts, frame_reference=f"frame_{seconds}")
+    return RawFrame(image=Image.new("RGB", (64, 40)), timestamp=ts, frame_reference=f"frame_{seconds}")
 
 
 def _detection(p_violent, threshold=THRESHOLD):
     flagged = p_violent >= threshold
     return SimpleNamespace(category="violence" if flagged else "safe",
-                           confidence=p_violent, flagged=flagged, inference_ms=12.0)
+                           confidence=p_violent, flagged=flagged, inference_ms=12.0,
+                           region="full", region_box=None, n_crops=1)
 
 
 def _independent_validator():
@@ -113,15 +115,20 @@ def test_invalid_payloads_rejected(mutate):
 # ---------------------------------------------------------------------------
 
 class FakeDetector:
-    """Returns p_violent values from a list, one per predict() call."""
+    """Returns p_violent values from a list, one per predict()/predict_regions() call."""
 
     threshold = THRESHOLD
 
     def __init__(self, probs):
         self._probs = iter(probs)
+        self.region_calls = []                 # (prev_image, strategy) per predict_regions call
 
     def predict(self, image):
         return _detection(next(self._probs))
+
+    def predict_regions(self, image, prev_image=None, strategy="tiles+motion"):
+        self.region_calls.append((prev_image, strategy))
+        return self.predict(image)
 
 
 def test_capture_and_classify_flagged_and_not():
@@ -204,3 +211,17 @@ def test_loop_survives_a_failing_frame():
                                 on_payload=lambda p: None, capture_fn=_clock_frames(),
                                 sleep_fn=lambda s: None)
     assert stats == {"frames": 3, "payloads": 1, "errors": 1}
+
+
+def test_loop_passes_small_previous_frame_and_strategy():
+    def capture():
+        return RawFrame(image=Image.new("RGB", (1440, 900), "white"),
+                        timestamp=T0.isoformat(), frame_reference="f")
+
+    det = FakeDetector([0.1, 0.1, 0.1])
+    run_monitoring_loop(det, max_iterations=3, capture_fn=capture, sleep_fn=lambda s: None,
+                        strategy="tiles")
+    prevs = [p for p, _ in det.region_calls]
+    assert prevs[0] is None                    # first frame has no previous frame
+    assert all(p.mode == "L" and p.width <= 160 for p in prevs[1:])   # downscaled copy only
+    assert {s for _, s in det.region_calls} == {"tiles"}

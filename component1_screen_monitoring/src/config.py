@@ -14,6 +14,10 @@ REPO_ROOT = COMPONENT_ROOT.parent
 #: P(violent) at or above which a frame is flagged.
 THRESHOLD: float = 0.5
 
+#: Which crops of each screen frame are classified (see regions.py):
+#: "full", "tiles", "motion" or "tiles+motion".
+REGION_STRATEGY: str = "tiles+motion"
+
 #: Seconds between screen samples in the live monitoring loop.
 CAPTURE_INTERVAL_S: float = 2.0
 

@@ -29,9 +29,11 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
-    from .config import CAPTURE_INTERVAL_S, SCHEMA_PATH   # imported as package
+    from .config import CAPTURE_INTERVAL_S, REGION_STRATEGY, SCHEMA_PATH  # imported as package
+    from .regions import motion_reference
 except ImportError:
-    from config import CAPTURE_INTERVAL_S, SCHEMA_PATH    # run as script from src/
+    from config import CAPTURE_INTERVAL_S, REGION_STRATEGY, SCHEMA_PATH   # run as script from src/
+    from regions import motion_reference
 
 log = logging.getLogger(__name__)
 
@@ -143,12 +145,21 @@ def _default_capture():
     return capture_frame(monitor_index=1)
 
 
-def capture_and_classify(detector: Any, capture_fn: Callable[[], Any] | None = None) -> dict | None:
-    """Capture one real frame, classify it, and return a payload (or ``None`` if not flagged)."""
+def capture_and_classify(
+    detector: Any,
+    capture_fn: Callable[[], Any] | None = None,
+    strategy: str = REGION_STRATEGY,
+) -> dict | None:
+    """
+    Capture one real frame, classify it, and return a payload (or ``None`` if not flagged).
+
+    A single frame has no previous frame, so the "motion" region is skipped.
+    """
     frame = (capture_fn or _default_capture)()
-    detection = detector.predict(frame.image)
-    log.info("frame %s → %s (p_violent=%.4f, %.0f ms)", frame.frame_reference,
-             detection.category, detection.confidence, detection.inference_ms)
+    detection = detector.predict_regions(frame.image, None, strategy)
+    log.info("frame %s → %s (p_violent=%.4f in %s, %d crops, %.0f ms)", frame.frame_reference,
+             detection.category, detection.confidence, detection.region, detection.n_crops,
+             detection.inference_ms)
     return build_payload(frame, detection)
 
 
@@ -159,11 +170,14 @@ def run_monitoring_loop(
     on_payload: Callable[[dict], None] | None = None,
     capture_fn: Callable[[], Any] | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
+    strategy: str = REGION_STRATEGY,
 ) -> dict:
     """
     Sample the screen every *interval* seconds and emit a payload per flagged frame.
 
-    Only the latest frame is held in memory and nothing is saved to disk.
+    Each frame is classified with ``detector.predict_regions`` (*strategy*).
+    Only the latest frame plus a small grayscale copy of the previous one (for
+    motion) are held in memory, and nothing is saved to disk.
     Not-flagged frames are logged at DEBUG. Ctrl+C stops the loop cleanly.
 
     Parameters
@@ -173,6 +187,7 @@ def run_monitoring_loop(
     max_iterations : stop after this many frames; ``None`` runs until Ctrl+C
     on_payload : called with each validated payload (default: log it)
     capture_fn, sleep_fn : injectable for tests
+    strategy : region strategy (default: config.REGION_STRATEGY)
 
     Returns
     -------
@@ -183,24 +198,26 @@ def run_monitoring_loop(
     on_payload = on_payload or (lambda p: log.info("payload %s", json.dumps(p)))
     tracker = IncidentTracker()
     stats = {"frames": 0, "payloads": 0, "errors": 0}
+    prev = None                                   # small grayscale copy of the last frame
 
-    log.info("monitoring started — interval=%ss, max_iterations=%s, threshold=%s",
-             interval, max_iterations, getattr(detector, "threshold", "?"))
+    log.info("monitoring started — interval=%ss, max_iterations=%s, threshold=%s, strategy=%s",
+             interval, max_iterations, getattr(detector, "threshold", "?"), strategy)
     try:
         while max_iterations is None or stats["frames"] < max_iterations:
             t0 = time.monotonic()
             try:
                 frame = capture_fn()                  # replaces the previous frame
-                detection = detector.predict(frame.image)
+                detection = detector.predict_regions(frame.image, prev, strategy)
+                prev = motion_reference(frame.image)
                 incident = tracker.update(frame, detection.flagged)
                 if incident:
                     payload = build_payload(frame, detection, *incident)
                     on_payload(payload)
                     stats["payloads"] += 1
                 else:
-                    log.debug("frame %s not flagged (p_violent=%.4f, %.0f ms)",
-                              frame.frame_reference, detection.confidence,
-                              detection.inference_ms)
+                    log.debug("frame %s not flagged (p_violent=%.4f in %s, %d crops, %.0f ms)",
+                              frame.frame_reference, detection.confidence, detection.region,
+                              detection.n_crops, detection.inference_ms)
             except Exception:
                 stats["errors"] += 1
                 log.exception("frame %d failed", stats["frames"] + 1)

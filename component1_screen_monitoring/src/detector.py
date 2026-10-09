@@ -16,6 +16,10 @@ CLI
 ---
     python src/detector.py path/to/image.png      # classify one image
     python src/detector.py --benchmark 20         # capture + classify 20 live frames, report latency
+
+predict() classifies one image as-is. predict_regions() classifies several
+crops of a screen frame (tiles and/or the moving region, see regions.py) in
+one batched forward pass and reports the highest-scoring crop.
 """
 from __future__ import annotations
 
@@ -27,9 +31,11 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .config import MODEL_DIR, THRESHOLD          # imported as package
+    from .config import MODEL_DIR, REGION_STRATEGY, THRESHOLD   # imported as package
+    from .regions import region_boxes
 except ImportError:
-    from config import MODEL_DIR, THRESHOLD           # run as script from src/
+    from config import MODEL_DIR, REGION_STRATEGY, THRESHOLD    # run as script from src/
+    from regions import region_boxes
 
 DEFAULT_MODEL_DIR = MODEL_DIR
 
@@ -42,6 +48,9 @@ class Detection:
     confidence: float      # probability of the violent class, 0..1
     flagged: bool          # confidence >= threshold
     inference_ms: float    # model time for this frame (preprocess + forward)
+    region: str = "full"                                # crop that scored highest
+    region_box: tuple[int, int, int, int] | None = None # its (left, top, right, bottom)
+    n_crops: int = 1                                    # crops classified for this frame
 
 
 def _pick_device(requested: str | None = None) -> str:
@@ -106,6 +115,52 @@ class ViolenceDetector:
             confidence=round(p_violent, 4),
             flagged=flagged,
             inference_ms=round(ms, 1),
+        )
+
+    def predict_regions(
+        self,
+        image: Any,
+        prev_image: Any | None = None,
+        strategy: str = REGION_STRATEGY,
+    ) -> Detection:
+        """
+        Classify several crops of a screen frame in ONE forward pass.
+
+        Parameters
+        ----------
+        image : current frame (PIL image)
+        prev_image : previous frame, or its ``regions.motion_reference()`` copy;
+            needed for the "motion" region, ignored otherwise
+        strategy : "full", "tiles", "motion" or "tiles+motion" (see regions.py)
+
+        Returns
+        -------
+        Detection whose ``confidence`` is the MAX P(violent) over all crops,
+        with ``region`` / ``region_box`` naming the crop that produced it.
+        """
+        torch = self._torch
+        t0 = time.perf_counter()
+        rgb = image.convert("RGB")
+        boxes = region_boxes(rgb, prev_image, strategy)
+        crops = [rgb.crop(box) for _, box in boxes]
+        inputs = self.processor(images=crops, return_tensors="pt").to(self.device)
+        with torch.inference_mode():
+            probs = self.model(**inputs).logits.float().softmax(-1)[:, self.violent_idx].cpu()
+        if self.device == "cuda":
+            torch.cuda.synchronize()
+        ms = (time.perf_counter() - t0) * 1000
+
+        best = int(probs.argmax())
+        p_violent = float(probs[best])
+        flagged = p_violent >= self.threshold
+        return Detection(
+            category="violence" if flagged else "safe",
+            confidence=round(p_violent, 4),
+            flagged=flagged,
+            inference_ms=round(ms, 1),
+            region=boxes[best][0],
+            region_box=boxes[best][1],
+            n_crops=len(crops),
         )
 
 
