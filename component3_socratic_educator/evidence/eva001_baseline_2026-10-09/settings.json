@@ -1,0 +1,18 @@
+{
+  "example_id": "EVA001",
+  "model_api_id": "google/gemma-3-1b",
+  "checkpoint": "gemma-3-1B-it-QAT-Q4_0.gguf (lmstudio-community/gemma-3-1B-it-QAT-GGUF)",
+  "runtime": "LM Studio 0.4.19.0 (LM Studio.exe product version)",
+  "loaded_context_length": 8192,
+  "endpoint": "POST http://localhost:1234/v1/chat/completions",
+  "messages": "one user message = prompt.txt; no system message",
+  "temperature": 0.8,
+  "max_tokens": 60,
+  "top_p": "not recorded (LM Studio default, not sent)",
+  "top_k": "not recorded (LM Studio default, not sent)",
+  "seed": "not recorded (not sent)",
+  "runs": 3,
+  "prompt_source": "data/educator_seed.jsonl, EVA001 prompt[0].content, unchanged",
+  "expected_answer_in_prompt": false,
+  "run_at": "2026-10-09T18:28:18+00:00"
+}
