@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 
@@ -28,11 +28,14 @@ def onnx_model_dir(model_id: str) -> Path:
 
 
 class OnnxBackend:
-    def __init__(self, model_id: str, max_length: int = 128, quantized: bool = True) -> None:
+    def __init__(self, model_id: str, max_length: int = 128, quantized: Optional[bool] = None) -> None:
+        """`quantized=None` uses INT8 when the export kept it (it passed the decision gate)."""
         import onnxruntime as ort
         from tokenizers import Tokenizer
 
         root = onnx_model_dir(model_id)
+        if quantized is None:
+            quantized = (root / "model.int8.onnx").exists()
         model_file = root / ("model.int8.onnx" if quantized else "model.onnx")
         if not model_file.exists():
             raise FileNotFoundError(f"{model_file} not found; run tools/export_onnx.py first")

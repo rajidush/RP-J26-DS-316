@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-10",
+  "gate_texts": 132,
+  "gate_ages": [
+    9,
+    12,
+    15
+  ],
+  "int8_settings": {
+    "op_types_to_quantize": [
+      "MatMul"
+    ],
+    "per_channel": true
+  },
+  "heads": {
+    "facebook/roberta-hate-speech-dynabench-r4-target": {
+      "fp32_vs_torch_max_diff": 0.0,
+      "int8_engine_changes": 9,
+      "int8_kept": false,
+      "examples": [
+        {
+          "text": "those people are a disease on this country",
+          "age": 9,
+          "fp32": [
+            "L0",
+            "none"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        },
+        {
+          "text": "those people are a disease on this country",
+          "age": 12,
+          "fp32": [
+            "L0",
+            "none"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        },
+        {
+          "text": "those people are a disease on this country",
+          "age": 15,
+          "fp32": [
+            "L0",
+            "none"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        },
+        {
+          "text": "get out of our neighbourhood you dont belong here",
+          "age": 9,
+          "fp32": [
+            "L3",
+            "bullying"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        },
+        {
+          "text": "get out of our neighbourhood you dont belong here",
+          "age": 12,
+          "fp32": [
+            "L0",
+            "bullying"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        },
+        {
+          "text": "get out of our neighbourhood you dont belong here",
+          "age": 15,
+          "fp32": [
+            "L0",
+            "bullying"
+          ],
+          "int8": [
+            "L3",
+            "hate_identity"
+          ]
+        }
+      ]
+    },
+    "unitary/toxic-bert": {
+      "fp32_vs_torch_max_diff": 0.0,
+      "int8_engine_changes": 0,
+      "int8_kept": true,
+      "examples": []
+    }
+  },
+  "shipped": {
+    "facebook/roberta-hate-speech-dynabench-r4-target": "fp32",
+    "unitary/toxic-bert": "int8"
+  },
+  "shipped_engine_changes_vs_fp32": 0,
+  "size_mb": {
+    "facebook/roberta-hate-speech-dynabench-r4-target": {
+      "model.onnx": 475.7
+    },
+    "unitary/toxic-bert": {
+      "model.int8.onnx": 173.7,
+      "model.onnx": 417.9
+    }
+  }
+}
