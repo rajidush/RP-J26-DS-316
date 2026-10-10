@@ -1,11 +1,34 @@
-# Component 2 — keep this CPU-friendly. Add model deps only when that step lands.
+# Component 2 — CPU only. Versions are the ones measured on the reference laptop
+# (Python 3.14, Windows 11, i7-1355U) on 10 Oct 2026.
+
+# Engine + contract
 jsonschema>=4.20
+numpy>=2.0
+onnxruntime>=1.20          # text heads (ONNX) and OCR
+tokenizers>=0.20           # ONNX heads run without transformers/torch
+
+# Readers
+pillow>=10.0
+rapidocr>=3.0              # PP-OCRv6 tiny screen OCR on ONNX Runtime
+faster-whisper>=1.1        # speech to text (Whisper tiny INT8) with Silero VAD
+
+# Agent + capture (Windows)
+psutil>=6.0
+mss>=9.0                   # screen stand-in when Component 1 is not importable
+soundcard>=0.4.2           # WASAPI loopback stand-in until Component 1 captures audio
+
+# Desktop app
+pywebview>=5.0             # native window on Edge WebView2 (no local web server)
+pystray>=0.19              # tray icon
+
+# One-off model export (tools/export_onnx.py): needs torch + transformers once,
+# never at runtime.
+# torch  --index-url https://download.pytorch.org/whl/cpu
+# transformers>=4.40
+# onnx>=1.17
+
+# Tests
 pytest>=8.0
 
-# Annotation data download only (annotation/fetch_data.py), not needed at runtime:
+# Annotation data download only (annotation/fetch_data.py):
 # kagglehub>=0.3
-
-# Planned (do not uncomment until the matching roadmap step):
-# torch          # step 3 — pretrained scorers (CPU build)
-# transformers   # step 3
-# # OCR / ASR packages when step 7 starts
