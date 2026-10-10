@@ -526,3 +526,246 @@ def test_build_manifest(inputs, tmp_path):
     assert [o["example_id"] for o in m["seed_overrides"]] == ["INQ001", "INQ005", "INQ022"]
     assert m["known_gaps"]["test_missing_risk_categories"] == ["cyberbullying", "self_harm_language"]
     assert m["rejected"] == {"count": 0, "example_ids": []}
+
+
+# ---------------------------------------------------------------- sheet / unblind
+TEST_SPLIT = PROJECT_ROOT / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"
+SETTINGS = {"do_sample": False, "max_new_tokens": 64, "precision": "fp32"}
+GOOD = "What is one safe thing you could do next?"          # passes both checks, 9 words
+NO_QUESTION = "That is okay with me."                          # fails the question rule, 5 words
+UNSTATED = "It makes sense to feel furious. What could help?"  # format ok, emotion violation, 9 words
+
+
+def _control_response(i):
+    """Control: rows 0-9 fail the format check, rows 10-14 name an unstated emotion, the rest pass."""
+    return NO_QUESTION if i < 10 else UNSTATED if i < 15 else GOOD
+
+
+def _raw_outputs(tmp_path, drop=None, **overrides):
+    """One raw-output file per arm (ticket 05 format); `overrides` = {arm: {field: value}} applied to every row."""
+    test = load_jsonl(TEST_SPLIT)
+    paths = {}
+    for arm, respond, latency, adapter in (("control", _control_response, 1.0, None),
+                                           ("adapted", lambda i: GOOD, 2.0, "/content/drive/MyDrive/run/adapter")):
+        rows = [{"example_id": r["example_id"], "arm": arm, "model_id": "google/gemma-3-1b-it", "adapter": adapter,
+                 "generation_settings": dict(SETTINGS), "response": respond(i), "latency_seconds": latency}
+                for i, r in enumerate(test) if not (drop and drop == (arm, r["example_id"]))]
+        for row in rows:
+            row.update(overrides.get(arm, {}))
+        paths[arm] = tmp_path / f"raw_outputs_{arm}.jsonl"
+        _write_jsonl(paths[arm], rows)
+    return paths
+
+
+@pytest.fixture
+def comparison(tmp_path):
+    import shutil
+    shutil.copy(TEST_SPLIT, tmp_path / "test.jsonl")
+    return {"test": tmp_path / "test.jsonl", **_raw_outputs(tmp_path), "out": tmp_path / "comparison"}
+
+
+def run_sheet(c, *extra, out=None):
+    ft.main(["sheet", "--test", str(c["test"]), "--outputs", str(c["control"]), str(c["adapted"]),
+             "--out", str(out or c["out"]), *extra])
+    out = Path(out or c["out"])
+    return out / "scoring_sheet.csv", out / "key.json"
+
+
+def read_sheet(path):
+    import csv
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def write_sheet(path, rows):
+    import csv
+    with open(path, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def run_unblind(c, sheet, key):
+    ft.main(["unblind", "--sheet", str(sheet), "--key", str(key), "--test", str(c["test"]),
+             "--outputs", str(c["control"]), str(c["adapted"])])
+    return json.loads((sheet.parent / "summary.json").read_text(encoding="utf-8"))
+
+
+def test_sheet_is_blind_and_complete(comparison):
+    sheet, key = run_sheet(comparison)
+    rows = read_sheet(sheet)
+    assert len(rows) == 100
+    assert list(rows[0]) == ["response_id", "reply_type", "context", "previous_message", "child_reply", "response",
+                             *ft.RUBRIC, "notes"]
+    import re
+    text = sheet.read_text(encoding="utf-8-sig").lower()
+    for hint in (r"\bcontrol\b", r"\badapted\b", r"\barms?\b", "gemma", "adapter", "/content/drive", r"\binq\d{3}\b"):
+        assert not re.search(hint, text), hint  # no arm names, model IDs or example IDs
+    assert [r["response_id"] for r in rows] == [f"R{n:03d}" for n in range(1, 101)]
+    assert all(r[c] == "" for r in rows for c in (*ft.RUBRIC, "notes"))
+    k = json.loads(key.read_text(encoding="utf-8"))
+    assert set(k["responses"]) == {r["response_id"] for r in rows}
+    arms = [k["responses"][r["response_id"]]["arm"] for r in rows]
+    assert arms.count("control") == arms.count("adapted") == 50
+    assert arms != sorted(arms) and arms != sorted(arms, reverse=True)  # not grouped by arm
+    assert k["seed"] == ft.SHEET_SEED
+
+
+def test_sheet_shows_context_child_reply_and_response(comparison):
+    sheet, key = run_sheet(comparison)
+    k = json.loads(key.read_text(encoding="utf-8"))
+    test = {r["example_id"]: r for r in load_jsonl(TEST_SPLIT)}
+    for row in read_sheet(sheet):
+        src = test[k["responses"][row["response_id"]]["example_id"]]
+        parts = ft.parse_inquire_prompt(src["prompt"][0]["content"])
+        assert (row["context"], row["previous_message"], row["child_reply"], row["reply_type"]) == (
+            parts["context"], parts["previous"], parts["child"], src["reply_type"])
+        assert row["response"] in (GOOD, NO_QUESTION, UNSTATED)
+
+
+def test_sheet_shuffle_is_reproducible_with_the_seed(comparison, tmp_path):
+    a, _ = run_sheet(comparison, out=tmp_path / "a")
+    b, _ = run_sheet(comparison, out=tmp_path / "b")
+    c, _ = run_sheet(comparison, "--seed", "7", out=tmp_path / "c")
+    assert a.read_bytes() == b.read_bytes()
+    assert a.read_bytes() != c.read_bytes()
+    assert json.loads((tmp_path / "c" / "key.json").read_text(encoding="utf-8"))["seed"] == 7
+
+
+@pytest.mark.parametrize("broken, problem", [
+    ({"drop": ("adapted", "INQ035")}, "INQ035"),                      # a test prompt with no output
+    ({"adapted": {"arm": "control"}}, "arm"),                           # both files claim one arm
+    ({"adapted": {"generation_settings": {**SETTINGS, "max_new_tokens": 128}}}, "generation settings"),
+    ({"adapted": {"model_id": "google/gemma-3-4b-it"}}, "model"),
+])
+def test_sheet_refuses_mismatched_raw_outputs(comparison, tmp_path, broken, problem):
+    comparison.update(_raw_outputs(tmp_path, **broken))
+    with pytest.raises(SystemExit) as e:
+        run_sheet(comparison)
+    assert problem in str(e.value.code)
+    assert not comparison["out"].exists()
+
+
+def _score(sheet, key, score):
+    """Fill every rubric cell with score(arm, reply_type, criterion)."""
+    k = json.loads(key.read_text(encoding="utf-8"))
+    rows = read_sheet(sheet)
+    for row in rows:
+        arm = k["responses"][row["response_id"]]["arm"]
+        for c in ft.RUBRIC:
+            row[c] = str(score(arm, row["reply_type"], c))
+    write_sheet(sheet, rows)
+    return rows
+
+
+def test_unblind_refuses_unscored_cells_and_names_the_rows(comparison):
+    sheet, key = run_sheet(comparison)
+    rows = _score(sheet, key, lambda arm, rt, c: 1)
+    rows[3][ft.RUBRIC[0]] = ""
+    rows[7][ft.RUBRIC[2]] = "maybe"
+    write_sheet(sheet, rows)
+    with pytest.raises(SystemExit) as e:
+        run_unblind(comparison, sheet, key)
+    message = str(e.value.code)
+    assert message.startswith("unblind refused")
+    assert rows[3]["response_id"] in message and rows[7]["response_id"] in message
+    assert not (sheet.parent / "summary.json").exists()
+
+
+def test_unblind_reports_each_arm_from_known_inputs(comparison):
+    sheet, key = run_sheet(comparison)
+    # adapted: everything 1. control: only handles_reply_type, and only for stated_emotion rows.
+    _score(sheet, key, lambda arm, rt, c: 1 if arm == "adapted" or (c == ft.RUBRIC[0] and rt == "stated_emotion") else 0)
+    s = run_unblind(comparison, sheet, key)
+    control, adapted = s["arms"]["control"], s["arms"]["adapted"]
+
+    assert control["responses"] == adapted["responses"] == 50
+    assert control["format_check"]["pass_rate"] == 0.8 and adapted["format_check"]["pass_rate"] == 1.0
+    assert control["format_check"]["failed_rules"] == {"question": 10}
+    assert control["stated_emotion_violations"] == 5 and adapted["stated_emotion_violations"] == 0
+    assert control["mean_words"] == round((10 * 5 + 40 * 9) / 50, 2) and adapted["mean_words"] == 9.0
+
+    assert adapted["rubric"]["overall"] == 1.0
+    assert control["rubric"]["per_criterion"] == {ft.RUBRIC[0]: 0.2, ft.RUBRIC[1]: 0.0, ft.RUBRIC[2]: 0.0}
+    assert control["rubric"]["per_reply_type"]["stated_emotion"][ft.RUBRIC[0]] == 1.0
+    assert control["rubric"]["per_reply_type"]["refusal"][ft.RUBRIC[0]] == 0.0
+    assert control["rubric"]["per_reply_type"]["stated_emotion"]["n"] == 10
+
+    assert control["latency_seconds"]["mean"] == 1.0 and adapted["latency_seconds"]["mean"] == 2.0
+    for arm in (control, adapted):
+        for field in ("json_validity", "controller_grammar_compliance", "controller_correctness"):
+            assert arm["not_measured"][field] == "not measured — adapted model not wired into the FSM"
+    assert s["sample"]["scenarios"] == 10 and s["sample"]["prompts"] == 50
+    assert "pilot" in s["sample"]["note"]
+    assert s["shuffle_seed"] == ft.SHEET_SEED
+    assert adapted["adapter"] == "/content/drive/MyDrive/run/adapter" and control["adapter"] is None
+
+
+def test_unblind_writes_a_markdown_table_per_arm(comparison):
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    run_unblind(comparison, sheet, key)
+    md = (sheet.parent / "summary.md").read_text(encoding="utf-8")
+    assert "## control" in md and "## adapted" in md
+    assert "| Format-check pass rate | 80.0% |" in md and "| Format-check pass rate | 100.0% |" in md
+    assert "not measured — adapted model not wired into the FSM" in md
+    assert "10 scenarios, 50 prompts" in md
+
+
+def test_unblind_groups_by_the_keys_reply_type_not_the_editable_sheet(comparison):
+    sheet, key = run_sheet(comparison)
+    rows = _score(sheet, key, lambda arm, rt, c: 1 if rt == "refusal" else 0)
+    for row in rows:
+        row["reply_type"] = "refusal"   # an accidental edit in the spreadsheet
+    write_sheet(sheet, rows)
+    s = run_unblind(comparison, sheet, key)
+    per_type = s["arms"]["adapted"]["rubric"]["per_reply_type"]
+    assert per_type["refusal"]["n"] == 10 and per_type["refusal"]["overall"] == 1.0
+    assert per_type["dont_know"]["overall"] == 0.0
+
+
+def test_unblind_refuses_raw_outputs_that_do_not_match_the_sheet(comparison, tmp_path):
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    other = tmp_path / "other"
+    other.mkdir()
+    comparison.update(_raw_outputs(other, adapted={"response": "Who could you talk to about this?"}))
+    with pytest.raises(SystemExit) as e:
+        run_unblind(comparison, sheet, key)
+    assert "do not match the raw outputs" in str(e.value.code)
+
+
+def test_unblind_refuses_duplicate_response_ids(comparison):
+    sheet, key = run_sheet(comparison)
+    rows = _score(sheet, key, lambda arm, rt, c: 1)
+    rows[1]["response_id"] = rows[0]["response_id"]
+    write_sheet(sheet, rows)
+    with pytest.raises(SystemExit) as e:
+        run_unblind(comparison, sheet, key)
+    assert rows[0]["response_id"] in str(e.value.code)
+
+
+def test_unblind_refuses_a_sheet_resaved_in_a_non_utf8_encoding(comparison):
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    text = sheet.read_text(encoding="utf-8-sig")
+    assert "’" in text  # curly apostrophes: 0x92 in cp1252, invalid as UTF-8
+    sheet.write_bytes(text.encode("cp1252", errors="replace"))  # what Excel's plain "CSV" save does
+    with pytest.raises(SystemExit) as e:
+        run_unblind(comparison, sheet, key)
+    assert "UTF-8" in str(e.value.code)
+
+
+def test_unblind_latency_median_of_an_even_count(comparison, tmp_path):
+    test = load_jsonl(TEST_SPLIT)
+    for arm in ("control", "adapted"):
+        rows = load_jsonl(comparison[arm])
+        for i, r in enumerate(rows):
+            r["latency_seconds"] = float(i + 1)   # 1..50: median 25.5
+        _write_jsonl(comparison[arm], rows)
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    s = run_unblind(comparison, sheet, key)
+    assert len(test) == 50
+    assert s["arms"]["control"]["latency_seconds"] == {"mean": 25.5, "median": 25.5, "max": 50.0,
+                                                      "note": "reported separately; not a behavior measure"}

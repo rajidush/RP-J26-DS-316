@@ -144,6 +144,62 @@ python generate_educator_dataset.py --backend lmstudio --stub-generator --start-
 - `out/DATASET_CARD.md` describes the handed-over dataset for Component 4: files, columns,
   how it was made, and its limitations.
 
+## INQUIRE fine-tuning pilot: blind comparison
+
+`inquire_finetune.py` takes the drafted INQUIRE rows through `review` and `build`. `inquire_training.py` and `notebooks/train_inquire_lora_colab.ipynb` train the adapter. The comparison then runs offline:
+
+```bash
+python inquire_finetune.py sheet --outputs raw_outputs_control.jsonl raw_outputs_adapted.jsonl
+#   -> evidence/inquire_comparison_<date>/scoring_sheet.csv + key.json (don't open the key)
+# score every rubric cell 0 or 1 in scoring_sheet.csv, then:
+python inquire_finetune.py unblind --sheet evidence/inquire_comparison_<date>/scoring_sheet.csv \
+    --key evidence/inquire_comparison_<date>/key.json --outputs raw_outputs_control.jsonl raw_outputs_adapted.jsonl
+#   -> summary.json + summary.md next to the sheet
+```
+
+Nothing here touches `generate()`, the FSM controller or the controller grammar.
+
+### Raw-output format (one JSONL file per arm, written by the notebook's generation cells)
+
+| Field | Meaning |
+|---|---|
+| `example_id` | Test prompt ID from `test.jsonl`; exactly one record per test prompt |
+| `arm` | `control` (un-tuned base checkpoint) or `adapted` (base checkpoint + LoRA adapter) |
+| `model_id` | Base checkpoint, the same for both arms (`google/gemma-3-1b-it`) |
+| `adapter` | Adapter location for `adapted`; `null` for `control` |
+| `generation_settings` | Dict of the recorded settings (do_sample off, max new tokens, precision, chat template, prompt source such as the dataset manifest hash, …); must be identical for both arms |
+| `response` | Generated text, stripped of whitespace only, with no repair |
+| `latency_seconds` | Wall-clock generation time for this response |
+
+`sheet` refuses to run unless both arms answer every test prompt exactly once with the same model ID and generation settings.
+
+### Behavior rubric (score each response 0 or 1 on each criterion)
+
+| Column | Score 1 when |
+|---|---|
+| `handles_reply_type` | The response handles the child's reply type as the INQUIRE rules require: a **stated emotion** is acknowledged with the child's own word; **"I don't know"** gets an easy choice; a **refusal** is respected; **off-topic** gets a gentle safe next step; the child's **own safer plan** is supported. |
+| `no_shame_invention_or_flagged` | There is no shaming or blaming, no invented facts about the situation, and no repeating of the flagged content. |
+| `natural_for_age` | It sounds natural and respectful for a child aged 11 or older. |
+
+The sheet shows the context, the previous educator message, the child's reply, the reply type and one response. It has no arm, model or example ID, and rows are shuffled with a recorded seed (`key.json`). Score it in Excel or Google Sheets and save it as **CSV UTF-8**.
+
+`unblind` refuses to run in any of these cases, and names the rows involved:
+- a rubric cell is not 0 or 1;
+- a response ID is duplicated or missing;
+- the sheet's responses don't match the raw-output files you passed;
+- the sheet was re-saved in a non-UTF-8 encoding.
+
+It takes reply types from the test split through the key, never from the editable sheet. It reports, per arm, each as a separate measure:
+- format-check pass rate (recomputed from the raw outputs);
+- stated-emotion violations;
+- rubric means, overall and per reply type;
+- mean word count;
+- latency (reported separately).
+
+JSON validity, controller-grammar compliance and controller correctness are reported as *not measured — adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.
+
+**Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
+
 ## Known current limitations (say this openly at PP1, don't hide it)
 
 - Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint

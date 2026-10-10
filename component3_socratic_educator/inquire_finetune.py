@@ -10,6 +10,9 @@ pilot for Component 3. Plain JSON/JSONL in and out.
     build    reviewed rows + INQUIRE seed examples (with recorded overrides and
              labels) -> train / validation / test JSONL grouped by scenario,
              plus a manifest; refuses pending rows and failing completions
+    sheet    both arms' raw outputs on the test prompts -> shuffled blind CSV
+             with opaque IDs, plus a separate key (ID -> arm)
+    unblind  a fully scored sheet + key -> summary.json / summary.md per arm
 
 format_check() is the shared format / stated-emotion contract (ADR 0003).
 Nothing here touches generate(), the FSM controller or the controller grammar.
@@ -18,13 +21,19 @@ Usage:
     python inquire_finetune.py review [--drafts <file>] [--split all|train_or_val|test]
     python inquire_finetune.py build [--drafts <file>] [--seeds <file>] [--scenarios <file>]
                                      [--overrides <file>] [--labels <file>] [--out <dir>]
+    python inquire_finetune.py sheet --outputs <control.jsonl> <adapted.jsonl> [--test <file>] [--seed N] [--out <dir>]
+    python inquire_finetune.py unblind --sheet <csv> --key <json> --outputs <control.jsonl> <adapted.jsonl>
+                                       [--test <file>] [--out <dir>]
 """
 import argparse
+import csv
 import hashlib
+import io
 import json
 import os
 import random
 import re
+import statistics
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -344,8 +353,8 @@ DEVELOPMENT_EXAMPLES = ("INQ001", "INQ026", "INQ027", "INQ028")
 SPLITS = ("train", "validation", "test")
 
 
-def _refuse(problem, details):
-    sys.exit(f"build refused: {problem}\n" + "\n".join(f"  {d}" for d in details))
+def _refuse(problem, details, command="build"):
+    sys.exit(f"{command} refused: {problem}\n" + "\n".join(f"  {d}" for d in details))
 
 
 def _sha256(path):
@@ -525,9 +534,200 @@ def cmd_build(args):
     print(f"  test set has no scenario for: {', '.join(manifest['known_gaps']['test_missing_risk_categories'])}")
 
 
+# ---------------------------------------------------------------- sheet / unblind
+# Raw-output record (one JSONL file per arm, written by the ticket 06 notebook cells):
+#   example_id, arm ("control" | "adapted"), model_id, adapter (None for control),
+#   generation_settings (dict, identical for both arms), response, latency_seconds
+ARMS = ("control", "adapted")
+# Behavior rubric, one 0/1 column each (README: "Blind comparison").
+RUBRIC = ("handles_reply_type", "no_shame_invention_or_flagged", "natural_for_age")
+SHEET_COLUMNS = ("response_id", "reply_type", "context", "previous_message", "child_reply", "response",
+                 *RUBRIC, "notes")
+SHEET_SEED = 20261012
+NOT_MEASURED = "not measured — adapted model not wired into the FSM"
+
+
+def _load_raw_outputs(paths, test, command):
+    """{arm: {example_id: record}}; refuses unless both arms answer every test prompt exactly once, alike."""
+    by_arm, problems = {}, []
+    for path in paths:
+        rows = load_jsonl(path)
+        arms = {r.get("arm") for r in rows}
+        if len(arms) != 1 or not arms <= set(ARMS):
+            _refuse(f"{Path(path).name}: expected one arm out of {ARMS}, found {sorted(map(str, arms))}", [], command)
+        arm = arms.pop()
+        if arm in by_arm:
+            _refuse(f"two output files for arm {arm!r}", [], command)
+        by_arm[arm] = {}
+        for r in rows:
+            if r["example_id"] in by_arm[arm]:
+                problems.append(f"{arm}: {r['example_id']} answered twice")
+            by_arm[arm][r["example_id"]] = r
+    if set(by_arm) != set(ARMS):
+        _refuse(f"need one output file per arm {ARMS}, got {sorted(by_arm)}", [], command)
+    expected = {r["example_id"] for r in test}
+    for arm, records in by_arm.items():
+        problems += [f"{arm}: no output for {eid}" for eid in sorted(expected - set(records))]
+        problems += [f"{arm}: {eid} is not a test prompt" for eid in sorted(set(records) - expected)]
+    for field, label in (("generation_settings", "generation settings"), ("model_id", "model ID")):
+        values = {json.dumps(r[field], sort_keys=True) for records in by_arm.values() for r in records.values()}
+        if len(values) > 1:
+            problems.append(f"{label} differ between outputs (only the adapter may differ): {sorted(values)}")
+    if problems:
+        _refuse("raw outputs do not match the test split", problems, command)
+    return by_arm
+
+
+def _read_sheet(path):
+    try:
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            return list(csv.DictReader(f))
+    except UnicodeDecodeError:
+        _refuse(f"{path} is not UTF-8", ['re-save it as "CSV UTF-8 (Comma delimited)", not plain "CSV"'], "unblind")
+
+
+def cmd_sheet(args):
+    test = load_jsonl(args.test)
+    outputs = _load_raw_outputs(args.outputs, test, "sheet")
+    rows = []
+    for r in test:
+        parts = parse_inquire_prompt(r["prompt"][0]["content"])
+        for arm in ARMS:
+            rows.append(({"arm": arm, "example_id": r["example_id"]},
+                         {"reply_type": r["reply_type"], "context": parts["context"],
+                          "previous_message": parts["previous"], "child_reply": parts["child"],
+                          "response": outputs[arm][r["example_id"]]["response"]}))
+    random.Random(args.seed).shuffle(rows)
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    key = {"seed": args.seed, "sheet": "scoring_sheet.csv", "rubric": list(RUBRIC), "responses": {}}
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=SHEET_COLUMNS, lineterminator="\n")
+    writer.writeheader()
+    for n, (hidden, shown) in enumerate(rows, 1):
+        rid = f"R{n:03d}"
+        key["responses"][rid] = hidden
+        writer.writerow({"response_id": rid, **shown, **{c: "" for c in RUBRIC}, "notes": ""})
+    # utf-8-sig so Excel shows curly quotes and apostrophes correctly
+    write_atomic(out / "scoring_sheet.csv", "﻿" + buffer.getvalue())
+    write_atomic(out / "key.json", json.dumps(key, ensure_ascii=False, indent=2) + "\n")
+    print(f"wrote {out / 'scoring_sheet.csv'} ({len(rows)} responses, shuffle seed {args.seed})")
+    print(f"wrote {out / 'key.json'}: do not open until every row is scored")
+
+
+def _mean(values):
+    return round(sum(values) / len(values), 3) if values else None
+
+
+def _arm_summary(records, scored, test_by_id):
+    checks = [format_check(r["response"], child_reply(test_by_id[eid])) for eid, r in records.items()]
+    failed = Counter(rule for c in checks for rule, ok in c.rules.items() if not ok)
+    latencies = [r["latency_seconds"] for r in records.values() if r.get("latency_seconds") is not None]
+    by_type = {}
+    for row in scored:
+        by_type.setdefault(row["reply_type"], []).append(row)
+
+    def rubric(rows):
+        means = {c: _mean([int(r[c]) for r in rows]) for c in RUBRIC}
+        return {**means, "overall": _mean([int(r[c]) for r in rows for c in RUBRIC]), "n": len(rows)}
+
+    overall = rubric(scored)
+    first = next(iter(records.values()))
+    return {
+        "model_id": first["model_id"],
+        "adapter": first.get("adapter"),
+        "responses": len(records),
+        "format_check": {"pass_rate": _mean([c.format_ok for c in checks]), "failed_rules": dict(sorted(failed.items()))},
+        "stated_emotion_violations": sum(not c.emotion_ok for c in checks),
+        "mean_words": _mean([c.words for c in checks]),
+        "rubric": {"overall": overall["overall"],
+                   "per_criterion": {c: overall[c] for c in RUBRIC},
+                   "per_reply_type": {t: rubric(rows) for t, rows in sorted(by_type.items())}},
+        "latency_seconds": {"mean": _mean(latencies), "median": statistics.median(latencies) if latencies else None,
+                            "max": max(latencies, default=None),
+                            "note": "reported separately; not a behavior measure"},
+        "not_measured": {"json_validity": NOT_MEASURED, "controller_grammar_compliance": NOT_MEASURED,
+                         "controller_correctness": NOT_MEASURED},
+    }
+
+
+def _pct(value):
+    return "n/a" if value is None else f"{100 * value:.1f}%"
+
+
+def _summary_markdown(summary):
+    s = summary["sample"]
+    lines = ["# INQUIRE comparison: blind scoring summary", "",
+             f"Sample: {s['scenarios']} scenarios, {s['prompts']} prompts per arm. {s['note']}", ""]
+    for arm, a in summary["arms"].items():
+        lat = a["latency_seconds"]
+        lines += [f"## {arm}", "", f"Model: `{a['model_id']}`" + (f" + adapter `{a['adapter']}`" if a["adapter"] else ""), "",
+                  "| Measure | Value |", "|---|---|",
+                  f"| Format-check pass rate | {_pct(a['format_check']['pass_rate'])} |",
+                  f"| Stated-emotion violations | {a['stated_emotion_violations']} / {a['responses']} |",
+                  f"| Rubric overall (behavior) | {_pct(a['rubric']['overall'])} |",
+                  *[f"| Rubric: {c} | {_pct(v)} |" for c, v in a["rubric"]["per_criterion"].items()],
+                  f"| Mean words | {a['mean_words']} |",
+                  f"| Latency mean / median / max (s, separate) | {lat['mean']} / {lat['median']} / {lat['max']} |",
+                  *[f"| {k.replace('_', ' ').capitalize()} | {v} |" for k, v in a["not_measured"].items()],
+                  "", "| Reply type | n | " + " | ".join(RUBRIC) + " | overall |",
+                  "|---|---|" + "---|" * (len(RUBRIC) + 1),
+                  *[f"| {t} | {r['n']} | " + " | ".join(_pct(r[c]) for c in RUBRIC) + f" | {_pct(r['overall'])} |"
+                    for t, r in a["rubric"]["per_reply_type"].items()], ""]
+    return "\n".join(lines)
+
+
+def cmd_unblind(args):
+    sheet = _read_sheet(args.sheet)
+    key = _load_json(args.key)
+    unscored = [f"{row['response_id']}: {c}={row.get(c, '')!r}" for row in sheet for c in RUBRIC
+                if (row.get(c) or "").strip() not in ("0", "1")]
+    if unscored:
+        _refuse(f"{len(unscored)} rubric cells are not scored 0 or 1", unscored, "unblind")
+    counts = Counter(row["response_id"] for row in sheet)
+    if any(n > 1 for n in counts.values()) or set(counts) != set(key["responses"]):
+        _refuse("the sheet's response IDs do not match the key", [
+            f"duplicated: {sorted(i for i, n in counts.items() if n > 1)}",
+            f"missing from sheet: {sorted(set(key['responses']) - set(counts))}",
+            f"not in key: {sorted(set(counts) - set(key['responses']))}"], "unblind")
+
+    test = load_jsonl(args.test)
+    test_by_id = {r["example_id"]: r for r in test}
+    outputs = _load_raw_outputs(args.outputs, test, "unblind")
+    scored, mismatched = {arm: [] for arm in ARMS}, []
+    for row in sheet:
+        hidden = key["responses"][row["response_id"]]
+        if row["response"].strip() != outputs[hidden["arm"]][hidden["example_id"]]["response"].strip():
+            mismatched.append(row["response_id"])
+        # reply type comes from the test split via the key, never from the editable sheet
+        scored[hidden["arm"]].append({c: row[c].strip() for c in RUBRIC}
+                                     | {"reply_type": test_by_id[hidden["example_id"]]["reply_type"]})
+    if mismatched:
+        _refuse(f"{len(mismatched)} sheet responses do not match the raw outputs given (wrong files?)",
+                [", ".join(mismatched)], "unblind")
+
+    summary = {
+        "sample": {"scenarios": len({r["scenario_id"] for r in test}), "prompts": len(test),
+                   "note": "This is a pilot on held-out scenarios, not a significance test."},
+        "shuffle_seed": key["seed"],
+        "rubric": list(RUBRIC),
+        "arms": {arm: _arm_summary(outputs[arm], scored[arm], test_by_id) for arm in ARMS},
+    }
+    out = Path(args.out) if args.out else Path(args.sheet).parent
+    out.mkdir(parents=True, exist_ok=True)
+    write_atomic(out / "summary.json", json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    write_atomic(out / "summary.md", _summary_markdown(summary))
+    print(f"wrote {out / 'summary.json'} and summary.md")
+    for arm, a in summary["arms"].items():
+        print(f"  {arm:<8} format {_pct(a['format_check']['pass_rate'])}  emotion violations "
+              f"{a['stated_emotion_violations']}  rubric {_pct(a['rubric']['overall'])}  "
+              f"mean words {a['mean_words']}  latency {a['latency_seconds']['mean']} s")
+
+
 # ---------------------------------------------------------------- cli
 def build_parser():
-    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot: review drafted rows, build the dataset.")
+    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot: review, build, sheet, unblind.")
     sub = ap.add_subparsers(dest="command", required=True)
 
     review = sub.add_parser("review", help="review drafted INQUIRE rows in the terminal")
@@ -544,6 +744,22 @@ def build_parser():
     build.add_argument("--labels", default=str(SEED_INPUTS_DIR / "seed_labels.json"))
     build.add_argument("--out", default=str(HERE / "evidence" / f"inquire_dataset_{date.today().isoformat()}"))
     build.set_defaults(func=cmd_build)
+
+    sheet = sub.add_parser("sheet", help="shuffled blind scoring sheet + hidden key from both arms' raw outputs")
+    sheet.add_argument("--test", default=str(HERE / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"))
+    sheet.add_argument("--outputs", nargs=2, required=True, metavar="RAW_OUTPUTS_JSONL",
+                       help="one raw-output file per arm (control and adapted), in any order")
+    sheet.add_argument("--seed", type=int, default=SHEET_SEED)
+    sheet.add_argument("--out", default=str(HERE / "evidence" / f"inquire_comparison_{date.today().isoformat()}"))
+    sheet.set_defaults(func=cmd_sheet)
+
+    unblind = sub.add_parser("unblind", help="join a fully scored sheet with the key; write summary.json/.md")
+    unblind.add_argument("--sheet", required=True)
+    unblind.add_argument("--key", required=True)
+    unblind.add_argument("--test", default=str(HERE / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"))
+    unblind.add_argument("--outputs", nargs=2, required=True, metavar="RAW_OUTPUTS_JSONL")
+    unblind.add_argument("--out", help="default: the sheet's folder")
+    unblind.set_defaults(func=cmd_unblind)
     return ap
 
 
