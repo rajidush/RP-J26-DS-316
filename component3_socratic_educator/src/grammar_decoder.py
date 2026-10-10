@@ -1,30 +1,23 @@
 """
 Function 2: Grammar-Constrained Decoding.
 
-Real grammar-constrained decoding masks disallowed tokens *during*
-generation (e.g. via a DFA built from the grammar, or a library like
-`outlines`/`guidance`), so an unsafe token can never be sampled in the
-first place. Wiring that up needs your quantized SLM running locally
-(you already have Gemma-3-1B working in LM Studio per your prototype
-evidence) -- see the TODO block below for where that plugs in.
+INTERCEPT (since 6 Oct, ADR 0004): the live model writes the line through LM
+Studio's `response_format` JSON schema. Its llama.cpp engine compiles the
+schema into a grammar and masks every disallowed token *during* generation,
+so the opener is always one of the fixed safe openers and the question is
+always one short plain sentence ending in "?". A grammar cannot say "never
+this word", so a post-check then rejects forbidden words, alert-revealing
+language and risk-category names. Any failure, or an unreachable model,
+yields the pre-checked template line (the fallback line).
 
-Until that's wired in, this module gives you something that is still
-*honest engineering*, not a fake: it defines the grammar as an explicit
-set of allowed sentence patterns per state, generates from a safe
-candidate pool, and then validates the result against the grammar --
-so the safety guarantee ("nothing ungrammatical ever reaches the
-child") is real and testable today, even before the generator behind
-it is the real model.
-
-This is exactly the kind of thing to log in your AI Use Disclosure and
-RP diary: "grammar defined and validated by hand this week; real SLM
-generation wired in next."
+INQUIRE stays on the template candidate pool until after PP1.
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Optional, Protocol
 
 from .schemas import RiskCategory
 from .model_client import call_local_model
@@ -34,14 +27,29 @@ class ConstraintViolation(Exception):
 
 
 # --- The grammar: one regex pattern per FSM state -------------------------
-# A real DFA/token-mask implementation enforces this token-by-token during
-# generation. Here we enforce it as a post-generation gate, which is the
-# right place to start: get the *rules* right and testable first, then
-# move the enforcement earlier (into generation) once that's proven out.
+# INTERCEPT's regex and its decoding-time JSON schema are built from the same
+# pieces, so what the model is forced to produce and what validate() accepts
+# cannot drift apart.
+INTERCEPT_OPENERS = (
+    "I noticed something on your screen just now.",
+    "Something you just saw might need a closer look.",
+)
+# One plain sentence: capital first, then letters, spaces, commas and straight
+# apostrophes only (no quotes, curly apostrophes or "..."), ending in one "?".
+_QUESTION = r"[A-Z][A-Za-z ,']{5,98}\?"
+INTERCEPT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "opener": {"type": "string", "enum": list(INTERCEPT_OPENERS)},
+        "question": {"type": "string", "pattern": f"^{_QUESTION}$", "maxLength": 100},
+    },
+    "required": ["opener", "question"],
+    "additionalProperties": False,
+}
+
 _GRAMMAR = {
     "INTERCEPT": re.compile(
-        r"^(I noticed something on your screen just now\.|Something you just saw might need a closer look\.)"
-        r" (Can you tell me what you were thinking\?|What made you curious about that\?|How are you feeling right now\?)$"
+        "^(" + "|".join(re.escape(o) for o in INTERCEPT_OPENERS) + ") " + _QUESTION + "$"
     ),
     "INQUIRE": re.compile(
         r"^(That makes sense\.|I understand\.|Thanks for telling me\.)"
@@ -53,6 +61,35 @@ _GRAMMAR = {
 # a hard safety backstop independent of the pattern check.
 _FORBIDDEN_SUBSTRINGS = ["kill", "hate", "porn", "suicide", "sex"]
 
+# Post-check for INTERCEPT: words that tell the child something was flagged,
+# and the words of every risk-category name (matched as whole words, so
+# "yourself" is not "self").
+_ALERT_WORDS = ("alert", "alerts", "flag", "flagged", "warning", "message", "messages",
+                "notification", "blocked", "detected", "detection")
+_CATEGORY_WORDS = sorted({w for rc in RiskCategory for w in rc.value.split("_")})
+
+INTERCEPT_PROMPT = (
+    "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. "
+    "Something on the child's screen was just stopped. Do not describe, name or hint at what it was, "
+    "and do not mention alerts, messages or warnings. "
+    "Return JSON. opener: copy one of the allowed openers exactly. "
+    "question: one short, gentle, open question (under 15 words) inviting the child to share "
+    "what they were doing or thinking."
+)
+
+
+def _has_word(words, text: str) -> bool:
+    return any(re.search(rf"\b{re.escape(w)}\b", text, re.I) for w in words)
+
+
+@dataclass(frozen=True)
+class GeneratedLine:
+    """A child-facing line and where it came from: "model", "template", or
+    "fallback" with the reason the model's line was not used."""
+    text: str
+    source: str
+    reason: Optional[str] = None
+
 
 @dataclass
 class GrammarConstrainedGenerator:
@@ -62,19 +99,12 @@ class GrammarConstrainedGenerator:
     it never silently returns an unconstrained string.
     """
 
-    # TODO (post-PP1 stretch): replace this candidate pool with a real
-    # call to your local SLM, then run the model's raw output through
-    # `validate()` below before returning it. Example shape:
-    #
-    #   from llama_cpp import Llama
-    #   _model = Llama(model_path="models/gemma-3-1b-q4.gguf")
-    #   def _generate_raw(state, risk_category):
-    #       prompt = _build_prompt(state, risk_category)
-    #       return _model(prompt, max_tokens=40)["choices"][0]["text"].strip()
-    #
-    # Swap the body of _candidate() below for a call to _generate_raw(),
-    # keep validate() exactly as-is -- that's the whole migration.
+    # The live model call (prompt, **request options) -> (text, seconds).
+    # None means src.model_client.call_local_model; tests pass a fake.
+    model_call: Optional[Callable[..., tuple[str, float]]] = None
 
+    # Template lines: INQUIRE's only source until after PP1, and INTERCEPT's
+    # fallback line whenever the model's line is not used.
     _CANDIDATES = {
         "INTERCEPT": [
             "I noticed something on your screen just now. Can you tell me what you were thinking?",
@@ -105,36 +135,48 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    # def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
-    #     candidate = self._candidate(state, risk_category, attempt=attempt)
-    #     if not self.validate(state, candidate):
-    #         # This is the safety guarantee: if generation ever produces
-    #         # something outside the grammar, we never let it reach the
-    #         # child -- we fall back to a fixed, pre-validated safe line.
-    #         return self._safe_fallback(state)
-    #     return candidate
     def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
-        # --- Monday 5 Oct Task: Wire SLM into INTERCEPT (unconstrained first) ---
-        if state == "INTERCEPT":
-            try:
-                prompt = (
-                    "You are a calm Socratic educator for child digital safety. "
-                    "A flagged item was detected on the child's screen. "
-                    "Ask ONE gentle opening question without naming or describing the inappropriate content. "
-                    "Keep it under 20 words."
-                )
-                text, _ = call_local_model(prompt)
-                return text.strip().strip('"')
-            except Exception:
-                # Fallback to safe template if LM Studio is offline
-                pass
+        return self.generate_with_source(state, risk_category, attempt).text
 
-        # --- Everything else (INQUIRE) remains on candidate pool untouched ---
+    def generate_with_source(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> GeneratedLine:
+        if state == "INTERCEPT":
+            return self._intercept(risk_category, attempt)
         candidate = self._candidate(state, risk_category, attempt=attempt)
         if not self.validate(state, candidate):
-            return self._safe_fallback(state)
-        return candidate
+            return GeneratedLine(self._safe_fallback(state), "fallback", "grammar")
+        return GeneratedLine(candidate, "template")
 
+    def _intercept(self, risk_category: RiskCategory, attempt: int) -> GeneratedLine:
+        def fallback(reason):
+            return GeneratedLine(self._candidate("INTERCEPT", risk_category, attempt=attempt), "fallback", reason)
+
+        call = self.model_call or call_local_model   # looked up per call, so tests can block it
+        try:
+            # 100 tokens: the JSON wrapper plus a 48-character opener and a question of
+            # up to 100 characters; a cut-off reply would fail as invalid_json.
+            raw, _ = call(INTERCEPT_PROMPT, max_tokens=100, response_format={
+                "type": "json_schema",
+                "json_schema": {"name": "intercept_line", "strict": True, "schema": INTERCEPT_SCHEMA}})
+        except Exception:
+            return fallback("model_unreachable")
+        try:
+            reply = json.loads(raw)
+        except (TypeError, ValueError):
+            return fallback("invalid_json")
+        if not (isinstance(reply, dict) and set(reply) == {"opener", "question"}
+                and all(isinstance(v, str) for v in reply.values())):
+            return fallback("grammar")
+        text = f"{reply['opener'].strip()} {reply['question'].strip()}"
+        # Post-check: the grammar fixes structure; these catch what it cannot express.
+        if not _GRAMMAR["INTERCEPT"].match(text):
+            return fallback("grammar")
+        if any(bad in text.lower() for bad in _FORBIDDEN_SUBSTRINGS):
+            return fallback("forbidden_word")
+        if _has_word(_ALERT_WORDS, text):
+            return fallback("alert_language")
+        if _has_word(_CATEGORY_WORDS, text):
+            return fallback("category_named")
+        return GeneratedLine(text, "model")
 
     def _safe_fallback(self, state: str) -> str:
         fallback = {

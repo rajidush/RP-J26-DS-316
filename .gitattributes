@@ -1,2 +1,5 @@
 # C2 policy packs are hash-verified on load: keep their bytes identical on every OS.
 component2_hate_speech_detection/packs/** -text
+
+# C3 evidence is hash-checked (dataset manifest, run records) and must stay byte-identical: no line-ending conversion.
+component3_socratic_educator/evidence/** -text
