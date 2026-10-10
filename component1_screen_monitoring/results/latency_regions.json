@@ -1,0 +1,76 @@
+{
+  "measured_at": "2026-10-07T10:09:35.000104+00:00",
+  "command": "python component1_screen_monitoring/src/run_monitor.py --benchmark 20",
+  "device": "mps",
+  "machine": "Apple M1",
+  "frames": 20,
+  "frame_size": {
+    "width": 1440,
+    "height": 900
+  },
+  "gap_between_captures_s": 0.5,
+  "note": "Same captured frames for every strategy; the motion crop is only added when part of the screen changed between consecutive frames.",
+  "capture_ms": {
+    "mean": 69.2,
+    "median": 65.0,
+    "max": 199.5
+  },
+  "strategies": {
+    "full": {
+      "inference_ms": {
+        "mean": 47.4,
+        "median": 46.0,
+        "max": 53.2
+      },
+      "total_ms": {
+        "mean": 116.6,
+        "median": 112.1,
+        "max": 245.1
+      },
+      "mean_crops": 1,
+      "frames_with_motion_crop": null
+    },
+    "tiles": {
+      "inference_ms": {
+        "mean": 199.0,
+        "median": 202.5,
+        "max": 205.3
+      },
+      "total_ms": {
+        "mean": 268.2,
+        "median": 267.3,
+        "max": 382.2
+      },
+      "mean_crops": 6,
+      "frames_with_motion_crop": null
+    },
+    "motion": {
+      "inference_ms": {
+        "mean": 49.9,
+        "median": 49.1,
+        "max": 54.5
+      },
+      "total_ms": {
+        "mean": 119.1,
+        "median": 114.5,
+        "max": 250.3
+      },
+      "mean_crops": 1,
+      "frames_with_motion_crop": 0
+    },
+    "tiles+motion": {
+      "inference_ms": {
+        "mean": 199.5,
+        "median": 201.4,
+        "max": 224.9
+      },
+      "total_ms": {
+        "mean": 268.7,
+        "median": 266.3,
+        "max": 400.8
+      },
+      "mean_crops": 6,
+      "frames_with_motion_crop": 0
+    }
+  }
+}
