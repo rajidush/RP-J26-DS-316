@@ -15,6 +15,7 @@ Resource behaviour (proposal NFR1-3):
 """
 from __future__ import annotations
 
+import hashlib
 import threading
 import time
 import uuid
@@ -168,6 +169,7 @@ class Analyzer:
             policy_version=self.policy.version,
             theta=decision.theta,
             source=obs.source,
+            fingerprint=fingerprint(decision.category, [s.span.text for s in flagged]) if decision.alerts else "",
         )
         verdict.explanation = explain(verdict, top.detail if top else None, escalated, fusion.ignored)
         return verdict
@@ -183,6 +185,12 @@ class Analyzer:
             for head, score in s.detail.head_scores.items():
                 out.append(Evidence(producer=head, score=score, box=s.span.box, source=s.span.source))
         return out
+
+
+def fingerprint(category: str, texts: List[str]) -> str:
+    """Stable hash of what was flagged: same harmful text on screen -> same fingerprint."""
+    canon = "|".join(sorted(ScoreCache.key(t).lower() for t in texts))
+    return hashlib.sha256(f"{category}|{canon}".encode("utf-8")).hexdigest()[:16]
 
 
 def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored: List[str]) -> str:

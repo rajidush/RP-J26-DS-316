@@ -105,6 +105,9 @@ class Verdict:
     explanation: str = ""
     theta: float = 0.0
     source: str = ""                     # typed | screen | audio
+    # Hash of the flagged text and category, never the text: lets the app alert
+    # once for a harmful message that stays on screen instead of every check.
+    fingerprint: str = ""
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     ts: str = field(default_factory=_now)
 

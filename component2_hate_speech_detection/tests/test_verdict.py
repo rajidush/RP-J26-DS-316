@@ -73,3 +73,12 @@ def test_repeated_screen_text_is_scored_once(analyzer):
 def test_redaction_masks_pii():
     out = redact("email me at kid@example.com or call +94 77 123 4567, password: hunter2")
     assert "kid@example.com" not in out and "hunter2" not in out and "4567" not in out
+
+
+def test_fingerprint_is_stable_for_the_same_flagged_text_and_holds_no_text(analyzer):
+    a = analyzer.analyze_text("you should kys", age=10)
+    b = analyzer.analyze_text("You  should KYS", age=10)
+    c = analyzer.analyze_text("nobody likes you", age=9)
+    assert a.fingerprint == b.fingerprint != c.fingerprint
+    assert "kys" not in a.fingerprint and len(a.fingerprint) == 16
+    assert analyzer.analyze_text("see you at practice", age=10).fingerprint == ""
