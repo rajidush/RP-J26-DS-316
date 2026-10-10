@@ -1,0 +1,411 @@
+{
+  "seed": 20261012,
+  "sheet": "scoring_sheet.csv",
+  "rubric": [
+    "handles_reply_type",
+    "no_shame_invention_or_flagged",
+    "natural_for_age"
+  ],
+  "responses": {
+    "R001": {
+      "arm": "control",
+      "example_id": "INQ051"
+    },
+    "R002": {
+      "arm": "adapted",
+      "example_id": "INQ075"
+    },
+    "R003": {
+      "arm": "adapted",
+      "example_id": "INQ176"
+    },
+    "R004": {
+      "arm": "adapted",
+      "example_id": "INQ070"
+    },
+    "R005": {
+      "arm": "control",
+      "example_id": "INQ179"
+    },
+    "R006": {
+      "arm": "control",
+      "example_id": "INQ077"
+    },
+    "R007": {
+      "arm": "adapted",
+      "example_id": "INQ069"
+    },
+    "R008": {
+      "arm": "control",
+      "example_id": "INQ073"
+    },
+    "R009": {
+      "arm": "adapted",
+      "example_id": "INQ038"
+    },
+    "R010": {
+      "arm": "control",
+      "example_id": "INQ142"
+    },
+    "R011": {
+      "arm": "adapted",
+      "example_id": "INQ143"
+    },
+    "R012": {
+      "arm": "adapted",
+      "example_id": "INQ071"
+    },
+    "R013": {
+      "arm": "adapted",
+      "example_id": "INQ043"
+    },
+    "R014": {
+      "arm": "control",
+      "example_id": "INQ175"
+    },
+    "R015": {
+      "arm": "control",
+      "example_id": "INQ078"
+    },
+    "R016": {
+      "arm": "adapted",
+      "example_id": "INQ074"
+    },
+    "R017": {
+      "arm": "control",
+      "example_id": "INQ068"
+    },
+    "R018": {
+      "arm": "adapted",
+      "example_id": "INQ065"
+    },
+    "R019": {
+      "arm": "control",
+      "example_id": "INQ064"
+    },
+    "R020": {
+      "arm": "control",
+      "example_id": "INQ103"
+    },
+    "R021": {
+      "arm": "control",
+      "example_id": "INQ069"
+    },
+    "R022": {
+      "arm": "adapted",
+      "example_id": "INQ044"
+    },
+    "R023": {
+      "arm": "control",
+      "example_id": "INQ101"
+    },
+    "R024": {
+      "arm": "control",
+      "example_id": "INQ052"
+    },
+    "R025": {
+      "arm": "adapted",
+      "example_id": "INQ042"
+    },
+    "R026": {
+      "arm": "control",
+      "example_id": "INQ062"
+    },
+    "R027": {
+      "arm": "adapted",
+      "example_id": "INQ060"
+    },
+    "R028": {
+      "arm": "adapted",
+      "example_id": "INQ041"
+    },
+    "R029": {
+      "arm": "control",
+      "example_id": "INQ066"
+    },
+    "R030": {
+      "arm": "control",
+      "example_id": "INQ102"
+    },
+    "R031": {
+      "arm": "adapted",
+      "example_id": "INQ104"
+    },
+    "R032": {
+      "arm": "control",
+      "example_id": "INQ060"
+    },
+    "R033": {
+      "arm": "control",
+      "example_id": "INQ067"
+    },
+    "R034": {
+      "arm": "adapted",
+      "example_id": "INQ053"
+    },
+    "R035": {
+      "arm": "adapted",
+      "example_id": "INQ051"
+    },
+    "R036": {
+      "arm": "control",
+      "example_id": "INQ144"
+    },
+    "R037": {
+      "arm": "adapted",
+      "example_id": "INQ036"
+    },
+    "R038": {
+      "arm": "control",
+      "example_id": "INQ079"
+    },
+    "R039": {
+      "arm": "control",
+      "example_id": "INQ072"
+    },
+    "R040": {
+      "arm": "adapted",
+      "example_id": "INQ140"
+    },
+    "R041": {
+      "arm": "adapted",
+      "example_id": "INQ177"
+    },
+    "R042": {
+      "arm": "adapted",
+      "example_id": "INQ102"
+    },
+    "R043": {
+      "arm": "adapted",
+      "example_id": "INQ179"
+    },
+    "R044": {
+      "arm": "control",
+      "example_id": "INQ104"
+    },
+    "R045": {
+      "arm": "control",
+      "example_id": "INQ075"
+    },
+    "R046": {
+      "arm": "control",
+      "example_id": "INQ061"
+    },
+    "R047": {
+      "arm": "adapted",
+      "example_id": "INQ077"
+    },
+    "R048": {
+      "arm": "control",
+      "example_id": "INQ037"
+    },
+    "R049": {
+      "arm": "adapted",
+      "example_id": "INQ067"
+    },
+    "R050": {
+      "arm": "adapted",
+      "example_id": "INQ141"
+    },
+    "R051": {
+      "arm": "control",
+      "example_id": "INQ053"
+    },
+    "R052": {
+      "arm": "adapted",
+      "example_id": "INQ076"
+    },
+    "R053": {
+      "arm": "adapted",
+      "example_id": "INQ061"
+    },
+    "R054": {
+      "arm": "control",
+      "example_id": "INQ063"
+    },
+    "R055": {
+      "arm": "control",
+      "example_id": "INQ050"
+    },
+    "R056": {
+      "arm": "adapted",
+      "example_id": "INQ052"
+    },
+    "R057": {
+      "arm": "control",
+      "example_id": "INQ100"
+    },
+    "R058": {
+      "arm": "adapted",
+      "example_id": "INQ068"
+    },
+    "R059": {
+      "arm": "control",
+      "example_id": "INQ076"
+    },
+    "R060": {
+      "arm": "control",
+      "example_id": "INQ178"
+    },
+    "R061": {
+      "arm": "control",
+      "example_id": "INQ036"
+    },
+    "R062": {
+      "arm": "adapted",
+      "example_id": "INQ064"
+    },
+    "R063": {
+      "arm": "control",
+      "example_id": "INQ044"
+    },
+    "R064": {
+      "arm": "control",
+      "example_id": "INQ141"
+    },
+    "R065": {
+      "arm": "adapted",
+      "example_id": "INQ101"
+    },
+    "R066": {
+      "arm": "control",
+      "example_id": "INQ074"
+    },
+    "R067": {
+      "arm": "adapted",
+      "example_id": "INQ144"
+    },
+    "R068": {
+      "arm": "adapted",
+      "example_id": "INQ040"
+    },
+    "R069": {
+      "arm": "control",
+      "example_id": "INQ041"
+    },
+    "R070": {
+      "arm": "adapted",
+      "example_id": "INQ063"
+    },
+    "R071": {
+      "arm": "adapted",
+      "example_id": "INQ175"
+    },
+    "R072": {
+      "arm": "adapted",
+      "example_id": "INQ073"
+    },
+    "R073": {
+      "arm": "adapted",
+      "example_id": "INQ062"
+    },
+    "R074": {
+      "arm": "adapted",
+      "example_id": "INQ066"
+    },
+    "R075": {
+      "arm": "control",
+      "example_id": "INQ040"
+    },
+    "R076": {
+      "arm": "control",
+      "example_id": "INQ043"
+    },
+    "R077": {
+      "arm": "control",
+      "example_id": "INQ140"
+    },
+    "R078": {
+      "arm": "control",
+      "example_id": "INQ042"
+    },
+    "R079": {
+      "arm": "adapted",
+      "example_id": "INQ072"
+    },
+    "R080": {
+      "arm": "control",
+      "example_id": "INQ065"
+    },
+    "R081": {
+      "arm": "adapted",
+      "example_id": "INQ079"
+    },
+    "R082": {
+      "arm": "adapted",
+      "example_id": "INQ103"
+    },
+    "R083": {
+      "arm": "adapted",
+      "example_id": "INQ039"
+    },
+    "R084": {
+      "arm": "control",
+      "example_id": "INQ143"
+    },
+    "R085": {
+      "arm": "control",
+      "example_id": "INQ176"
+    },
+    "R086": {
+      "arm": "control",
+      "example_id": "INQ177"
+    },
+    "R087": {
+      "arm": "adapted",
+      "example_id": "INQ054"
+    },
+    "R088": {
+      "arm": "adapted",
+      "example_id": "INQ050"
+    },
+    "R089": {
+      "arm": "adapted",
+      "example_id": "INQ178"
+    },
+    "R090": {
+      "arm": "control",
+      "example_id": "INQ070"
+    },
+    "R091": {
+      "arm": "control",
+      "example_id": "INQ054"
+    },
+    "R092": {
+      "arm": "control",
+      "example_id": "INQ039"
+    },
+    "R093": {
+      "arm": "adapted",
+      "example_id": "INQ142"
+    },
+    "R094": {
+      "arm": "adapted",
+      "example_id": "INQ078"
+    },
+    "R095": {
+      "arm": "adapted",
+      "example_id": "INQ100"
+    },
+    "R096": {
+      "arm": "adapted",
+      "example_id": "INQ037"
+    },
+    "R097": {
+      "arm": "control",
+      "example_id": "INQ035"
+    },
+    "R098": {
+      "arm": "control",
+      "example_id": "INQ038"
+    },
+    "R099": {
+      "arm": "adapted",
+      "example_id": "INQ035"
+    },
+    "R100": {
+      "arm": "control",
+      "example_id": "INQ071"
+    }
+  }
+}

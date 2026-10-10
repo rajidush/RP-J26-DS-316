@@ -169,7 +169,11 @@ Nothing here touches `generate()`, the FSM controller or the controller grammar.
 | `adapter` | Adapter location for `adapted`; `null` for `control` |
 | `generation_settings` | Dict of the recorded settings (do_sample off, max new tokens, precision, chat template, prompt source such as the dataset manifest hash, …); must be identical for both arms |
 | `response` | Generated text, stripped of whitespace only, with no repair |
-| `latency_seconds` | Wall-clock generation time for this response |
+| `latency_seconds` | Wall-clock time for this response: chat template, `generate` and decode |
+| `new_tokens` | Tokens generated, including the end-of-turn token |
+| `hit_max_new_tokens` | `true` if the response used the whole `max_new_tokens` budget, so it may be cut off |
+
+The "Comparison" section at the end of `notebooks/train_inquire_lora_colab.ipynb` writes these files with `inquire_training.generate_arm`. The fixed settings are in `inquire_training.GENERATION_CONFIG`: greedy decoding (temperature 0), one output per prompt, and 128 max new tokens. Both arms are loaded fresh from the base checkpoint in fp32. The adapted arm also loads the adapter from Drive and merges it into the weights (`merge_and_unload`), so both arms run the same architecture. Each arm runs one unrecorded warm-up call before timing starts. Responses are never printed, so the owner stays blind.
 
 `sheet` refuses to run unless both arms answer every test prompt exactly once with the same model ID and generation settings.
 
