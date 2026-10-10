@@ -1,0 +1,512 @@
+{
+  "S027": {
+    "previous_educator_message": "Hey, it looks like a message in your chat was just hidden by the safety filter. How are things on your end right now?",
+    "replies": {
+      "stated_emotion": "I'm just really grossed out and kind of confused why some random person would try to send me that.",
+      "dont_know": "I'm not exactly sure what happened. It just popped up on my screen and then disappeared before I could do anything.",
+      "refusal": "I don't really want to talk about this right now. Please just drop it.",
+      "off_topic": "Whatever. Can I just go back to my game now? I'm in the middle of a really hard level.",
+      "own_safer_plan": "I'm just going to block that account right now so they can't ever message me again."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S028": {
+    "previous_educator_message": "I noticed an alert just came up regarding another player's avatar. How are you doing after seeing that?",
+    "replies": {
+      "stated_emotion": "I'm honestly just grossed out. People are so weird on this game and I didn't want to see that.",
+      "dont_know": "I'm not really sure what's going on, I just teleported in and the screen froze up on me.",
+      "refusal": "I don't really want to talk about it right now. Can we just skip this?",
+      "off_topic": "Are the servers going down for the new update soon? I need to finish my daily quests.",
+      "own_safer_plan": "I'm just going to report their account and jump to a private server so I don't have to deal with them."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S029": {
+    "previous_educator_message": "It looks like the video you were trying to watch just got blocked. How are you doing after that happened?",
+    "replies": {
+      "stated_emotion": "I'm honestly super grossed out and kind of shocked. It literally had a normal cartoon character on the thumbnail.",
+      "dont_know": "I'm not really sure what's going on. The screen just went black out of nowhere before it even started.",
+      "refusal": "Just drop it, okay? It’s fine and I don't want to talk about some stupid glitch.",
+      "off_topic": "Whatever. Anyway, are you going to unlock the wifi so I can play my game instead?",
+      "own_safer_plan": "That was weird. I'm just going to close the app and go ask my mom to help me find a normal video."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S030": {
+    "previous_educator_message": "Hey, a safety alert just popped up while you were on that gaming site. Can you tell me what you saw on your screen?",
+    "replies": {
+      "stated_emotion": "Ugh, I was just trying to play and that weird ad popped up. I'm honestly super grossed out right now.",
+      "dont_know": "I wasn't really paying attention. I was focused on the game and just saw some weird picture load on the side.",
+      "refusal": "It's nothing, drop it. I'm not answering your questions about this.",
+      "off_topic": "Can you just unblock it so I can finish my game? I was literally about to beat my high score.",
+      "own_safer_plan": "It was a really sketchy ad. I'm just going to close the tab and ask my mom to install an ad-blocker."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S031": {
+    "previous_educator_message": "Hi there. I noticed a recent search was blocked. Can you tell me a bit about what happened?",
+    "replies": {
+      "stated_emotion": "I'm just really annoyed right now. I wasn't even doing anything bad, I was just looking up stuff for a video game!",
+      "dont_know": "I'm not exactly sure why that warning popped up. I was just typing stuff in and the screen suddenly locked on me.",
+      "refusal": "It's none of your business. I am not talking to you about my internet history, so just drop it.",
+      "off_topic": "Whatever. Are they turning the Wi-Fi off soon? I really need to finish my math homework before dinner.",
+      "own_safer_plan": "My bad. I'm just going to close this tab and go ask my dad to help me find stuff for my science project instead."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S032": {
+    "previous_educator_message": "Hi. I am checking in about what was just typed into your shared school document. Can you tell me what is going on right now?",
+    "replies": {
+      "stated_emotion": "I'm honestly just angry. My group members keep messing around and not taking the assignment seriously at all.",
+      "dont_know": "I honestly have no idea what happened in there. Everyone was typing at once and it just got crazy.",
+      "refusal": "I'm not talking about this right now. Please just leave me alone so I can do my work.",
+      "off_topic": "Are we allowed to use our own calculators on the math quiz tomorrow? I can't find the study guide.",
+      "own_safer_plan": "I think I'm going to close the tab for now and ask the teacher if I can do the project by myself."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S033": {
+    "previous_educator_message": "I'm checking in about the post that just came across your timeline. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "Honestly, that made me feel really anxious. My stomach kind of dropped when it started playing.",
+      "dont_know": "I'm not really sure what to think, it just played automatically and surprised me.",
+      "refusal": "Can we just drop it? I really don't want to discuss this with you.",
+      "off_topic": "Did you see that new update for my favorite game? It's supposed to drop tomorrow.",
+      "own_safer_plan": "I think I'm going to block that account so it doesn't show up on my feed again."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S034": {
+    "previous_educator_message": "Hi, I received a safety alert about the game you just loaded. Can you tell me what is going on?",
+    "replies": {
+      "stated_emotion": "Honestly I'm just kind of grossed out. I didn't expect the download to look like that when I booted up the server.",
+      "dont_know": "I'm not really sure what happened. I just downloaded a texture pack and then the screen went weird.",
+      "refusal": "I'm not talking to you about this. Stop messaging me, I just want to play my game in peace.",
+      "off_topic": "Do you know how to fix the lag on this server? It keeps freezing every time I try to walk.",
+      "own_safer_plan": "I'm just going to uninstall that mod pack and go back to the normal game. It was way too much anyway."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S035": {
+    "previous_educator_message": "I noticed that an image was just blurred on your screen. How are things going for you right now?",
+    "replies": {
+      "stated_emotion": "I'm just really freaked out. I was just scrolling and didn't expect that to pop up.",
+      "dont_know": "I'm not exactly sure what happened, honestly. Everything just kind of blurred all of a sudden.",
+      "refusal": "Leave me alone, I don't want to talk about this with you.",
+      "off_topic": "Can I just have double XP on my game now? I really need to finish this level.",
+      "own_safer_plan": "I'm just going to close the app and go watch TV with my brother instead."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S036": {
+    "previous_educator_message": "Hi. I wanted to check in about something that was just sent in your group chat. Can you tell me what's happening there?",
+    "replies": {
+      "stated_emotion": "I'm honestly just really freaked out right now. I didn't want to see that.",
+      "dont_know": "I'm not really sure what's going on tbh. Everyone was just sending random stuff and then that popped up.",
+      "refusal": "I'm fine, it's not a big deal. I really don't want to talk about it right now.",
+      "off_topic": "Can we talk about this later? I really need to finish my math homework before dinner or I'm grounded.",
+      "own_safer_plan": "It was way too much. I'm just going to mute the chat and leave the group so I don't see stuff like that anymore."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S037": {
+    "previous_educator_message": "Hi there, I received an alert concerning the community art board you were just visiting. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "I'm just really overwhelmed. Seeing that stuff made me feel super weird and anxious.",
+      "dont_know": "I'm not exactly sure what happened, to be honest. I was just scrolling and didn't really process what was on there.",
+      "refusal": "I'm fine and I really don't want to discuss this with you. Just drop it.",
+      "off_topic": "Can I just go play my game now? My friends are waiting for me in the lobby.",
+      "own_safer_plan": "I already closed the tab. I think I'm gonna take a break from that site and log off for today."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S038": {
+    "previous_educator_message": "Hi there. I saw that a video you were watching just got blocked. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "I'm just really annoyed. I was just scrolling and it stopped my app for no reason.",
+      "dont_know": "I'm not exactly sure what happened, it went away too fast. My brain is just kind of blank.",
+      "refusal": "Leave me alone, I don't want to talk about this right now. It's not a big deal anyway.",
+      "off_topic": "Can you just unlock my screen? Also, do you know if the wifi is running slow today?",
+      "own_safer_plan": "That was weird. I think I'm just going to close this app and go talk to my mom."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S039": {
+    "previous_educator_message": "I noticed an alert from your game's voice chat a moment ago. Can you share what's happening in the lobby right now?",
+    "replies": {
+      "stated_emotion": "Some guy was screaming weird stuff at our team and it just made me really annoyed and frustrated.",
+      "dont_know": "I barely even heard what they were saying, everyone was just talking over each other so I'm not really sure.",
+      "refusal": "It was nothing, just regular trash talk. I don't want to make a big deal out of it.",
+      "off_topic": "Can you just help me figure out how to level up my character faster? I need to get better gear.",
+      "own_safer_plan": "Some people were being super toxic on the mic, so I'm just going to mute the whole lobby and play solo."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S040": {
+    "previous_educator_message": "I got a notification about an image shared in your group chat recently. Can you tell me what happened?",
+    "replies": {
+      "stated_emotion": "I'm really weirded out by it. Someone sent a gross picture and it made me super uncomfortable.",
+      "dont_know": "I'm not really sure what that picture even meant tbh. People just started sending random stuff to the chat.",
+      "refusal": "It was just a joke, leave me alone about it. I don't want to explain it.",
+      "off_topic": "Whatever. Can I go now? I really need to finish my homework before I log off to play games.",
+      "own_safer_plan": "Yeah, I didn't like what they sent. I'm just going to leave the group and block the person who sent it."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S041": {
+    "previous_educator_message": "Hi there, I noticed some comments just popped up under that video. How are things going right now?",
+    "replies": {
+      "stated_emotion": "It's just so embarrassing. Why are they saying all that stuff about me where everyone can see it?",
+      "dont_know": "I'm not really sure what to think. It all happened so fast and my brain is just kind of blanking.",
+      "refusal": "I don't want to talk about it. Just leave me alone, it's not a big deal anyway.",
+      "off_topic": "Can we talk about the new update for that zombie game instead? I really want to unlock the next level.",
+      "own_safer_plan": "I'm just going to delete the app for a while and go show my older sister so she can help me block them."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S042": {
+    "previous_educator_message": "Hi there, I wanted to check in about the shared school document. Can you tell me what's happening in there right now?",
+    "replies": {
+      "stated_emotion": "I'm just really grossed out and angry about the stuff people are typing in the margins. It's so mean.",
+      "dont_know": "I'm not really sure what's going on, honestly. People keep adding weird stuff to the text and I just got here.",
+      "refusal": "It's nothing. I really don't want to talk about it right now, so please just drop it.",
+      "off_topic": "Did you see the new update for that game we were talking about yesterday? It drops tonight.",
+      "own_safer_plan": "People are acting awful in it. I'm just going to close the tab and email my teacher to let them handle it."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S043": {
+    "previous_educator_message": "Hi there. A safety alert was just triggered on your device. Can you tell me what is going on right now?",
+    "replies": {
+      "stated_emotion": "I am so annoyed and embarrassed. They think it is funny but it really isn't.",
+      "dont_know": "I am barely even sure what is happening. I just got a ton of notifications and my brain is blank.",
+      "refusal": "No, I don't want to talk about it. Just leave me alone and drop it.",
+      "off_topic": "Can you just unlock my screen? I really need to finish watching my video right now.",
+      "own_safer_plan": "I think I am just going to leave that group chat and block the person who sent it."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S044": {
+    "previous_educator_message": "I received an alert about the shared school document you were using. Can you tell me what's happening in there right now?",
+    "replies": {
+      "stated_emotion": "I'm just really embarrassed. Everyone in the group saw those comments they typed over my work and it makes me feel awful.",
+      "dont_know": "I'm not really sure. I logged in and saw all this weird stuff typed on my slide, but I can't even process it.",
+      "refusal": "It's nothing, just a joke. I really don't want to make a big deal out of it or talk about it anyway.",
+      "off_topic": "Did we have math homework due tomorrow? I left my textbook in my locker and I need to figure out what chapter it is.",
+      "own_safer_plan": "I'm just going to copy my work into a private file, delete my part from the shared one, and email the teacher."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S045": {
+    "previous_educator_message": "Just checking in about the recent activity on your profile link. How are things going right now?",
+    "replies": {
+      "stated_emotion": "I'm just really annoyed. People keep spamming mean stuff on my anonymous link because they're too scared to say it to my face.",
+      "dont_know": "I'm not exactly sure what to make of it all. My notifications just blew up out of nowhere.",
+      "refusal": "Can we just drop it? I don't really want to discuss this right now.",
+      "off_topic": "Did you see the new update for that game yet? It just dropped earlier today.",
+      "own_safer_plan": "I'm just going to take the anonymous link out of my bio and set my profile to private."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S046": {
+    "previous_educator_message": "Hi. I noticed the system just muted another user in your voice channel. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "I'm honestly pretty stressed out, they were being way too loud and completely ruining the match.",
+      "dont_know": "I'm not really sure what just happened, I couldn't even hear what they were saying over the game audio.",
+      "refusal": "Can we just drop it? I just want to finish my game and not make a big deal out of anything.",
+      "off_topic": "Yeah whatever. Did you see the new game update that just came out though? The new map is crazy.",
+      "own_safer_plan": "It's fine, I'm just going to leave this lobby and play solo for a while so I don't have to deal with them."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S047": {
+    "previous_educator_message": "Hi there, I'm checking in with you about a recent conversation on your social media. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "It's just some random person acting weird. Honestly, it makes me feel kind of creeped out and uncomfortable.",
+      "dont_know": "I'm not really sure what's going on or why they keep saying that stuff to me. It's confusing.",
+      "refusal": "It's nothing big and I really don't feel like discussing it right now. Just drop it, please.",
+      "off_topic": "Whatever. Anyway, did you see the new update for that game we were talking about yesterday?",
+      "own_safer_plan": "It was getting weird, so I'm just going to hit the block button and restrict my profile so they can't comment anymore."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S048": {
+    "previous_educator_message": "I'm checking in about a recent conversation in your game chat. How are you feeling about how it went?",
+    "replies": {
+      "stated_emotion": "I just felt really weirded out when they said that stuff. It made me uncomfortable.",
+      "dont_know": "I'm not really sure what was even going on, to be honest. It was just a lot all at once.",
+      "refusal": "I don't want to talk about it. It's fine and I just want to go back to playing.",
+      "off_topic": "Did you see the new update that dropped today? The servers were lagging so bad earlier.",
+      "own_safer_plan": "I think I'm just going to mute them and take a break from that server for a while."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S049": {
+    "previous_educator_message": "Hi. I'm checking in because an alert came up about a recent conversation. What's happening there?",
+    "replies": {
+      "stated_emotion": "I feel kinda weirded out. This person offered to buy me gift cards but I literally have no idea who they are.",
+      "dont_know": "I really don't get what they want from me. They just offered to buy me stuff out of nowhere.",
+      "refusal": "Nothing happened. It's not a big deal and I don't want to talk about it with you.",
+      "off_topic": "Whatever. Hey, did you see the new update for the game that dropped today? It looks so cool.",
+      "own_safer_plan": "Some random person offered to buy me stuff, so I'm just going to block their profile and ignore them."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S050": {
+    "previous_educator_message": "Hi. I'm checking in about a recent conversation on your messaging app. How are things going right now?",
+    "replies": {
+      "stated_emotion": "I'm honestly just feeling super weirded out and uncomfortable right now.",
+      "dont_know": "I'm not really sure what to make of it, my head is just kind of blank.",
+      "refusal": "Can we not? I really just want to forget about it and move on.",
+      "off_topic": "Can I just go watch YouTube? My favorite streamer just went live.",
+      "own_safer_plan": "I already blocked their account and I'm going to tell my mom when she gets home."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S051": {
+    "previous_educator_message": "Hi. Your message was paused before it sent. Can you share what is happening right now?",
+    "replies": {
+      "stated_emotion": "I'm just really overwhelmed and stressed out about everything.",
+      "dont_know": "I'm not really sure why I typed that, my brain is just kind of blank.",
+      "refusal": "I don't want to talk about it. Just leave me alone.",
+      "off_topic": "Can I just go play my game now? The new season just dropped.",
+      "own_safer_plan": "I think I'm just gonna log off and go pet my dog for a while."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S052": {
+    "previous_educator_message": "Hi, I'm checking in about the team chat earlier. Can you share a bit about what was happening then?",
+    "replies": {
+      "stated_emotion": "I'm just really freaked out right now. Someone was saying weird stuff and it made me super uncomfortable.",
+      "dont_know": "I'm not exactly sure what was going on. People were typing so fast and I kinda lost track of the whole conversation.",
+      "refusal": "I don't want to talk about it. Just drop it, okay?",
+      "off_topic": "Can I just go back to my game now? We are trying to rank up and I need to finish this match.",
+      "own_safer_plan": "I'm just going to mute the team chat and leave this lobby. I'll go play a solo round instead."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S053": {
+    "previous_educator_message": "Hi there. I'm checking in because of a recent safety alert from your journaling app account. Could you share what's going on with you today?",
+    "replies": {
+      "stated_emotion": "I just feel really overwhelmed and stressed out about everything lately.",
+      "dont_know": "I can't even explain it. My head is just foggy and I have no idea what's going on.",
+      "refusal": "I really don't want to talk about this with anyone right now.",
+      "off_topic": "Am I going to be locked out of my account? I need it for school.",
+      "own_safer_plan": "I'm just going to log out of the journal and go sit downstairs with my mom."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S054": {
+    "previous_educator_message": "Hi. I'm checking in about your app activity just now. How are things going?",
+    "replies": {
+      "stated_emotion": "I'm just annoyed. Everyone else is doing it, so I feel stupid that I got a warning.",
+      "dont_know": "I'm not exactly sure what I even did wrong. I just clicked a button like normal.",
+      "refusal": "I really don't want to talk about this right now. Just leave me alone.",
+      "off_topic": "Did you see that the new season of that show dropped today? I really want to go watch it.",
+      "own_safer_plan": "I guess I should go into my privacy settings and turn off the sharing feature so random people can't see me."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S055": {
+    "previous_educator_message": "I noticed a link was recently added to your collaborative school document. Can you tell me a bit about what happened?",
+    "replies": {
+      "stated_emotion": "I'm just really embarrassed about it. I clicked paste by accident and it was the wrong thing entirely. I feel so dumb.",
+      "dont_know": "I have absolutely no clue how that got pasted in there. My screen just glitched out and suddenly the link appeared.",
+      "refusal": "I deleted it right away so it doesn't matter anymore. I'm not talking about this with you.",
+      "off_topic": "Are we going to lose points on the group project? Because I haven't even finished typing up my main paragraph yet.",
+      "own_safer_plan": "I'm going to change the document settings to view-only right now, and then I'll message my teacher to explain the mix-up."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  },
+  "S056": {
+    "previous_educator_message": "I noticed the voice chat just got muted. How are you doing right now?",
+    "replies": {
+      "stated_emotion": "I'm just really annoyed. Everyone was screaming so loud and it was giving me a headache. It's so stupid.",
+      "dont_know": "I'm not really sure, honestly. Everyone just started yelling at the exact same time and then it went completely quiet.",
+      "refusal": "Leave me alone, I don't want to explain it right now. It is really not a big deal anyway.",
+      "off_topic": "Can I just go down and get a snack? My mom bought those new pizza rolls and I'm super hungry.",
+      "own_safer_plan": "I'm just going to report that guy's account and go play a different game by myself for a while."
+    },
+    "provenance": {
+      "model": "google/gemini-3.1-pro-preview",
+      "backend": "colab",
+      "temperature": 0.9,
+      "drafting_prompt_version": "inquire-draft-v1",
+      "generated_at": "2026-10-08T08:01:21+00:00"
+    }
+  }
+}

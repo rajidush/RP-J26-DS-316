@@ -1,0 +1,26 @@
+{
+  "cyberbullying": [
+    "[\n  \"A risk trigger was received for intentionally embarrassing edited photos shared in a peer group message.\",\n  \"A risk trigger was received for mocking and derogatory notes left on a shared school collaboration document.\",\n  \"A risk trigger was received for a barrage of anonymous insults submitted through a social media profile link.\",\n  \"A risk trigger was received for aggressive verbal harassment detected in a live team voice channel; the offending user was automatically muted.\"\n]"
+  ],
+  "explicit_visual": [
+    "[\n  \"A risk trigger was received for an unsolicited explicit image sent to the child via a direct messaging app; the content was intercepted and hidden.\",\n  \"A risk trigger was received for explicit user-generated artwork displayed on a custom avatar in a multiplayer sandbox game.\",\n  \"A risk trigger was received for adult visual material masquerading as a children's animation on a video-sharing platform; playback was immediately blocked.\",\n  \"A risk trigger was received for a sexually explicit banner advertisement loading on the sidebar of a free gaming website.\"\n]"
+  ],
+  "grooming_language": [
+    "[\n  \"A risk trigger was received for manipulative grooming language; an unknown user repeatedly complimented the child's maturity on a social media post.\",\n  \"A risk trigger was received for isolating grooming language in a gaming chat where a stranger claimed that the child's parents do not understand them.\",\n  \"A risk trigger was received for potential grooming behavior involving an unfamiliar contact offering to buy the child digital gift cards on a fan forum.\",\n  \"A risk trigger was received for invasive grooming questions on a messaging app asking the child about their daily schedule and when they are home alone.\"\n]"
+  ],
+  "hate_speech": [
+    "[\n  \"A risk trigger was received for discriminatory audio detected over voice chat in a multiplayer game lobby.\",\n  \"A risk trigger was received for an image containing hateful symbols shared in a private social media group chat.\",\n  \"A risk trigger was received for targeted derogatory comments appearing below a trending short-form video.\",\n  \"A risk trigger was received for prejudiced remarks directed at a marginalized group within a shared school document.\"\n]"
+  ],
+  "self_harm_imagery": [
+    "[\n  \"A risk trigger was received for visual content promoting self-injury on a photo-sharing platform; the image was blurred by the system.\",\n  \"A risk trigger was received for an image depicting self-harm shared within a private group chat.\",\n  \"A risk trigger was received for artwork romanticizing self-injury discovered on an online community art board.\",\n  \"A risk trigger was received for a short-form video montage containing self-harm imagery; playback was immediately blocked.\"\n]"
+  ],
+  "self_harm_language": [
+    "[\n  \"A risk trigger was received for self-harm language drafted in a direct message; the system flagged the text before it was sent.\",\n  \"A risk trigger was received for concerning language about self-injury shared in a multiplayer game's team chat.\",\n  \"A risk trigger was received for text indicating self-harm ideation typed into a cloud-synced educational journaling app.\"\n]"
+  ],
+  "unknown_flagged": [
+    "[\n  \"A risk trigger was received for broadcasting real-time GPS location to unverified followers on a social mapping app.\",\n  \"A risk trigger was received for an inappropriate webpage link pasted into a collaborative school document.\",\n  \"A risk trigger was received for intense profanity and verbal harassment detected in a multiplayer voice lobby; the audio feed was muted.\"\n]"
+  ],
+  "violence": [
+    "[\n  \"A risk trigger was received for search queries regarding the construction of homemade weapons; the browser blocked the results.\",\n  \"A risk trigger was received for detailed descriptions of physical violence typed into a collaborative school document.\",\n  \"A risk trigger was received for a video compilation of real-world physical altercations appearing on a social media timeline.\",\n  \"A risk trigger was received for excessively bloody user-generated modifications loaded into a sandbox game.\"\n]"
+  ]
+}

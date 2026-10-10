@@ -1,0 +1,171 @@
+{
+  "sample": {
+    "scenarios": 10,
+    "prompts": 50,
+    "note": "This is a pilot on held-out scenarios, not a significance test."
+  },
+  "shuffle_seed": 20261012,
+  "rubric": [
+    "handles_reply_type",
+    "no_shame_invention_or_flagged",
+    "natural_for_age"
+  ],
+  "arms": {
+    "control": {
+      "model_id": "google/gemma-3-1b-it",
+      "adapter": null,
+      "responses": 50,
+      "format_check": {
+        "pass_rate": 0.88,
+        "failed_rules": {
+          "question": 4,
+          "sentences": 1,
+          "words": 1
+        }
+      },
+      "stated_emotion_violations": 36,
+      "mean_words": 19.38,
+      "trusted_adult": {
+        "mentions": 0,
+        "share": 0.0
+      },
+      "most_repeated_closing": {
+        "text": "Would you like to talk about what’s making you feel that way?",
+        "count": 3
+      },
+      "rubric": {
+        "overall": 0.673,
+        "per_criterion": {
+          "handles_reply_type": 0.26,
+          "no_shame_invention_or_flagged": 0.92,
+          "natural_for_age": 0.84
+        },
+        "per_reply_type": {
+          "dont_know": {
+            "handles_reply_type": 0.0,
+            "no_shame_invention_or_flagged": 0.9,
+            "natural_for_age": 1.0,
+            "overall": 0.633,
+            "n": 10
+          },
+          "off_topic": {
+            "handles_reply_type": 0.2,
+            "no_shame_invention_or_flagged": 0.8,
+            "natural_for_age": 0.5,
+            "overall": 0.5,
+            "n": 10
+          },
+          "own_safer_plan": {
+            "handles_reply_type": 0.2,
+            "no_shame_invention_or_flagged": 1.0,
+            "natural_for_age": 0.8,
+            "overall": 0.667,
+            "n": 10
+          },
+          "refusal": {
+            "handles_reply_type": 0.4,
+            "no_shame_invention_or_flagged": 0.9,
+            "natural_for_age": 0.9,
+            "overall": 0.733,
+            "n": 10
+          },
+          "stated_emotion": {
+            "handles_reply_type": 0.5,
+            "no_shame_invention_or_flagged": 1.0,
+            "natural_for_age": 1.0,
+            "overall": 0.833,
+            "n": 10
+          }
+        }
+      },
+      "latency_seconds": {
+        "mean": 1.438,
+        "median": 1.397,
+        "max": 3.176,
+        "note": "reported separately; not a behavior measure"
+      },
+      "not_measured": {
+        "json_validity": "not measured — adapted model not wired into the FSM",
+        "controller_grammar_compliance": "not measured — adapted model not wired into the FSM",
+        "controller_correctness": "not measured — adapted model not wired into the FSM"
+      }
+    },
+    "adapted": {
+      "model_id": "google/gemma-3-1b-it",
+      "adapter": "/content/drive/MyDrive/c3_inquire_training/2026-10-10_1249/adapter",
+      "responses": 50,
+      "format_check": {
+        "pass_rate": 0.98,
+        "failed_rules": {
+          "words": 1
+        }
+      },
+      "stated_emotion_violations": 1,
+      "mean_words": 19.32,
+      "trusted_adult": {
+        "mentions": 43,
+        "share": 0.86
+      },
+      "most_repeated_closing": {
+        "text": "Would you rather take a short break or talk to a trusted adult?",
+        "count": 16
+      },
+      "rubric": {
+        "overall": 0.893,
+        "per_criterion": {
+          "handles_reply_type": 0.92,
+          "no_shame_invention_or_flagged": 0.94,
+          "natural_for_age": 0.82
+        },
+        "per_reply_type": {
+          "dont_know": {
+            "handles_reply_type": 1.0,
+            "no_shame_invention_or_flagged": 1.0,
+            "natural_for_age": 1.0,
+            "overall": 1.0,
+            "n": 10
+          },
+          "off_topic": {
+            "handles_reply_type": 0.8,
+            "no_shame_invention_or_flagged": 0.8,
+            "natural_for_age": 0.6,
+            "overall": 0.733,
+            "n": 10
+          },
+          "own_safer_plan": {
+            "handles_reply_type": 0.8,
+            "no_shame_invention_or_flagged": 0.9,
+            "natural_for_age": 0.6,
+            "overall": 0.767,
+            "n": 10
+          },
+          "refusal": {
+            "handles_reply_type": 1.0,
+            "no_shame_invention_or_flagged": 1.0,
+            "natural_for_age": 1.0,
+            "overall": 1.0,
+            "n": 10
+          },
+          "stated_emotion": {
+            "handles_reply_type": 1.0,
+            "no_shame_invention_or_flagged": 1.0,
+            "natural_for_age": 0.9,
+            "overall": 0.967,
+            "n": 10
+          }
+        }
+      },
+      "latency_seconds": {
+        "mean": 1.421,
+        "median": 1.282,
+        "max": 5.564,
+        "note": "reported separately; not a behavior measure"
+      },
+      "not_measured": {
+        "json_validity": "not measured — adapted model not wired into the FSM",
+        "controller_grammar_compliance": "not measured — adapted model not wired into the FSM",
+        "controller_correctness": "not measured — adapted model not wired into the FSM"
+      }
+    }
+  }
+}
