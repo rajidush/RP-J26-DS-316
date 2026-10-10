@@ -1,0 +1,25 @@
+{
+  "overrides": [
+    {
+      "example_id": "INQ001",
+      "original": "What might help you manage that frustration before choosing what to do next?",
+      "completion": "What might help you manage feeling annoyed before choosing what to do next?",
+      "reason": "The child said \"annoyed\"; the seed names \"frustration\", which breaks the verbatim stated-emotion rule.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    },
+    {
+      "example_id": "INQ005",
+      "original": "It’s completely okay to feel shaken up by creepy surprises. What would help your mind reset and feel comfortable right now?",
+      "completion": "It’s completely okay to feel creeped out by scary surprises. What would help your mind reset and feel comfortable right now?",
+      "reason": "The child said \"creeped out\" and \"scary\"; the seed names \"shaken up\", which breaks the verbatim stated-emotion rule.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    },
+    {
+      "example_id": "INQ022",
+      "original": "That sounds frightening. Which trusted adult could you show this message to now?",
+      "completion": "It makes sense to feel scared. Which trusted adult could you show this message to now?",
+      "reason": "The child said \"scared\"; the seed names \"frightening\". Rewritten rather than cleared by a looser check, because the comparison scores the adapted model with the same check.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    }
+  ]
+}

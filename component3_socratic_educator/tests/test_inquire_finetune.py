@@ -142,7 +142,11 @@ def test_all_300_drafts_pass_both_checks():
 
 # ---------------------------------------------------------------- review
 def _fixture_rows(n_train=6, n_test=2):
+    """Real drafted rows reset to pending, whatever the owner's review file says."""
     rows = load_jsonl(DRAFTS_FILE)
+    for r in rows:
+        r["completion"] = None
+        r["review"] = {"status": "pending", "chosen_draft": None, "rewritten": False, "notes": ""}
     return ([r for r in rows if r["split"] == "train_or_val"][:n_train]
             + [r for r in rows if r["split"] == "test"][:n_test])
 
@@ -287,3 +291,238 @@ def test_review_reports_progress(monkeypatch, capsys, drafts):
     out = run_review(monkeypatch, capsys, drafts, "a\nr\na\nWhat is one safe thing you could do next?\nx\n\nq\n")
     assert "train_or_val: 3 reviewed, 3 pending (1 approved as drafted, 1 rewritten, 1 rejected)" in out
     assert "test: 0 reviewed, 2 pending" in out
+
+
+# ---------------------------------------------------------------- build
+SCENARIOS_FILE = DRAFTS_DIR / "scenarios.json"
+SEED_INPUTS_DIR = PROJECT_ROOT / "evidence" / "inquire_seed_inputs"
+OVERRIDES_FILE = SEED_INPUTS_DIR / "seed_overrides.json"
+LABELS_FILE = SEED_INPUTS_DIR / "seed_labels.json"
+FROZEN_TEST = json.loads(SCENARIOS_FILE.read_text(encoding="utf-8"))["test_scenario_ids"]
+DEVELOPMENT_EXAMPLES = {"INQ001", "INQ026", "INQ027", "INQ028"}
+
+
+def _sha256(path):
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _reviewed_rows():
+    """All 150 drafted rows with a fixed review (draft 0 approved; test prompts kept), whatever the owner's file says."""
+    rows = load_jsonl(DRAFTS_FILE)
+    for r in rows:
+        test = r["split"] == "test"
+        r["completion"] = None if test else r["drafts"][0]
+        r["review"] = {"status": "approved", "chosen_draft": None if test else 0, "rewritten": False,
+                       "notes": "", "reviewed_at": "2026-10-10T00:00:00+00:00"}
+    return rows
+
+
+@pytest.fixture
+def inputs(tmp_path):
+    """tmp_path copies of every build input, so tests can break one at a time."""
+    import shutil
+    d = tmp_path / "inputs"
+    d.mkdir()
+    _write_jsonl(d / "inquire_drafts.jsonl", _reviewed_rows())
+    for src in (SEED_FILE, SCENARIOS_FILE, OVERRIDES_FILE, LABELS_FILE):
+        shutil.copy(src, d / src.name)
+    return d
+
+
+def run_build(inputs, out):
+    ft.main(["build", "--drafts", str(inputs / "inquire_drafts.jsonl"), "--seeds", str(inputs / SEED_FILE.name),
+             "--scenarios", str(inputs / "scenarios.json"), "--overrides", str(inputs / "seed_overrides.json"),
+             "--labels", str(inputs / "seed_labels.json"), "--out", str(out)])
+    return {name: load_jsonl(out / f"{name}.jsonl") for name in ("train", "validation", "test")}
+
+
+def refused(inputs, tmp_path):
+    with pytest.raises(SystemExit) as e:
+        run_build(inputs, tmp_path / "out")
+    assert not (tmp_path / "out").exists()  # nothing written on refusal
+    return str(e.value.code)
+
+
+def _edit_json(path, edit):
+    data = json.loads(path.read_text(encoding="utf-8"))
+    edit(data)
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def _edit_drafts(inputs, edit):
+    path = inputs / "inquire_drafts.jsonl"
+    rows = load_jsonl(path)
+    for r in rows:
+        edit(r)
+    _write_jsonl(path, rows)
+
+
+def test_build_splits_by_scenario_with_frozen_test(inputs, tmp_path):
+    splits = run_build(inputs, tmp_path / "out")
+    scenarios = {name: {r["scenario_id"] for r in rows} for name, rows in splits.items()}
+    assert not scenarios["train"] & scenarios["validation"]
+    assert not scenarios["test"] & (scenarios["train"] | scenarios["validation"])
+    assert sorted(scenarios["test"]) == FROZEN_TEST
+    assert not DEVELOPMENT_EXAMPLES & {r["example_id"] for r in splits["test"]}
+    # 26 seed scenarios + 20 new training-and-validation scenarios
+    assert len(scenarios["train"] | scenarios["validation"]) == 46
+    assert len(splits["train"]) + len(splits["validation"]) == 29 + 100
+    assert len(splits["test"]) == 50
+
+
+def test_build_validation_mirrors_test(inputs, tmp_path):
+    """Decision 4: 5 new scenarios, one per category, stratified; every seed row trains."""
+    splits = run_build(inputs, tmp_path / "out")
+    val = splits["validation"]
+    assert {r["source"] for r in val} == {"reviewed"}
+    assert sum(r["source"] == "seed" for r in splits["train"]) == 29
+    assert len({r["scenario_id"] for r in val}) == 5 and len(val) == 25  # about 20% of 129 rows
+    assert len({r["risk_category"] for r in val}) == 5  # one scenario per category
+    assert "S032" not in {r["scenario_id"] for r in val}  # the only new violence scenario stays in train
+    assert {r["reply_type"] for r in val} == set(ft.REPLY_TYPES)
+
+
+def test_build_refuses_an_empty_validation_scenario(inputs, tmp_path):
+    run_build(inputs, tmp_path / "first")
+    drawn = json.loads((tmp_path / "first" / "manifest.json").read_text(encoding="utf-8"))["scenarios"]["validation"][0]
+
+    def edit(r):
+        if r["scenario_id"] == drawn:
+            r["review"]["status"], r["completion"] = "rejected", None
+    _edit_drafts(inputs, edit)
+    message = refused(inputs, tmp_path)
+    assert drawn in message and "validation" in message
+
+
+def test_build_row_shapes(inputs, tmp_path):
+    splits = run_build(inputs, tmp_path / "out")
+    meta = {"example_id", "scenario_id", "reply_type", "risk_category", "source"}
+    for row in splits["train"] + splits["validation"]:
+        assert set(row) == meta | {"prompt", "completion"}
+        assert [m["role"] for m in row["prompt"]] == ["user"]
+        assert [m["role"] for m in row["completion"]] == ["assistant"]
+        assert row["source"] == ("seed" if int(row["example_id"][3:]) < 30 else "reviewed")
+        assert row["reply_type"] and row["risk_category"]
+    for row in splits["test"]:
+        assert set(row) == meta | {"prompt"}  # no completion to leak into generation
+        assert row["source"] == "reviewed"
+
+
+def test_build_is_byte_identical(inputs, tmp_path):
+    run_build(inputs, tmp_path / "a")
+    run_build(inputs, tmp_path / "b")
+    for name in ("train.jsonl", "validation.jsonl", "test.jsonl", "manifest.json"):
+        assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes(), name
+
+
+@pytest.mark.parametrize("split", ["train_or_val", "test"])
+def test_build_refuses_pending_rows(inputs, tmp_path, split):
+    target = next(r["example_id"] for r in load_jsonl(inputs / "inquire_drafts.jsonl") if r["split"] == split)
+
+    def edit(r):
+        if r["example_id"] == target:
+            r["review"]["status"], r["completion"] = "pending", None
+    _edit_drafts(inputs, edit)
+    message = refused(inputs, tmp_path)
+    assert "pending" in message and target in message
+
+
+@pytest.mark.parametrize("bad, problem", [
+    ("That is all.", "question"),
+    ("It makes sense to feel furious. What could you do next?", "unstated emotion: furious"),
+])
+def test_build_refuses_completions_that_fail_the_checks(inputs, tmp_path, bad, problem):
+    def edit(r):
+        if r["example_id"] == "INQ030":
+            r["completion"] = bad
+    _edit_drafts(inputs, edit)
+    message = refused(inputs, tmp_path)
+    assert "INQ030" in message and problem in message
+
+
+def test_build_applies_seed_overrides_and_leaves_seed_file_untouched(inputs, tmp_path):
+    seed = inputs / SEED_FILE.name
+    before = _sha256(seed)
+    splits = run_build(inputs, tmp_path / "out")
+    assert _sha256(seed) == before == _sha256(SEED_FILE)
+    by_id = {r["example_id"]: r["completion"][0]["content"] for r in splits["train"] + splits["validation"]}
+    overrides = json.loads(OVERRIDES_FILE.read_text(encoding="utf-8"))["overrides"]
+    assert {o["example_id"] for o in overrides} == {"INQ001", "INQ005", "INQ022"}
+    for o in overrides:
+        assert by_id[o["example_id"]] == o["completion"]
+    assert "creeped out" in by_id["INQ005"] and "’" in by_id["INQ005"]  # curly apostrophe kept
+
+
+def test_build_refuses_a_stale_override(inputs, tmp_path):
+    _edit_json(inputs / "seed_overrides.json",
+               lambda d: d["overrides"][0].update(original="Some older wording?"))
+    message = refused(inputs, tmp_path)
+    assert "INQ001" in message and "original" in message
+
+
+def test_build_without_overrides_refuses_the_failing_seeds(inputs, tmp_path):
+    _edit_json(inputs / "seed_overrides.json", lambda d: d["overrides"].clear())
+    message = refused(inputs, tmp_path)
+    assert all(eid in message for eid in KNOWN_SEED_FAILURES)
+
+
+@pytest.mark.parametrize("section, key", [("reply_types", "INQ007"), ("risk_categories", "S007")])
+def test_build_refuses_an_unlabelled_seed(inputs, tmp_path, section, key):
+    _edit_json(inputs / "seed_labels.json", lambda d: d[section].pop(key))
+    message = refused(inputs, tmp_path)
+    assert key in message and "label" in message
+
+
+def test_build_refuses_an_unknown_label(inputs, tmp_path):
+    _edit_json(inputs / "seed_labels.json", lambda d: d["reply_types"].update(INQ007="rambling"))
+    assert "rambling" in refused(inputs, tmp_path)
+
+
+def test_build_excludes_non_inquire_seeds_and_rejected_rows(inputs, tmp_path):
+    rows = load_jsonl(inputs / "inquire_drafts.jsonl")
+    rejected = [rows[0]["example_id"], next(r["example_id"] for r in rows if r["split"] == "test")]
+
+    def edit(r):
+        if r["example_id"] in rejected:
+            r["review"]["status"], r["completion"] = "rejected", None
+    _edit_drafts(inputs, edit)
+    splits = run_build(inputs, tmp_path / "out")
+    ids = [r["example_id"] for rows in splits.values() for r in rows]
+    assert len(ids) == len(set(ids)) == 29 + 150 - 2
+    assert all(eid.startswith("INQ") for eid in ids)
+    assert not set(rejected) & set(ids)
+    manifest = json.loads((tmp_path / "out" / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["rejected"] == {"count": 2, "example_ids": sorted(rejected)}
+    assert manifest["excluded_seed_rows"] == {"CON": 2, "EVA": 5, "INT": 5}
+
+
+def test_build_manifest(inputs, tmp_path):
+    splits = run_build(inputs, tmp_path / "out")
+    m = json.loads((tmp_path / "out" / "manifest.json").read_text(encoding="utf-8"))
+    for name, file in (("drafts", "inquire_drafts.jsonl"), ("seeds", SEED_FILE.name), ("scenarios", "scenarios.json"),
+                       ("overrides", "seed_overrides.json"), ("labels", "seed_labels.json")):
+        assert m["inputs"][name] == {"file": file, "sha256": _sha256(inputs / file)}
+    for name in ("train", "validation", "test"):
+        assert m["outputs"][f"{name}.jsonl"] == _sha256(tmp_path / "out" / f"{name}.jsonl")
+    assert m["split_seeds"] == {"test": 20261008, "validation": 20261008}
+    assert m["scenarios"]["test"] == FROZEN_TEST
+    assert m["validation_rule"]["scenarios"] == 5
+    assert m["validation_rule"]["row_share"] == round(len(splits["validation"]) / (29 + 100), 3)
+    for name, rows in splits.items():
+        counts = m["counts"][name]
+        assert counts["rows"] == len(rows)
+        assert counts["scenarios"] == len({r["scenario_id"] for r in rows})
+        assert sum(counts["reply_type"].values()) == sum(counts["risk_category"].values()) == len(rows)
+    assert m["counts"]["train"]["source"]["seed"] == 29
+    assert "seed" not in m["counts"]["validation"]["source"]
+    for name in ("train", "validation"):
+        n = len(splits[name])
+        assert m["checks"][name] == {"rows": n, "format_ok": n, "emotion_ok": n, "pass_rate": 1.0}
+        adults = sum(bool(ft.TRUSTED_ADULT.search(r["completion"][0]["content"])) for r in splits[name])
+        assert m["trusted_adult_share"][name] == round(adults / n, 3)
+    assert m["trusted_adult_share"]["test"] is None
+    assert m["seed_labels"]["labelled_by"] == json.loads(LABELS_FILE.read_text(encoding="utf-8"))["labelled_by"]
+    assert [o["example_id"] for o in m["seed_overrides"]] == ["INQ001", "INQ005", "INQ022"]
+    assert m["known_gaps"]["test_missing_risk_categories"] == ["cyberbullying", "self_harm_language"]
+    assert m["rejected"] == {"count": 0, "example_ids": []}

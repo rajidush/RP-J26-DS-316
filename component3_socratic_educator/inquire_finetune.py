@@ -7,14 +7,20 @@ pilot for Component 3. Plain JSON/JSONL in and out.
     review   step through the drafted rows in the terminal: choose draft A or B,
              rewrite, reject or skip; every decision is saved to the drafts file
              straight away, and a re-run resumes at the first pending row
+    build    reviewed rows + INQUIRE seed examples (with recorded overrides and
+             labels) -> train / validation / test JSONL grouped by scenario,
+             plus a manifest; refuses pending rows and failing completions
 
 format_check() is the shared format / stated-emotion contract (ADR 0003).
 Nothing here touches generate(), the FSM controller or the controller grammar.
 
 Usage:
     python inquire_finetune.py review [--drafts <file>] [--split all|train_or_val|test]
+    python inquire_finetune.py build [--drafts <file>] [--seeds <file>] [--scenarios <file>]
+                                     [--overrides <file>] [--labels <file>] [--out <dir>]
 """
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -22,14 +28,18 @@ import re
 import sys
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
-from draft_inquire_dataset import load_jsonl, parse_inquire_prompt
+from draft_inquire_dataset import REPLY_TYPES, RISK_CATEGORIES, load_jsonl, parse_inquire_prompt
 from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS
 
 HERE = Path(__file__).resolve().parent
-DRAFTS_FILE = HERE / "evidence" / "inquire_drafts_2026-10-08" / "inquire_drafts.jsonl"
+DRAFTS_DIR = HERE / "evidence" / "inquire_drafts_2026-10-08"
+DRAFTS_FILE = DRAFTS_DIR / "inquire_drafts.jsonl"
+SCENARIOS_FILE = DRAFTS_DIR / "scenarios.json"
+SEED_FILE = HERE / "data" / "educator_seed.jsonl"
+SEED_INPUTS_DIR = HERE / "evidence" / "inquire_seed_inputs"
 
 # The controller grammar's hard backstop, shared rather than copied (ADR 0003).
 FORBIDDEN_SUBSTRINGS = _FORBIDDEN_SUBSTRINGS
@@ -153,6 +163,10 @@ def write_atomic(path, text):
 
 def child_reply(row):
     return parse_inquire_prompt(row["prompt"][0]["content"])["child"]
+
+
+def completion_text(row):
+    return row["completion"][0]["content"]
 
 
 # ---------------------------------------------------------------- review
@@ -318,9 +332,202 @@ def cmd_review(args):
     print(review_progress(rows))
 
 
+# ---------------------------------------------------------------- build
+# Seed reply types add "explanation" (the child describes what happened or why); drafted rows use the five.
+SEED_REPLY_TYPES = REPLY_TYPES + ("explanation",)
+# Validation mirrors test (decision 4, ticket 03): only new drafted scenarios, one per risk
+# category, never a category's only scenario; 5 x 5 rows is about 20% of training rows.
+VALIDATION_SCENARIOS = 5
+VALIDATION_SEED = 20261008
+# Seen while iterating prompts or probing the inference baseline: never test evidence.
+DEVELOPMENT_EXAMPLES = ("INQ001", "INQ026", "INQ027", "INQ028")
+SPLITS = ("train", "validation", "test")
+
+
+def _refuse(problem, details):
+    sys.exit(f"build refused: {problem}\n" + "\n".join(f"  {d}" for d in details))
+
+
+def _sha256(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _load_json(path):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _example(row, completion, source):
+    """A conversational prompt/completion record (completion None for test: prompt only)."""
+    out = {"example_id": row["example_id"], "scenario_id": row["scenario_id"], "reply_type": row["reply_type"],
+           "risk_category": row["risk_category"], "source": source,
+           "prompt": [{"role": "user", "content": row["prompt"][0]["content"]}]}
+    if completion is not None:
+        out["completion"] = [{"role": "assistant", "content": completion}]
+    return out
+
+
+def _seed_examples(seed_rows, overrides, labels):
+    """INQUIRE seed rows with their labels and overrides applied; the seed rows themselves are not modified."""
+    inquire = [r for r in seed_rows if r["example_id"].startswith("INQ")]
+    by_id = {r["example_id"]: r for r in inquire}
+    reply_types, risk = labels.get("reply_types", {}), labels.get("risk_categories", {})
+    problems = [f"{r['example_id']}: no reply type label" for r in inquire if r["example_id"] not in reply_types]
+    problems += [f"{s}: no risk category label" for s in sorted({r["scenario_id"] for r in inquire}) if s not in risk]
+    problems += [f"{k}: unknown reply type label {v!r}" for k, v in reply_types.items() if v not in SEED_REPLY_TYPES]
+    problems += [f"{k}: unknown risk category label {v!r}" for k, v in risk.items() if v not in RISK_CATEGORIES]
+    if problems:
+        _refuse("seed labels are missing or invalid", problems)
+
+    completions = {eid: completion_text(r) for eid, r in by_id.items()}
+    for o in overrides:
+        eid = o["example_id"]
+        if eid not in by_id:
+            problems.append(f"{eid}: override for an example that is not an INQUIRE seed")
+        elif o["original"] != completions[eid]:
+            problems.append(f"{eid}: stale override, its original no longer matches the seed completion")
+        else:
+            completions[eid] = o["completion"]
+    if problems:
+        _refuse("seed overrides do not apply", problems)
+
+    return [_example({**r, "reply_type": reply_types[r["example_id"]], "risk_category": risk[r["scenario_id"]]},
+                     completions[r["example_id"]], "seed") for r in inquire]
+
+
+def _check_problems(examples):
+    problems = []
+    for ex in examples:
+        if "completion" not in ex:
+            problems.append(f"{ex['example_id']}: no completion")
+            continue
+        failures = format_check(completion_text(ex), child_reply(ex)).failures()
+        if failures:
+            problems.append(f"{ex['example_id']}: {', '.join(failures)}")
+    return problems
+
+
+def _counts(rows):
+    def tally(key):
+        return dict(sorted(Counter(r[key] for r in rows).items()))
+    return {"rows": len(rows), "scenarios": len({r["scenario_id"] for r in rows}), "reply_type": tally("reply_type"),
+            "risk_category": tally("risk_category"), "source": tally("source")}
+
+
+def _check_counts(rows):
+    results = [format_check(completion_text(r), child_reply(r)) for r in rows]
+    passed = sum(r.ok for r in results)
+    return {"rows": len(rows), "format_ok": sum(r.format_ok for r in results),
+            "emotion_ok": sum(r.emotion_ok for r in results),
+            "pass_rate": round(passed / len(rows), 3) if rows else None}
+
+
+def _trusted_adult_share(rows):
+    if not rows or "completion" not in rows[0]:
+        return None
+    return round(sum(bool(TRUSTED_ADULT.search(completion_text(r))) for r in rows) / len(rows), 3)
+
+
+def draw_validation(new_scenarios, k=VALIDATION_SCENARIOS, seed=VALIDATION_SEED):
+    """Stratified draw: k categories with at least 2 new scenarios, then one scenario from each."""
+    by_category = {}
+    for s in sorted(new_scenarios, key=lambda s: s["scenario_id"]):
+        by_category.setdefault(s["risk_category"], []).append(s["scenario_id"])
+    rng = random.Random(seed)
+    eligible = sorted(c for c, ids in by_category.items() if len(ids) >= 2)
+    return sorted(rng.choice(by_category[c]) for c in sorted(rng.sample(eligible, k)))
+
+
+def cmd_build(args):
+    inputs = {"drafts": args.drafts, "seeds": args.seeds, "scenarios": args.scenarios,
+              "overrides": args.overrides, "labels": args.labels}
+    drafts, seed_rows = load_jsonl(args.drafts), load_jsonl(args.seeds)
+    scenarios, overrides, labels = _load_json(args.scenarios), _load_json(args.overrides), _load_json(args.labels)
+    test_ids = list(scenarios["test_scenario_ids"])
+
+    pending = [r["example_id"] for r in drafts if r["review"]["status"] == "pending"]
+    if pending:
+        _refuse(f"{len(pending)} drafted rows are still pending review", [", ".join(pending)])
+    misplaced = [f"{r['example_id']}: split {r['split']!r} but scenario {r['scenario_id']}"
+                 f"{' is' if r['scenario_id'] in test_ids else ' is not'} a frozen test scenario"
+                 for r in drafts if (r["split"] == "test") != (r["scenario_id"] in test_ids)]
+    if misplaced:
+        _refuse("drafted rows disagree with the frozen test scenarios", misplaced)
+
+    seeds = _seed_examples(seed_rows, overrides["overrides"], labels)
+    seed_scenarios = sorted({r["scenario_id"] for r in seeds})
+    leaked = sorted(set(seed_scenarios) & set(test_ids))
+    if leaked:
+        _refuse("seed scenarios are in the frozen test set", leaked)
+
+    kept = [r for r in drafts if r["review"]["status"] != "rejected"]
+    rejected = sorted(r["example_id"] for r in drafts if r["review"]["status"] == "rejected")
+    reviewed = [_example(r, r["completion"], "reviewed") for r in kept if r["split"] == "train_or_val"]
+    test = [_example(r, None, "reviewed") for r in kept if r["split"] == "test"]
+
+    problems = _check_problems(seeds + reviewed)
+    if problems:
+        _refuse("training/validation completions fail the format or stated-emotion check", problems)
+
+    # Drawn over the scenarios file, not the kept rows, so a rejection never moves another
+    # scenario between train and validation. Seed scenarios always train.
+    new_scenarios = [s for s in scenarios["scenarios"] if s["scenario_id"] not in test_ids]
+    val_ids = draw_validation(new_scenarios)
+    train_ids = sorted(set(seed_scenarios) | {s["scenario_id"] for s in new_scenarios} - set(val_ids))
+    empty = [s for s in val_ids if not any(r["scenario_id"] == s for r in reviewed)]
+    if empty:
+        _refuse("validation scenarios have no kept rows (all rejected)", empty)
+
+    def ordered(rows):
+        return sorted(rows, key=lambda r: r["example_id"])
+    splits = {"train": ordered(r for r in seeds + reviewed if r["scenario_id"] not in val_ids),
+              "validation": ordered(r for r in seeds + reviewed if r["scenario_id"] in val_ids),
+              "test": ordered(test)}
+
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, rows in splits.items():
+        write_atomic(out / f"{name}.jsonl", dump_jsonl(rows))
+
+    covered = {s["risk_category"] for s in scenarios["scenarios"] if s["scenario_id"] in test_ids}
+    manifest = {
+        "dataset": "inquire-finetune",
+        "inputs": {k: {"file": Path(p).name, "sha256": _sha256(p)} for k, p in inputs.items()},
+        "outputs": {f"{name}.jsonl": _sha256(out / f"{name}.jsonl") for name in SPLITS},
+        "split_seeds": {"test": scenarios["test_split_seed"], "validation": VALIDATION_SEED},
+        "validation_rule": {
+            "rule": "new drafted scenarios only; seeded draw of categories with >= 2 new scenarios, "
+                    "one scenario per category; seed scenarios always train",
+            "scenarios": VALIDATION_SCENARIOS,
+            "row_share": round(len(splits["validation"]) / (len(splits["train"]) + len(splits["validation"])), 3),
+        },
+        "scenarios": {"train": train_ids, "validation": val_ids, "test": test_ids},
+        "development_examples": {eid: next(n for n, rows in splits.items()
+                                           if any(r["example_id"] == eid for r in rows))
+                                 for eid in DEVELOPMENT_EXAMPLES},
+        "counts": {name: _counts(rows) for name, rows in splits.items()},
+        "rejected": {"count": len(rejected), "example_ids": rejected},
+        "excluded_seed_rows": dict(sorted(Counter(r["example_id"][:3] for r in seed_rows
+                                                  if not r["example_id"].startswith("INQ")).items())),
+        "checks": {name: _check_counts(splits[name]) for name in ("train", "validation")},
+        "trusted_adult_share": {name: _trusted_adult_share(rows) for name, rows in splits.items()},
+        "seed_overrides": [{k: o[k] for k in ("example_id", "reason", "proposed_by")} for o in overrides["overrides"]],
+        "seed_labels": {"labelled_by": labels.get("labelled_by", "not recorded")},
+        "known_gaps": {"test_missing_risk_categories": [c for c in RISK_CATEGORIES if c not in covered]},
+    }
+    write_atomic(out / "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+
+    print(f"wrote {out}")
+    for name in SPLITS:
+        c = manifest["counts"][name]
+        print(f"  {name}.jsonl: {c['rows']} rows, {c['scenarios']} scenarios")
+    print(f"  rejected: {len(rejected)}  excluded non-INQUIRE seed rows: {sum(manifest['excluded_seed_rows'].values())}")
+    print(f"  trusted-adult share: {manifest['trusted_adult_share']}")
+    print(f"  test set has no scenario for: {', '.join(manifest['known_gaps']['test_missing_risk_categories'])}")
+
+
 # ---------------------------------------------------------------- cli
 def build_parser():
-    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot: review drafted rows.")
+    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot: review drafted rows, build the dataset.")
     sub = ap.add_subparsers(dest="command", required=True)
 
     review = sub.add_parser("review", help="review drafted INQUIRE rows in the terminal")
@@ -328,6 +535,15 @@ def build_parser():
     review.add_argument("--split", choices=["all", "train_or_val", "test"], default="all",
                         help="default: training/validation rows first, then the prompt check on test rows")
     review.set_defaults(func=cmd_review)
+
+    build = sub.add_parser("build", help="build grouped train/validation/test JSONL and a manifest")
+    build.add_argument("--drafts", default=str(DRAFTS_FILE))
+    build.add_argument("--seeds", default=str(SEED_FILE))
+    build.add_argument("--scenarios", default=str(SCENARIOS_FILE), help="holds the frozen test scenario IDs")
+    build.add_argument("--overrides", default=str(SEED_INPUTS_DIR / "seed_overrides.json"))
+    build.add_argument("--labels", default=str(SEED_INPUTS_DIR / "seed_labels.json"))
+    build.add_argument("--out", default=str(HERE / "evidence" / f"inquire_dataset_{date.today().isoformat()}"))
+    build.set_defaults(func=cmd_build)
     return ap
 
 

@@ -1,0 +1,234 @@
+{
+  "dataset": "inquire-finetune",
+  "inputs": {
+    "drafts": {
+      "file": "inquire_drafts.jsonl",
+      "sha256": "ce407184592cbdc45076db19c1710c923be242bcdb98afbf2f814435f1d45819"
+    },
+    "seeds": {
+      "file": "educator_seed.jsonl",
+      "sha256": "6121763ddf80d0afbcfbf8ac1557130a8ddf675903ff1028c485c75e61a4a387"
+    },
+    "scenarios": {
+      "file": "scenarios.json",
+      "sha256": "4d63ebe6c0b85b8f6c2e6f462614543fe4ae78c2252ec5697a84e361efa5d7fb"
+    },
+    "overrides": {
+      "file": "seed_overrides.json",
+      "sha256": "5770c9f22e768795570b4561e251b4c6e4858c9389a679e194115397010543a5"
+    },
+    "labels": {
+      "file": "seed_labels.json",
+      "sha256": "a6821beb69d3281dc80c97620888e416b8eeaac321d79e88cb26cbef105b883e"
+    }
+  },
+  "outputs": {
+    "train.jsonl": "ae942a95937c9212ff71c8535918720a1cb9bcbbd9c50f2684431ca5f3f35c7b",
+    "validation.jsonl": "1708852e06ac4ba6d1da4c0f604c7f2b451b3caf3d095f45216ce5b4a6d07427",
+    "test.jsonl": "3c9e0e9a5b6506d69c41fd845440b09691b730aa2630c340d915998c36ed5d65"
+  },
+  "split_seeds": {
+    "test": 20261008,
+    "validation": 20261008
+  },
+  "validation_rule": {
+    "rule": "new drafted scenarios only; seeded draw of categories with >= 2 new scenarios, one scenario per category; seed scenarios always train",
+    "scenarios": 5,
+    "row_share": 0.194
+  },
+  "scenarios": {
+    "train": [
+      "S001",
+      "S002",
+      "S003",
+      "S004",
+      "S005",
+      "S006",
+      "S007",
+      "S008",
+      "S009",
+      "S010",
+      "S011",
+      "S012",
+      "S013",
+      "S014",
+      "S015",
+      "S016",
+      "S017",
+      "S018",
+      "S019",
+      "S020",
+      "S021",
+      "S022",
+      "S023",
+      "S024",
+      "S025",
+      "S026",
+      "S030",
+      "S032",
+      "S037",
+      "S038",
+      "S040",
+      "S042",
+      "S043",
+      "S044",
+      "S046",
+      "S047",
+      "S048",
+      "S051",
+      "S053",
+      "S054",
+      "S055"
+    ],
+    "validation": [
+      "S027",
+      "S039",
+      "S045",
+      "S050",
+      "S052"
+    ],
+    "test": [
+      "S028",
+      "S029",
+      "S031",
+      "S033",
+      "S034",
+      "S035",
+      "S036",
+      "S041",
+      "S049",
+      "S056"
+    ]
+  },
+  "development_examples": {
+    "INQ001": "train",
+    "INQ026": "train",
+    "INQ027": "train",
+    "INQ028": "train"
+  },
+  "counts": {
+    "train": {
+      "rows": 104,
+      "scenarios": 41,
+      "reply_type": {
+        "dont_know": 16,
+        "explanation": 17,
+        "off_topic": 16,
+        "own_safer_plan": 15,
+        "refusal": 16,
+        "stated_emotion": 24
+      },
+      "risk_category": {
+        "cyberbullying": 20,
+        "explicit_visual": 7,
+        "grooming_language": 14,
+        "hate_speech": 15,
+        "self_harm_imagery": 10,
+        "self_harm_language": 11,
+        "unknown_flagged": 19,
+        "violence": 8
+      },
+      "source": {
+        "reviewed": 75,
+        "seed": 29
+      }
+    },
+    "validation": {
+      "rows": 25,
+      "scenarios": 5,
+      "reply_type": {
+        "dont_know": 5,
+        "off_topic": 5,
+        "own_safer_plan": 5,
+        "refusal": 5,
+        "stated_emotion": 5
+      },
+      "risk_category": {
+        "cyberbullying": 5,
+        "explicit_visual": 5,
+        "grooming_language": 5,
+        "hate_speech": 5,
+        "self_harm_language": 5
+      },
+      "source": {
+        "reviewed": 25
+      }
+    },
+    "test": {
+      "rows": 50,
+      "scenarios": 10,
+      "reply_type": {
+        "dont_know": 10,
+        "off_topic": 10,
+        "own_safer_plan": 10,
+        "refusal": 10,
+        "stated_emotion": 10
+      },
+      "risk_category": {
+        "explicit_visual": 10,
+        "grooming_language": 5,
+        "hate_speech": 5,
+        "self_harm_imagery": 10,
+        "unknown_flagged": 5,
+        "violence": 15
+      },
+      "source": {
+        "reviewed": 50
+      }
+    }
+  },
+  "rejected": {
+    "count": 0,
+    "example_ids": []
+  },
+  "excluded_seed_rows": {
+    "CON": 2,
+    "EVA": 5,
+    "INT": 5
+  },
+  "checks": {
+    "train": {
+      "rows": 104,
+      "format_ok": 104,
+      "emotion_ok": 104,
+      "pass_rate": 1.0
+    },
+    "validation": {
+      "rows": 25,
+      "format_ok": 25,
+      "emotion_ok": 25,
+      "pass_rate": 1.0
+    }
+  },
+  "trusted_adult_share": {
+    "train": 0.615,
+    "validation": 0.72,
+    "test": null
+  },
+  "seed_overrides": [
+    {
+      "example_id": "INQ001",
+      "reason": "The child said \"annoyed\"; the seed names \"frustration\", which breaks the verbatim stated-emotion rule.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    },
+    {
+      "example_id": "INQ005",
+      "reason": "The child said \"creeped out\" and \"scary\"; the seed names \"shaken up\", which breaks the verbatim stated-emotion rule.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    },
+    {
+      "example_id": "INQ022",
+      "reason": "The child said \"scared\"; the seed names \"frightening\". Rewritten rather than cleared by a looser check, because the comparison scores the adapted model with the same check.",
+      "proposed_by": "claude-opus-5-5; wording agreed by the owner 2026-10-10 (/grill-with-docs)"
+    }
+  ],
+  "seed_labels": {
+    "labelled_by": "Proposed by claude-opus-5-5 on 2026-10-10; checked and corrected by the owner (Rajinda Hettige) on 2026-10-10"
+  },
+  "known_gaps": {
+    "test_missing_risk_categories": [
+      "cyberbullying",
+      "self_harm_language"
+    ]
+  }
+}
