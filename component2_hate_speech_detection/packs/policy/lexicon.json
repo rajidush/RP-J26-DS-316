@@ -1,0 +1,245 @@
+{
+  "pack": "c2-lexicon",
+  "version": "1.0.0",
+  "source": "J26-DS-316 MVP analyst/stage1/lexicon.py (exact rules) + self_harm and grooming families",
+  "phrases": {
+    "high": [
+      "kill yourself",
+      "kill your self",
+      "kill urself",
+      "killurself",
+      "kys",
+      "go die",
+      "you should die",
+      "hang yourself",
+      "rape",
+      "raped",
+      "raping",
+      "rapist",
+      "gas the jews",
+      "gas the lot of you",
+      "nigger",
+      "nigga",
+      "faggot",
+      "retard",
+      "retarded",
+      "tranny",
+      "shemale"
+    ],
+    "mid": [
+      "nobody likes you",
+      "your kind of people",
+      "go back to your country",
+      "go back to where you came from",
+      "hate you",
+      "hate all of you",
+      "hate all of them",
+      "hate you people",
+      "subhuman",
+      "ill find you",
+      "i'll find you",
+      "i will find you"
+    ],
+    "gaming_benign": [
+      "ez",
+      "easy",
+      "noob",
+      "gg",
+      "gg ez",
+      "trash",
+      "bot",
+      "lmao",
+      "ratio"
+    ]
+  },
+  "literal_categories": {
+    "threat": [
+      "kys",
+      "kill yourself",
+      "kill your self",
+      "kill urself",
+      "killurself",
+      "go die",
+      "you should die",
+      "hang yourself"
+    ],
+    "hate_identity": [
+      "nigger",
+      "nigga",
+      "faggot",
+      "tranny",
+      "shemale",
+      "retard",
+      "retarded",
+      "gas the jews",
+      "gas the lot of you"
+    ],
+    "sexual_harassment": [
+      "rape",
+      "raped",
+      "raping",
+      "rapist"
+    ]
+  },
+  "bands": {
+    "high": {
+      "base": 0.88,
+      "step": 0.03,
+      "cap": 0.98
+    },
+    "mid": {
+      "base": 0.52,
+      "step": 0.06,
+      "cap": 0.8
+    },
+    "gaming": 0.18,
+    "neutral": 0.08,
+    "empty": 0.05,
+    "cue": 0.45
+  },
+  "leet": {
+    "0": "o",
+    "1": "i",
+    "3": "e",
+    "4": "a",
+    "5": "s",
+    "7": "t",
+    "@": "a",
+    "$": "s"
+  },
+  "contexts": {
+    "gaming": "\\b(?:match|game|gaming|round|lobby|respawn|spawn|noob|gg|ez|team|teammate|boss|raid|level|server|killstreak|headshot|squad|clutch|scoreboard|rank|loot|xp|queue|map|player|players|minecraft|fortnite|roblox|valorant|overwatch|cod|warzone|apex|smash)\\b",
+    "figurative": "\\b(?:lol|lmao|lmfao|haha+|jk|homework|exam|test|quiz|maths?|essay|monday|traffic|cringe|embarrass(?:ed|ing)?|so\\s+tired|bored)\\b"
+  },
+  "families": [
+    {
+      "id": "threat:violence_intent",
+      "category": "threat",
+      "band": "high",
+      "suppressed_in": [
+        "gaming"
+      ],
+      "patterns": [
+        "\\b(?:i|we)\\s*(?:'m|m|am|re|are)?\\s*(?:gonna|going to|gna|will)\\s+(?:hurt|beat|jump|batter|smash|end|destroy)\\s+(?:you|u|him|her|them)\\b",
+        "\\bme\\s+and\\s+my\\s+(?:friends|mates|boys)\\s+(?:are\\s+)?(?:gonna|going to)\\s+(?:jump|get|hurt|beat)\\s+(?:you|u)\\b",
+        "\\bwait\\s+(?:till|until)\\s+(?:i|we)\\s+(?:see|catch|find)\\s+you\\b"
+      ]
+    },
+    {
+      "id": "threat:intimidation",
+      "category": "threat",
+      "band": "mid",
+      "suppressed_in": [
+        "gaming"
+      ],
+      "patterns": [
+        "\\bwatch\\s+your\\s+back\\b",
+        "\\bi\\s+know\\s+where\\s+you\\s+live\\b",
+        "\\byou'?re\\s+(?:gonna|going to)\\s+(?:regret|pay for)\\s+(?:it|this|that)\\b",
+        "\\bmeet\\s+me\\s+(?:after\\s+school|behind\\s+\\w+)\\b"
+      ]
+    },
+    {
+      "id": "bullying:degradation",
+      "category": "bullying",
+      "band": "mid",
+      "suppressed_in": [],
+      "patterns": [
+        "\\byou'?re\\s+(?:so\\s+|such\\s+a\\s+|a\\s+)?(?:worthless|pathetic|useless|disgusting|waste\\s+of\\s+space|waste\\s+of\\s+air)\\b",
+        "\\byou'?re\\s+so\\s+ugly\\b",
+        "\\bno\\s+wonder\\s+(?:you|nobody)\\b.{0,20}\\b(?:no\\s+friends|likes?\\s+you)\\b",
+        "\\beveryone\\s+(?:hates|laughs\\s+at|makes\\s+fun\\s+of)\\s+you\\b",
+        "\\beveryone\\s+in\\s+\\w+\\s+laughs\\s+at\\s+you\\b"
+      ]
+    },
+    {
+      "id": "bullying:exclusion",
+      "category": "bullying",
+      "band": "mid",
+      "suppressed_in": [],
+      "patterns": [
+        "\\bnobody\\s+(?:likes|wants|needs|cares\\s+about)\\s+you\\b",
+        "\\bno\\s+one\\s+(?:likes|wants|cares\\s+about)\\s+you\\b",
+        "\\b(?:everyone|we|we'?d\\s+all|everybody)\\s+(?:would\\s+)?be\\s+(?:better|happier)\\s*(?:off\\s*)?(?:without\\s+you|if\\s+you\\s+(?:were\\s+)?(?:gone|left|died))\\b",
+        "\\bwhy\\s+(?:do|would)\\s+you\\s+even\\s+(?:bother|try|exist|show\\s+up|come)\\b",
+        "\\bgo\\s+away\\s+nobody\\s+wants\\s+you\\b"
+      ]
+    },
+    {
+      "id": "sexual:coercion",
+      "category": "sexual_harassment",
+      "band": "high",
+      "suppressed_in": [],
+      "patterns": [
+        "\\bsend\\s+(?:me\\s+)?(?:nudes|nude|pics|pictures|photos)\\b",
+        "\\btake\\s+(?:your|ur|yr)\\s+clothes\\s+off\\b",
+        "\\btake\\s+(?:it|them)\\s+off\\s+for\\s+(?:me|the\\s+camera)\\b",
+        "\\bdon'?t\\s+tell\\s+(?:your|ur)\\s+(?:parents|mum|mom|dad|family)\\b"
+      ]
+    },
+    {
+      "id": "identity:dehumanisation",
+      "category": "hate_identity",
+      "band": "high",
+      "suppressed_in": [],
+      "patterns": [
+        "\\b(?:they|them|those\\s+people|their\\s+kind|your\\s+kind|your\\s+sort|their\\s+sort)\\b.{0,40}\\b(?:animals|vermin|rats|roaches|subhuman|filth|scum|parasites?)\\b",
+        "\\b(?:breed|multiply|spread)\\s+like\\s+(?:vermin|rats|animals|flies|roaches)\\b",
+        "\\bshould\\s+be\\s+(?:caged|exterminated|wiped\\s+out|put\\s+down)\\b"
+      ]
+    },
+    {
+      "id": "identity:exclusion",
+      "category": "hate_identity",
+      "band": "mid",
+      "suppressed_in": [],
+      "patterns": [
+        "\\b(?:people\\s+like\\s+(?:you|them)|your\\s+kind|their\\s+kind|your\\s+sort|their\\s+lot)\\s+(?:should\\s*n'?t|should\\s+not)\\s+be\\s+(?:allowed|here|let\\s+in)\\b",
+        "\\bshould\\s*n'?t\\s+be\\s+allowed\\s+in\\s+(?:this|our|the)\\s+country\\b",
+        "\\b(?:their|your)\\s+kind\\s+(?:always|never)\\s+\\w+",
+        "\\bwe'?d\\s+(?:all\\s+)?be\\s+better\\s+off\\s+without\\s+(?:your|their)\\s+(?:sort|kind|lot|people)\\b",
+        "\\btake\\s+our\\s+jobs\\b"
+      ]
+    },
+    {
+      "id": "self_harm:intent",
+      "category": "self_harm",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "First-person intent. Never discounted by framing; urgent in decide().",
+      "patterns": [
+        "\\bi\\s*(?:'?m|am)?\\s*(?:going\\s+to|gonna|want\\s+to|wanna|will|about\\s+to)\\s+(?:kill|hurt|cut)\\s+myself\\b",
+        "\\bi\\s+(?:want|wanna|am\\s+going)\\s+to\\s+end\\s+my\\s+life\\b",
+        "\\bi\\s+(?:don'?t|do\\s+not)\\s+want\\s+to\\s+(?:live|be\\s+alive|be\\s+here)\\s*any\\s*more\\b",
+        "\\bi\\s+wish\\s+i\\s+(?:was|were)\\s+(?:dead|never\\s+born)\\b"
+      ]
+    },
+    {
+      "id": "self_harm:ambiguous",
+      "category": "self_harm",
+      "band": "mid",
+      "suppressed_in": [
+        "gaming",
+        "figurative"
+      ],
+      "note": "Common hyperbole in children's chat, so suppressed in figurative and gaming context.",
+      "patterns": [
+        "\\bi\\s+(?:just\\s+|really\\s+)?(?:want|wanna)\\s+(?:to\\s+)?die\\b",
+        "\\bend\\s+it\\s+all\\b"
+      ]
+    },
+    {
+      "id": "grooming:secrecy",
+      "category": "grooming",
+      "band": "cue",
+      "suppressed_in": [],
+      "note": "A per-message cue only. Guardian treats grooming as a conversation-level pattern, so a cue is recorded as evidence and never alerts alone.",
+      "patterns": [
+        "\\b(?:our|a)\\s+little\\s+secret\\b",
+        "\\bkeep\\s+(?:this|it|us)\\s+(?:between\\s+us|a\\s+secret|secret)\\b",
+        "\\bdon'?t\\s+tell\\s+(?:anyone|anybody|nobody)\\s+(?:about\\s+(?:us|this|me)|we\\s+talk)\\b",
+        "\\bdelete\\s+our\\s+(?:messages|chats?|texts|conversation)\\b"
+      ]
+    }
+  ]
+}
