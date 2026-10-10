@@ -620,6 +620,11 @@ def _mean(values):
     return round(sum(values) / len(values), 3) if values else None
 
 
+def closing_sentence(text):
+    """The last sentence of a response (spec story 14 watch item: one closing question for every reply)."""
+    return re.split(r"(?<=[.!?])\s+", text.strip())[-1]
+
+
 def _arm_summary(records, scored, test_by_id):
     checks = [format_check(r["response"], child_reply(test_by_id[eid])) for eid, r in records.items()]
     failed = Counter(rule for c in checks for rule, ok in c.rules.items() if not ok)
@@ -634,6 +639,9 @@ def _arm_summary(records, scored, test_by_id):
 
     overall = rubric(scored)
     first = next(iter(records.values()))
+    responses = [r["response"] for r in records.values()]
+    adults = sum(bool(TRUSTED_ADULT.search(text)) for text in responses)
+    closing, repeats = Counter(closing_sentence(text) for text in responses).most_common(1)[0]
     return {
         "model_id": first["model_id"],
         "adapter": first.get("adapter"),
@@ -641,10 +649,12 @@ def _arm_summary(records, scored, test_by_id):
         "format_check": {"pass_rate": _mean([c.format_ok for c in checks]), "failed_rules": dict(sorted(failed.items()))},
         "stated_emotion_violations": sum(not c.emotion_ok for c in checks),
         "mean_words": _mean([c.words for c in checks]),
+        "trusted_adult": {"mentions": adults, "share": round(adults / len(responses), 3)},
+        "most_repeated_closing": {"text": closing, "count": repeats},
         "rubric": {"overall": overall["overall"],
                    "per_criterion": {c: overall[c] for c in RUBRIC},
                    "per_reply_type": {t: rubric(rows) for t, rows in sorted(by_type.items())}},
-        "latency_seconds": {"mean": _mean(latencies), "median": statistics.median(latencies) if latencies else None,
+        "latency_seconds": {"mean": _mean(latencies), "median": round(statistics.median(latencies), 3) if latencies else None,
                             "max": max(latencies, default=None),
                             "note": "reported separately; not a behavior measure"},
         "not_measured": {"json_validity": NOT_MEASURED, "controller_grammar_compliance": NOT_MEASURED,
@@ -669,6 +679,10 @@ def _summary_markdown(summary):
                   f"| Rubric overall (behavior) | {_pct(a['rubric']['overall'])} |",
                   *[f"| Rubric: {c} | {_pct(v)} |" for c, v in a["rubric"]["per_criterion"].items()],
                   f"| Mean words | {a['mean_words']} |",
+                  f"| Trusted-adult mentions | {a['trusted_adult']['mentions']} / {a['responses']} "
+                  f"({_pct(a['trusted_adult']['share'])}) |",
+                  f"| Most repeated closing sentence | {a['most_repeated_closing']['count']}× "
+                  f"\"{a['most_repeated_closing']['text']}\" |",
                   f"| Latency mean / median / max (s, separate) | {lat['mean']} / {lat['median']} / {lat['max']} |",
                   *[f"| {k.replace('_', ' ').capitalize()} | {v} |" for k, v in a["not_measured"].items()],
                   "", "| Reply type | n | " + " | ".join(RUBRIC) + " | overall |",

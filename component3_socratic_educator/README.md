@@ -198,6 +198,8 @@ It takes reply types from the test split through the key, never from the editabl
 - stated-emotion violations;
 - rubric means, overall and per reply type;
 - mean word count;
+- trusted-adult mentions (the same `TRUSTED_ADULT` pattern `review` highlights and `build` counts per split);
+- the most repeated closing sentence and its count, as a check for template collapse;
 - latency (reported separately).
 
 JSON validity, controller-grammar compliance and controller correctness are reported as *not measured — adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.

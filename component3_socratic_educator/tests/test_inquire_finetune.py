@@ -769,3 +769,36 @@ def test_unblind_latency_median_of_an_even_count(comparison, tmp_path):
     assert len(test) == 50
     assert s["arms"]["control"]["latency_seconds"] == {"mean": 25.5, "median": 25.5, "max": 50.0,
                                                       "note": "reported separately; not a behavior measure"}
+
+
+def test_unblind_rounds_the_latency_median_like_the_mean(comparison):
+    for arm in ("control", "adapted"):
+        rows = load_jsonl(comparison[arm])
+        for i, r in enumerate(rows):
+            r["latency_seconds"] = 1.394 if i % 2 else 1.4   # float median: 1.3969999999999998
+        _write_jsonl(comparison[arm], rows)
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    s = run_unblind(comparison, sheet, key)
+    assert s["arms"]["control"]["latency_seconds"]["median"] == 1.397
+    assert "1.397 / 1.397 / 1.4 |" in (sheet.parent / "summary.md").read_text(encoding="utf-8")
+
+
+def test_unblind_reports_trusted_adult_share_and_the_most_repeated_closing(comparison):
+    adult = "Okay. Would you rather take a short break or talk to a trusted adult?"
+    rows = load_jsonl(comparison["adapted"])
+    for i, r in enumerate(rows):
+        r["response"] = adult if i < 30 else f"Thanks! Ask your mom, option {i}?" if i < 35 else GOOD
+    _write_jsonl(comparison["adapted"], rows)
+    sheet, key = run_sheet(comparison)
+    _score(sheet, key, lambda arm, rt, c: 1)
+    s = run_unblind(comparison, sheet, key)
+    adapted, control = s["arms"]["adapted"], s["arms"]["control"]
+    assert adapted["trusted_adult"] == {"mentions": 35, "share": 0.7}
+    assert adapted["most_repeated_closing"] == {
+        "text": "Would you rather take a short break or talk to a trusted adult?", "count": 30}
+    assert control["trusted_adult"] == {"mentions": 0, "share": 0.0}
+    assert control["most_repeated_closing"]["count"] == 35          # GOOD closes rows 15-49
+    md = (sheet.parent / "summary.md").read_text(encoding="utf-8")
+    assert "| Trusted-adult mentions | 35 / 50 (70.0%) |" in md
+    assert '| Most repeated closing sentence | 30× "Would you rather take a short break or talk to a trusted adult?" |' in md

@@ -323,7 +323,8 @@ def test_notebook_generates_both_arms_from_one_base_loader_with_shared_settings(
     loader = re.search(r"def load_base\(\):\n((?:    .*\n?)+)", code).group(1)
     assert "tr.BASE_MODEL" in loader and "dtype=torch.float32" in loader
     assert re.search(r"control = load_base\(\)", code)
-    assert re.search(r"PeftModel\.from_pretrained\(load_base\(\), ADAPTER_SOURCE\)", code)
+    # merged, so both arms run the same architecture (README; the 2026-10-10 run merged it)
+    assert re.search(r"PeftModel\.from_pretrained\(load_base\(\), ADAPTER_SOURCE\)\.merge_and_unload\(\)", code)
 
 
 def test_notebook_loads_the_adapter_from_drive_and_writes_outputs_there():
