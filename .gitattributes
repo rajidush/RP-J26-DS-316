@@ -1,0 +1,2 @@
+# C2 policy packs are hash-verified on load: keep their bytes identical on every OS.
+component2_hate_speech_detection/packs/** -text
