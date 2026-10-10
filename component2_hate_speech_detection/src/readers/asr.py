@@ -55,8 +55,10 @@ class AsrEngine:
         if self._model is None:
             from faster_whisper import WhisperModel
 
+            # local_files_only: never contact the model hub at runtime (proposal NFR4).
+            # Measured: without it, loading checked huggingface.co for updates over HTTPS.
             self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8",
-                                       cpu_threads=ASR_THREADS, num_workers=1)
+                                       cpu_threads=ASR_THREADS, num_workers=1, local_files_only=True)
         return self._model
 
     def transcribe(self, audio: np.ndarray) -> Transcript:
