@@ -1,0 +1,93 @@
+{
+  "pack": "c2-decision",
+  "version": "1.0.0",
+  "source": "Guardian PROJECT_PLAN.md §5.2, §6.5; MVP decide.py thresholds",
+  "stage1_theta": 0.35,
+  "persona_theta": {
+    "P1_PROTECT": 0.55,
+    "P2_GUIDE": 0.65,
+    "P3_RESPECT": 0.75
+  },
+  "persona_ages": {
+    "P1_PROTECT": [
+      8,
+      10
+    ],
+    "P2_GUIDE": [
+      11,
+      13
+    ],
+    "P3_RESPECT": [
+      14,
+      15
+    ]
+  },
+  "critical_categories": [
+    "self_harm",
+    "sexual_content",
+    "grooming"
+  ],
+  "critical_theta": 0.5,
+  "urgent_categories": [
+    "self_harm",
+    "grooming"
+  ],
+  "urgent_theta": 0.9,
+  "urgent_threat_category": "threat",
+  "rung_map": {
+    "bullying": {
+      "P1_PROTECT": "L3",
+      "P2_GUIDE": "L3",
+      "P3_RESPECT": "L2"
+    },
+    "hate_identity": {
+      "P1_PROTECT": "L3",
+      "P2_GUIDE": "L3",
+      "P3_RESPECT": "L3"
+    },
+    "threat": {
+      "P1_PROTECT": "L3",
+      "P2_GUIDE": "L3",
+      "P3_RESPECT": "L3"
+    },
+    "self_harm": {
+      "P1_PROTECT": "L4",
+      "P2_GUIDE": "L4",
+      "P3_RESPECT": "L4"
+    },
+    "sexual_harassment": {
+      "P1_PROTECT": "L4",
+      "P2_GUIDE": "L3",
+      "P3_RESPECT": "L3"
+    },
+    "sexual_content": {
+      "P1_PROTECT": "L4",
+      "P2_GUIDE": "L4",
+      "P3_RESPECT": "L4"
+    },
+    "grooming": {
+      "P1_PROTECT": "L3",
+      "P2_GUIDE": "L3",
+      "P3_RESPECT": "L3"
+    },
+    "profanity": {
+      "P1_PROTECT": "L1",
+      "P2_GUIDE": "L1",
+      "P3_RESPECT": "L1"
+    }
+  },
+  "max_rung": {
+    "P1_PROTECT": "L5",
+    "P2_GUIDE": "L5",
+    "P3_RESPECT": "L4"
+  },
+  "abstain_rung": "L1",
+  "corroboration": {
+    "solo_trust": 0.9,
+    "floor": 0.5,
+    "solo_damp": 0.7
+  },
+  "gaming_model_cap": 0.3,
+  "lexicon_decides_alone": 0.88,
+  "model_category_min": 0.55
+}

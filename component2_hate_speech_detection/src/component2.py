@@ -1,15 +1,22 @@
 """
 Component 2 (Hate-Speech Detection) -- owned by IT23209152.
 
-Step 1: validate every outbound payload against the shared JSON schema.
-Step 2: auditable keyword layer can classify live text into a schema trigger.
+Public entry points. The engine behind them is `src/engine/` (lexicon, two
+corroborating heads, framing guard, fusion, age-aware decision), shaped as the
+Guardian C2 reference engine.
 
-Mock path (no text) keeps the end-to-end demo working. Live path returns
-None when the keyword screen finds nothing — do not wake C3 on clean chat.
+    analyze_text()   -> team-schema trigger dict for C3, or None (stable API)
+    analyze()        -> full Verdict (rung, evidence, explanation) for the app and C4
+
+Mock path (no text) keeps the end-to-end demo working. The live path returns
+None when nothing reaches an alerting rung, so clean chat never wakes C3.
+Every outbound payload is validated against the shared JSON schema.
 """
 from __future__ import annotations
 
 import json
+import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,7 +24,9 @@ from typing import Optional
 
 import jsonschema
 
-from component2_hate_speech_detection.src.keywords import screen_keywords
+from component2_hate_speech_detection.src.engine.analyzer import Analyzer
+from component2_hate_speech_detection.src.engine.text_scorer import TextScorer
+from component2_hate_speech_detection.src.engine.verdict import Verdict
 
 MOCK_INPUTS = Path(__file__).resolve().parents[1] / "mock_inputs"
 SCHEMA_PATH = (
@@ -26,6 +35,26 @@ SCHEMA_PATH = (
     / "interface-contracts"
     / "comp2_to_comp3.schema.json"
 )
+
+_analyzer: Optional[Analyzer] = None
+_analyzer_lock = threading.Lock()
+
+
+def get_analyzer() -> Analyzer:
+    """Shared engine. Heads load on first use; C2_USE_HEADS=0 runs the lexicon only."""
+    global _analyzer
+    with _analyzer_lock:
+        if _analyzer is None:
+            use_heads = os.environ.get("C2_USE_HEADS", "1") != "0"
+            _analyzer = Analyzer(scorer=TextScorer(use_heads=use_heads))
+        return _analyzer
+
+
+def set_analyzer(analyzer: Optional[Analyzer]) -> None:
+    """Swap the shared engine (tests, ablations, a pre-warmed app instance)."""
+    global _analyzer
+    with _analyzer_lock:
+        _analyzer = analyzer
 
 
 def _load_schema() -> dict:
@@ -38,60 +67,35 @@ def _validate(payload: dict) -> dict:
     return payload
 
 
-def _new_session_fields() -> dict:
-    return {
-        "session_id": str(uuid.uuid4()),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
-
 def _payload_from_mock(mock_file: str) -> dict:
     with open(MOCK_INPUTS / mock_file) as f:
         payload = json.load(f)
-    payload.update(_new_session_fields())
+    payload["session_id"] = str(uuid.uuid4())
+    payload["timestamp"] = datetime.now(timezone.utc).isoformat()
     return _validate(payload)
 
 
-def _payload_from_keywords(
-    text: str,
-    *,
-    content_type: str,
-    platform: str,
-) -> Optional[dict]:
-    result = screen_keywords(text)
-    if not result.matched:
-        return None
-
-    payload = {
-        **_new_session_fields(),
-        "source_component": "component2_hate_speech_detection",
-        "content_type": content_type,
-        "risk_category": result.risk_category,
-        "confidence_score": result.confidence_score,
-        "context_metadata": {
-            "platform": platform,
-            "language_detected": "en",
-            # Family IDs only — never the raw flagged text (privacy + contract).
-            "matched_families": list(result.matched_families),
-            "screen_stage": "keyword_layer",
-        },
-    }
-    return _validate(payload)
+def analyze(text: str, *, age: int = 10, source: str = "typed") -> Verdict:
+    """Full decision record: rung, urgency, evidence, explanation, latency."""
+    return get_analyzer().analyze_text(text, age, source=source)
 
 
 def analyze_text(
     text: str | None = None,
     mock_file: str = "sample_analysis.json",
     *,
+    age: int = 10,
     content_type: str = "text_message",
     platform: str = "unknown",
 ) -> Optional[dict]:
     """
-    Produce a schema-valid TriggerPayload, or None if live text is clean.
+    Produce a schema-valid TriggerPayload for C3, or None if C3 should not wake.
 
     - text is None  -> mock fixture (integration / demo)
-    - text provided -> keyword screen; None means no C2 trigger
+    - text provided -> full C2 engine for a child of `age`
     """
     if text is None:
         return _payload_from_mock(mock_file)
-    return _payload_from_keywords(text, content_type=content_type, platform=platform)
+    source = "audio" if content_type == "voice_transcript" else "typed"
+    payload = analyze(text, age=age, source=source).to_trigger_payload(platform=platform)
+    return _validate(payload) if payload is not None else None

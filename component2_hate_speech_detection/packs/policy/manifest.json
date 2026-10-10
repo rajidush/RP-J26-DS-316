@@ -1,0 +1,11 @@
+{
+  "pack": "c2-policy",
+  "version": "1.0.0",
+  "min_engine": "1.0.0",
+  "created": "2026-10-10T14:00:36Z",
+  "files": {
+    "lexicon.json": "sha256:095e858606a77c77081a7bc6e4d714610589afc13a9c449942691bed2d13d535",
+    "framing.json": "sha256:ede4eead93cbbd17b8a44439a7e0a3a232dfa37b5d39e7c7839b9a8c68663add",
+    "decision.json": "sha256:215d53dc7923f86472350d01e3e571bc7fc2bb8dc14001949fbb931da9639f1b"
+  }
+}

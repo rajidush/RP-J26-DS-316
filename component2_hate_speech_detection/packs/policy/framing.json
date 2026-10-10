@@ -1,0 +1,33 @@
+{
+  "pack": "c2-framing",
+  "version": "1.0.0",
+  "source": "J26-DS-316 MVP analyst/stage1/framing.py (exact rules); never_discounted widened",
+  "cap": 0.5,
+  "never_discounted": [
+    "sexual_harassment",
+    "grooming",
+    "self_harm"
+  ],
+  "signals": {
+    "attribution": [
+      "\\b(?:someone|somebody|some\\s?one|this\\s+(?:kid|boy|girl|guy)|a\\s+(?:kid|boy|girl|classmate)|he|she|they|them|people|kids|classmates?)\\s+(?:just\\s+|keeps?\\s+|kept\\s+|always\\s+)?(?:said|says|told|telling|wrote|writes|called|calling|posted|sent|sends|typed|commented)\\b",
+      "\\bcalled\\s+me\\b",
+      "\\bwrote\\s+.{0,30}\\bon\\s+my\\b",
+      "\\bin\\s+the\\s+(?:group\\s+)?chat\\b.{0,40}\\b(?:said|told|wrote)\\b",
+      "\\bgot\\s+(?:called|told)\\b"
+    ],
+    "condemnation": [
+      "\\b(?:never|don'?t|do\\s+not|shouldn'?t|should\\s+not|stop)\\s+(?:say|saying|tell|telling|call|calling|type|post)\\b(?!\\s+(?:your|ur|yr)\\s+(?:parents|mum|mom|dad|family|teacher|anyone|anybody))",
+      "\\bthat'?s\\s+(?:awful|horrible|terrible|wrong|mean|not\\s+ok(?:ay)?|unacceptable|so\\s+rude)\\b",
+      "\\b(?:is|that'?s)\\s+(?:bullying|racist|hate\\s+speech|harassment)\\b",
+      "\\breport(?:ed|ing)?\\s+(?:it|them|him|her|this)\\b"
+    ],
+    "meta": [
+      "\\b(?:article|lesson|assembly|class|homework|essay|project|documentary|news)\\b.{0,30}\\b(?:about|on|discusses?|covers?)\\b",
+      "\\bwe\\s+(?:learned|learnt|talked|were\\s+talking)\\s+about\\b",
+      "\\bis\\s+it\\s+(?:bullying|racist|hate|harassment)\\b",
+      "\\bwhat\\s+(?:do|should)\\s+i\\s+do\\b",
+      "\\bi'?m\\s+(?:scared|worried|upset|frightened)\\b"
+    ]
+  }
+}

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>C2 Analyst</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --panel: #ffffff; --ink: #18202e; --muted: #5d687a; --line: #e2e7ef;
+    --accent: #2684ff; --ok: #1f9d55; --warn: #d97706; --bad: #dc3c3c;
+    --hate_identity: #7c3aed; --bullying: #ea7a12; --threat: #dc3c3c; --self_harm: #0e8f8f;
+    --sexual_harassment: #d6337d; --grooming: #9f1d35; --profanity: #64748b; --none: #94a3b8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f141c; --panel: #171e29; --ink: #e8edf5; --muted: #98a3b5; --line: #263042; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 22px; background: var(--panel);
+           border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 2; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand h1 { font-size: 17px; margin: 0; }
+  .brand small { display: block; color: var(--muted); font-size: 12px; }
+  .spacer { flex: 1; }
+  .pill { padding: 5px 12px; border-radius: 999px; font-weight: 600; font-size: 12.5px; background: #e8f1ff; color: var(--accent); }
+  .pill.protecting { background: #e3f6ec; color: var(--ok); }
+  .pill.stopped { background: #eef1f5; color: var(--muted); }
+  .pill.degraded, .pill.loading { background: #fff3e0; color: var(--warn); }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+           padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  select, textarea { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+  main { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); gap: 18px; padding: 18px 22px; }
+  .cards { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card .k { color: var(--muted); font-size: 12px; }
+  .card .v { font-size: 22px; font-weight: 650; margin-top: 2px; }
+  .card .s { color: var(--muted); font-size: 12px; }
+  .good { color: var(--ok); } .badtext { color: var(--bad); }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  section h2 { font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  section h2 .count { color: var(--muted); font-weight: 400; }
+  .sources { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .sources b { color: var(--ink); font-weight: 600; }
+  #feed { display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 290px); overflow: auto; }
+  .empty { color: var(--muted); padding: 24px 6px; text-align: center; }
+  .det { border: 1px solid var(--line); border-left: 4px solid var(--none); border-radius: 10px; padding: 10px 12px; }
+  .det .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 6px; color: #fff; background: var(--none); }
+  .tag.rung { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .tag.urgent { background: var(--bad); }
+  .meta { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .why { margin: 6px 0 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .chip { font-size: 11.5px; padding: 2px 7px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); }
+  .snippet { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
+  .snippet .text { filter: blur(5px); transition: filter .2s; }
+  .snippet.shown .text { filter: none; }
+  details { margin-top: 6px; font-size: 12px; }
+  pre { margin: 6px 0 0; padding: 8px; background: var(--bg); border-radius: 8px; overflow: auto; max-height: 220px; font-size: 11.5px; }
+  .side { display: flex; flex-direction: column; gap: 18px; }
+  textarea { width: 100%; min-height: 70px; resize: vertical; }
+  .row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  #drop { margin-top: 10px; border: 2px dashed var(--line); border-radius: 10px; padding: 16px; text-align: center; color: var(--muted); cursor: pointer; }
+  #drop.over { border-color: var(--accent); color: var(--accent); }
+  #result .det { margin-top: 10px; }
+  .grid2 { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; }
+  .grid2 span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+  .err { color: var(--bad); margin-top: 8px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M32 4 58 14 54 40 32 60 10 40 6 14Z" fill="#2684ff"/><path d="M20 33 29 42 45 22" stroke="#fff" stroke-width="6" fill="none"/>
+    </svg>
+    <div><h1>C2 Analyst</h1><small>On-device harmful content detection &middot; J26-DS-316 Component 2</small></div>
+  </div>
+  <div class="spacer"></div>
+  <span id="state" class="pill loading">Starting&hellip;</span>
+  <label>Child's age
+    <select id="age"></select>
+  </label>
+  <span id="persona" class="pill"></span>
+  <button id="toggle" class="primary">Pause</button>
+</header>
+
+<main>
+  <div class="cards">
+    <div class="card"><div class="k">CPU (whole machine)</div><div class="v" id="cpu">-</div><div class="s">below-normal priority</div></div>
+    <div class="card"><div class="k">Memory</div><div class="v" id="mem">-</div><div class="s">models + readers</div></div>
+    <div class="card"><div class="k">Screen check</div><div class="v" id="scr">-</div><div class="s" id="scr2">p50 &middot; p95</div></div>
+    <div class="card"><div class="k">Speech &rarr; verdict</div><div class="v" id="asr">-</div><div class="s" id="asr2">per utterance</div></div>
+    <div class="card"><div class="k">Unchanged screens skipped</div><div class="v" id="skip">-</div><div class="s" id="skip2">no OCR, no models</div></div>
+    <div class="card"><div class="k">Network: C2 engine</div><div class="v" id="net">-</div><div class="s" id="net2">connections opened</div></div>
+  </div>
+  <div class="sources" id="sources"></div>
+
+  <section>
+    <h2>Detections <span class="count" id="feedcount"></span></h2>
+    <div id="feed"><div class="empty">Nothing harmful detected yet. Detections from the screen, speech and the try-it box appear here.</div></div>
+  </section>
+
+  <div class="side">
+    <section>
+      <h2>Try it</h2>
+      <textarea id="text" placeholder="Type a message a child might see or send, e.g. &quot;nobody likes you, just leave the group&quot;"></textarea>
+      <div class="row"><button class="primary" id="check">Check text</button><span class="meta" id="checkms"></span></div>
+      <div id="drop">Drop a screenshot (.png/.jpg) or a voice clip (.wav) here, or click to choose
+        <input id="file" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp,.wav" hidden></div>
+      <div id="result"></div>
+    </section>
+    <section>
+      <h2>Pipeline</h2>
+      <div class="grid2" id="pipeline"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const CAT = {hate_identity: "Hate (identity)", bullying: "Bullying", threat: "Threat", self_harm: "Self-harm",
+             sexual_harassment: "Sexual harassment", grooming: "Grooming", profanity: "Strong language", none: "Clear"};
+const RUNG = {L0: "L0 record", L1: "L1 inform parent", L2: "L2 soft blur", L3: "L3 blur + talk (C3)",
+              L4: "L4 block + support", L5: "L5 close app"};
+const SRC = {screen: "🖥 screen", audio: "🔊 speech", typed: "⌨ typed"};
+const PERSONA = {P1_PROTECT: "Protect 8-10", P2_GUIDE: "Guide 11-13", P3_RESPECT: "Respect 14-15"};
+let lastSeq = 0, state = "stopped";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const ms = t => t && t.n ? `${Math.round(t.p50)} ms` : "-";
+
+function card(v) {
+  const color = `var(--${v.top_category in CAT ? v.top_category : "none"})`;
+  // Evidence comes grouped per flagged block, strongest first: show the top block's evidence.
+  const key = e => JSON.stringify([e.box, e.source, e.redacted_snippet]);
+  const blocks = [...new Set(v.evidence.filter(e => e.producer !== "vision").map(key))];
+  const top = v.evidence.filter(e => key(e) === blocks[0]);
+  const rules = [...new Set(top.filter(e => e.rule_id).map(e => e.rule_id))];
+  const heads = top.filter(e => !e.rule_id && e.producer.includes(":"))
+                   .map(e => `${e.producer.split(":").pop()} ${e.score.toFixed(2)}`);
+  const snippet = (top.find(e => e.redacted_snippet) || {}).redacted_snippet;
+  const more = blocks.length > 1 ? `<span class="chip">+${blocks.length - 1} more risky block(s) on screen</span>` : "";
+  return `<div class="det" style="border-left-color:${color}">
+    <div class="top">
+      <span class="tag" style="background:${color}">${esc(CAT[v.top_category] || v.top_category)}</span>
+      <span class="tag rung">${esc(RUNG[v.rung] || v.rung)}</span>
+      ${v.urgent ? '<span class="tag urgent">URGENT: tell a parent</span>' : ""}
+      <span class="meta">${esc(v.clock)} &middot; ${esc(SRC[v.source] || v.source)}${v.app && v.app.exe ? " &middot; " + esc(v.app.exe) : ""} &middot; risk ${v.p.toFixed(2)} vs &theta; ${v.theta.toFixed(2)}</span>
+    </div>
+    <div class="why">${esc(v.explanation)}</div>
+    <div class="chips">${rules.map(r => `<span class="chip">rule: ${esc(r)}</span>`).join("")}${heads.map(h => `<span class="chip">${esc(h)}</span>`).join("")}${v.framing_reason ? `<span class="chip">framing: ${esc(v.framing_reason)}</span>` : ""}${more}<span class="chip">${Math.round(v.latency_ms.total_ms || 0)} ms</span></div>
+    <div class="snippet">Child sees: <em>${esc(v.child_safe_summary)}</em></div>
+    ${snippet ? `<div class="snippet" onclick="this.classList.toggle('shown')" title="Click to reveal">Flagged text (PII-masked, click to reveal): <span class="text">${esc(snippet)}</span></div>` : ""}
+    ${v.trigger_payload ? `<details><summary>Payload sent to C3 (no flagged text)</summary><pre>${esc(JSON.stringify(v.trigger_payload, null, 2))}</pre></details>` : ""}
+  </div>`;
+}
+
+async function refresh() {
+  try {
+    const s = await pywebview.api.status();
+    state = s.state;
+    const label = !s.warm && s.state !== "stopped" ? "Loading models…" : {protecting: "Protecting", stopped: "Paused", degraded: "Degraded"}[s.state];
+    $("state").textContent = label;
+    $("state").className = "pill " + (!s.warm && s.state !== "stopped" ? "loading" : s.state);
+    $("toggle").textContent = s.state === "stopped" ? "Resume" : "Pause";
+    $("persona").textContent = PERSONA[s.persona];
+    $("cpu").textContent = `${s.cpu_pct.toFixed(1)}%`;
+    $("mem").textContent = `${Math.round(s.rss_mb)} MB`;
+    const t = s.timings, c = s.counts;
+    $("scr").textContent = ms(t.screen_check_ms);
+    $("scr2").textContent = t.screen_check_ms.n ? `p95 ${Math.round(t.screen_check_ms.p95)} ms · ${t.screen_check_ms.n} checks` : "p50 · p95";
+    $("asr").textContent = ms(t.audio_verdict_ms);
+    $("asr2").textContent = t.audio_verdict_ms.n ? `p95 ${Math.round(t.audio_verdict_ms.p95)} ms` : (s.speech.in_speech ? "listening to speech…" : "per utterance");
+    $("skip").textContent = c.screen_checks ? `${Math.round(100 * c.unchanged / c.screen_checks)}%` : "-";
+    $("skip2").textContent = `${c.unchanged} of ${c.screen_checks} checks`;
+    $("net").innerHTML = s.network.engine === 0 ? '<span class="good">0 ✓</span>' : `<span class="badtext">${s.network.engine}</span>`;
+    $("net2").textContent = `window engine (WebView2): ${s.network.window}`;
+    $("sources").innerHTML = Object.entries({Screen: s.sources.screen, Audio: s.sources.audio, OCR: s.sources.ocr,
+      Speech: s.sources.asr, "Text models": s.sources.text, "Policy pack": "v" + s.sources.policy})
+      .map(([k, v]) => `<span>${k}: <b>${esc(v)}</b></span>`).join("");
+    const rows = [["Screen checks", c.screen_checks], ["Unchanged (skipped)", c.unchanged], ["Partial re-reads", c.partial_reads],
+      ["Full reads", c.full_reads], ["Utterances heard", c.utterances], ["Transcribed", c.transcribed],
+      ["Music / non-speech dropped", c.silent_after_vad], ["Alerts", c.alerts], ["Repeats suppressed", c.repeats_suppressed],
+      ["Text cache hit rate", `${Math.round(100 * s.cache.hit_rate)}%`], ["Model calls", s.model_calls],
+      ["OCR p50", ms(t.ocr_ms)], ["Whisper p50", ms(t.asr_ms)], ["Paused (locked)", c.paused_locked]];
+    $("pipeline").innerHTML = rows.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join("");
+
+    const fresh = await pywebview.api.feed(lastSeq);
+    if (fresh.length) {
+      if (!lastSeq) $("feed").innerHTML = "";
+      lastSeq = Math.max(...fresh.map(v => v.seq));
+      $("feed").insertAdjacentHTML("afterbegin", fresh.map(card).join(""));
+      $("feedcount").textContent = `(${$("feed").children.length})`;
+    }
+  } catch (e) { console.error(e); }
+}
+
+async function checkText() {
+  const text = $("text").value.trim();
+  if (!text) return;
+  const t0 = performance.now();
+  const v = await pywebview.api.check_text(text);
+  $("checkms").textContent = `${Math.round(performance.now() - t0)} ms round trip`;
+  $("result").innerHTML = card(v);
+}
+
+async function checkFile(file) {
+  $("result").innerHTML = `<div class="meta">Reading ${esc(file.name)}…</div>`;
+  const data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
+  try {
+    const views = await pywebview.api.check_file(file.name, data);
+    $("result").innerHTML = views.length ? views.map(card).join("") : '<div class="meta">No speech or text found.</div>';
+  } catch (e) { $("result").innerHTML = `<div class="err">${esc(e.message || e)}</div>`; }
+}
+
+window.addEventListener("pywebviewready", () => {
+  for (let a = 8; a <= 15; a++) $("age").insertAdjacentHTML("beforeend", `<option ${a === 10 ? "selected" : ""}>${a}</option>`);
+  pywebview.api.status().then(s => { $("age").value = s.age; });
+  $("age").onchange = e => pywebview.api.set_age(+e.target.value).then(refresh);
+  $("toggle").onclick = () => (state === "stopped" ? pywebview.api.start() : pywebview.api.stop()).then(refresh);
+  $("check").onclick = checkText;
+  $("text").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) checkText(); };
+  const drop = $("drop");
+  drop.onclick = () => $("file").click();
+  $("file").onchange = e => e.target.files[0] && checkFile(e.target.files[0]);
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); e.dataTransfer.files[0] && checkFile(e.dataTransfer.files[0]); };
+  refresh();
+  setInterval(refresh, 1000);
+});
+</script>
+</body>
+</html>
