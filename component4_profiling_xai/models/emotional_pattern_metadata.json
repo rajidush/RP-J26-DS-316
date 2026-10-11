@@ -1,0 +1,59 @@
+{
+  "sklearn_version": "1.6.1",
+  "trained_on": "educator_sessions.csv (Component 3)",
+  "n_children": 40,
+  "n_sessions": 754,
+  "model": "KMeans",
+  "params": {
+    "n_clusters": 4,
+    "n_init": 10,
+    "random_state": 42
+  },
+  "features": [
+    "p_calm",
+    "p_defensive",
+    "p_distressed",
+    "p_unclear",
+    "selfreg_rate",
+    "mean_turns"
+  ],
+  "cluster_names": {
+    "0": "Distressed",
+    "1": "Calm / reflective",
+    "2": "Defensive",
+    "3": "Withdrawn / unclear"
+  },
+  "severity_order": {
+    "Calm / reflective": 0,
+    "Withdrawn / unclear": 1,
+    "Defensive": 2,
+    "Distressed": 3
+  },
+  "trend_settings": {
+    "window_days": 14,
+    "min_sessions": 3,
+    "min_valid_windows": 3,
+    "change_threshold": 1
+  },
+  "results": {
+    "silhouette": 0.6428149815444244,
+    "davies_bouldin": 0.5213693812644375,
+    "stability_ari_mean": 1.0,
+    "holdout_ari": 1.0,
+    "dbscan_best": {
+      "eps": 1.2,
+      "min_samples": 3,
+      "noise_children": 4
+    },
+    "trend_status_counts": {
+      "stable": 30,
+      "not enough data": 4,
+      "improving": 4,
+      "worsening": 2
+    },
+    "ablation_shares_only": {
+      "silhouette": 0.7333882955552604,
+      "ari_vs_final": 1.0
+    }
+  }
+}
