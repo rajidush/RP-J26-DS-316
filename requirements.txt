@@ -10,11 +10,16 @@ pytest>=8.0
 sqlalchemy>=2.0
 pydantic>=2.0
 
+# Component 4 UI (ui/): Streamlit app, Plotly charts.
+streamlit>=1.45
+plotly>=5.20
+
 # Component 3, once the real on-device model is wired in:
 # llama-cpp-python>=0.2
 
 # Component 4 (see component4_profiling_xai/requirements.txt). scikit-learn
-# must match the version the behavioral anomaly models were trained with:
+# must match the version both trained models (Function 1 K-Means, Function 2
+# One-Class SVM) were pickled with; the UI refuses to load them otherwise:
 scikit-learn==1.6.1
 joblib>=1.2.0
 numpy>=1.19.5
