@@ -6,6 +6,9 @@ __pycache__/
 venv/
 .venv/
 
+# Local databases (db/ defaults to project.db)
+*.db
+
 # Local model weights - never commit these, too large for git
 *.gguf
 *.bin

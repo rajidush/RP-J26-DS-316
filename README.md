@@ -30,6 +30,31 @@ means here and why no server/container setup is needed.
 pytest -v
 ```
 
+## Shared database (`db/`)
+
+Component outputs are stored through `db/` (SQLAlchemy 2 + Pydantic v2).
+Tables link on `session_id`. Only Component 3 is stored so far; see
+`db/__init__.py` for how to add Components 1 and 2.
+
+```bash
+pip install -r requirements.txt
+
+# Create the tables (default: ./project.db; override with DATABASE_URL,
+# e.g. postgresql+psycopg://user:pass@host/dbname)
+python -c "from db import init_db; init_db()"
+
+# Run the DB tests (they use a temporary SQLite file, never project.db)
+pytest tests -v
+```
+
+```python
+from db import init_db
+from db.comp3 import save_comp3_output, get_escalated_sessions, risk_summary
+
+init_db()
+save_comp3_output(record)   # validated against comp3_to_comp4.schema.json
+```
+
 ## Git identity (Component 2 / Dilnuka)
 
 Always commit as your GitHub-linked identity so contributions show under **Dilnuka**.

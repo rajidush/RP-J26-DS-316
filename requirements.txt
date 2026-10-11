@@ -6,6 +6,10 @@
 jsonschema>=4.20
 pytest>=8.0
 
+# Shared database layer (db/). SQLite by default; set DATABASE_URL to switch.
+sqlalchemy>=2.0
+pydantic>=2.0
+
 # Component 3, once the real on-device model is wired in:
 # llama-cpp-python>=0.2
 
