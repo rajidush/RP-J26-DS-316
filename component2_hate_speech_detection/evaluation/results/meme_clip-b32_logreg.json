@@ -1,0 +1,71 @@
+{
+  "run": "meme_clip-b32_logreg",
+  "date": "2026-10-11",
+  "encoder": "clip-b32",
+  "results": {
+    "image": {
+      "C": 1.0,
+      "val_auroc": 0.7175,
+      "auroc": 0.6408,
+      "accuracy@0.5": 0.566,
+      "accuracy@val_threshold": 0.566,
+      "f1_hateful@0.5": 0.4055,
+      "ece": 0.1325,
+      "brier": 0.2501,
+      "auroc_ci95": [
+        0.5925,
+        0.69
+      ]
+    },
+    "text": {
+      "C": 1.0,
+      "val_auroc": 0.7549,
+      "auroc": 0.6398,
+      "accuracy@0.5": 0.56,
+      "accuracy@val_threshold": 0.56,
+      "f1_hateful@0.5": 0.3452,
+      "ece": 0.1791,
+      "brier": 0.2683,
+      "auroc_ci95": [
+        0.5957,
+        0.6864
+      ]
+    },
+    "concat": {
+      "C": 1.0,
+      "val_auroc": 0.7819,
+      "auroc": 0.6754,
+      "accuracy@0.5": 0.594,
+      "accuracy@val_threshold": 0.594,
+      "f1_hateful@0.5": 0.4408,
+      "ece": 0.1524,
+      "brier": 0.2515,
+      "auroc_ci95": [
+        0.6312,
+        0.7219
+      ]
+    },
+    "align": {
+      "C": 10.0,
+      "val_auroc": 0.6049,
+      "auroc": 0.5715,
+      "accuracy@0.5": 0.514,
+      "accuracy@val_threshold": 0.514,
+      "f1_hateful@0.5": 0.0395,
+      "ece": 0.1497,
+      "brier": 0.2681,
+      "auroc_ci95": [
+        0.5214,
+        0.6211
+      ]
+    }
+  },
+  "references_auroc_x100": {
+    "kiela2020_human_test_seen": 82.65,
+    "hateclipper2022_align_L14_dev_seen": 81.55,
+    "hateclipper2022_cross_L14_dev_seen": 82.62,
+    "hateclipper2022_align_L14_test_seen": 85.8,
+    "rgcl2024_L14_test_seen": 87.0,
+    "mvp_logreg_B32_1200rows": 65.79
+  }
+}
