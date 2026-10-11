@@ -4,6 +4,7 @@
 # split it into its own virtual environment at that point, not before.
 
 jsonschema>=4.20
+rfc3339-validator>=0.1.4   # lets jsonschema check "format": "date-time"
 pytest>=8.0
 
 # Component 3, once the real on-device model is wired in:

@@ -1,4 +1,5 @@
 jsonschema>=4.20
+rfc3339-validator>=0.1.4   # lets jsonschema check "format": "date-time"
 pytest>=8.0
 
 # Uncomment once you wire in the real on-device model (see the TODO in
