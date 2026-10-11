@@ -15,6 +15,18 @@ venv/
 *.safetensors
 models/
 
+# Exception: Component 4's trained models are tiny (~15 KB total) and the UI
+# refuses to show results without them, so these specific files are committed.
+# (Un-ignore the folder, re-ignore its contents, then allow the named files.)
+!component4_profiling_xai/models/
+component4_profiling_xai/models/*
+!component4_profiling_xai/models/emotional_pattern_kmeans.pkl
+!component4_profiling_xai/models/emotional_pattern_scaler.pkl
+!component4_profiling_xai/models/emotional_pattern_metadata.json
+!component4_profiling_xai/models/behavioral_anomaly_ocsvm_variation.pkl
+!component4_profiling_xai/models/behavioral_scaler_variation.pkl
+!component4_profiling_xai/models/behavioral_features_variation.pkl
+
 # OS
 .DS_Store
 Thumbs.db

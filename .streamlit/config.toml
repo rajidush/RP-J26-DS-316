@@ -1,0 +1,20 @@
+# Streamlit settings for the Component 4 UI (ui/app.py). Streamlit reads this
+# file from the directory you launch it in, so run `streamlit run ui/app.py`
+# from the repo root. Extra styling (cards, badges, sidebar) is in ui/theme.py.
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#2F6FDE"
+backgroundColor = "#F5F8FD"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#2B3A5C"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap, sans-serif"
+borderColor = "#E3EAF5"
+baseRadius = "10px"
+
+[theme.sidebar]
+backgroundColor = "#E9F0FB"
+secondaryBackgroundColor = "#FFFFFF"

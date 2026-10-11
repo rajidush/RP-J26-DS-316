@@ -98,7 +98,8 @@ def get_engine() -> Engine:
 
 
 def init_db(url=None):
-    """Create every component table that doesn't exist yet. Safe to re-run."""
+    """Create every component table that doesn't exist yet and add any newer
+    columns to existing ones. Safe to re-run."""
     if url is not None:
         configure(url)
     engine = get_engine()
@@ -107,6 +108,8 @@ def init_db(url=None):
     # from db import comp1  # noqa: F401   <- add when Component 1's output is final
     # from db import comp2  # noqa: F401   <- add when Component 2's output is final
     Base.metadata.create_all(engine)
+    # Add columns introduced after a table was first created (no Alembic yet).
+    comp3.upgrade_schema(engine)
     return engine
 
 
