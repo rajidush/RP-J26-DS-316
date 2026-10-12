@@ -320,8 +320,20 @@ def _run_function1(df, artifact_dir=None):
     f1 = _f1_module()
     sessions = f1.clean_sessions(df[[c for c in F1_COLUMNS if c in df.columns]])
     patterns, trend = f1.run_dashboard_outputs(sessions, status["artifact_dir"])
-    return {"status": status, "patterns": patterns,
+    return {"status": status, "sessions": sessions, "patterns": patterns,
             "features": f1.build_features(sessions).round(3), "trend": trend}
+
+
+def _window_features(sessions, child_id, window_start, window_days):
+    """Features of one child's sessions in the 2-week trend window starting at
+    window_start (ISO date). Windows are counted from the first session's day,
+    as in component4's build_emotion_trend, so these are the features behind
+    that window's pattern."""
+    begin = pd.Timestamp(window_start, tz="UTC")
+    in_window = ((sessions["child_id"].astype(str) == child_id)
+                 & (sessions["timestamp"] >= begin)
+                 & (sessions["timestamp"] < begin + pd.Timedelta(days=window_days)))
+    return _f1_module().build_features(sessions[in_window]).round(3).loc[child_id].to_dict()
 
 
 def emotional_pattern_report(sessions, child_id, artifact_dir=None):
@@ -347,13 +359,15 @@ def emotional_pattern_report(sessions, child_id, artifact_dir=None):
         return {"enough_data": False, "child_id": child_id, "sessions": n_sessions,
                 "min_sessions": MIN_SESSIONS_FOR_PATTERN, "status": status,
                 "overall_pattern": None, "current_pattern": None, "current_since": None,
-                "trend": None, "severity_change": None, "timeline": [], "features": None}
+                "trend": None, "severity_change": None, "timeline": [], "features": None,
+                "window_features": None}
 
     run = _run_function1(sessions, artifact_dir)
     trend = run["trend"][child_id]
     timeline = [{"date": w["window_start"], "pattern": w["pattern"], "sessions": w["sessions"]}
                 for w in trend["windows"] if w["pattern"] in PATTERN_ORDER]
     overall = run["patterns"].loc[child_id, "pattern"]
+    window_days = status["metadata"]["trend_settings"]["window_days"]
     return {
         "enough_data": True,
         "min_sessions": MIN_SESSIONS_FOR_PATTERN,
@@ -367,6 +381,10 @@ def emotional_pattern_report(sessions, child_id, artifact_dir=None):
         "severity_change": trend["severity_change"],
         "timeline": timeline,
         "features": run["features"].loc[child_id].to_dict(),
+        # Features behind current_pattern (the latest window); None when there is
+        # no window with enough sessions and current_pattern is the overall one.
+        "window_features": (_window_features(run["sessions"], child_id, timeline[-1]["date"],
+                                             window_days) if timeline else None),
     }
 
 
@@ -380,10 +398,21 @@ FEATURE_LABELS = {
 }
 
 
-def features_table(features):
-    """Feature dict -> readable table for the "Why this pattern?" section."""
-    return pd.DataFrame({"Feature": [FEATURE_LABELS.get(k, k) for k in features],
-                         "Value": list(features.values())})
+def features_table(columns):
+    """{column header: feature dict} -> readable table, one value column per entry."""
+    names = list(next(iter(columns.values())))
+    return pd.DataFrame({"Feature": [FEATURE_LABELS.get(k, k) for k in names],
+                         **{header: [f[k] for k in names] for header, f in columns.items()}})
+
+
+def pattern_features_table(report):
+    """The "Why this pattern?" table: the latest 2-week window (behind the badge)
+    next to all sessions (behind the overall pattern), each header naming its pattern."""
+    columns = {}
+    if report["window_features"] is not None:
+        columns[f"Latest 2-week window: {report['current_pattern']}"] = report["window_features"]
+    columns[f"All sessions: {report['overall_pattern']}"] = report["features"]
+    return features_table(columns)
 
 
 # --- Function 2: Behavioral Anomaly Detection ----------------------------------------
