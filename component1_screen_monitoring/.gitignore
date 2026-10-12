@@ -9,7 +9,12 @@ __pycache__/
 *.pyo
 
 # Dataset / raw frames (large binary artefacts — store in DVC or S3)
-data/
+data/*
+!data/screens/
+data/screens/*
+!data/screens/README.md
+!data/screens/urls.txt
+!data/screens/*.csv
 
 # Pytest / coverage
 .pytest_cache/

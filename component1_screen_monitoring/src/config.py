@@ -24,5 +24,8 @@ CAPTURE_INTERVAL_S: float = 2.0
 #: Fine-tuned ViT checkpoint (not in git — see the component README).
 MODEL_DIR: Path = COMPONENT_ROOT / "models" / "violence-vit-screen-ft-v1"
 
+#: Screen-style dataset (scraped pages, composites, recordings) — see data/screens/README.md.
+SCREENS_DIR: Path = COMPONENT_ROOT / "data" / "screens"
+
 #: Shared contract every emitted payload is validated against.
 SCHEMA_PATH: Path = REPO_ROOT / "docs" / "interface-contracts" / "comp1_to_comp3.schema.json"

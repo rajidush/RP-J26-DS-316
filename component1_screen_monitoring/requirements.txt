@@ -22,6 +22,10 @@ rfc3339-validator>=0.1.4  # enables jsonschema's "date-time" format check
 # Demo dashboard (src/dashboard.py)
 streamlit>=1.37           # st.fragment(run_every=...) for the live panel
 
+# Screen-style dataset: page screenshots (src/scrape_screenshots.py)
+# After installing, also run once:  playwright install chromium
+playwright>=1.45
+
 # Testing
 pytest>=8.0.0
 pytest-cov>=5.0.0
