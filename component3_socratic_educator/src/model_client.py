@@ -9,7 +9,9 @@ import json
 
 from . import config
 
-LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
+# 127.0.0.1, not "localhost": on Windows "localhost" resolves to ::1 first, LM Studio
+# listens on IPv4 only, and the refused IPv6 connect cost ~2 s per call (13 Oct).
+LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 
 def call_local_model(prompt: str, timeout: float = 30.0, response_format: dict | None = None,
                      max_tokens: int = 60, temperature: float | None = None) -> tuple[str, float]:

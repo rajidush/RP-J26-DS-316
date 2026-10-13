@@ -1,0 +1,141 @@
+{
+  "run_started": "2026-10-13T22:49:45+05:30",
+  "target_seconds": 3.0,
+  "definition": "wait = from the child's last reply (or the session start) to the next line being ready; the child's own reply time is excluded. EVALUATE+CONTRACT is the wait for the closing line, which covers both states. 'INTERCEPT model call (HTTP)' is the whole HTTP request, connect included, as the client sees it.",
+  "sessions": 40,
+  "intercept_sources": {
+    "model": 40,
+    "fallback": 0
+  },
+  "warm_up_intercept": {
+    "seconds": 2.96,
+    "source": "model",
+    "reason": null
+  },
+  "per_state_seconds": {
+    "INTERCEPT": {
+      "n": 40,
+      "min": 2.657,
+      "median": 2.911,
+      "p95": 3.078,
+      "max": 3.123,
+      "over_target": 11
+    },
+    "INTERCEPT model call (HTTP)": {
+      "n": 40,
+      "min": 2.655,
+      "median": 2.91,
+      "p95": 3.077,
+      "max": 3.122,
+      "over_target": 11
+    },
+    "INTERCEPT outside the model call": {
+      "n": 40,
+      "min": 0.001,
+      "median": 0.001,
+      "p95": 0.002,
+      "max": 0.002,
+      "over_target": 0
+    },
+    "INQUIRE": {
+      "n": 88,
+      "min": 0.0,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0,
+      "over_target": 0
+    },
+    "EVALUATE+CONTRACT": {
+      "n": 40,
+      "min": 0.001,
+      "median": 0.001,
+      "p95": 0.003,
+      "max": 0.003,
+      "over_target": 0
+    }
+  },
+  "connect_probe": [
+    {
+      "address": "::1",
+      "seconds": 2.027,
+      "outcome": "failed: ConnectionRefusedError"
+    },
+    {
+      "address": "127.0.0.1",
+      "seconds": 0.023,
+      "outcome": "connected"
+    }
+  ],
+  "settings": {
+    "url": "http://localhost:1234/v1/chat/completions",
+    "model_id": "google/gemma-3-1b",
+    "server": "LM Studio (llama.cpp engine)",
+    "lm_studio_version": "0.4.19 build 2 (last recorded app version in historical-version-info.json, not read from the server)",
+    "hardware": {
+      "os": "Windows-11-10.0.26200-SP0",
+      "cpu": "13th Gen Intel(R) Core(TM) i7-13620H",
+      "ram_gb": 15.7,
+      "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU, 610.62, 6144 MiB",
+      "lm_studio_engines": "LLM ENGINE                                      SELECTED    MODEL FORMAT\nllama.cpp-win-x86_64-avx2@1.38.0                                GGUF    \nllama.cpp-win-x86_64-nvidia-cuda-avx2@1.46.0       âœ“            GGUF    \nllama.cpp-win-x86_64-nvidia-cuda-avx2@1.42.0                    GGUF    \nllama.cpp-win-x86_64-nvidia-cuda-avx2@1.38.0                    GGUF    \nllama.cpp-win-x86_64-vulkan-avx2@1.38.0                         GGUF",
+      "loaded_model": "IDENTIFIER           MODEL                STATUS    SIZE         CONTEXT    PARALLEL    DEVICE    TTL\ngoogle/gemma-3-1b    google/gemma-3-1b    IDLE      720.50 MB    8192       4           Local"
+    },
+    "response_format": "json_schema (strict)",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "opener": {
+          "type": "string",
+          "enum": [
+            "I noticed something on your screen just now.",
+            "Something you just saw might need a closer look."
+          ]
+        },
+        "question": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z ,']{5,98}\\?$",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "opener",
+        "question"
+      ],
+      "additionalProperties": false
+    },
+    "prompt": "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. Something on the child's screen was just stopped. Do not describe, name or hint at what it was, and do not mention alerts, messages or warnings. Return JSON. opener: copy one of the allowed openers exactly. question: one short, gentle, open question (under 15 words) inviting the child to share what they were doing or thinking.",
+    "max_tokens": 100,
+    "temperature": 1.0,
+    "other_sampling": "server defaults (not set)",
+    "sessions_per_category": 5,
+    "child_replies": {
+      "reflective": [
+        "I was just watching videos",
+        "I guess I should close it and tell my mum next time"
+      ],
+      "defensive": [
+        "It wasn't me",
+        "whatever",
+        "no big deal",
+        "It was nothing, my friend sent it"
+      ],
+      "distressed": [
+        "It was really scary",
+        "I feel sick",
+        "so scared",
+        "I can't stop crying about it"
+      ],
+      "withdrawn": [
+        "idk",
+        "nothing",
+        "leave me alone",
+        "I don't want to talk"
+      ]
+    },
+    "inquire": "template lines (no model until after PP1)"
+  },
+  "limitations": [
+    "One laptop, one model load, back-to-back sessions: other machines, a cold start or a busy GPU will differ.",
+    "Child replies are scripted and instant; INQUIRE, EVALUATE and CONTRACT make no model call today, so their numbers will grow when INQUIRE moves to the model after PP1.",
+    "Timed in Python with time.perf_counter around the whole step; the server's own prediction time is not read here."
+  ]
+}

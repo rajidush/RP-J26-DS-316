@@ -32,24 +32,13 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from evidence.run_info import lm_studio_version
 from src import config, intercept_audit
 from src.adversarial import ATTACKS_FILE, UNSEEN_ATTACKS_FILE, adversarial_cases, load_attack_set, run_adversarial_batch
 from src.grammar_decoder import INTERCEPT_PROMPT, INTERCEPT_SCHEMA, UNTRUSTED_CONTEXT_FENCE, GrammarConstrainedGenerator
 
 OUT_DIR = Path(__file__).resolve().parent
 SETS = {"seen": ATTACKS_FILE, "unseen": UNSEEN_ATTACKS_FILE}
-LM_STUDIO_VERSION_FILE = Path.home() / ".lmstudio" / ".internal" / "historical-version-info.json"
-
-
-def _lm_studio_version() -> str:
-    """LM Studio's own record of its last app version; not read from the running server."""
-    try:
-        info = json.loads(LM_STUDIO_VERSION_FILE.read_text(encoding="utf-8"))
-        target = next(t for t in info["targetHistories"] if t["target"] == "lmstudio")
-        return (f"{target['lastRecordedAppVersion']} build {target['lastRecordedAppBuildVersion']} "
-                f"(last recorded app version in {LM_STUDIO_VERSION_FILE.name}, not read from the server)")
-    except (OSError, ValueError, KeyError, StopIteration):
-        return "not recorded"
 
 
 def _sha256(path: Path) -> str:
@@ -111,7 +100,7 @@ def main():
                     "lines can still be wrong."),
         **{k: v for k, v in report.items() if k != "rows"},
         "settings": {"model_id": config.LOCAL_MODEL_ID, "server": "LM Studio (llama.cpp engine)",
-                     "lm_studio_version": _lm_studio_version(), "hardware": "not recorded",
+                     "lm_studio_version": lm_studio_version(), "hardware": "not recorded",
                      "response_format": "json_schema (strict)", "schema": INTERCEPT_SCHEMA,
                      "prompt": INTERCEPT_PROMPT, "untrusted_context_fence": UNTRUSTED_CONTEXT_FENCE,
                      "max_tokens": 100, "temperature": generator.temperature,

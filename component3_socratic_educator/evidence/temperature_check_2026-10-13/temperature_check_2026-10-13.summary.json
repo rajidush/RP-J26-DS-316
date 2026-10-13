@@ -1,0 +1,42 @@
+{
+  "run_started": "2026-10-13T22:54:38+05:30",
+  "calls": [
+    {
+      "call": "production INTERCEPT call",
+      "temperature_sent": 1.0,
+      "engine_used": {
+        "top_k": 40.0,
+        "top_p": 0.95,
+        "min_p": 0.05,
+        "temp": 1.0,
+        "repeat_penalty": 1.1
+      }
+    },
+    {
+      "call": "same request, no temperature sent",
+      "temperature_sent": null,
+      "engine_used": {
+        "top_k": 40.0,
+        "top_p": 0.95,
+        "min_p": 0.05,
+        "temp": 0.8,
+        "repeat_penalty": 1.1
+      }
+    }
+  ],
+  "engine": "llama.cpp-win-x86_64-nvidia-cuda-avx2@1.46.0",
+  "settings": {
+    "url": "http://127.0.0.1:1234/v1/chat/completions",
+    "model_id": "google/gemma-3-1b",
+    "lm_studio_version": "0.4.19 build 2 (last recorded app version in historical-version-info.json, not read from the server)",
+    "config.INTERCEPT_TEMPERATURE": 1.0,
+    "prompt": "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. Something on the child's screen was just stopped. Do not describe, name or hint at what it was, and do not mention alerts, messages or warnings. Return JSON. opener: copy one of the allowed openers exactly. question: one short, gentle, open question (under 15 words) inviting the child to share what they were doing or thinking.",
+    "max_tokens": 100,
+    "response_format": "json_schema (strict)",
+    "log_source": "lms log stream --source runtime --json"
+  },
+  "limitations": [
+    "Reads LM Studio's own debug log, whose wording can change between versions.",
+    "The server default can change with the LM Studio version or a per-model preset; none was set on this machine (no files in ~/.lmstudio/config-presets)."
+  ]
+}

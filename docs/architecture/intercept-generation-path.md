@@ -32,3 +32,5 @@ flowchart TD
 | 104 attacks + 8 no-attack controls, seen + unseen, temperature 1.0 (13 Oct) | `adversarial_intercept_2026-10-13/` | 0/112 post-check violations delivered (by construction); 9 blocked; measurement-only audit flagged 20/112 (seen 4/24, unseen 16/88), owner review pending |
 | End-to-end, online (12 Oct) | `end_to_end_2026-10-12_online/` | 7/8 model lines delivered, 1 blocked live (`invites_description`) |
 | End-to-end, offline (12 Oct) | `end_to_end_2026-10-12_offline/` | 8/8 fallback lines (`model_unreachable`), sessions complete |
+| Per-state latency, 40 sessions, RTX 3050 laptop GPU (13 Oct) | `latency_2026-10-13_before-fix/`, `latency_2026-10-13_after-fix/` | INTERCEPT median 2.91 → 0.67 s, p95 3.08 → 0.73 s, over 3 s 11/40 → 0/40 after addressing the server as `127.0.0.1` (`localhost` tried `::1` first: a 2.03 s refused connect per call); INQUIRE, EVALUATE and CONTRACT ≤ 4 ms |
+| Sampling temperature actually used (13 Oct) | `temperature_check_2026-10-13/` | llama.cpp log: temp 1.0 when sent (production); 0.8 when not sent (server default, used before 12 Oct) |

@@ -1,0 +1,19 @@
+Latency, 40 sessions (5 per category), target 3.0 s, google/gemma-3-1b at temperature 1.0, url http://127.0.0.1:1234/v1/chat/completions
+GPU: NVIDIA GeForce RTX 3050 6GB Laptop GPU, 610.62, 6144 MiB; CPU: 13th Gen Intel(R) Core(TM) i7-13620H; RAM: 15.7 GB
+INTERCEPT sources: {'model': 39, 'fallback': 1}
+Warm-up INTERCEPT (not in the table): 0.69 s (model)
+
+Connect probe (each address the host resolves to, in order):
+  127.0.0.1     0.001 s  connected
+
+  seconds the child waits               n     min  median     p95     max  > 3.0 s
+  INTERCEPT                            40   0.469   0.668   0.734   0.777        0
+  INTERCEPT model call (HTTP)          40   0.468   0.667   0.732   0.777        0
+  INTERCEPT outside the model call     40   0.001   0.001   0.002   0.003        0
+  INQUIRE                              88     0.0     0.0     0.0     0.0        0
+  EVALUATE+CONTRACT                    40   0.001   0.001   0.003   0.004        0
+
+Limitations:
+  - One laptop, one model load, back-to-back sessions: other machines, a cold start or a busy GPU will differ.
+  - Child replies are scripted and instant; INQUIRE, EVALUATE and CONTRACT make no model call today, so their numbers will grow when INQUIRE moves to the model after PP1.
+  - Timed in Python with time.perf_counter around the whole step; the server's own prediction time is not read here.

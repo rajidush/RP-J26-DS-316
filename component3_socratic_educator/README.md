@@ -208,6 +208,19 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 ## Known current limitations (say this openly at PP1, don't hide it)
 
+- Latency (13 Oct, `evidence/latency_2026-10-13_before-fix/`, `_after-fix/`): the
+  bottleneck was the connection, not the model. `localhost` tried IPv6 `::1`
+  first, which LM Studio refuses, costing 2.03 s per call; the client now uses
+  `127.0.0.1`. After the fix the child waits a median 0.67 s (p95 0.73 s, max
+  0.78 s; 40 sessions, 39 model lines and 1 post-check fallback) for the
+  INTERCEPT line, under the 3 s target, and ≤ 4 ms for every other line.
+  Measured on one laptop (RTX 3050 6 GB GPU) with the model already loaded; a
+  cold start, the CPU-only engine or a model-written INQUIRE (after PP1) are
+  not measured.
+- Temperature (13 Oct, `evidence/temperature_check_2026-10-13/`): llama.cpp's
+  log shows it samples INTERCEPT at the 1.0 we send; with none sent, the
+  server default is 0.8, so the runs before 12 Oct were at 0.8.
+
 - Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint
   applied yet**: its output is returned as-is, without `validate()`. Samples in
   `evidence/intercept_samples_2026-10-06/` show 0/16 match the INTERCEPT
