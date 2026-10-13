@@ -85,9 +85,8 @@ with theme.card("pattern-timeline", "Emotion Pattern Change Over Time"):
     # Only explain a pattern that exists.
     if report["enough_data"]:
         with st.expander("Why this pattern?"):
-            st.write("Function 1 groups children by these features, computed over all of the "
-                     "child's sessions:")
-            st.dataframe(services.features_table(report["features"]), hide_index=True,
+            st.write("The badge uses the latest 2-week window. The overall pattern uses all sessions.")
+            st.dataframe(services.pattern_features_table(report), hide_index=True,
                          width="stretch")
 
 with st.expander("Use your own data (CSV with child_id)"):

@@ -273,7 +273,7 @@ def test_too_few_sessions_gives_no_pattern(n, monkeypatch):
     assert report["sessions"] == n
     assert report["min_sessions"] == services.MIN_SESSIONS_FOR_PATTERN == 3
     assert report["current_pattern"] is None and report["overall_pattern"] is None
-    assert report["features"] is None
+    assert report["features"] is None and report["window_features"] is None
     assert report["timeline"] == []
 
 
@@ -304,9 +304,43 @@ def test_report_matches_the_model_directly():
 
 
 def test_features_table_labels():
-    table = services.features_table({"p_calm": 0.5, "mean_turns": 2.0})
+    table = services.features_table({"A": {"p_calm": 0.5, "mean_turns": 2.0},
+                                     "B": {"p_calm": 0.25, "mean_turns": 3.0}})
+    assert table.columns.tolist() == ["Feature", "A", "B"]
     assert table["Feature"].tolist() == ["Share of calm sessions", "Average dialogue turns"]
-    assert table["Value"].tolist() == [0.5, 2.0]
+    assert table["A"].tolist() == [0.5, 2.0]
+    assert table["B"].tolist() == [0.25, 3.0]
+
+
+def _predict_from_features(features):
+    """The trained model's pattern for one feature dict."""
+    model, scaler, meta = services._f1_module().load_artifacts(services.f1_artifact_dir())
+    X = pd.DataFrame([features])[meta["features"]]
+    return meta["cluster_names"][int(model.predict(scaler.transform(X))[0])]
+
+
+@pytest.mark.parametrize("child", ["C001", "C002", "C003", "C004", "C005"])
+def test_latest_window_features_give_the_badge_pattern(child):
+    report = services.emotional_pattern_report(services.demo_sessions(), child)
+    assert _predict_from_features(report["window_features"]) == report["current_pattern"]
+    assert _predict_from_features(report["features"]) == report["overall_pattern"]
+
+
+def test_c004_window_and_overall_features_differ():
+    """C004's badge (latest window) is Defensive while most of its sessions are calm."""
+    report = services.emotional_pattern_report(services.demo_sessions(), "C004")
+    assert report["current_pattern"] == "Defensive"
+    assert report["window_features"]["p_defensive"] > report["features"]["p_defensive"]
+    table = services.pattern_features_table(report)
+    assert table.columns.tolist() == ["Feature", "Latest 2-week window: Defensive",
+                                      f"All sessions: {report['overall_pattern']}"]
+
+
+def test_no_window_column_without_a_window_pattern():
+    report = services.emotional_pattern_report(_child_sessions(3), "K1")
+    report.update(window_features=None, timeline=[])  # e.g. no window has 3 sessions
+    table = services.pattern_features_table(report)
+    assert table.columns.tolist() == ["Feature", "All sessions: Calm / reflective"]
 
 
 @pytest.mark.parametrize("child, current, trend", [
