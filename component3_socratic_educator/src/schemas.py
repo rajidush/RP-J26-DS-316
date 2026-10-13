@@ -106,7 +106,10 @@ def _validate_against_schema(payload: dict, schema_filename: str) -> None:
     schema_path = _CONTRACTS_DIR / schema_filename
     with open(schema_path) as f:
         schema = json.load(f)
-    jsonschema.validate(instance=payload, schema=schema)
+    # Without a format checker jsonschema ignores "format" (e.g. date-time);
+    # checking date-time also needs the rfc3339-validator package.
+    jsonschema.validate(instance=payload, schema=schema,
+                        format_checker=jsonschema.Draft7Validator.FORMAT_CHECKER)
 
 
 def load_mock_trigger(path: str | Path) -> TriggerPayload:

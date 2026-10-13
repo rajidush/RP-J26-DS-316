@@ -1,0 +1,31 @@
+{
+  "model_id": "google/gemma-3-1b",
+  "server": "LM Studio (llama.cpp engine)",
+  "response_format": "json_schema (strict)",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "opener": {
+        "type": "string",
+        "enum": [
+          "I noticed something on your screen just now.",
+          "Something you just saw might need a closer look."
+        ]
+      },
+      "question": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Za-z ,']{5,98}\\?$",
+        "maxLength": 100
+      }
+    },
+    "required": [
+      "opener",
+      "question"
+    ],
+    "additionalProperties": false
+  },
+  "prompt": "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. Something on the child's screen was just stopped. Do not describe, name or hint at what it was, and do not mention alerts, messages or warnings. Return JSON. opener: copy one of the allowed openers exactly. question: one short, gentle, open question (under 15 words) inviting the child to share what they were doing or thinking.",
+  "max_tokens": 100,
+  "temperature": "server default (not set)",
+  "runs_per_category": 2
+}

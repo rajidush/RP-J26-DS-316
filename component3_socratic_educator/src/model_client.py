@@ -1,19 +1,25 @@
 
 # model_client.py -- standalone test that the local SLM responds from code.
-# Not wired into grammar_decoder.py yet -- that's Week 3.
+# Used by grammar_decoder.py for INTERCEPT; `response_format` carries the
+# JSON schema that LM Studio enforces while generating (ADR 0004).
 
 import time
 import urllib.request
 import json
 
+from . import config
+
 LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
 
-def call_local_model(prompt: str, timeout: float = 30.0) -> tuple[str, float]:
+def call_local_model(prompt: str, timeout: float = 30.0, response_format: dict | None = None,
+                     max_tokens: int = 60) -> tuple[str, float]:
     payload = {
-        "model": "gemma-3-1b",  # match the model name shown in LM Studio
+        "model": config.LOCAL_MODEL_ID,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 60,
+        "max_tokens": max_tokens,
     }
+    if response_format is not None:
+        payload["response_format"] = response_format
     req = urllib.request.Request(
         LM_STUDIO_URL,
         data=json.dumps(payload).encode(),
