@@ -15,8 +15,9 @@ run_emotional_pattern() for this device's child.
 Run from the repo root with an interpreter that has pandas and joblib:
     python component3_socratic_educator/evidence/run_end_to_end.py --mode offline
 
-Writes evidence/end_to_end_<date>_<mode>.jsonl (one row per session), a
-.summary.json and a readable .log.txt; never overwrites a recorded run.
+Writes, in the run folder evidence/end_to_end_<date>_<mode>/, a .jsonl (one row
+per session), a .summary.json and a readable .log.txt; never overwrites a
+recorded run.
 """
 import argparse
 import hashlib
@@ -88,7 +89,8 @@ def main():
     args = ap.parse_args()
 
     stamp = datetime.now().strftime("%Y-%m-%d")
-    out = OUT_DIR / f"end_to_end_{stamp}_{args.mode}.jsonl"
+    run_name = f"end_to_end_{stamp}_{args.mode}"
+    out = OUT_DIR / run_name / f"{run_name}.jsonl"           # one folder per run
     outputs = [out, out.with_suffix(".summary.json"), out.with_suffix(".log.txt")]
     if any(o.exists() for o in outputs):   # check all three first, so a rerun cannot leave a partial set
         sys.exit(f"{out.name} (or its .summary.json/.log.txt) is already recorded; nothing was overwritten.")
@@ -130,7 +132,7 @@ def main():
             "lm_studio_version": "not recorded", "hardware": "not recorded",
             "response_format": "json_schema (strict)", "schema": INTERCEPT_SCHEMA, "prompt": INTERCEPT_PROMPT,
             "max_tokens": 100,
-            "temperature": "server default (not set)" if args.mode == "online" else "n/a",
+            "temperature": config.INTERCEPT_TEMPERATURE if args.mode == "online" else "n/a",
             "inquire": "template lines (no model until after PP1)",
             "component4_artifacts": "reproduced on 11 Oct by running Component 4's Function 1 notebook unchanged "
                                     "(models/ is gitignored); checked then against its committed outputs/ "
@@ -168,6 +170,7 @@ def main():
     text.extend(f"  - {item}" for item in summary["limitations"])
     text.append(f"Session seconds (min/median/max): {session_seconds['min']} / {session_seconds['median']} / {session_seconds['max']} (wall-clock, not latency)")
 
+    out.parent.mkdir(exist_ok=True)
     with open(out, "x", encoding="utf-8", newline="\n") as f:   # never overwrite a recorded run
         for log in logs:
             f.write(json.dumps(log, ensure_ascii=False) + "\n")

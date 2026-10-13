@@ -56,7 +56,7 @@ def test_live_model_reaches_intercept_and_session_completes():
 # what it was sent and returns a canned reply, so no LM Studio is needed.
 import json
 
-from component3_socratic_educator.src import grammar_decoder as gd
+from component3_socratic_educator.src import config, grammar_decoder as gd
 
 OPENER = gd.INTERCEPT_OPENERS[0]
 
@@ -82,6 +82,15 @@ def test_intercept_asks_the_model_with_the_json_schema_and_no_category():
     assert call["response_format"]["type"] == "json_schema"
     assert call["response_format"]["json_schema"]["schema"] == gd.INTERCEPT_SCHEMA
     assert "violence" not in call["prompt"].lower()          # Q7: the category is never sent
+
+
+def test_intercept_samples_at_the_fixed_configured_temperature():
+    _, model = _line({"opener": OPENER, "question": "What were you doing just now?"})
+    assert model.calls[0]["temperature"] == config.INTERCEPT_TEMPERATURE
+    model = _fake_model({"opener": OPENER, "question": "What were you doing just now?"})
+    GrammarConstrainedGenerator(model_call=model, temperature=0.2).generate_with_source(
+        "INTERCEPT", RiskCategory.VIOLENCE)
+    assert model.calls[0]["temperature"] == 0.2
 
 
 def test_a_valid_constrained_reply_becomes_the_line():

@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Optional, Protocol
 
+from . import config
 from .schemas import RiskCategory
 from .model_client import call_local_model
 
@@ -145,6 +146,8 @@ class GrammarConstrainedGenerator:
     # The live model call (prompt, **request options) -> (text, seconds).
     # None means src.model_client.call_local_model; tests pass a fake.
     model_call: Optional[Callable[..., tuple[str, float]]] = None
+    # INTERCEPT's sampling temperature; fixed so runs are comparable (plan, Mon 12 Oct).
+    temperature: float = config.INTERCEPT_TEMPERATURE
 
     # Template lines: INQUIRE's only source until after PP1, and INTERCEPT's
     # fallback line whenever the model's line is not used.
@@ -203,9 +206,9 @@ class GrammarConstrainedGenerator:
         try:
             # 100 tokens: the JSON wrapper plus a 48-character opener and a question of
             # up to 100 characters; a cut-off reply would fail as invalid_json.
-            raw, _ = call(_intercept_prompt(upstream_context), max_tokens=100, response_format={
-                "type": "json_schema",
-                "json_schema": {"name": "intercept_line", "strict": True, "schema": INTERCEPT_SCHEMA}})
+            raw, _ = call(_intercept_prompt(upstream_context), max_tokens=100, temperature=self.temperature,
+                          response_format={"type": "json_schema", "json_schema": {
+                              "name": "intercept_line", "strict": True, "schema": INTERCEPT_SCHEMA}})
         except Exception:
             return fallback("model_unreachable")
         try:

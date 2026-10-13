@@ -37,3 +37,11 @@ def test_response_format_is_passed_through_unchanged(monkeypatch):
     fmt = {"type": "json_schema", "json_schema": {"name": "x", "strict": True, "schema": {"type": "object"}}}
     model_client.call_local_model("p", response_format=fmt, timeout=5)
     assert sent["body"]["response_format"] == fmt and sent["timeout"] == 5
+
+
+def test_temperature_is_sent_only_when_set(monkeypatch):
+    sent = _capture(monkeypatch)
+    model_client.call_local_model("p")
+    assert "temperature" not in sent["body"]          # server default
+    model_client.call_local_model("p", temperature=0.5)
+    assert sent["body"]["temperature"] == 0.5

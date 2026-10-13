@@ -6,9 +6,9 @@ Capture INTERCEPT samples from the live model, as evidence for the plan's
 Needs LM Studio running on localhost:1234. Run from component3_socratic_educator/:
     python -m evidence.capture_intercept_samples --runs 2
 
-Writes evidence/intercept_samples_constrained_<date>.jsonl (one row per sample)
-plus a .settings.json, and prints a before/after table. The 6 Oct "before" file
-is only read, never rewritten; both sides are scored with today's grammar and
+Writes, in the run folder evidence/intercept_samples_constrained_<date>/, a
+.jsonl (one row per sample) plus a .settings.json, and prints a before/after
+table. The 6 Oct "before" file is only read, never rewritten; both sides are scored with today's grammar and
 post-check, so they are measured with the same yardstick.
 """
 import argparse
@@ -24,7 +24,7 @@ from src.grammar_decoder import (_ALERT_WORDS, _CATEGORY_WORDS, _FORBIDDEN_SUBST
 from src.schemas import RiskCategory
 
 OUT_DIR = Path(__file__).resolve().parent
-BEFORE = OUT_DIR / "intercept_samples_2026-10-06.jsonl"
+BEFORE = OUT_DIR / "intercept_samples_2026-10-06" / "intercept_samples_2026-10-06.jsonl"
 
 
 def score(text: str, gen: GrammarConstrainedGenerator) -> dict:
@@ -66,13 +66,15 @@ def main():
                          **score(line.text, gen)})
 
     stamp = datetime.now().strftime("%Y-%m-%d")   # local date, as in the RP diary
-    out = OUT_DIR / f"intercept_samples_constrained_{stamp}.jsonl"
+    run_name = f"intercept_samples_constrained_{stamp}"
+    out = OUT_DIR / run_name / f"{run_name}.jsonl"           # one folder per run
+    out.parent.mkdir(exist_ok=True)
     with open(out, "x", encoding="utf-8", newline="\n") as f:   # never overwrite recorded samples
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     settings = {"model_id": config.LOCAL_MODEL_ID, "server": "LM Studio (llama.cpp engine)",
                 "response_format": "json_schema (strict)", "schema": INTERCEPT_SCHEMA, "prompt": INTERCEPT_PROMPT,
-                "max_tokens": 100, "temperature": "server default (not set)", "runs_per_category": args.runs}
+                "max_tokens": 100, "temperature": config.INTERCEPT_TEMPERATURE, "runs_per_category": args.runs}
     out.with_suffix(".settings.json").write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
 
     before = [json.loads(line) for line in BEFORE.read_text(encoding="utf-8").splitlines()]

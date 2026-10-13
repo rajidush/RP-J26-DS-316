@@ -15,7 +15,7 @@ privacy-safe record to Component 4.
 | Function | File | What to demo |
 |---|---|---|
 | Function 1: FSM Controller | `src/fsm_controller.py` | Run a full session and show the state trace in `SessionTranscript` |
-| Function 2: Grammar-Constrained Decoding | `src/grammar_decoder.py` | Run `run_adversarial_batch(...)` and show a 0% violation rate |
+| Function 2: Grammar-Constrained Decoding | `src/grammar_decoder.py` | Run `python -m evidence.run_adversarial_intercept` and show both scores: post-check violations (0% by construction) and the audit rate (`src/intercept_audit.py`) |
 
 ## Function 1: FSM Controller (`src/fsm_controller.py`)
 
@@ -210,7 +210,7 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 - Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint
   applied yet**: its output is returned as-is, without `validate()`. Samples in
-  `evidence/intercept_samples_2026-10-06.jsonl` show 0/16 match the INTERCEPT
+  `evidence/intercept_samples_2026-10-06/` show 0/16 match the INTERCEPT
   grammar (none named the flagged category). Constraining it is the 6 Oct task.
   If LM Studio is unreachable or times out (30 s), INTERCEPT falls back to the
   template pool.
@@ -223,5 +223,10 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   against the profile they were *generated* with, not on real children or
   human-annotated labels. Weakest case: withdrawn children who voice sadness are
   labelled `distressed` (65% agreement for `unclear`).
-- Tested against ~20 adversarial cases for PP1, not yet the proposal's
-  target of 200+.
+- Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
+  3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
+  target of 200+. The measurement-only audit flagged 20 of 112 delivered
+  lines (18%). That is not yet a bound either way: the flags are unreviewed
+  and some are arguable ("...when it stopped?"), and the audit missed lines
+  such as "What did it look like?" and "What are you looking at?"
+  (`evidence/adversarial_intercept_2026-10-13/`, `.review.md`, owner review pending).

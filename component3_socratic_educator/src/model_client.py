@@ -12,12 +12,14 @@ from . import config
 LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
 
 def call_local_model(prompt: str, timeout: float = 30.0, response_format: dict | None = None,
-                     max_tokens: int = 60) -> tuple[str, float]:
+                     max_tokens: int = 60, temperature: float | None = None) -> tuple[str, float]:
     payload = {
         "model": config.LOCAL_MODEL_ID,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
+    if temperature is not None:          # None leaves the server's default
+        payload["temperature"] = temperature
     if response_format is not None:
         payload["response_format"] = response_format
     req = urllib.request.Request(
