@@ -1,0 +1,60 @@
+# Screen-style dataset — ordinary SAFE pages to screenshot (src/scrape_screenshots.py).
+# One URL per line; '#' starts a comment. Only everyday, non-violent pages.
+# robots.txt is checked for every URL at run time; disallowed URLs are skipped and logged.
+# Review every screenshot afterwards: pages marked [review] can show changing
+# thumbnails/headlines — delete any screenshot that contains violent imagery.
+
+# --- Encyclopedia / reference (8) ---
+https://en.wikipedia.org/wiki/Photosynthesis
+https://en.wikipedia.org/wiki/Solar_System
+https://en.wikipedia.org/wiki/Coral_reef
+https://en.wikipedia.org/wiki/Honey_bee
+https://en.wikipedia.org/wiki/Mount_Everest
+https://en.wikipedia.org/wiki/Bicycle
+https://simple.wikipedia.org/wiki/Rainbow
+https://www.britannica.com/science/photosynthesis
+
+# --- Education (7) ---
+https://www.bbc.co.uk/bitesize
+https://www.khanacademy.org/
+https://www.coursera.org/
+https://www.edx.org/
+https://www.duolingo.com/
+https://www.w3schools.com/
+https://developer.mozilla.org/en-US/
+
+# --- Science / tech / weather news sections (6) [review] ---
+https://www.bbc.co.uk/news/science_and_environment
+https://www.bbc.co.uk/weather
+https://www.theverge.com/tech
+https://arstechnica.com/science/
+https://www.nasa.gov/
+https://www.sciencedaily.com/
+
+# --- Shopping (6) ---
+https://books.toscrape.com/
+https://www.ikea.com/gb/en/
+https://www.lego.com/en-gb
+https://www.johnlewis.com/
+https://www.argos.co.uk/
+https://www.etsy.com/
+
+# --- Recipes (5) ---
+https://www.bbcgoodfood.com/
+https://www.allrecipes.com/
+https://www.seriouseats.com/
+https://www.loveandlemons.com/
+https://www.budgetbytes.com/
+
+# --- Government / utilities / docs (5) ---
+https://www.gov.uk/
+https://www.metoffice.gov.uk/
+https://www.timeanddate.com/
+https://docs.python.org/3/
+https://quotes.toscrape.com/
+
+# --- Video sites, home pages only (4) [review] ---
+https://www.ted.com/talks
+https://vimeo.com/
+https://www.youtube.com/
+https://www.dailymotion.com/
