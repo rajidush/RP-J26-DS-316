@@ -69,3 +69,17 @@ def test_trend_output_shape():
         }
         assert "overall_pattern" in child
 
+
+def test_dataset_trends_match_individual_children():
+    data = Path(__file__).resolve().parents[1] / "data" / "educator_sessions.csv"
+    sessions = pd.read_csv(data)
+    batch_patterns, batch_trends = run_dashboard_outputs(sessions)
+
+    assert len(batch_trends) == 40
+    for child, rows in sessions.groupby("child_id"):
+        patterns, trends = run_dashboard_outputs(rows)
+        assert batch_trends[child] == trends[child], child
+        pd.testing.assert_frame_equal(batch_patterns.loc[[child]], patterns)
+        first_day = pd.to_datetime(rows["timestamp"], utc=True).min().date().isoformat()
+        assert batch_trends[child]["windows"][0]["window_start"] == first_day
+

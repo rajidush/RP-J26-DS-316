@@ -1,41 +1,41 @@
 {
   "C001": {
-    "trend": "not enough data",
+    "trend": "improving",
     "worsening": false,
-    "severity_change": null,
+    "severity_change": -1.0,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Defensive"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 1,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-07-27",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
+        "window": 2,
+        "window_start": "2026-08-10",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-24",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 2,
+        "window_start": "2026-09-07",
+        "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 2,
+        "window_start": "2026-09-21",
+        "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       }
@@ -49,36 +49,36 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
+        "window_start": "2026-07-28",
+        "sessions": 7,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-11",
         "sessions": 5,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 5,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-08-25",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
+        "window": 4,
+        "window_start": "2026-09-08",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 9,
+        "window_start": "2026-09-22",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       }
@@ -92,35 +92,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 6,
+        "window_start": "2026-07-21",
+        "sessions": 7,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 5,
-        "reliable": true,
-        "pattern": "Defensive"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-04",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
-        "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 3,
+        "window": 3,
+        "window_start": "2026-08-18",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
+        "window": 4,
+        "window_start": "2026-09-01",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 5,
         "reliable": true,
         "pattern": "Calm / reflective"
@@ -135,35 +135,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 4,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-07-22",
         "sessions": 6,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
+        "window": 2,
+        "window_start": "2026-08-05",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-19",
         "sessions": 6,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-02",
         "sessions": 5,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
@@ -178,35 +178,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 4,
-        "reliable": true,
-        "pattern": "Withdrawn / unclear"
-      },
-      {
-        "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-07-22",
         "sessions": 3,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
+        "window": 2,
+        "window_start": "2026-08-05",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-19",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-09-02",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      },
+      {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
@@ -246,13 +246,6 @@
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
-      },
-      {
-        "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 0,
-        "reliable": false,
-        "pattern": "No sessions"
       }
     ],
     "overall_pattern": "Distressed"
@@ -264,36 +257,36 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-23",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 6,
+        "window_start": "2026-08-06",
+        "sessions": 7,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 5,
+        "window_start": "2026-08-20",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 6,
+        "window_start": "2026-09-03",
+        "sessions": 8,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 5,
+        "window_start": "2026-09-17",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       }
@@ -307,35 +300,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
+        "window_start": "2026-07-22",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
+        "window_start": "2026-08-05",
+        "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-19",
         "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-02",
         "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
@@ -350,35 +343,28 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 1,
-        "reliable": false,
-        "pattern": "Not enough data"
+        "window_start": "2026-08-02",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Withdrawn / unclear"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-16",
         "sessions": 5,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Withdrawn / unclear"
-      },
-      {
-        "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-08-30",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
-        "window": 5,
-        "window_start": "2026-09-14",
+        "window": 4,
+        "window_start": "2026-09-13",
         "sessions": 3,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
@@ -436,38 +422,38 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-30",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Defensive"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-13",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 5,
-        "reliable": true,
-        "pattern": "Defensive"
-      },
-      {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 1,
+        "window_start": "2026-08-27",
+        "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-10",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Defensive"
+        "window_start": "2026-09-24",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Defensive"
@@ -522,38 +508,38 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
+        "window_start": "2026-07-27",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 5,
+        "window_start": "2026-08-10",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 7,
+        "window_start": "2026-08-24",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 4,
+        "window_start": "2026-09-07",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 6,
-        "reliable": true,
-        "pattern": "Distressed"
+        "window_start": "2026-09-21",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Distressed"
@@ -565,35 +551,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-22",
         "sessions": 5,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-05",
         "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-19",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-02",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
@@ -602,41 +588,41 @@
     "overall_pattern": "Defensive"
   },
   "C015": {
-    "trend": "stable",
+    "trend": "not enough data",
     "worsening": false,
-    "severity_change": 0.0,
+    "severity_change": null,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-23",
         "sessions": 4,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-06",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 6,
+        "window_start": "2026-08-20",
+        "sessions": 8,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 4,
-        "reliable": true,
-        "pattern": "Distressed"
+        "window_start": "2026-09-03",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-17",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
@@ -651,38 +637,38 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 7,
+        "window_start": "2026-07-22",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
-        "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 1,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 4,
-        "window_start": "2026-08-31",
+        "window": 2,
+        "window_start": "2026-08-05",
         "sessions": 6,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
-        "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 3,
+        "window": 3,
+        "window_start": "2026-08-19",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-09-02",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-16",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Calm / reflective"
@@ -694,35 +680,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-22",
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-05",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 4,
+        "window_start": "2026-08-19",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 2,
+        "window_start": "2026-09-02",
+        "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 3,
         "reliable": true,
         "pattern": "Distressed"
@@ -780,38 +766,38 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
+        "window_start": "2026-07-29",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
+        "window_start": "2026-08-12",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 5,
+        "window_start": "2026-08-26",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 8,
+        "window_start": "2026-09-09",
+        "sessions": 7,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 4,
-        "reliable": true,
-        "pattern": "Distressed"
+        "window_start": "2026-09-23",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Distressed"
@@ -823,36 +809,36 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 4,
+        "window_start": "2026-07-24",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 5,
+        "window_start": "2026-08-07",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 3,
+        "window_start": "2026-08-21",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 5,
+        "window_start": "2026-09-04",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 4,
+        "window_start": "2026-09-18",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
       }
@@ -866,38 +852,31 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 4,
+        "window_start": "2026-07-25",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 4,
+        "window_start": "2026-08-08",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-22",
         "sessions": 4,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 5,
+        "window_start": "2026-09-05",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
-      },
-      {
-        "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Withdrawn / unclear"
@@ -909,35 +888,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 4,
+        "window_start": "2026-07-22",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 4,
+        "window_start": "2026-08-05",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-19",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-02",
         "sessions": 3,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-16",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
@@ -952,35 +931,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 7,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-18",
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
@@ -989,41 +968,41 @@
     "overall_pattern": "Distressed"
   },
   "C024": {
-    "trend": "stable",
+    "trend": "improving",
     "worsening": false,
-    "severity_change": 0.0,
+    "severity_change": -1.0,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-23",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
+        "window_start": "2026-08-06",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-20",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 5,
+        "window_start": "2026-09-03",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-17",
         "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
@@ -1034,42 +1013,42 @@
   "C025": {
     "trend": "stable",
     "worsening": false,
-    "severity_change": 0.5,
+    "severity_change": -0.5,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-24",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 1,
+        "window_start": "2026-08-07",
+        "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-21",
         "sessions": 3,
         "reliable": true,
-        "pattern": "Calm / reflective"
+        "pattern": "Withdrawn / unclear"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-04",
         "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 4,
+        "window_start": "2026-09-18",
+        "sessions": 3,
         "reliable": true,
-        "pattern": "Withdrawn / unclear"
+        "pattern": "Calm / reflective"
       }
     ],
     "overall_pattern": "Calm / reflective"
@@ -1081,35 +1060,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-24",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-07",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-21",
         "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-04",
         "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-18",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
@@ -1124,35 +1103,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 4,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 5,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-18",
         "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 6,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 3,
         "reliable": true,
         "pattern": "Distressed"
@@ -1167,35 +1146,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 6,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 4,
+        "window_start": "2026-08-04",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 4,
+        "window_start": "2026-08-18",
+        "sessions": 3,
         "reliable": true,
-        "pattern": "Withdrawn / unclear"
+        "pattern": "Defensive"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 4,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 7,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
@@ -1204,42 +1183,42 @@
     "overall_pattern": "Withdrawn / unclear"
   },
   "C029": {
-    "trend": "stable",
+    "trend": "improving",
     "worsening": false,
-    "severity_change": 0.0,
+    "severity_change": -1.0,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-22",
         "sessions": 7,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
+        "window_start": "2026-08-05",
+        "sessions": 3,
+        "reliable": true,
+        "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-19",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 3,
+        "window_start": "2026-09-02",
+        "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 5,
+        "window_start": "2026-09-16",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       }
@@ -1253,38 +1232,38 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
+        "window_start": "2026-07-26",
+        "sessions": 6,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 8,
+        "window_start": "2026-08-09",
+        "sessions": 6,
         "reliable": true,
-        "pattern": "Defensive"
+        "pattern": "Calm / reflective"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-23",
         "sessions": 7,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-06",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 4,
+        "window_start": "2026-09-20",
+        "sessions": 3,
         "reliable": true,
-        "pattern": "Distressed"
+        "pattern": "Withdrawn / unclear"
       }
     ],
     "overall_pattern": "Defensive"
@@ -1296,35 +1275,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 5,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-18",
         "sessions": 5,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 6,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 4,
         "reliable": true,
         "pattern": "Withdrawn / unclear"
@@ -1462,44 +1441,44 @@
     "overall_pattern": "Defensive"
   },
   "C035": {
-    "trend": "stable",
-    "worsening": false,
-    "severity_change": 0.0,
+    "trend": "worsening",
+    "worsening": true,
+    "severity_change": 1.5,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 5,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-07-26",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
-        "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 2,
+        "window": 2,
+        "window_start": "2026-08-09",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-23",
+        "sessions": 1,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
-        "window": 5,
-        "window_start": "2026-09-14",
+        "window": 4,
+        "window_start": "2026-09-06",
         "sessions": 4,
         "reliable": true,
-        "pattern": "Calm / reflective"
+        "pattern": "Distressed"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-20",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Calm / reflective"
@@ -1511,35 +1490,35 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 5,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-18",
         "sessions": 4,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
+        "window_start": "2026-09-15",
         "sessions": 3,
         "reliable": true,
         "pattern": "Calm / reflective"
@@ -1550,128 +1529,121 @@
   "C037": {
     "trend": "stable",
     "worsening": false,
-    "severity_change": -0.5,
+    "severity_change": 0.0,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Withdrawn / unclear"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 9,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 4,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      },
-      {
-        "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Calm / reflective"
-      }
-    ],
-    "overall_pattern": "Calm / reflective"
-  },
-  "C038": {
-    "trend": "not enough data",
-    "worsening": false,
-    "severity_change": null,
-    "windows": [
-      {
-        "window": 1,
-        "window_start": "2026-07-20",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 2,
-        "window_start": "2026-08-03",
-        "sessions": 2,
-        "reliable": false,
-        "pattern": "Not enough data"
-      },
-      {
-        "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-07-24",
         "sessions": 7,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
-        "window": 4,
-        "window_start": "2026-08-31",
+        "window": 2,
+        "window_start": "2026-08-07",
         "sessions": 5,
         "reliable": true,
         "pattern": "Calm / reflective"
       },
       {
-        "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 0,
+        "window": 3,
+        "window_start": "2026-08-21",
+        "sessions": 6,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-09-04",
+        "sessions": 2,
         "reliable": false,
-        "pattern": "No sessions"
+        "pattern": "Not enough data"
+      },
+      {
+        "window": 5,
+        "window_start": "2026-09-18",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Calm / reflective"
   },
-  "C039": {
+  "C038": {
     "trend": "stable",
     "worsening": false,
     "severity_change": 0.0,
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-29",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 2,
+        "window_start": "2026-08-12",
+        "sessions": 4,
+        "reliable": true,
+        "pattern": "Distressed"
+      },
+      {
+        "window": 3,
+        "window_start": "2026-08-26",
+        "sessions": 7,
+        "reliable": true,
+        "pattern": "Calm / reflective"
+      },
+      {
+        "window": 4,
+        "window_start": "2026-09-09",
+        "sessions": 1,
+        "reliable": false,
+        "pattern": "Not enough data"
+      }
+    ],
+    "overall_pattern": "Calm / reflective"
+  },
+  "C039": {
+    "trend": "not enough data",
+    "worsening": false,
+    "severity_change": null,
+    "windows": [
+      {
+        "window": 1,
+        "window_start": "2026-07-21",
         "sessions": 4,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
-        "sessions": 0,
+        "window_start": "2026-08-18",
+        "sessions": 1,
         "reliable": false,
-        "pattern": "No sessions"
+        "pattern": "Not enough data"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
+        "window_start": "2026-09-01",
         "sessions": 4,
         "reliable": true,
         "pattern": "Distressed"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 3,
-        "reliable": true,
-        "pattern": "Distressed"
+        "window_start": "2026-09-15",
+        "sessions": 2,
+        "reliable": false,
+        "pattern": "Not enough data"
       }
     ],
     "overall_pattern": "Distressed"
@@ -1683,36 +1655,36 @@
     "windows": [
       {
         "window": 1,
-        "window_start": "2026-07-20",
+        "window_start": "2026-07-21",
         "sessions": 10,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 2,
-        "window_start": "2026-08-03",
+        "window_start": "2026-08-04",
         "sessions": 4,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 3,
-        "window_start": "2026-08-17",
+        "window_start": "2026-08-18",
         "sessions": 2,
         "reliable": false,
         "pattern": "Not enough data"
       },
       {
         "window": 4,
-        "window_start": "2026-08-31",
-        "sessions": 4,
+        "window_start": "2026-09-01",
+        "sessions": 5,
         "reliable": true,
         "pattern": "Defensive"
       },
       {
         "window": 5,
-        "window_start": "2026-09-14",
-        "sessions": 4,
+        "window_start": "2026-09-15",
+        "sessions": 3,
         "reliable": true,
         "pattern": "Defensive"
       }
