@@ -27,8 +27,8 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 | State | What happens | Exit condition |
 |---|---|---|
 | (entry) | `trigger.validate()` against the comp1/comp2 contract | Invalid trigger raises before the child is asked anything |
-| INTERCEPT | One opening question from the generator. Never names the flagged category. | Always -> INQUIRE after one reply |
-| INQUIRE | Follow-up questions, a different one each attempt (no repeats in a session) | Reply has >= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
+| INTERCEPT | One opening question from the generator. Never names the flagged category. | -> INQUIRE after one reply; a refusal ("leave me alone") goes straight to EVALUATE |
+| INQUIRE | Follow-up questions picked by the reply type of the child's latest reply (stated emotion: supportive; "I don't know": low-pressure; other: neutral), a different one each attempt | A complete reply (>= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or a feeling, denial or plan phrase such as "I feel sick"), a refusal, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
 | EVALUATE | Builds the typed record (no child-facing text) | Always -> CONTRACT |
 | CONTRACT | Sets `escalation_flag`, says the closing line | Always -> DONE; record is schema-validated and returned |
 
@@ -41,25 +41,34 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   - *reflective*, e.g. "maybe I should talk to my mom"
   - *distress*, e.g. "so scared", "alone", "heavy"; softened forms like "kinda scary" don't count
   - *defensive*, e.g. "not my fault", "I didn't do it"
-  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone"
+  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone", "not sure" (uncertainty added 14 Oct)
 
   The result is calm if planning is at least as strong as distress. Otherwise the strongest of
   distressed > defensive > unclear wins. No signal plus only 1-2 word replies gives unclear
   (a bare "no" is not counted as defensive). `classify()` also returns the phrases that
   fired, so every label can be explained. On the simulated dataset it agrees with the
-  intended child profile in 89.8% of development sessions (C001-C020, used to write the
-  rules) and **85.2% of held-out sessions** (C021-C040). The word-count rule it replaced
+  intended child profile in 89.0% of development sessions (C001-C020, used to write the
+  rules) and **84.7% of held-out sessions** (C021-C040), after the 14 Oct fixes (before:
+  89.8% / 85.2%; `evidence/emotion_rules_eval_2026-10-14/`). The drop is two held-out
+  calm children now scored unclear, from the new uncertainty phrases, and two dev
+  unclear children now scored distressed, because a refusal ends INQUIRE earlier and
+  they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
+  data, and were not tuned after these results. The word-count rule it replaced
   scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
 
-**CONTRACT rule:** `escalation_flag = risk_level in ESCALATION_RISK_LEVELS`
-(currently `{"high"}`). An escalated session closes with *"I'm going to let a
-parent know we talked about this, so they can support you."*; otherwise
+**CONTRACT rule:** `escalation_flag` is set when `risk_level` is in
+`ESCALATION_RISK_LEVELS` (`{"high"}`) **or** `emotional_state` is in
+`ESCALATION_EMOTIONAL_STATES` (`{"distressed"}`), whatever the risk level (14 Oct,
+ADR 0005); the reason is appended to `dialogue_summary`. An escalated session
+closes with *"I'm going to let a parent know we talked about this, so they can
+support you."*; a child whose last reply was a refusal hears *"That's okay, you
+don't have to talk right now. I'm here if you want to talk later."*; otherwise
 *"Thanks for talking this through with me."*
 
 `dialogue_turns` counts turns that have a child reply (INTERCEPT + INQUIRE), so
-it ranges from 2 to 4 with the current config. All tunables are in `src/config.py`.
+it ranges from 1 (a refusal to the opening line) to 4 with the current config. All tunables are in `src/config.py`.
 
 **Tests.** `tests/test_synthetic_dialogues.py` holds 18 scripted dialogues
 (normal flow, minimal/silent/defensive children, keyword edge cases, risk
@@ -220,6 +229,15 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 - Temperature (13 Oct, `evidence/temperature_check_2026-10-13/`): llama.cpp's
   log shows it samples INTERCEPT at the 1.0 we send; with none sent, the
   server default is 0.8, so the runs before 12 Oct were at 0.8.
+- Dialogue fixes (14 Oct, `evidence/end_to_end_2026-10-14_online_after-review/`
+  vs `end_to_end_2026-10-12_online/`; the untagged 14 Oct runs predate the review
+  fixes and their summary still says INQUIRE does not adapt): INQUIRE no longer asks a distressed child
+  "Is there another way you could've reacted?", stops after a short reply that
+  states a feeling, and stops at a refusal. Still not handled: an off-topic
+  reply is not detected (it gets a neutral line and can score calm), and the
+  model's INTERCEPT questions repeat "focus" wording (7 of 8 model lines in the
+  after-review online run); the INTERCEPT prompt was left unchanged so the 13 Oct
+  adversarial evidence stays valid.
 
 - Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint
   applied yet**: its output is returned as-is, without `validate()`. Samples in

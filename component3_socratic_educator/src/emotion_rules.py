@@ -59,9 +59,19 @@ DEFENSIVE = _rx(
     r"just a bit", r"bit of fun", r"no way", rf"didn{_APOS}t (bother|happen to) me",
     rf"wasn{_APOS}t (even )?looking", r"not (that |very )?important", r"leave it alone",
 )
+# A refusal: the child opts out of talking. INQUIRE stops asking (14 Oct: the
+# withdrawn child was asked again after "leave me alone"), and every refusal is
+# also a WITHDRAWN phrase, so EVALUATE scores it unclear, never calm.
+_REFUSAL_PHRASES = (
+    r"leave me alone", rf"(don{_APOS}t|do not) (really )?(want|feel like) (to )?talk(ing)?", r"stop asking",
+    r"go away", r"i (need|want) (some )?space",
+)
+REFUSAL = _rx(*_REFUSAL_PHRASES)
+
 WITHDRAWN = _rx(
+    *_REFUSAL_PHRASES,
     rf"i don{_APOS}t (really )?know(?! (what to do|why|how))", r"idk", rf"i don{_APOS}t (get|understand)", r"quiet", r"weird",
-    r"nope", r"nothing", r"leave me alone", r"(some )?space", rf"don{_APOS}t (really )?(want|feel like) (to )?talk(ing)?", r"boring",
+    r"nope", r"nothing", r"(some )?space", r"boring",
     r"a lot", rf"what{_APOS}s that",
     # Uncertainty (added 14 Oct from the 12 Oct end-to-end bug, not from held-out data):
     # three "I'm not sure" replies had no signal and fell through to calm.
@@ -80,15 +90,6 @@ class EmotionVerdict:
         return {k: len(v) for k, v in self.hits.items()}
 
 
-# A refusal: the child opts out of talking. INQUIRE stops asking (14 Oct: the
-# withdrawn child was asked again after "leave me alone"). Not a scoring signal:
-# EVALUATE still scores these replies through WITHDRAWN.
-REFUSAL = _rx(
-    r"leave me alone", rf"(don{_APOS}t|do not) (really )?(want|feel like) (to )?talk(ing)?", r"stop asking",
-    r"go away", r"i (need|want) (some )?space",
-)
-
-
 def is_refusal(reply: str) -> bool:
     return bool(REFUSAL.search((reply or "").lower()))
 
@@ -101,17 +102,22 @@ def states_something(reply: str) -> bool:
     return any(_SIGNALS[name].search(text) for name in ("distress", "defensive", "reflective"))
 
 
-def reply_type(reply: str) -> str:
-    """INQUIRE's pool for the child's latest reply: "stated_emotion" if a distress
-    phrase fires, "dont_know" if a withdrawn phrase does, else "other". Refusals
-    end INQUIRE before a line is picked (is_refusal). Off-topic replies are not
-    detected: they get "other", whose questions steer back gently."""
+# Reply types INQUIRE picks its line by (the glossary's names; keys of
+# grammar_decoder.INQUIRE_LINES).
+STATED_EMOTION, DONT_KNOW, OTHER = "stated_emotion", "dont_know", "other"
+
+
+def classify_reply(reply: str) -> str:
+    """INQUIRE's reply type for the child's latest reply: STATED_EMOTION if a
+    distress phrase fires, DONT_KNOW if a withdrawn phrase does, else OTHER.
+    Refusals end INQUIRE before a line is picked (is_refusal). Off-topic replies
+    are not detected: they get OTHER, whose questions steer back gently."""
     text = (reply or "").lower()
     if DISTRESS.search(text):
-        return "stated_emotion"
+        return STATED_EMOTION
     if WITHDRAWN.search(text):
-        return "dont_know"
-    return "other"
+        return DONT_KNOW
+    return OTHER
 
 
 def classify(replies: list[str]) -> EmotionVerdict:

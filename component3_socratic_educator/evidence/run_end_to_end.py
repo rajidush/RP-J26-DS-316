@@ -15,7 +15,7 @@ run_emotional_pattern() for this device's child.
 Run from the repo root with an interpreter that has pandas and joblib:
     python component3_socratic_educator/evidence/run_end_to_end.py --mode offline
 
-Writes, in the run folder evidence/end_to_end_<date>_<mode>/, a .jsonl (one row
+Writes, in the run folder evidence/end_to_end_<date>_<mode>[_<tag>]/, a .jsonl (one row
 per session), a .summary.json and a readable .log.txt; never overwrites a
 recorded run.
 """
@@ -86,14 +86,15 @@ def schema_valid(record):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["online", "offline"], required=True)
+    ap.add_argument("--tag", help="suffix for a second run on the same day, e.g. after-review")
     args = ap.parse_args()
 
     stamp = datetime.now().strftime("%Y-%m-%d")
-    run_name = f"end_to_end_{stamp}_{args.mode}"
+    run_name = f"end_to_end_{stamp}_{args.mode}{'_' + args.tag if args.tag else ''}"
     out = OUT_DIR / run_name / f"{run_name}.jsonl"           # one folder per run
     outputs = [out, out.with_suffix(".summary.json"), out.with_suffix(".log.txt")]
     if any(o.exists() for o in outputs):   # check all three first, so a rerun cannot leave a partial set
-        sys.exit(f"{out.name} (or its .summary.json/.log.txt) is already recorded; nothing was overwritten.")
+        sys.exit(f"{out.name} (or its .summary.json/.log.txt) is already recorded; pass --tag. Nothing was overwritten.")
 
     started = datetime.now().astimezone().isoformat(timespec="seconds")
     logs = run_sessions(None if args.mode == "online" else offline_model)
@@ -140,7 +141,8 @@ def main():
         },
         "limitations": [
             "Triggers are the Component 1 and 2 mock fixtures, not live detections.",
-            "Child replies are scripted; INQUIRE lines are templates and do not adapt to the reply.",
+            "Child replies are scripted; INQUIRE lines are templates, picked by the reply type of the child's "
+            "latest reply (since 14 Oct), not written by a model.",
             "The parent-facing report is Component 4's stub (generate_report); only Function 1 is real.",
             "All 8 sessions share one device child_id, so Function 1 profiles a synthetic child mixing four "
             "personas; the pattern shows the chain works, not anything about a real child.",

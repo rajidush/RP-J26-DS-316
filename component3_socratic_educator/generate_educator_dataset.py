@@ -38,6 +38,7 @@ from pathlib import Path
 
 # Run this file from the project root (the folder that contains src/).
 from src.fsm_controller import FSMController
+from src.emotion_rules import OTHER
 from src.grammar_decoder import GrammarConstrainedGenerator
 from src.model_client import LM_STUDIO_URL
 from src.schemas import _CONTRACTS_DIR, _validate_against_schema, EmotionalState, RiskLevel, TriggerPayload
@@ -241,7 +242,7 @@ class StubInterceptGenerator(GrammarConstrainedGenerator):
     on that text today.
     """
 
-    def generate(self, state, risk_category, attempt=0, reply_type="other"):
+    def generate(self, state, risk_category, attempt=0, reply_type=OTHER):
         candidate = self._candidate(state, risk_category, attempt=attempt, reply_type=reply_type)
         return candidate if self.validate(state, candidate) else self._safe_fallback(state)
 

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional, Protocol
 
 from . import config
+from .emotion_rules import DONT_KNOW, OTHER, STATED_EMOTION
 from .schemas import RiskCategory
 from .model_client import call_local_model
 
@@ -51,21 +52,23 @@ INTERCEPT_SCHEMA = {
 }
 
 # INQUIRE's template lines, by the reply type of the child's latest reply
-# (src/emotion_rules.reply_type). Three per pool, so the three attempts never
+# (src/emotion_rules.classify_reply). Three per pool, so the three attempts never
 # repeat a line. None hints at blame: "Is there another way you could've
 # reacted?" was asked to a distressed child in the 12 Oct run and is gone.
+# OTHER's third line was added on 14 Oct so three attempts never repeat; its
+# wording is pending the owner's approval.
 INQUIRE_LINES = {
-    "stated_emotion": (
+    STATED_EMOTION: (
         "That sounds really hard. Do you want to tell me what made it feel that way?",
         "I'm glad you told me how you feel. What would help you feel a bit safer right now?",
         "It's okay to feel like that. Is there someone you'd like to talk to about it?",
     ),
-    "dont_know": (
+    DONT_KNOW: (
         "That's okay, you don't have to be sure. What were you doing just before?",
         "No pressure. Is there one small thing you remember?",
         "That's alright. What's one word for how you feel right now?",
     ),
-    "other": (
+    OTHER: (
         "That makes sense. Can you say a bit more about that?",
         "Thanks for telling me. What do you think might happen next?",
         "I understand. What would you like to happen now?",
@@ -183,7 +186,7 @@ class GrammarConstrainedGenerator:
     }
 
     def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0,
-                   reply_type: str = "other") -> str:
+                   reply_type: str = OTHER) -> str:
         pool = INQUIRE_LINES[reply_type] if state == "INQUIRE" else self._CANDIDATES.get(state, [])
         if not pool:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
@@ -201,11 +204,11 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0, reply_type: str = "other") -> str:
+    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0, reply_type: str = OTHER) -> str:
         return self.generate_with_source(state, risk_category, attempt, reply_type=reply_type).text
 
     def generate_with_source(self, state: str, risk_category: RiskCategory, attempt: int = 0,
-                             upstream_context: Optional[str] = None, reply_type: str = "other") -> GeneratedLine:
+                             upstream_context: Optional[str] = None, reply_type: str = OTHER) -> GeneratedLine:
         """`upstream_context` is untrusted text for the INTERCEPT prompt. No caller
         passes it today (Component 3 reads only category and confidence); the
         adversarial harness uses it to simulate a future upstream text field.
@@ -246,6 +249,6 @@ class GrammarConstrainedGenerator:
     def _safe_fallback(self, state: str) -> str:
         fallback = {
             "INTERCEPT": "I noticed something on your screen just now. Can you tell me what you were thinking?",
-            "INQUIRE": "That makes sense. Can you say a bit more about that?",
+            "INQUIRE": INQUIRE_LINES[OTHER][0],
         }
         return fallback.get(state, "Let's talk about what happened.")

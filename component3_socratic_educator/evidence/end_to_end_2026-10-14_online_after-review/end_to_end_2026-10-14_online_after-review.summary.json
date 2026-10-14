@@ -1,0 +1,108 @@
+{
+  "mode": "online",
+  "run_started": "2026-10-14T20:35:27+05:30",
+  "sessions": 8,
+  "records_schema_valid": "8/8 (re-checked here against comp3_to_comp4.schema.json)",
+  "intercept_sources": {
+    "model": 8
+  },
+  "intercept_fallback_reasons": {},
+  "emotional_state_by_scripted_child": {
+    "component1/reflective": "calm",
+    "component1/defensive": "defensive",
+    "component1/distressed": "distressed",
+    "component1/withdrawn": "unclear",
+    "component2/reflective": "calm",
+    "component2/defensive": "defensive",
+    "component2/distressed": "distressed",
+    "component2/withdrawn": "unclear"
+  },
+  "component4_function1": {
+    "ran": true,
+    "patterns": {
+      "device-child-01": {
+        "sessions": 8,
+        "cluster": 1,
+        "pattern": "Calm / reflective"
+      }
+    },
+    "artifacts_sha256": {
+      "emotional_pattern_features.pkl": "75787be41d016a3bacedbb7fe6623b3601f0341aeda9527ef07f7d44a7a24901",
+      "emotional_pattern_kmeans.pkl": "2719bae7af662b91dd91cd5b954d39176ab589c13d22f04b455d6fd4c9203a82",
+      "emotional_pattern_metadata.json": "fa0b7f2c0d74e191b5a805c09eef0d44ec2e7351f35407c43161187bfd0ebb01",
+      "emotional_pattern_scaler.pkl": "9be824fdf4d4e527ab0220d83711d14a92a4f0a67ad2efdb1420ed21876be9a7"
+    }
+  },
+  "session_seconds": {
+    "min": 1.322,
+    "median": 1.861,
+    "max": 2.381
+  },
+  "session_seconds_note": "wall-clock per session, including scripted replies and the stub report; not model latency (measured against the 3 s target on Tue 13 Oct)",
+  "settings": {
+    "triggers": "mock fixtures: component1 mock_inputs/sample_trigger.json, component2 mock_inputs/sample_analysis.json (Component 2's real engine needs Hugging Face downloads, unavailable offline)",
+    "child_replies": {
+      "reflective": [
+        "I was just watching videos",
+        "I guess I should close it and tell my mum next time"
+      ],
+      "defensive": [
+        "It wasn't me",
+        "whatever",
+        "no big deal",
+        "It was nothing, my friend sent it"
+      ],
+      "distressed": [
+        "It was really scary",
+        "I feel sick",
+        "so scared",
+        "I can't stop crying about it"
+      ],
+      "withdrawn": [
+        "idk",
+        "nothing",
+        "leave me alone",
+        "I don't want to talk"
+      ]
+    },
+    "child_id": "device-child-01 (device placeholder)",
+    "model_id": "google/gemma-3-1b",
+    "server": "LM Studio (llama.cpp engine), localhost:1234",
+    "lm_studio_version": "not recorded",
+    "hardware": "not recorded",
+    "response_format": "json_schema (strict)",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "opener": {
+          "type": "string",
+          "enum": [
+            "I noticed something on your screen just now.",
+            "Something you just saw might need a closer look."
+          ]
+        },
+        "question": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Za-z ,']{5,98}\\?$",
+          "maxLength": 100
+        }
+      },
+      "required": [
+        "opener",
+        "question"
+      ],
+      "additionalProperties": false
+    },
+    "prompt": "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. Something on the child's screen was just stopped. Do not describe, name or hint at what it was, and do not mention alerts, messages or warnings. Return JSON. opener: copy one of the allowed openers exactly. question: one short, gentle, open question (under 15 words) inviting the child to share what they were doing or thinking.",
+    "max_tokens": 100,
+    "temperature": 1.0,
+    "inquire": "template lines (no model until after PP1)",
+    "component4_artifacts": "reproduced on 11 Oct by running Component 4's Function 1 notebook unchanged (models/ is gitignored); checked then against its committed outputs/ (40/40 children, trend file); not re-checked by this run (hashes above)"
+  },
+  "limitations": [
+    "Triggers are the Component 1 and 2 mock fixtures, not live detections.",
+    "Child replies are scripted; INQUIRE lines are templates, picked by the reply type of the child's latest reply (since 14 Oct), not written by a model.",
+    "The parent-facing report is Component 4's stub (generate_report); only Function 1 is real.",
+    "All 8 sessions share one device child_id, so Function 1 profiles a synthetic child mixing four personas; the pattern shows the chain works, not anything about a real child."
+  ]
+}

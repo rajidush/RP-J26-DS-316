@@ -33,6 +33,7 @@ from component1_screen_monitoring.src.component1 import simulate_screen_capture 
 from component2_hate_speech_detection.src.component2 import analyze_text as comp2_analyze          # noqa: E402
 from component4_profiling_xai.src.component4 import generate_report as comp4_report                # noqa: E402
 from component3_socratic_educator.src.fsm_controller import DialogueState, FSMController           # noqa: E402
+from component3_socratic_educator.src.emotion_rules import OTHER                                   # noqa: E402
 from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator           # noqa: E402
 from component3_socratic_educator.src.schemas import RiskCategory, TriggerPayload                   # noqa: E402
 from integration.comp3_to_comp4 import DEVICE_CHILD_ID, to_emotional_pattern_row                   # noqa: E402
@@ -60,7 +61,7 @@ class RecordingGenerator(GrammarConstrainedGenerator):
     came from (model, template or fallback, with the reason) for the run log."""
     lines: list = field(default_factory=list)
 
-    def generate(self, state, risk_category, attempt=0, reply_type="other"):
+    def generate(self, state, risk_category, attempt=0, reply_type=OTHER):
         line = self.generate_with_source(state, risk_category, attempt, reply_type=reply_type)
         self.lines.append((state, line))
         return line.text

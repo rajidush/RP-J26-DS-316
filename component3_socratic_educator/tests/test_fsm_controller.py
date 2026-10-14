@@ -187,3 +187,13 @@ def test_the_summary_says_why_a_high_risk_session_escalated():
 def test_a_calm_moderate_risk_session_is_not_escalated_and_says_nothing_about_it():
     result, _ = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: "I clicked a link by accident")
     assert result.escalation_flag is False and "escalated" not in result.dialogue_summary
+
+
+def test_a_refusal_with_distress_ends_inquire_and_still_escalates():
+    # Agreed 14 Oct: the refusal is respected, and the distress gets a parent involved.
+    it = iter(["hmm", "leave me alone, I'm so scared", "never asked"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it))
+    assert [t.child_response for t in transcript.turns if t.state == DialogueState.INQUIRE] == [
+        "leave me alone, I'm so scared"]
+    assert result.emotional_state.value == "distressed" and result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text

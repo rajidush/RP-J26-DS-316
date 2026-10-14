@@ -132,7 +132,7 @@ class FSMController:
             # The line answers the child's latest reply (14 Oct: it used to ignore it).
             latest = next((t.child_response for t in reversed(transcript.turns) if t.child_response is not None), "")
             prompt = self.generator.generate("INQUIRE", trigger.risk_category, attempt=attempts,
-                                             reply_type=emotion_rules.reply_type(latest))
+                                             reply_type=emotion_rules.classify_reply(latest))
             answer = respond(prompt)
             transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
             responses.append(answer)

@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator
+from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES, GrammarConstrainedGenerator
 from component3_socratic_educator.src.schemas import RiskCategory
 
 
@@ -202,8 +202,6 @@ def test_a_blocked_line_keeps_what_the_model_said_as_evidence():
 
 
 # --- 14 Oct: INQUIRE picks its line by the reply type of the child's latest reply ---
-
-from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
 
 SUPPORTIVE = INQUIRE_LINES["stated_emotion"]
 

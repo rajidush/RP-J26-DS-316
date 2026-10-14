@@ -21,6 +21,10 @@ from component3_socratic_educator.src.schemas import EmotionalState as E
     (["I guess it was there"], E.UNCLEAR),
     # ...but "I guess I should" is still a plan
     (["I guess I should tell my dad"], E.CALM),
+    # a refusal is a non-answer too, however it is worded (14 Oct review: this one scored calm)
+    (["I do not want to talk"], E.UNCLEAR),
+    (["please just go away now"], E.UNCLEAR),
+    (["can you stop asking me that"], E.UNCLEAR),
     # no answer / bare refusal -> unclear, never defensive
     ([], E.UNCLEAR),
     (["", "   "], E.UNCLEAR),
