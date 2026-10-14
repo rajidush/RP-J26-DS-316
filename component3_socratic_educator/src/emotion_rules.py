@@ -80,6 +80,19 @@ class EmotionVerdict:
         return {k: len(v) for k, v in self.hits.items()}
 
 
+# A refusal: the child opts out of talking. INQUIRE stops asking (14 Oct: the
+# withdrawn child was asked again after "leave me alone"). Not a scoring signal:
+# EVALUATE still scores these replies through WITHDRAWN.
+REFUSAL = _rx(
+    r"leave me alone", rf"(don{_APOS}t|do not) (really )?(want|feel like) (to )?talk(ing)?", r"stop asking",
+    r"go away", r"i (need|want) (some )?space",
+)
+
+
+def is_refusal(reply: str) -> bool:
+    return bool(REFUSAL.search((reply or "").lower()))
+
+
 def states_something(reply: str) -> bool:
     """True if one reply already states a feeling, a denial or a safer plan, however
     short ("I feel sick"): INQUIRE treats it as a complete reply. A withdrawn phrase

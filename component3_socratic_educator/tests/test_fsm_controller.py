@@ -121,3 +121,31 @@ def test_a_short_reply_that_states_a_feeling_denial_or_plan_is_complete(reply):
 
 def test_a_short_reply_with_nothing_in_it_is_still_followed_up():
     assert _inquire_replies(["hmm", "ok", "no", "fine"]) == ["ok", "no", "fine"]
+
+
+REFUSAL_CLOSE = "That's okay, you don't have to talk right now. I'm here if you want to talk later."
+
+
+@pytest.mark.parametrize("refusal", ["leave me alone", "I don't want to talk", "I do not want to talk about it",
+                                     "stop asking", "go away"])
+def test_a_refusal_ends_inquire_at_once(refusal):
+    # 12 Oct run: the withdrawn child was asked again after "leave me alone".
+    assert _inquire_replies(["hmm", refusal, "never asked"]) == [refusal]
+
+
+def test_a_refusal_to_the_opening_line_skips_inquire():
+    assert _inquire_replies(["leave me alone", "never asked"]) == []
+
+
+def test_a_refusing_child_who_is_not_escalated_hears_that_it_is_okay_not_to_talk():
+    it = iter(["hmm", "leave me alone"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it))
+    assert result.escalation_flag is False
+    assert transcript.turns[-1].system_text == REFUSAL_CLOSE
+
+
+def test_a_refusing_child_who_is_escalated_still_hears_the_parent_line():
+    it = iter(["hmm", "leave me alone"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.9), respond=lambda _: next(it))
+    assert result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text

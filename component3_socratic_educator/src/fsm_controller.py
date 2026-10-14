@@ -76,7 +76,8 @@ class FSMController:
                 child_text = respond(system_text)
                 transcript.add(Turn(state, system_text, child_text))
                 last_child_text = child_text
-                state = DialogueState.INQUIRE
+                # A refusal to the opening line skips INQUIRE: no follow-up questions.
+                state = DialogueState.EVALUATE if emotion_rules.is_refusal(child_text) else DialogueState.INQUIRE
 
             elif state == DialogueState.INQUIRE:
                 responses = self.inquire_loop(trigger, respond, transcript)
@@ -90,11 +91,7 @@ class FSMController:
 
             elif state == DialogueState.CONTRACT:
                 evaluate_output.escalation_flag = evaluate_output.risk_level.value in config.ESCALATION_RISK_LEVELS
-                transcript.add(Turn(
-                    state,
-                    "Thanks for talking this through with me." if not evaluate_output.escalation_flag
-                    else "I'm going to let a parent know we talked about this, so they can support you.",
-                ))
+                transcript.add(Turn(state, self._closing_line(evaluate_output, last_child_text)))
                 state = DialogueState.DONE
 
         evaluate_output.dialogue_turns = len([t for t in transcript.turns if t.child_response is not None])
@@ -103,6 +100,13 @@ class FSMController:
 
     # -- helpers -------------------------------------------------------
 
+
+    def _closing_line(self, evaluate_output: EvaluateOutput, last_child_text: str) -> str:
+        if evaluate_output.escalation_flag:
+            return "I'm going to let a parent know we talked about this, so they can support you."
+        if emotion_rules.is_refusal(last_child_text):
+            return "That's okay, you don't have to talk right now. I'm here if you want to talk later."
+        return "Thanks for talking this through with me."
 
     def opening_question(self, trigger: TriggerPayload) -> str:
         """Intercept state: open the conversation without naming the flagged content."""
@@ -118,7 +122,7 @@ class FSMController:
             transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
             responses.append(answer)
             attempts += 1
-            if self._is_complete(answer):
+            if emotion_rules.is_refusal(answer) or self._is_complete(answer):
                 break
         return responses
     

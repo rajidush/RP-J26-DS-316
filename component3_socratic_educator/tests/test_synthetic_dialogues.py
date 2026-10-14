@@ -36,6 +36,7 @@ _COMP1 = {RiskCategory.EXPLICIT_VISUAL, RiskCategory.VIOLENCE,
 
 CLOSE_NORMAL = "Thanks for talking this through with me."
 CLOSE_ESCALATE = "I'm going to let a parent know we talked about this, so they can support you."
+CLOSE_REFUSED = "That's okay, you don't have to talk right now. I'm here if you want to talk later."
 
 
 def make_trigger(rc: RiskCategory, confidence: float) -> TriggerPayload:
@@ -66,6 +67,7 @@ class Dialogue:
     self_regulation: bool
     risk_level: RiskLevel
     note: Optional[str] = None
+    refuses: bool = False            # the child's last reply is a refusal
 
     @property
     def escalates(self) -> bool:
@@ -129,8 +131,10 @@ DIALOGUES = [
              note="off-topic is not detected yet: long enough -> complete & calm"),
     Dialogue("distress_is_detected", RiskCategory.SELF_HARM_LANGUAGE, 0.70,
              ["I feel really scared and I do not want to talk about it"],
-             2, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
-             note="was a known limitation (always calm) until emotion_rules.py, 6 Oct"),
+             1, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
+             note="was a known limitation (always calm) until emotion_rules.py, 6 Oct; "
+                  "a refusal to the opening line skips INQUIRE since 14 Oct",
+             refuses=True),
 
     # --- risk-level / escalation boundaries -------------------------------
     Dialogue("boundary_085_escalates", RiskCategory.SELF_HARM_IMAGERY, 0.85,
@@ -159,7 +163,7 @@ def test_dialogue_outcome(d):
     assert result.escalation_flag is d.escalates
     closing = transcript.turns[-1]
     assert closing.state == DialogueState.CONTRACT
-    assert closing.system_text == (CLOSE_ESCALATE if d.escalates else CLOSE_NORMAL)
+    assert closing.system_text == (CLOSE_ESCALATE if d.escalates else CLOSE_REFUSED if d.refuses else CLOSE_NORMAL)
 
 
 @pytest.mark.parametrize("d", DIALOGUES, ids=lambda d: d.name)
@@ -167,11 +171,12 @@ def test_dialogue_invariants(d):
     result, transcript = run_dialogue(d)
     states = [t.state for t in transcript.turns]
 
-    # State order: exactly one INTERCEPT, 1..MAX INQUIRE, one EVALUATE, one CONTRACT.
+    # State order: exactly one INTERCEPT, 1..MAX INQUIRE (0 only after a refusal to the
+    # opening line), one EVALUATE, one CONTRACT.
     n_inquire = states.count(DialogueState.INQUIRE)
     assert states == ([DialogueState.INTERCEPT] + [DialogueState.INQUIRE] * n_inquire
                       + [DialogueState.EVALUATE, DialogueState.CONTRACT])
-    assert 1 <= n_inquire <= config.MAX_INQUIRE_ATTEMPTS
+    assert (0 if d.refuses and result.dialogue_turns == 1 else 1) <= n_inquire <= config.MAX_INQUIRE_ATTEMPTS
 
     # The child never sees the flagged category named.
     for turn in transcript.turns:
