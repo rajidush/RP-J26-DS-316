@@ -80,6 +80,14 @@ class EmotionVerdict:
         return {k: len(v) for k, v in self.hits.items()}
 
 
+def states_something(reply: str) -> bool:
+    """True if one reply already states a feeling, a denial or a safer plan, however
+    short ("I feel sick"): INQUIRE treats it as a complete reply. A withdrawn phrase
+    ("idk") is not enough."""
+    text = (reply or "").lower()
+    return any(_SIGNALS[name].search(text) for name in ("distress", "defensive", "reflective"))
+
+
 def classify(replies: list[str]) -> EmotionVerdict:
     text = " ".join(r for r in replies if r).lower()
     if not text.strip():

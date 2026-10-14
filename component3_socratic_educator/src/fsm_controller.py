@@ -123,7 +123,10 @@ class FSMController:
         return responses
     
     def _is_complete(self, child_text: str) -> bool:
-        return len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
+        """A complete reply: long enough, or it already states a feeling, a denial or
+        a plan (14 Oct: "I feel sick" was asked again for being under 4 words)."""
+        return (len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
+                or emotion_rules.states_something(child_text))
 
     def _evaluate(self, trigger: TriggerPayload, transcript: SessionTranscript, last_child_text: str) -> EvaluateOutput:
         """

@@ -102,3 +102,22 @@ def test_run_actually_uses_inquire_loop():
     _, transcript = controller.run(trigger, respond=lambda _: "no")
     inquire_turns = [t for t in transcript.turns if t.state.name == "INQUIRE"]
     assert len(inquire_turns) == config.MAX_INQUIRE_ATTEMPTS
+
+
+# --- 14 Oct fixes -------------------------------------------------------------
+
+def _inquire_replies(replies):
+    """Run a session; return the replies the child was asked for during INQUIRE."""
+    it = iter(replies)
+    _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    return [t.child_response for t in transcript.turns if t.state == DialogueState.INQUIRE]
+
+
+@pytest.mark.parametrize("reply", ["I feel sick", "so scared", "not my fault", "I'll tell mum"])
+def test_a_short_reply_that_states_a_feeling_denial_or_plan_is_complete(reply):
+    # 12 Oct run: "I feel sick" (3 words) was asked again; it had already said something.
+    assert _inquire_replies(["hmm", reply, "never asked"]) == [reply]
+
+
+def test_a_short_reply_with_nothing_in_it_is_still_followed_up():
+    assert _inquire_replies(["hmm", "ok", "no", "fine"]) == ["ok", "no", "fine"]

@@ -9,8 +9,9 @@ invariants that hold for ALL sessions (state order, schema validity, no
 flagged-content leak, no repeated INQUIRE question).
 
 Replies are consumed as: reply[0] -> INTERCEPT, then up to
-MAX_INQUIRE_ATTEMPTS replies -> INQUIRE (stops early on a reply of
->= MIN_RESPONSE_WORDS_FOR_COMPLETENESS words).
+MAX_INQUIRE_ATTEMPTS replies -> INQUIRE (stops early on a complete reply: at
+least MIN_RESPONSE_WORDS_FOR_COMPLETENESS words, or one stating a feeling, a
+denial or a plan).
 
 Runs offline: tests/conftest.py blocks the live model, so INTERCEPT uses
 the template pool.
@@ -96,14 +97,16 @@ DIALOGUES = [
     # --- minimal / defensive / withdrawn responses ------------------------
     Dialogue("one_word_every_turn", RiskCategory.HATE_SPEECH, 0.70,
              ["whatever"],
-             1 + config.MAX_INQUIRE_ATTEMPTS, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a denial is a complete reply (14 Oct): one INQUIRE question, not three"),
     Dialogue("two_words_is_still_defensive", RiskCategory.CYBERBULLYING, 0.60,
              ["no", "so what", "not really", "my fault"],
-             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="'so what' is a denial, so INQUIRE stops there (was 4 turns before 14 Oct)"),
     Dialogue("three_word_deflection_is_defensive", RiskCategory.VIOLENCE, 0.60,
              ["hmm", "it was nothing", "it was nothing", "just a video"],
-             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
-             note="3-word replies never complete INQUIRE, so all 3 attempts are used"),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a 3-word denial is a complete reply (14 Oct); before, all 3 attempts were used"),
     Dialogue("exactly_four_words_completes", RiskCategory.EXPLICIT_VISUAL, 0.20,
              ["idk", "it was an ad"],
              2, EmotionalState.UNCLEAR, False, RiskLevel.LOW),
