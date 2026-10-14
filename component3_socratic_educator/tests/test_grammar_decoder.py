@@ -199,3 +199,39 @@ def test_a_blocked_line_keeps_what_the_model_said_as_evidence():
     assert line.source == "fallback" and line.model_output == f"{OPENER} Did that alert worry you?"
     line, _ = _line("not json at all")
     assert line.reason == "invalid_json" and line.model_output == "not json at all"
+
+
+# --- 14 Oct: INQUIRE picks its line by the reply type of the child's latest reply ---
+
+from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
+
+SUPPORTIVE = INQUIRE_LINES["stated_emotion"]
+
+
+@pytest.mark.parametrize("reply_type", list(INQUIRE_LINES))
+def test_each_reply_type_gets_a_line_from_its_own_pool(reply_type):
+    gen = GrammarConstrainedGenerator()
+    for attempt in range(3):
+        line = gen.generate_with_source("INQUIRE", RiskCategory.VIOLENCE, attempt, reply_type=reply_type)
+        assert line.text in INQUIRE_LINES[reply_type] and line.source == "template"
+
+
+def test_a_pool_never_repeats_a_line_within_the_three_attempts():
+    gen = GrammarConstrainedGenerator()
+    for reply_type in INQUIRE_LINES:
+        lines = [gen.generate("INQUIRE", RiskCategory.HATE_SPEECH, a, reply_type=reply_type) for a in range(3)]
+        assert len(set(lines)) == 3, reply_type
+
+
+def test_no_inquire_line_hints_at_blame():
+    # "Is there another way you could've reacted?" was asked to a distressed child (12 Oct run).
+    for pool in INQUIRE_LINES.values():
+        for line in pool:
+            assert "reacted" not in line and "should have" not in line.lower()
+
+
+def test_the_inquire_grammar_is_exactly_the_template_lines():
+    gen = GrammarConstrainedGenerator()
+    assert all(gen.validate("INQUIRE", line) for pool in INQUIRE_LINES.values() for line in pool)
+    assert not gen.validate("INQUIRE", "I understand. Is there another way you could've reacted?")
+    assert not gen.validate("INQUIRE", "That makes sense. What did you see?")

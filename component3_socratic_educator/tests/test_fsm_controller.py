@@ -149,3 +149,21 @@ def test_a_refusing_child_who_is_escalated_still_hears_the_parent_line():
     result, transcript = FSMController().run(make_trigger(confidence=0.9), respond=lambda _: next(it))
     assert result.escalation_flag is True
     assert "parent" in transcript.turns[-1].system_text
+
+
+def _inquire_lines(replies):
+    it = iter(replies)
+    _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    return [t.system_text for t in transcript.turns if t.state == DialogueState.INQUIRE]
+
+
+def test_a_child_who_states_a_feeling_gets_a_supportive_line():
+    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
+    assert _inquire_lines(["It was really scary"])[0] in INQUIRE_LINES["stated_emotion"]
+
+
+def test_a_child_who_does_not_know_gets_a_low_pressure_line_not_thanks():
+    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
+    lines = _inquire_lines(["idk", "nothing", "I was just watching videos"])
+    assert all(line in INQUIRE_LINES["dont_know"] for line in lines[:2])
+    assert not any(line.startswith("Thanks for telling me") for line in lines[:2])

@@ -101,6 +101,19 @@ def states_something(reply: str) -> bool:
     return any(_SIGNALS[name].search(text) for name in ("distress", "defensive", "reflective"))
 
 
+def reply_type(reply: str) -> str:
+    """INQUIRE's pool for the child's latest reply: "stated_emotion" if a distress
+    phrase fires, "dont_know" if a withdrawn phrase does, else "other". Refusals
+    end INQUIRE before a line is picked (is_refusal). Off-topic replies are not
+    detected: they get "other", whose questions steer back gently."""
+    text = (reply or "").lower()
+    if DISTRESS.search(text):
+        return "stated_emotion"
+    if WITHDRAWN.search(text):
+        return "dont_know"
+    return "other"
+
+
 def classify(replies: list[str]) -> EmotionVerdict:
     text = " ".join(r for r in replies if r).lower()
     if not text.strip():

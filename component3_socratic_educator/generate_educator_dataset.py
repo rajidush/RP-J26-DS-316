@@ -241,8 +241,8 @@ class StubInterceptGenerator(GrammarConstrainedGenerator):
     on that text today.
     """
 
-    def generate(self, state, risk_category, attempt=0):
-        candidate = self._candidate(state, risk_category, attempt=attempt)
+    def generate(self, state, risk_category, attempt=0, reply_type="other"):
+        candidate = self._candidate(state, risk_category, attempt=attempt, reply_type=reply_type)
         return candidate if self.validate(state, candidate) else self._safe_fallback(state)
 
 

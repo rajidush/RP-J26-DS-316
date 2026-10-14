@@ -60,8 +60,8 @@ class RecordingGenerator(GrammarConstrainedGenerator):
     came from (model, template or fallback, with the reason) for the run log."""
     lines: list = field(default_factory=list)
 
-    def generate(self, state, risk_category, attempt=0):
-        line = self.generate_with_source(state, risk_category, attempt)
+    def generate(self, state, risk_category, attempt=0, reply_type="other"):
+        line = self.generate_with_source(state, risk_category, attempt, reply_type=reply_type)
         self.lines.append((state, line))
         return line.text
 

@@ -10,7 +10,9 @@ this word", so a post-check then rejects forbidden words, alert-revealing
 language and risk-category names. Any failure, or an unreachable model,
 yields the pre-checked template line (the fallback line).
 
-INQUIRE stays on the template candidate pool until after PP1.
+INQUIRE stays on template lines until after PP1. Since 14 Oct the line is
+picked by the reply type of the child's latest reply (stated emotion, "I don't
+know", or other), and INQUIRE's grammar is exactly that list of lines.
 """
 from __future__ import annotations
 
@@ -48,13 +50,35 @@ INTERCEPT_SCHEMA = {
     "additionalProperties": False,
 }
 
+# INQUIRE's template lines, by the reply type of the child's latest reply
+# (src/emotion_rules.reply_type). Three per pool, so the three attempts never
+# repeat a line. None hints at blame: "Is there another way you could've
+# reacted?" was asked to a distressed child in the 12 Oct run and is gone.
+INQUIRE_LINES = {
+    "stated_emotion": (
+        "That sounds really hard. Do you want to tell me what made it feel that way?",
+        "I'm glad you told me how you feel. What would help you feel a bit safer right now?",
+        "It's okay to feel like that. Is there someone you'd like to talk to about it?",
+    ),
+    "dont_know": (
+        "That's okay, you don't have to be sure. What were you doing just before?",
+        "No pressure. Is there one small thing you remember?",
+        "That's alright. What's one word for how you feel right now?",
+    ),
+    "other": (
+        "That makes sense. Can you say a bit more about that?",
+        "Thanks for telling me. What do you think might happen next?",
+        "I understand. What would you like to happen now?",
+    ),
+}
+
 _GRAMMAR = {
     "INTERCEPT": re.compile(
         "^(" + "|".join(re.escape(o) for o in INTERCEPT_OPENERS) + ") " + _QUESTION + "$"
     ),
+    # Exactly the template lines: nothing else is a valid INQUIRE line.
     "INQUIRE": re.compile(
-        r"^(That makes sense\.|I understand\.|Thanks for telling me\.)"
-        r" (Can you say a bit more about that\?|What do you think might happen next\?|Is there another way you could\'ve reacted\?)$"
+        "^(" + "|".join(re.escape(line) for pool in INQUIRE_LINES.values() for line in pool) + ")$"
     ),
 }
 
@@ -149,22 +173,18 @@ class GrammarConstrainedGenerator:
     # INTERCEPT's sampling temperature; fixed so runs are comparable (plan, Mon 12 Oct).
     temperature: float = config.INTERCEPT_TEMPERATURE
 
-    # Template lines: INQUIRE's only source until after PP1, and INTERCEPT's
-    # fallback line whenever the model's line is not used.
+    # INTERCEPT's fallback lines, used whenever the model's line is not used.
+    # INQUIRE's template lines are INQUIRE_LINES, picked by reply type.
     _CANDIDATES = {
         "INTERCEPT": [
             "I noticed something on your screen just now. Can you tell me what you were thinking?",
             "Something you just saw might need a closer look. How are you feeling right now?",
         ],
-        "INQUIRE": [
-            "That makes sense. Can you say a bit more about that?",
-            "Thanks for telling me. What do you think might happen next?",
-            "I understand. Is there another way you could've reacted?",
-        ],
     }
 
-    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
-        pool = self._CANDIDATES.get(state, [])
+    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0,
+                   reply_type: str = "other") -> str:
+        pool = INQUIRE_LINES[reply_type] if state == "INQUIRE" else self._CANDIDATES.get(state, [])
         if not pool:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
         # Deterministic pick for reproducible test sets; offset by attempt so repeated
@@ -181,17 +201,18 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
-        return self.generate_with_source(state, risk_category, attempt).text
+    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0, reply_type: str = "other") -> str:
+        return self.generate_with_source(state, risk_category, attempt, reply_type=reply_type).text
 
     def generate_with_source(self, state: str, risk_category: RiskCategory, attempt: int = 0,
-                             upstream_context: Optional[str] = None) -> GeneratedLine:
+                             upstream_context: Optional[str] = None, reply_type: str = "other") -> GeneratedLine:
         """`upstream_context` is untrusted text for the INTERCEPT prompt. No caller
         passes it today (Component 3 reads only category and confidence); the
-        adversarial harness uses it to simulate a future upstream text field."""
+        adversarial harness uses it to simulate a future upstream text field.
+        `reply_type` picks INQUIRE's pool (see INQUIRE_LINES)."""
         if state == "INTERCEPT":
             return self._intercept(risk_category, attempt, upstream_context)
-        candidate = self._candidate(state, risk_category, attempt=attempt)
+        candidate = self._candidate(state, risk_category, attempt=attempt, reply_type=reply_type)
         if not self.validate(state, candidate):
             return GeneratedLine(self._safe_fallback(state), "fallback", "grammar")
         return GeneratedLine(candidate, "template")
