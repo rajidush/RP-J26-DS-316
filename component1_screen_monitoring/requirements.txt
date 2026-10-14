@@ -9,11 +9,18 @@ Pillow>=10.3.0            # image I/O and basic processing
 # ML / classification
 torch>=2.2.0
 torchvision>=0.17.0
-transformers>=4.40.0
+transformers>=4.40.0,<5   # fine-tuned checkpoint saved with 4.57; 5.x breaks loading
 # onnxruntime>=1.18.0     # uncomment if using ONNX export
 
 # Data handling
 numpy>=1.26.0
+
+# Output payload validation (comp1_to_comp3.schema.json)
+jsonschema>=4.20
+rfc3339-validator>=0.1.4  # enables jsonschema's "date-time" format check
+
+# Demo dashboard (src/dashboard.py)
+streamlit>=1.37           # st.fragment(run_every=...) for the live panel
 
 # Testing
 pytest>=8.0.0

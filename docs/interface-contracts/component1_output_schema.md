@@ -3,84 +3,39 @@
 **File:** `docs/interface-contracts/component1_output_schema.md`  
 **Component:** Component 1 — Screen Monitoring  
 **Owner:** IT23377844  
-**Status:** Draft  
-**Last updated:** 2026-09-29
+**Status:** Implemented — mirrors `comp1_to_comp3.schema.json`  
+**Last updated:** 2026-10-07
 
 ---
 
 ## Overview
 
-This document defines the canonical output payload that Component 1 (Screen Monitoring)
-must emit after classifying a captured screen frame. Every downstream consumer
-(Component 3, logging sinks, dashboards) must treat these fields as the stable
-contract — internal implementation details of Component 1 may change freely as
-long as the shape below is preserved.
+Component 1 emits a **TriggerPayload** each time a captured screen frame is
+**flagged** by the fine-tuned violence detector. The machine-readable contract
+is [`comp1_to_comp3.schema.json`](comp1_to_comp3.schema.json); this document
+explains it. If the two ever disagree, **the JSON schema wins**.
+
+- A frame that is **not flagged produces no payload** — the schema describes a
+  risk trigger and has no "safe" category.
+- No raw image, frame buffer, or file path is ever included — only
+  classification metadata.
+- Every payload is validated with `jsonschema` (Draft 7, `date-time` format
+  checked) before it is emitted (`src/component1.py: validate_payload`).
 
 ---
 
-## Output Fields
+## Fields
 
-| Field | Type | Required | Description |
+| Field | Type | Required | Value emitted by Component 1 |
 |---|---|---|---|
-| `flagged` | `bool` | ✅ | `true` if the frame was classified as containing harmful or policy-violating content, `false` otherwise. |
-| `category` | `string` | ✅ | The primary content category assigned to the frame. Must be one of the enumerated values below. |
-| `confidence` | `float` | ✅ | Model confidence in the assigned `category`, in the range `[0.0, 1.0]`. |
-| `timestamp` | `string` | ✅ | ISO 8601 UTC timestamp of when the frame was captured / classified. Format: `YYYY-MM-DDTHH:MM:SS.ssssss+00:00`. |
-| `frame_reference` | `string` | ✅ | Unique, stable identifier for the captured frame (e.g. a file path or UUID-based key). Used by downstream components to retrieve or log the original image. |
-
----
-
-## Field Details
-
-### `flagged` — `bool`
-
-- `true`  → frame requires downstream action (alerting, logging, intervention).
-- `false` → frame is considered safe; no action required.
-- Downstream components **must not** take action solely on `category` without also
-  checking `flagged`; a high-risk category with low `confidence` may still be `false`.
-
-### `category` — `string` (enum)
-
-Allowed values:
-
-| Value | Meaning |
-|---|---|
-| `"explicit_visual"` | Sexually explicit imagery. |
-| `"violence"` | Graphic violence or gore. |
-| `"hate_speech"` | Hateful symbols, text overlays, or gestures. |
-| `"self_harm"` | Content depicting or promoting self-harm. |
-| `"safe"` | No policy violation detected. |
-
-> [!NOTE]
-> New categories must be agreed across all component owners before being added.
-> Consumers should handle unknown category strings gracefully (treat as `"safe"`
-> if `flagged` is `false`, or escalate to human review if `flagged` is `true`).
-
-### `confidence` — `float`
-
-- Range: `0.0` (no confidence) → `1.0` (maximum confidence).
-- Values outside `[0.0, 1.0]` are invalid and must be rejected by consumers.
-- Recommended thresholds (non-binding):
-
-  | Confidence range | Suggested consumer behaviour |
-  |---|---|
-  | `≥ 0.85` | High confidence — act immediately. |
-  | `0.65 – 0.84` | Medium confidence — log and queue for review. |
-  | `< 0.65` | Low confidence — log only; do not escalate automatically. |
-
-### `timestamp` — `string` (ISO 8601)
-
-- Always UTC (`+00:00` or `Z` suffix).
-- Producers must use `datetime.now(timezone.utc).isoformat()` (Python) or equivalent.
-- Consumers must parse this as a timezone-aware datetime; naive datetimes must be rejected.
-
-### `frame_reference` — `string`
-
-- Must be unique within a session.
-- Recommended format: `frame_<unix_epoch_ms>` or a UUID v4.
-- Must not contain whitespace or special shell characters (safe subset: `[A-Za-z0-9_\-.]`).
-- Producers must guarantee the referenced resource (file / buffer) is accessible for
-  at least 60 seconds after emission, to allow async consumers to retrieve it.
+| `session_id` | string | ✅ | UUID v4, one per incident (a run of consecutive flagged frames); shared by all 4 components for that incident. |
+| `timestamp` | string (`date-time`) | ✅ | Frame capture time, UTC ISO 8601, e.g. `2026-10-07T09:13:18.087781+00:00`. |
+| `source_component` | const | ✅ | `"component1_screen_monitoring"` |
+| `content_type` | enum: `image`, `video_frame`, `on_screen_text` | ✅ | `"image"` (each sample is a screenshot). |
+| `risk_category` | enum: `explicit_visual`, `violence`, `self_harm_imagery`, `unknown_flagged` | ✅ | `"violence"` (only the violence model is live in PP1). |
+| `confidence_score` | number, 0–1 | ✅ | Detector's P(violent); always ≥ the flag threshold (`config.THRESHOLD`, default 0.5). |
+| `context_metadata.app_or_window` | string | — | Not emitted yet. |
+| `context_metadata.duration_visible_ms` | integer | — | ms since the incident's first flagged frame (0 on the first payload). |
 
 ---
 
@@ -88,26 +43,32 @@ Allowed values:
 
 ```json
 {
-  "flagged": true,
-  "category": "explicit_visual",
-  "confidence": 0.92,
-  "timestamp": "2026-09-29T07:30:00.123456+00:00",
-  "frame_reference": "frame_1759128600123"
+  "session_id": "3f1c2a8e-5b7d-4e0a-9c61-2d8f4b9e7a10",
+  "timestamp": "2026-10-07T09:13:20.112000+00:00",
+  "source_component": "component1_screen_monitoring",
+  "content_type": "image",
+  "risk_category": "violence",
+  "confidence_score": 0.93,
+  "context_metadata": { "duration_visible_ms": 2000 }
 }
 ```
 
 ---
 
-## Validation
+## Superseded draft (2026-09-29)
 
-The JSON Schema counterpart of this document lives at:
+The first draft of this document described a different shape — `flagged`,
+`category` (incl. `"safe"`, `"hate_speech"`, `"self_harm"`), `confidence`,
+`timestamp`, `frame_reference`. That shape was **never part of the agreed
+contract** and is not emitted. Mapping, for anyone who used it:
 
-```
-docs/interface-contracts/comp1_to_comp3.schema.json
-```
-
-All output from Component 1 is automatically validated against that schema in
-`tests/test_component1.py` before being forwarded to Component 3.
+| Old draft field | Now |
+|---|---|
+| `flagged` | implicit — a payload is only emitted when flagged |
+| `category` | `risk_category` (schema enum; no `"safe"`) |
+| `confidence` | `confidence_score` |
+| `timestamp` | `timestamp` |
+| `frame_reference` | dropped — no reference to raw frames leaves Component 1 |
 
 ---
 
@@ -116,3 +77,4 @@ All output from Component 1 is automatically validated against that schema in
 | Date | Author | Change |
 |---|---|---|
 | 2026-09-29 | IT23377844 | Initial draft — defines five output fields. |
+| 2026-10-07 | IT23377844 | Rewritten to mirror `comp1_to_comp3.schema.json`; old draft marked superseded. Real payloads now emitted from the fine-tuned detector. No schema change. |

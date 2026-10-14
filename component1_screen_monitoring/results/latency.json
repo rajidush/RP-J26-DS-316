@@ -1,0 +1,35 @@
+{
+  "measured_at": "2026-10-07T03:58:28.986019+00:00",
+  "command": "python component1_screen_monitoring/src/detector.py --benchmark 20",
+  "model_dir": "component1_screen_monitoring/models/violence-vit-screen-ft-v1",
+  "device": "mps",
+  "machine": "Apple M1",
+  "frames": 20,
+  "warmup_frames": 1,
+  "frame_size": {
+    "width": 1440,
+    "height": 900
+  },
+  "latency_ms": {
+    "capture": {
+      "mean": 12.1,
+      "median": 11.7,
+      "max": 16.5
+    },
+    "inference": {
+      "mean": 48.2,
+      "median": 47.6,
+      "max": 58.0
+    },
+    "total": {
+      "mean": 60.3,
+      "median": 59.2,
+      "max": 70.6
+    }
+  },
+  "versions": {
+    "python": "3.13.5",
+    "torch": "2.14.0",
+    "transformers": "4.57.6"
+  }
+}
