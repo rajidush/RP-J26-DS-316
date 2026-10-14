@@ -71,7 +71,8 @@ class Dialogue:
 
     @property
     def escalates(self) -> bool:
-        return self.risk_level.value in config.ESCALATION_RISK_LEVELS
+        return (self.risk_level.value in config.ESCALATION_RISK_LEVELS
+                or self.emotional_state.value in config.ESCALATION_EMOTIONAL_STATES)
 
 
 DIALOGUES = [

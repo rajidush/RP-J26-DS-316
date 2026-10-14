@@ -167,3 +167,23 @@ def test_a_child_who_does_not_know_gets_a_low_pressure_line_not_thanks():
     lines = _inquire_lines(["idk", "nothing", "I was just watching videos"])
     assert all(line in INQUIRE_LINES["dont_know"] for line in lines[:2])
     assert not any(line.startswith("Thanks for telling me") for line in lines[:2])
+
+
+def test_a_distressed_child_is_escalated_even_at_moderate_risk():
+    # 12 Oct run: "I can't stop crying about it" at confidence 0.71 was not escalated (ADR 0005).
+    it = iter(["It was really scary", "I can't stop crying about it"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    assert result.risk_level.value == "moderate" and result.emotional_state.value == "distressed"
+    assert result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text
+    assert result.dialogue_summary.endswith("escalated: emotional_state=distressed")
+
+
+def test_the_summary_says_why_a_high_risk_session_escalated():
+    result, _ = FSMController().run(make_trigger(confidence=0.9), respond=lambda _: "I clicked a link by accident")
+    assert result.dialogue_summary.endswith("escalated: risk_level=high")
+
+
+def test_a_calm_moderate_risk_session_is_not_escalated_and_says_nothing_about_it():
+    result, _ = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: "I clicked a link by accident")
+    assert result.escalation_flag is False and "escalated" not in result.dialogue_summary

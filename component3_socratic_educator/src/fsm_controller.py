@@ -90,7 +90,10 @@ class FSMController:
                 state = DialogueState.CONTRACT
 
             elif state == DialogueState.CONTRACT:
-                evaluate_output.escalation_flag = evaluate_output.risk_level.value in config.ESCALATION_RISK_LEVELS
+                reason = self._escalation_reason(evaluate_output)
+                evaluate_output.escalation_flag = reason is not None
+                if reason:   # the schema has no reason field (ADR 0005), so the summary says why
+                    evaluate_output.dialogue_summary += f"; escalated: {reason}"
                 transcript.add(Turn(state, self._closing_line(evaluate_output, last_child_text)))
                 state = DialogueState.DONE
 
@@ -100,6 +103,15 @@ class FSMController:
 
     # -- helpers -------------------------------------------------------
 
+
+    @staticmethod
+    def _escalation_reason(evaluate_output: EvaluateOutput) -> Optional[str]:
+        """Why a parent should review this session, or None. Risk level first."""
+        if evaluate_output.risk_level.value in config.ESCALATION_RISK_LEVELS:
+            return f"risk_level={evaluate_output.risk_level.value}"
+        if evaluate_output.emotional_state.value in config.ESCALATION_EMOTIONAL_STATES:
+            return f"emotional_state={evaluate_output.emotional_state.value}"
+        return None
 
     def _closing_line(self, evaluate_output: EvaluateOutput, last_child_text: str) -> str:
         if evaluate_output.escalation_flag:

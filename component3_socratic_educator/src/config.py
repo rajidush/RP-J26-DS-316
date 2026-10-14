@@ -8,8 +8,11 @@ MAX_INQUIRE_ATTEMPTS = 3
 # "not yet complete" and triggers another follow-up, up to the max above.
 MIN_RESPONSE_WORDS_FOR_COMPLETENESS = 4
 
-# CONTRACT state: risk levels at or above this trigger escalation_flag=True
+# CONTRACT state: escalation_flag=True when the risk level is one of these...
 ESCALATION_RISK_LEVELS = {"high"}
+# ...or EVALUATE's emotional state is one of these, whatever the risk level
+# (14 Oct, ADR 0005: a distressed child at moderate risk was not escalated).
+ESCALATION_EMOTIONAL_STATES = {"distressed"}
 
 # Local SLM: the model ID LM Studio serves (inference baseline,
 # gemma-3-1B-it-QAT-Q4_0.gguf). See src/model_client.py.
