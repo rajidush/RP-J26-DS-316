@@ -74,8 +74,9 @@ class Dialogue:
 DIALOGUES = [
     # --- normal flow ------------------------------------------------------
     Dialogue("calm_explains_first_try", RiskCategory.EXPLICIT_VISUAL, 0.62,
-             ["I'm not sure", "I clicked a link by accident"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE),
+             ["hmm", "I clicked a link by accident"],
+             2, EmotionalState.CALM, False, RiskLevel.MODERATE,
+             note="was \"I'm not sure\" until 14 Oct; uncertainty now scores unclear (test_emotion_rules)"),
     Dialogue("self_regulation_instead", RiskCategory.VIOLENCE, 0.90,
              ["I saw it", "I should have closed it instead"],
              2, EmotionalState.CALM, True, RiskLevel.HIGH),

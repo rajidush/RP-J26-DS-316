@@ -63,6 +63,9 @@ WITHDRAWN = _rx(
     rf"i don{_APOS}t (really )?know(?! (what to do|why|how))", r"idk", rf"i don{_APOS}t (get|understand)", r"quiet", r"weird",
     r"nope", r"nothing", r"leave me alone", r"(some )?space", rf"don{_APOS}t (really )?(want|feel like) (to )?talk(ing)?", r"boring",
     r"a lot", rf"what{_APOS}s that",
+    # Uncertainty (added 14 Oct from the 12 Oct end-to-end bug, not from held-out data):
+    # three "I'm not sure" replies had no signal and fell through to calm.
+    r"not sure", r"dunno", r"no idea", r"i guess(?! i (should|need))",
 )
 _SIGNALS = {"reflective": REFLECTIVE, "distress": DISTRESS, "defensive": DEFENSIVE, "withdrawn": WITHDRAWN}
 

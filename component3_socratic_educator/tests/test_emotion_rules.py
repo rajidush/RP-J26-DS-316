@@ -15,6 +15,12 @@ from component3_socratic_educator.src.schemas import EmotionalState as E
     (["It's not my fault.", "I didn't do anything."], E.DEFENSIVE),
     (["I feel so alone.", "My heart feels heavy."], E.DISTRESSED),
     (["I don't know.", "Just... quiet."], E.UNCLEAR),
+    # uncertainty is a non-answer, not calm (14 Oct bug: three "I'm not sure" scored calm)
+    (["I'm not sure", "I'm not sure", "I'm not sure"], E.UNCLEAR),
+    (["dunno", "no idea what happened there"], E.UNCLEAR),
+    (["I guess it was there"], E.UNCLEAR),
+    # ...but "I guess I should" is still a plan
+    (["I guess I should tell my dad"], E.CALM),
     # no answer / bare refusal -> unclear, never defensive
     ([], E.UNCLEAR),
     (["", "   "], E.UNCLEAR),

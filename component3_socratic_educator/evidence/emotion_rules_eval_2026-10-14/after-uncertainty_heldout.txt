@@ -1,0 +1,10 @@
+split=heldout  sessions=372  children=20
+agreement with intended state: 315/372 = 84.7%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                      101           1          13           4      85%
+defensive                   8          97           2           5      87%
+distressed                  0           0          75           1      99%
+unclear                     3           2          18          42      65%
+
+output counts: {'distressed': 108, 'defensive': 100, 'unclear': 52, 'calm': 112}
