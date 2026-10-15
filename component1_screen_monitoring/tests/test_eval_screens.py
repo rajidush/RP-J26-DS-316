@@ -97,3 +97,26 @@ def test_markdown_report_has_every_source_and_strategy(fake_screens):
                       "evaluated_at": "now", "counts": {"scraped": 3}, "metrics": metrics})
     for token in ("| scraped | full", "| composite | tiles", "| overall | full", "—"):
         assert token in md
+
+
+def test_pick_examples_mixes_missed_and_false_alarms(fake_screens):
+    from component1_screen_monitoring.src.eval_screens import pick_examples
+    _, rows = evaluate(ColorDetector(), collect_dataset(fake_screens))
+    ex = pick_examples(rows, n=8)
+    assert ex and all(r["pred"] != r["label"] for r in ex)
+    assert {r["label"] for r in ex} == {0, 1}                 # both kinds of error
+    assert len({r["file"] for r in ex}) == len(ex)            # one entry per image
+
+
+def test_save_examples_blurs_violent_images(fake_screens, tmp_path):
+    from component1_screen_monitoring.src.eval_screens import save_examples
+    sharp = tmp_path / "violent.png"
+    img = Image.new("RGB", (400, 250), "white")
+    img.paste((0, 0, 0), (0, 0, 200, 250))                    # hard black/white edge
+    img.save(sharp)
+    out = tmp_path / "grid.png"
+    save_examples([{"file": str(sharp), "label": 1, "pred": 0, "source": "composite",
+                    "strategy": "full", "p_violent": 0.01}], out, cols=1)
+    grid = Image.open(out).convert("L")
+    row = [grid.getpixel((x, 120)) for x in range(185, 216)]
+    assert max(row) - min(row) < 250 and any(30 < v < 225 for v in row)   # edge smeared
