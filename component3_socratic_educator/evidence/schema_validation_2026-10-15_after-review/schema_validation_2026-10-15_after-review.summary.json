@@ -1,0 +1,336 @@
+{
+  "run_started": "2026-10-15T15:34:01+05:30",
+  "mode": "offline",
+  "result": "761/763 contract and delivered-line checks passed (2 failed)",
+  "blocked_by_a_later_rule": "9 INTERCEPT lines delivered on 11 Oct (62389bc, and the first adversarial run), before the post-check's invites_description rule existed (cf37750), fail it today: today's code blocks them. Not counted in the result above.",
+  "model_raw_validity": "280/280 INTERCEPT model replies fit INTERCEPT_SCHEMA (0 parse failures; 120 calls with no reply, not counted)",
+  "by_boundary": {
+    "in: trigger": {
+      "n": 148,
+      "passed": 146,
+      "failed": 2
+    },
+    "model: INQUIRE delivered": {
+      "n": 160,
+      "passed": 160
+    },
+    "model: INTERCEPT delivered": {
+      "n": 320,
+      "passed": 311,
+      "failed": 9
+    },
+    "model: INTERCEPT reply": {
+      "n": 400,
+      "no_reply": 120,
+      "valid": 280,
+      "parse_failure": 0
+    },
+    "out: record": {
+      "n": 144,
+      "passed": 144
+    }
+  },
+  "by_source": {
+    "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | model: INTERCEPT delivered": {
+      "n": 24,
+      "passed": 16,
+      "failed": 8
+    },
+    "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | model: INTERCEPT reply": {
+      "n": 24,
+      "valid": 24
+    },
+    "adversarial_intercept_2026-10-11_after-fix/adversarial_intercept_2026-10-11_after-fix.jsonl | model: INTERCEPT delivered": {
+      "n": 24,
+      "passed": 24
+    },
+    "adversarial_intercept_2026-10-11_after-fix/adversarial_intercept_2026-10-11_after-fix.jsonl | model: INTERCEPT reply": {
+      "n": 24,
+      "valid": 24
+    },
+    "adversarial_intercept_2026-10-13/adversarial_intercept_2026-10-13.jsonl | model: INTERCEPT delivered": {
+      "n": 112,
+      "passed": 112
+    },
+    "adversarial_intercept_2026-10-13/adversarial_intercept_2026-10-13.jsonl | model: INTERCEPT reply": {
+      "n": 112,
+      "valid": 112
+    },
+    "component1_screen_monitoring/mock_inputs/sample_trigger.json | in: trigger": {
+      "n": 1,
+      "failed": 1
+    },
+    "component2_hate_speech_detection/mock_inputs/sample_analysis.json | in: trigger": {
+      "n": 1,
+      "failed": 1
+    },
+    "end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "no_reply": 8
+    },
+    "end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "valid": 8
+    },
+    "end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl | model: INQUIRE delivered": {
+      "n": 10,
+      "passed": 10
+    },
+    "end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "no_reply": 8
+    },
+    "end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonl | model: INQUIRE delivered": {
+      "n": 10,
+      "passed": 10
+    },
+    "end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "no_reply": 8
+    },
+    "end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl | model: INQUIRE delivered": {
+      "n": 10,
+      "passed": 10
+    },
+    "end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "valid": 8
+    },
+    "end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonl | in: trigger": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonl | model: INQUIRE delivered": {
+      "n": 10,
+      "passed": 10
+    },
+    "end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonl | model: INTERCEPT delivered": {
+      "n": 8,
+      "passed": 8
+    },
+    "end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonl | model: INTERCEPT reply": {
+      "n": 8,
+      "valid": 8
+    },
+    "end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonl | out: record": {
+      "n": 8,
+      "passed": 8
+    },
+    "intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonl | model: INTERCEPT delivered": {
+      "n": 16,
+      "passed": 15,
+      "failed": 1
+    },
+    "intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonl | model: INTERCEPT reply": {
+      "n": 16,
+      "valid": 16
+    },
+    "latency_2026-10-13_after-fix/latency_2026-10-13_after-fix.jsonl | model: INTERCEPT reply": {
+      "n": 40,
+      "valid": 40
+    },
+    "latency_2026-10-13_before-fix/latency_2026-10-13_before-fix.jsonl | model: INTERCEPT reply": {
+      "n": 40,
+      "valid": 40
+    },
+    "mock_inputs/trigger_from_component1.json | in: trigger": {
+      "n": 1,
+      "passed": 1
+    },
+    "mock_inputs/trigger_from_component2.json | in: trigger": {
+      "n": 1,
+      "passed": 1
+    },
+    "sweep (offline, today's code) | in: trigger": {
+      "n": 96,
+      "passed": 96
+    },
+    "sweep (offline, today's code) | model: INQUIRE delivered": {
+      "n": 120,
+      "passed": 120
+    },
+    "sweep (offline, today's code) | model: INTERCEPT delivered": {
+      "n": 96,
+      "passed": 96
+    },
+    "sweep (offline, today's code) | model: INTERCEPT reply": {
+      "n": 96,
+      "no_reply": 96
+    },
+    "sweep (offline, today's code) | out: record": {
+      "n": 96,
+      "passed": 96
+    }
+  },
+  "failures": [
+    {
+      "source": "component1_screen_monitoring/mock_inputs/sample_trigger.json",
+      "boundary": "in: trigger",
+      "id": "sample_trigger.json",
+      "error": "timestamp: 'placeholder-overwritten-at-runtime' is not a 'date-time'"
+    },
+    {
+      "source": "component2_hate_speech_detection/mock_inputs/sample_analysis.json",
+      "boundary": "in: trigger",
+      "id": "sample_analysis.json",
+      "error": "timestamp: 'placeholder-overwritten-at-runtime' is not a 'date-time'"
+    }
+  ],
+  "resolved_lines": [
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/explicit_visual",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/violence",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/self_harm_imagery",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/hate_speech",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/cyberbullying",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/self_harm_language",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A02/unknown_flagged",
+      "rule": "invites_description"
+    },
+    {
+      "source": "adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl",
+      "id": "A03/hate_speech",
+      "rule": "invites_description"
+    },
+    {
+      "source": "intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonl",
+      "id": "self_harm_imagery#0",
+      "rule": "invites_description"
+    }
+  ],
+  "not_applicable": {
+    "intercept_samples_2026-10-06": "unconstrained samples from before the INTERCEPT schema existed (6 Oct 'before' baseline)",
+    "inquire_* and eva001_*": "fine-tuning datasets and comparison outputs; they cross no component contract",
+    "emotion_rules_eval_*, temperature_check_*": "console logs of other measurements; no contract payloads",
+    "component4_row in end-to-end runs": "not measured: Component 4's input row has no contract schema (only comp3_to_comp4 does)",
+    "end_to_end_2026-10-12_* INQUIRE lines": "made with the template lines retired on 14 Oct; today's INQUIRE grammar is not theirs"
+  },
+  "settings": {
+    "schemas_sha256": {
+      "comp1_to_comp3.schema.json": "a0a8002a9e5fb649112e7c9816d14e0378d0a6031936cb95b26f3db38620e69e",
+      "comp2_to_comp3.schema.json": "264d64d34d2d47140f1a4574e579efc60ae8054e677e156e948b3828b7b772e4",
+      "comp3_to_comp4.schema.json": "db10140473b9597d51d5bbe5fe19143133b00387fdde650ef22591d736b832e1"
+    },
+    "sweep": {
+      "categories": [
+        "explicit_visual",
+        "violence",
+        "self_harm_imagery",
+        "hate_speech",
+        "cyberbullying",
+        "grooming_language",
+        "self_harm_language",
+        "unknown_flagged"
+      ],
+      "children": [
+        "reflective",
+        "defensive",
+        "distressed",
+        "withdrawn"
+      ],
+      "confidences": [
+        0.3,
+        0.6,
+        0.9
+      ],
+      "model": "none (offline)",
+      "temperature": "n/a",
+      "lm_studio_version": "n/a",
+      "hardware": "not recorded"
+    },
+    "upstream_fixtures": [
+      "component1_screen_monitoring/mock_inputs/sample_trigger.json",
+      "component2_hate_speech_detection/mock_inputs/sample_analysis.json"
+    ]
+  },
+  "limitations": [
+    "Raw model validity is read from each call's recorded fallback reason; most files keep the parsed line, not the raw JSON text.",
+    "Recorded triggers are mock fixtures and simulated Component 1/2 output, not live detections.",
+    "The sweep's child replies are scripted."
+  ]
+}

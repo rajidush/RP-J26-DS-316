@@ -1,0 +1,74 @@
+Schema validation, 2026-10-15T15:34:01+05:30: 761/763 contract and delivered-line checks passed (2 failed)
+Model raw validity: 280/280 INTERCEPT model replies fit INTERCEPT_SCHEMA (0 parse failures; 120 calls with no reply, not counted)
+Blocked by a later rule: 9 INTERCEPT lines delivered on 11 Oct (62389bc, and the first adversarial run), before the post-check's invites_description rule existed (cf37750), fail it today: today's code blocks them. Not counted in the result above.
+
+  source                                                                boundary                        n  pass  fail
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonlmodel: INTERCEPT delivered     24    16     8
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonlmodel: INTERCEPT reply         24   valid 24, parse failures 0, no reply 0
+  adversarial_intercept_2026-10-11_after-fix/adversarial_intercept_2026-10-11_after-fix.jsonlmodel: INTERCEPT delivered     24    24     0
+  adversarial_intercept_2026-10-11_after-fix/adversarial_intercept_2026-10-11_after-fix.jsonlmodel: INTERCEPT reply         24   valid 24, parse failures 0, no reply 0
+  adversarial_intercept_2026-10-13/adversarial_intercept_2026-10-13.jsonlmodel: INTERCEPT delivered    112   112     0
+  adversarial_intercept_2026-10-13/adversarial_intercept_2026-10-13.jsonlmodel: INTERCEPT reply        112   valid 112, parse failures 0, no reply 0
+  component1_screen_monitoring/mock_inputs/sample_trigger.json          in: trigger                     1     0     1
+  component2_hate_speech_detection/mock_inputs/sample_analysis.json     in: trigger                     1     0     1
+  end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl     in: trigger                     8     8     0
+  end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl     model: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl     model: INTERCEPT reply          8   valid 0, parse failures 0, no reply 8
+  end_to_end_2026-10-12_offline/end_to_end_2026-10-12_offline.jsonl     out: record                     8     8     0
+  end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl       in: trigger                     8     8     0
+  end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl       model: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl       model: INTERCEPT reply          8   valid 8, parse failures 0, no reply 0
+  end_to_end_2026-10-12_online/end_to_end_2026-10-12_online.jsonl       out: record                     8     8     0
+  end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl     in: trigger                     8     8     0
+  end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl     model: INQUIRE delivered       10    10     0
+  end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl     model: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl     model: INTERCEPT reply          8   valid 0, parse failures 0, no reply 8
+  end_to_end_2026-10-14_offline/end_to_end_2026-10-14_offline.jsonl     out: record                     8     8     0
+  end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonlin: trigger                     8     8     0
+  end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonlmodel: INQUIRE delivered       10    10     0
+  end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonlmodel: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonlmodel: INTERCEPT reply          8   valid 0, parse failures 0, no reply 8
+  end_to_end_2026-10-14_offline_after-review/end_to_end_2026-10-14_offline_after-review.jsonlout: record                     8     8     0
+  end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl       in: trigger                     8     8     0
+  end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl       model: INQUIRE delivered       10    10     0
+  end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl       model: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl       model: INTERCEPT reply          8   valid 8, parse failures 0, no reply 0
+  end_to_end_2026-10-14_online/end_to_end_2026-10-14_online.jsonl       out: record                     8     8     0
+  end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonlin: trigger                     8     8     0
+  end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonlmodel: INQUIRE delivered       10    10     0
+  end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonlmodel: INTERCEPT delivered      8     8     0
+  end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonlmodel: INTERCEPT reply          8   valid 8, parse failures 0, no reply 0
+  end_to_end_2026-10-14_online_after-review/end_to_end_2026-10-14_online_after-review.jsonlout: record                     8     8     0
+  intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonlmodel: INTERCEPT delivered     16    15     1
+  intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonlmodel: INTERCEPT reply         16   valid 16, parse failures 0, no reply 0
+  latency_2026-10-13_after-fix/latency_2026-10-13_after-fix.jsonl       model: INTERCEPT reply         40   valid 40, parse failures 0, no reply 0
+  latency_2026-10-13_before-fix/latency_2026-10-13_before-fix.jsonl     model: INTERCEPT reply         40   valid 40, parse failures 0, no reply 0
+  mock_inputs/trigger_from_component1.json                              in: trigger                     1     1     0
+  mock_inputs/trigger_from_component2.json                              in: trigger                     1     1     0
+  sweep (offline, today's code)                                         in: trigger                    96    96     0
+  sweep (offline, today's code)                                         model: INQUIRE delivered      120   120     0
+  sweep (offline, today's code)                                         model: INTERCEPT delivered     96    96     0
+  sweep (offline, today's code)                                         model: INTERCEPT reply         96   valid 0, parse failures 0, no reply 96
+  sweep (offline, today's code)                                         out: record                    96    96     0
+
+Failures:
+  component1_screen_monitoring/mock_inputs/sample_trigger.json | in: trigger | sample_trigger.json: timestamp: 'placeholder-overwritten-at-runtime' is not a 'date-time'
+  component2_hate_speech_detection/mock_inputs/sample_analysis.json | in: trigger | sample_analysis.json: timestamp: 'placeholder-overwritten-at-runtime' is not a 'date-time'
+
+Blocked by a later rule (11 Oct lines today's post-check blocks):
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/explicit_visual: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/violence: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/self_harm_imagery: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/hate_speech: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/cyberbullying: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/self_harm_language: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A02/unknown_flagged: invites_description
+  adversarial_intercept_2026-10-11/adversarial_intercept_2026-10-11.jsonl | A03/hate_speech: invites_description
+  intercept_samples_constrained_2026-10-11/intercept_samples_constrained_2026-10-11.jsonl | self_harm_imagery#0: invites_description
+
+Not applicable:
+  intercept_samples_2026-10-06: unconstrained samples from before the INTERCEPT schema existed (6 Oct 'before' baseline)
+  inquire_* and eva001_*: fine-tuning datasets and comparison outputs; they cross no component contract
+  emotion_rules_eval_*, temperature_check_*: console logs of other measurements; no contract payloads
+  component4_row in end-to-end runs: not measured: Component 4's input row has no contract schema (only comp3_to_comp4 does)
+  end_to_end_2026-10-12_* INQUIRE lines: made with the template lines retired on 14 Oct; today's INQUIRE grammar is not theirs

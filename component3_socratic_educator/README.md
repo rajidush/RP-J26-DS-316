@@ -229,6 +229,22 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 - Temperature (13 Oct, `evidence/temperature_check_2026-10-13/`): llama.cpp's
   log shows it samples INTERCEPT at the 1.0 we send; with none sent, the
   server default is 0.8, so the runs before 12 Oct were at 0.8.
+- Schema validation (15 Oct, `evidence/schema_validation_2026-10-15_after-review/`,
+  `python -m evidence.validate_schemas`): every recorded output plus a fresh
+  sweep of today's FSM (8 categories x 4 scripted children x 3 confidences,
+  offline). 761/763 trigger, record and delivered-line checks pass. The 2
+  failures are Component 1 and 2's fixture files (`sample_trigger.json`,
+  `sample_analysis.json`): templates whose `timestamp` is the placeholder
+  "placeholder-overwritten-at-runtime"; the 16 triggers built from them at
+  runtime all pass. Every Component 3 output passes: triggers it received,
+  records it sent (comp3_to_comp4) and lines it delivered. The model's raw
+  INTERCEPT replies fit the schema 280/280 times (0 parse failures, read from
+  each call's recorded fallback reason; most runs keep the parsed line, not the
+  raw JSON). 9 lines delivered on 11 Oct, before the post-check's
+  `invites_description` rule existed (cf37750), fail it today and are blocked
+  by today's code. Not measured: an online sweep (LM Studio was off) and
+  Component 4's input row (it has no contract schema). Next: an online sweep
+  with LM Studio running.
 - Dialogue fixes (14 Oct, `evidence/end_to_end_2026-10-14_online_after-review/`
   vs `end_to_end_2026-10-12_online/`; the untagged 14 Oct runs predate the review
   fixes and their summary still says INQUIRE does not adapt): INQUIRE no longer asks a distressed child
