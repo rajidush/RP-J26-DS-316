@@ -18,9 +18,10 @@ and gives a calibrated probability (I-1).
 | Pro-Cap / PromptHate (Cao et al., 2022, 2023): caption every meme with BLIP-2, then a text model | not checked | No: a captioning model per meme | Rejected |
 | ISSUES (Burbi et al., 2023): CLIP + textual inversion | 85.5 | Needs an extra inversion network on ViT-L/14 | Later |
 | **Hate-CLIPper** (Kumar & Nandakumar, 2022): frozen CLIP + small fusion head | 85.8 (test_seen), 81.2–82.6 (dev_seen) | **Yes**: only the head trains; align fusion has ~5M parameters | **Chosen: step 1** |
-| **RGCL** (Mei et al., 2024, ACL): Hate-CLIPper + retrieval-guided contrastive loss + k-NN | 87.0 | **Yes**: same head, one extra loss | **Chosen: step 2** |
+| **RGCL** (Mei et al., 2024, ACL): Hate-CLIPper + retrieval-guided contrastive loss + k-NN | 87.0 | **Yes**: same head, one extra loss | Tried as step 2; no gain on B/32 (see Results) |
 
-So: **frozen CLIP + Hate-CLIPper align-fusion head, improved with RGCL.**
+So: **frozen CLIP + Hate-CLIPper align-fusion head.** RGCL was tried on top
+and dropped (see Results).
 
 - Hate-CLIPper's align fusion matches its 1.1-billion-parameter cross fusion
   with ~5M parameters. The authors say the trend holds with ViT-B/32.
@@ -50,7 +51,8 @@ labels were never released. Our test split is `dev_seen`, where Hate-CLIPper
   winner is reported with 5 seeds (mean ± sd) plus a bootstrap 95 % CI for the
   seed ensemble.
 - Calibration: temperature scaling on val (Guo et al., 2017); ECE reported
-  before and after.
+  before and after. Whether the score may fuse is decided by the I-1 gate
+  below.
 - Ablations: image only, text only, concat vs align vs cross, with and without
   the 833 Kaggle/WOAH label conflicts, with and without RGCL.
 
@@ -94,11 +96,60 @@ trainable parameters.
     look-ups noisier than with the paper's L/14.
 - **The GPU re-run reproduces the CPU result** within seed noise (0.755 vs
   0.751). A T4 trains one seed in ~10 s, against ~170 s on the laptop CPU.
-- **Calibration is not yet good enough for the I-1 gate.** Temperature
-  scaling halves ECE (0.22 → 0.11), but part of the residual comes from the
-  prior shift (35 % hateful in train, 49 % in test).
+- **Calibration does not pass the I-1 gate.** Temperature scaling halves
+  ECE (0.22 → 0.11); see the next section for the gate.
 - **A val-tuned threshold is unstable** (0.34–0.77 across seeds), so accuracy
   is reported at 0.5 and AUROC is the headline metric.
+
+## Calibration: the I-1 gate (2026-10-15)
+
+`calibrate.py` decides whether the meme score may move a decision. The rule
+was set before the test result was read:
+
+- **Gate:** consistency resampling (Bröcker & Smith, 2007), p ≥ 0.05, for the
+  shipped temperature-scaled score, on val (5-fold, in distribution) **and**
+  on test.
+- **Why not an ECE cut-off:** on 500 memes a perfectly calibrated score still
+  shows ECE ≈ 0.05 (95th percentile ≈ 0.067), so one number cannot separate
+  noise from miscalibration.
+- **Base rate:** a calibrated probability holds for one base rate. Train and
+  val are 35 % hateful, dev_seen 49 %. Test is reweighted to the training base
+  rate (label shift; Saerens et al., 2002), so the gate judges the score, not
+  the base rate.
+
+| Calibrator (fitted on val) | Val ECE (5-fold) | Val p | Test ECE, raw | Test ECE at 35 % | Test p |
+|---|---|---|---|---|---|
+| **Temperature (shipped)** | 0.049 | 0.43 | 0.123 | 0.076 | **0.008** |
+| Platt | 0.044 | 0.64 | 0.145 | 0.074 | 0.008 |
+| Isotonic | 0.030 | 0.92 | 0.136 | 0.081 | < 0.001 |
+
+Reliability per decision band (temperature-scaled; test reweighted to 35 %):
+
+| Score band | Test memes | Mean score | Observed hateful | Val (5-fold): mean / observed |
+|---|---|---|---|---|
+| 0–0.35 | 256 | 0.157 | 0.222 | 0.156 / 0.136 |
+| 0.35–0.55: stage 1, fusion agreement band | 103 | 0.435 | **0.348** | 0.454 / 0.534 |
+| 0.55–0.75: persona thresholds | 81 | 0.646 | 0.633 | 0.673 / **0.565** |
+| 0.75–1 | 60 | 0.771 | 0.716 | 0.773 / 0.742 |
+
+**Verdict: FAIL. The meme score stays evidence only (I-1).**
+
+- On val the score is calibrated (p = 0.43), so temperature scaling works for
+  the training distribution.
+- On dev_seen it is not, even after the base-rate correction (p = 0.008).
+  No calibrator fitted on val passes (all p < 0.01), so the cause is a shift
+  between train and dev_seen beyond the base rate, not the choice of
+  calibrator.
+- The miss is worst at 0.35–0.55: the score says 0.44, but 35 % are hateful.
+  That band feeds the fusion agreement bonus (+0.15), which can lift a fused
+  score past the 0.55 threshold, so it would change outcomes.
+- 0.55–0.75 looks right on test (0.65 vs 0.63) but is over-confident on val
+  (0.67 vs 0.57), so it is not reliable either.
+- Children's screens are a further shift from both splits. The gate should be
+  re-run on the child-context test set (roadmap Step 9) before the meme score
+  is allowed to fuse. Ranking (AUROC) is unaffected by any of this.
+
+Figures: `evaluation/results/meme_clip-b32_align_calibration.json`.
 
 ## Run
 
@@ -107,6 +158,7 @@ python -m component2_hate_speech_detection.meme_model.embed --encoder clip-b32
 python -m component2_hate_speech_detection.meme_model.train --logreg
 python -m component2_hate_speech_detection.meme_model.grid --encoder clip-b32
 python -m component2_hate_speech_detection.meme_model.train --fusion align --rgcl 1 --knn 10 --tag rgcl
+python -m component2_hate_speech_detection.meme_model.calibrate --run meme_clip-b32_align
 ```
 
 Training runs on a GPU (`--device auto` picks it up; Colab or Thunder). Head
@@ -120,6 +172,7 @@ are suitable to commit.
 
 ## References
 
+- Bröcker, J. & Smith, L. A. (2007). Increasing the reliability of reliability diagrams. *Weather and Forecasting*, 22(3), 651–661.
 - Burbi, G. et al. (2023). Mapping memes to words for multimodal hateful meme classification. *ICCV Workshops*.
 - Cao, R. et al. (2022). Prompting for multimodal hateful meme classification. *EMNLP*.
 - Cao, R. et al. (2023). Pro-Cap: Leveraging a frozen vision-language model for hateful meme detection. *ACM MM*.
@@ -128,3 +181,4 @@ are suitable to commit.
 - Kumar, G. K. & Nandakumar, K. (2022). Hate-CLIPper: Multimodal hateful meme classification based on cross-modal interaction of CLIP features. *NLP4PI Workshop*. arXiv:2210.05916.
 - Mei, J. et al. (2024). Improving hateful meme detection through retrieval-guided contrastive learning. *ACL*, 5333–5347.
 - Radford, A. et al. (2021). Learning transferable visual models from natural language supervision. *ICML*.
+- Saerens, M., Latinne, P. & Decaestecker, C. (2002). Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure. *Neural Computation*, 14(1), 21–41.

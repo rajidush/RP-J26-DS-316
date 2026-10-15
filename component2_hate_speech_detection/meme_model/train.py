@@ -79,15 +79,19 @@ def load_splits(encoder: str, exclude_conflicts: bool = False, manifest_dir: Pat
 
 # ---------------------------------------------------------------- metrics
 
-def expected_calibration_error(y: np.ndarray, p: np.ndarray, bins: int = 15) -> float:
-    """ECE with equal-width bins (Guo et al., 2017)."""
+def expected_calibration_error(y: np.ndarray, p: np.ndarray, bins: int = 15,
+                               weights: Optional[np.ndarray] = None) -> float:
+    """ECE with equal-width bins (Guo et al., 2017). `weights` reweights the
+    sample, e.g. to another base rate (see calibrate.class_weights)."""
+    w = np.ones(len(p)) if weights is None else np.asarray(weights, dtype=float)
     edges = np.linspace(0.0, 1.0, bins + 1)
     which = np.clip(np.digitize(p, edges[1:-1]), 0, bins - 1)
     ece = 0.0
     for b in range(bins):
         mask = which == b
         if mask.any():
-            ece += mask.mean() * abs(p[mask].mean() - y[mask].mean())
+            wb = w[mask]
+            ece += wb.sum() / w.sum() * abs(np.average(p[mask], weights=wb) - np.average(y[mask], weights=wb))
     return float(ece)
 
 

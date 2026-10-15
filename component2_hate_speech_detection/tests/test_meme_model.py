@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 
-from component2_hate_speech_detection.meme_model import embed, train
+from component2_hate_speech_detection.meme_model import calibrate, embed, train
 from component2_hate_speech_detection.meme_model.heads import FUSIONS, FusionHead
 
 
@@ -51,6 +51,73 @@ def test_ece_is_zero_when_confidence_matches_frequency():
     y = np.array([1, 0, 1, 0, 1, 0, 1, 0], dtype=np.float32)
     assert train.expected_calibration_error(y, np.full(8, 0.5)) == pytest.approx(0.0)
     assert train.expected_calibration_error(y, np.where(y == 1, 0.0, 1.0)) == pytest.approx(1.0)
+
+
+def test_weighted_ece_reweights_to_another_base_rate():
+    y = np.array([1, 1, 0, 0], dtype=np.float32)
+    p = np.full(4, 0.75)
+    assert train.expected_calibration_error(y, p, weights=np.ones(4)) == pytest.approx(
+        train.expected_calibration_error(y, p))
+    # Counting the hateful memes three times turns a 50 % sample into a 75 % one.
+    assert train.expected_calibration_error(y, p, weights=np.array([3, 3, 1, 1])) == pytest.approx(0.0)
+
+
+def test_prior_shift_round_trips_and_moves_the_right_way():
+    p = np.array([0.1, 0.5, 0.9])
+    there = calibrate.shift_prior(p, 0.35, 0.5)
+    assert np.all(there > p)
+    assert calibrate.shift_prior(there, 0.5, 0.35) == pytest.approx(p)
+    assert calibrate.shift_prior(p, 0.35, 0.35) == pytest.approx(p)
+
+
+def test_class_weights_give_the_target_base_rate():
+    y = np.array([1] * 49 + [0] * 51)
+    w = calibrate.class_weights(y, 0.49, 0.354)
+    assert np.average(y, weights=w) == pytest.approx(0.354)
+
+
+def test_consistency_test_accepts_a_calibrated_score_and_rejects_an_overconfident_one():
+    rng = np.random.default_rng(1)
+    p = rng.uniform(0.02, 0.98, 500)
+    y = rng.binomial(1, p).astype(float)
+    assert calibrate.consistency_test(y, p, rounds=300)["p_value"] > 0.05
+    overconfident = train.sigmoid(3 * calibrate.log_odds(p))
+    assert calibrate.consistency_test(y, overconfident, rounds=300)["p_value"] < 0.01
+
+
+def test_consistency_test_separates_base_rate_shift_from_miscalibration():
+    # A score calibrated in a reference population, then a sample with more hateful
+    # memes (label shift: drop most benign ones). Raw ECE looks bad; reweighted to
+    # the reference base rate the score is consistent.
+    rng = np.random.default_rng(2)
+    p = rng.uniform(0.02, 0.98, 6000)
+    y = rng.binomial(1, p).astype(float)
+    reference = float(y.mean())
+    keep = (y == 1) | (rng.random(len(y)) < 0.4)
+    p, y = p[keep], y[keep]
+    shifted = calibrate.consistency_test(y, p, rate=float(y.mean()), reference=reference, rounds=300)
+    naive = calibrate.consistency_test(y, p, rounds=300)
+    assert shifted["p_value"] > 0.05
+    assert naive["p_value"] < 0.01
+
+
+def test_band_reliability_reports_each_decision_band():
+    p = np.array([0.1, 0.4, 0.6, 0.8, 1.0])
+    y = np.array([0, 0, 1, 1, 1], dtype=float)
+    bands = calibrate.band_reliability(y, p)
+    assert [b["band"] for b in bands] == [list(b) for b in calibrate.BANDS]
+    assert bands[-1]["n"] == 2
+
+
+def test_calibrators_are_fitted_and_cross_validated_on_val_only():
+    rng = np.random.default_rng(3)
+    z = rng.normal(0, 3, 400)
+    y = rng.binomial(1, train.sigmoid(z / 2)).astype(float)
+    for kind in ("temperature", "platt", "isotonic"):
+        out = calibrate.cross_validated(kind, z, y)
+        assert out.shape == y.shape and np.all((out >= 0) & (out <= 1))
+    with pytest.raises(ValueError):
+        calibrate.fit_calibrator("histogram", z, y)
 
 
 def test_threshold_is_chosen_to_maximise_validation_accuracy():
