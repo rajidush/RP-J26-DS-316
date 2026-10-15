@@ -133,7 +133,8 @@ function card(v) {
   const color = `var(--${v.top_category in CAT ? v.top_category : "none"})`;
   // Evidence comes grouped per flagged block, strongest first: show the top block's evidence.
   const key = e => JSON.stringify([e.box, e.source, e.redacted_snippet]);
-  const blocks = [...new Set(v.evidence.filter(e => e.producer !== "vision").map(key))];
+  const blocks = [...new Set(v.evidence.filter(e => e.source !== "vision" && e.producer !== "vision").map(key))];
+  const meme = v.evidence.find(e => e.source === "vision");
   const top = v.evidence.filter(e => key(e) === blocks[0]);
   const rules = [...new Set(top.filter(e => e.rule_id).map(e => e.rule_id))];
   const heads = top.filter(e => !e.rule_id && e.producer.includes(":"))
@@ -148,7 +149,7 @@ function card(v) {
       <span class="meta">${esc(v.clock)} &middot; ${esc(SRC[v.source] || v.source)}${v.app && v.app.exe ? " &middot; " + esc(v.app.exe) : ""} &middot; risk ${v.p.toFixed(2)} vs &theta; ${v.theta.toFixed(2)}</span>
     </div>
     <div class="why">${esc(v.explanation)}</div>
-    <div class="chips">${rules.map(r => `<span class="chip">rule: ${esc(r)}</span>`).join("")}${heads.map(h => `<span class="chip">${esc(h)}</span>`).join("")}${v.framing_reason ? `<span class="chip">framing: ${esc(v.framing_reason)}</span>` : ""}${more}<span class="chip">${Math.round(v.latency_ms.total_ms || 0)} ms</span></div>
+    <div class="chips">${rules.map(r => `<span class="chip">rule: ${esc(r)}</span>`).join("")}${heads.map(h => `<span class="chip">${esc(h)}</span>`).join("")}${v.framing_reason ? `<span class="chip">framing: ${esc(v.framing_reason)}</span>` : ""}${meme ? `<span class="chip">meme model ${meme.score.toFixed(2)}${meme.rule_id ? " (evidence only)" : ""}</span>` : ""}${more}<span class="chip">${Math.round(v.latency_ms.total_ms || 0)} ms</span></div>
     <div class="snippet">Child sees: <em>${esc(v.child_safe_summary)}</em></div>
     ${snippet ? `<div class="snippet" onclick="this.classList.toggle('shown')" title="Click to reveal">Flagged text (PII-masked, click to reveal): <span class="text">${esc(snippet)}</span></div>` : ""}
     ${v.trigger_payload ? `<details><summary>Payload sent to C3 (no flagged text)</summary><pre>${esc(JSON.stringify(v.trigger_payload, null, 2))}</pre></details>` : ""}
@@ -176,7 +177,7 @@ async function refresh() {
     $("net").innerHTML = s.network.engine === 0 ? '<span class="good">0 ✓</span>' : `<span class="badtext">${s.network.engine}</span>`;
     $("net2").textContent = `window engine (WebView2): ${s.network.window}`;
     $("sources").innerHTML = Object.entries({Screen: s.sources.screen, Audio: s.sources.audio, OCR: s.sources.ocr,
-      Speech: s.sources.asr, "Text models": s.sources.text, "Policy pack": "v" + s.sources.policy})
+      Speech: s.sources.asr, "Text models": s.sources.text, "Meme model": s.sources.meme, "Policy pack": "v" + s.sources.policy})
       .map(([k, v]) => `<span>${k}: <b>${esc(v)}</b></span>`).join("");
     const rows = [["Screen checks", c.screen_checks], ["Unchanged (skipped)", c.unchanged], ["Partial re-reads", c.partial_reads],
       ["Full reads", c.full_reads], ["Utterances heard", c.utterances], ["Transcribed", c.transcribed],

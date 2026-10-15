@@ -146,7 +146,8 @@ class Analyzer:
         evidence = self._evidence(flagged, persona)
         if obs.vision is not None and obs.vision.score > 0:
             evidence.append(Evidence(producer=obs.vision.producer or "vision", score=round(obs.vision.score, 4),
-                                     rule_id="" if obs.vision.calibrated else "uncalibrated:evidence_only"))
+                                     rule_id="" if obs.vision.calibrated else "uncalibrated:evidence_only",
+                                     source="vision"))
         regions = [s.span.box for s in flagged if s.span.box and s.detail.score >= decision.theta > 0]
         framing_reason = top.detail.framing_reason if top else ""
 
@@ -193,6 +194,10 @@ def fingerprint(category: str, texts: List[str]) -> str:
     return hashlib.sha256(f"{category}|{canon}".encode("utf-8")).hexdigest()[:16]
 
 
+# How an uncalibrated signal is named in the plain-language explanation.
+SIGNAL_LABELS = {"vision": "the meme model's image score"}
+
+
 def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored: List[str]) -> str:
     """One plain sentence per fact that moved the decision (proposal FR7)."""
     if detail is None:
@@ -214,7 +219,8 @@ def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored:
     if detail.framing_reason:
         parts.append("Score held down: the text reads like reporting or quoting harm, not doing it.")
     if ignored:
-        parts.append(f"{', '.join(ignored)} read but not calibrated, so it did not affect the score.")
+        what = ", ".join(SIGNAL_LABELS.get(name, name) for name in ignored)
+        parts.append(f"Also read {what}, which is not calibrated yet, so it did not affect the score.")
     if v.urgent:
         parts.append("Urgent: a parent should be told now.")
     parts.append(f"Final risk {v.p:.2f}.")

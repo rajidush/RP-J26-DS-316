@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from component2_hate_speech_detection.src.agent.runtime import Agent, AgentConfig
 from component2_hate_speech_detection.src.app.main import Api, exclude_from_capture, wav_bytes_to_audio
 from component2_hate_speech_detection.src.engine.analyzer import Analyzer
+from component2_hate_speech_detection.src.engine.meme_scorer import MemeScorer
 from component2_hate_speech_detection.src.readers.asr import AsrEngine
 from component2_hate_speech_detection.src.readers.screen import ScreenReader
 from component2_hate_speech_detection.src.readers.speech import SpeechReader
@@ -23,11 +24,12 @@ class OneLineOcr:
 
 
 @pytest.fixture
-def api(lexicon_scorer):
+def api(lexicon_scorer, tmp_path):
     agent = Agent(config=AgentConfig(age=10, audio=False, screen=False),
                   analyzer=Analyzer(scorer=lexicon_scorer),
                   screen_reader=ScreenReader(OneLineOcr()),
-                  speech_reader=SpeechReader(AsrEngine(transcribe_fn=lambda a: "nobody likes you")))
+                  speech_reader=SpeechReader(AsrEngine(transcribe_fn=lambda a: "nobody likes you")),
+                  meme_scorer=MemeScorer(root=tmp_path / "no-meme-model"))
     return Api(agent)
 
 

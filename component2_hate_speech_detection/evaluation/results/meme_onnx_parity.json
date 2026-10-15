@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-15",
+  "run": "meme_clip-b32_align",
+  "fp32_vs_torch_max_logit_diff": 6e-06,
+  "val_runtime_fp32_vs_reference": {
+    "auroc": 0.8251,
+    "reference_auroc": 0.8252,
+    "max_abs_diff": 0.0031,
+    "mean_abs_diff": 0.0002,
+    "band_changes": 0
+  },
+  "val_int8_vs_fp32": {
+    "auroc": 0.8255,
+    "reference_auroc": 0.8251,
+    "max_abs_diff": 0.148,
+    "mean_abs_diff": 0.0121,
+    "band_changes": 21,
+    "auroc_drop": -0.0004
+  },
+  "int8_gate": {
+    "max_auroc_drop": 0.005,
+    "max_mean_shift": 0.02,
+    "settings": {
+      "op_types_to_quantize": [
+        "MatMul"
+      ],
+      "per_channel": true,
+      "only_under": "/vision_model/"
+    },
+    "kept": true
+  },
+  "shipped": "int8",
+  "test_shipped_vs_reference": {
+    "auroc": 0.7502,
+    "reference_auroc": 0.7522,
+    "max_abs_diff": 0.1101,
+    "mean_abs_diff": 0.0151,
+    "band_changes": 47
+  },
+  "median_ms_per_meme": {
+    "fp32": 123.5,
+    "int8": 65.5
+  },
+  "size_mb": {
+    "model.int8.onnx": 351.1,
+    "model.onnx": 593.5
+  },
+  "calibrated": false
+}

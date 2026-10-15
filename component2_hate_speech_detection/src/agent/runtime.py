@@ -34,6 +34,7 @@ from ..capture.sources import AudioSource, ScreenSource
 from ..capture.system import battery_saver_on, foreground_app, session_locked
 from ..engine.analyzer import Analyzer, Observation, TextSpan
 from ..engine.decide import persona_for_age
+from ..engine.meme_scorer import MemeScorer
 from ..engine.verdict import Verdict
 from ..readers.screen import ScreenReader
 from ..readers.speech import SpeechReader
@@ -91,6 +92,7 @@ class Agent:
         audio_source: Optional[AudioSource] = None,
         screen_reader: Optional[ScreenReader] = None,
         speech_reader: Optional[SpeechReader] = None,
+        meme_scorer: Optional[MemeScorer] = None,
         context: Callable[[], Dict[str, str]] = foreground_app,
         locked: Callable[[], bool] = session_locked,
         battery_saver: Callable[[], bool] = battery_saver_on,
@@ -102,6 +104,7 @@ class Agent:
         self.audio_source = audio_source
         self.screen_reader = screen_reader or ScreenReader()
         self.speech_reader = speech_reader or SpeechReader()
+        self.meme_scorer = meme_scorer or MemeScorer()
         self.context, self.locked, self.battery_saver = context, locked, battery_saver
         self.on_alert = on_alert
         self.stats = AgentStats()
@@ -250,7 +253,15 @@ class Agent:
     def check_image(self, image: Image.Image) -> Verdict:
         with self._ocr_lock:
             read = ScreenReader(self.screen_reader.ocr).read(image)
-        obs = Observation(read.spans, source="screen", read_ms={"ocr_ms": read.ocr_ms})
+        # A dropped image is scored as one meme, with its OCR text as the caption.
+        # Live screen frames are not: there a meme is a small part of the frame,
+        # and the model has only been measured on whole memes (meme_model/README).
+        read_ms = {"ocr_ms": read.ocr_ms}
+        t = time.perf_counter()
+        vision = self.meme_scorer.score(image, " ".join(s.text for s in read.spans))
+        if vision is not None:
+            read_ms["meme_ms"] = round((time.perf_counter() - t) * 1000, 1)
+        obs = Observation(read.spans, source="screen", vision=vision, read_ms=read_ms)
         return self._handle(self.analyzer.analyze(obs, self.config.age), force=True)
 
     def check_audio(self, audio: np.ndarray) -> List[Verdict]:
@@ -310,6 +321,7 @@ class Agent:
                 "ocr": self.screen_reader.ocr.name,
                 "asr": self.speech_reader.asr.name,
                 "text": self.analyzer.scorer.name,
+                "meme": self.meme_scorer.name if self.meme_scorer.available else "off",
                 "policy": self.analyzer.policy.version,
             },
             "counts": dict(self.stats.counts),

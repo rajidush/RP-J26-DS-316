@@ -79,7 +79,7 @@ class Evidence:
     rule_id: str = ""
     box: Optional[List[float]] = None   # normalised x0, y0, x1, y1 of the screen
     redacted_snippet: str = ""
-    source: str = ""                    # typed | ocr | asr
+    source: str = ""                    # typed | ocr | asr | vision
 
 
 @dataclass
@@ -152,7 +152,7 @@ class Verdict:
                 "persona": self.persona,
                 "child_safe_summary": self.child_safe_summary,
                 # Rule IDs only, never the flagged text (privacy + contract).
-                "matched_families": sorted({e.rule_id for e in self.evidence if e.rule_id}),
+                "matched_families": sorted({e.rule_id for e in self.evidence if e.rule_id and e.source != "vision"}),
                 "framing_reason": self.framing_reason,
                 "verdict_id": self.id,
                 "engine_version": self.engine_version,

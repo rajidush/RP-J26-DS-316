@@ -21,14 +21,15 @@ soundcard>=0.4.2           # WASAPI loopback stand-in until Component 1 captures
 pywebview>=5.0             # native window on Edge WebView2 (no local web server)
 pystray>=0.19              # tray icon
 
-# One-off model export (tools/export_onnx.py): needs torch + transformers once,
-# never at runtime.
+# One-off model export (tools/export_onnx.py, tools/export_meme_onnx.py): needs
+# torch + transformers once, never at runtime.
 # torch  --index-url https://download.pytorch.org/whl/cpu
 # transformers>=4.40
 # onnx>=1.17
 
 # Tests
 pytest>=8.0
+onnx>=1.17                 # test_meme_scorer.py builds a tiny stand-in meme model
 
 # Annotation data download only (annotation/fetch_data.py):
 # kagglehub>=0.3

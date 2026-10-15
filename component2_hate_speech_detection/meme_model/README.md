@@ -1,9 +1,11 @@
 # Meme model (Step 8: image / meme path)
 
-A meme hate classifier for C2's image path (proposal SO3, FR5). It is a
-research build: nothing it outputs changes a child's outcome until it passes the
-calibration gate in [`src/engine/fusion.py`](../src/engine/fusion.py)
-(invariant I-1), and then it can only *raise* a score (I-2).
+A meme hate classifier for C2's image path (proposal SO3, FR5). It ships in
+the app as ONNX and scores dropped images, but nothing it outputs changes a
+child's outcome until it passes the calibration gate in
+[`src/engine/fusion.py`](../src/engine/fusion.py) (invariant I-1). It does not
+pass yet (see Calibration), so today it is evidence only. Once it passes, it
+can only *raise* a score (I-2).
 
 ## Why this model
 
@@ -151,6 +153,60 @@ Reliability per decision band (temperature-scaled; test reweighted to 35 %):
 
 Figures: `evaluation/results/meme_clip-b32_align_calibration.json`.
 
+## Shipping form and app wiring (2026-10-15)
+
+The app never imports torch, so the model ships as ONNX
+(`tools/export_meme_onnx.py`; figures in
+`evaluation/results/meme_onnx_parity.json`). The runtime is
+[`src/engine/meme_scorer.py`](../src/engine/meme_scorer.py): ONNX Runtime +
+`tokenizers`, its own CLIP preprocessing, loaded on first use.
+
+| Check | Result |
+|---|---|
+| fp32 ONNX vs torch, same inputs | max logit difference 0.000006 |
+| Runtime preprocessing + tokeniser vs the reported head (val) | AUROC 0.8251 vs 0.8252; max score difference 0.003; 0 band changes |
+| INT8, vision tower only (val gate: AUROC drop ≤ 0.005, mean shift ≤ 0.02) | AUROC +0.000, mean shift 0.012: **kept** |
+| Shipped INT8, test, dataset captions | AUROC 0.750 (reference 0.752) |
+| Size / speed (laptop CPU, 2 threads) | 351 MB (fp32 594 MB); 65 ms per meme (fp32 124 ms) |
+
+INT8 on the text tower fails (val AUROC −0.035, mean shift 0.087): its
+activations have outliers that dynamic quantisation clips. Only the vision
+tower is quantised. One preprocessing bug was caught by the parity check:
+CLIP floors the resized long side, and rounding it instead moved one val
+meme's score by 0.19.
+
+**Wiring.** A dropped image (`Agent.check_image`, the panel's "try it") is
+scored as one meme, with its OCR text as the caption. The score reaches the
+analyzer as a `vision` signal with `calibrated = False` (copied from the I-1
+gate into `meme.json`), so it is shown as evidence ("meme model 0.82
+(evidence only)") and never changes the score, rung or C3 payload. Live screen
+frames are not scored: a meme is a small part of a screen, and the model is
+measured on whole memes only.
+
+**End to end: the 500 test memes through the app path** (real OCR, both text
+heads, meme scorer, decision):
+
+| | Result |
+|---|---|
+| Meme score AUROC (OCR captions, INT8) | **0.733** |
+| Text path alone, verdict-score AUROC | 0.560 |
+| Text path, age 9: hateful memes alerted | 32 % (79 / 246) |
+| Text path, age 9: benign memes alerted | 21 % (52 / 254) |
+| Hateful memes the text path misses (age 9) where the meme score is ≥ 0.55 | 67 of 167 (and 47 of 254 benign memes score ≥ 0.55) |
+| Latency per image, median / p95 | 421 / 806 ms (OCR 240, meme 98, text 78) |
+| Peak memory: OCR + both text heads + meme model, no torch | 1,508 MB (NFR2 budget 2 GB) |
+
+- **On memes, the text path is close to chance** (0.56), as the dataset
+  intends: benign confounders reuse the hateful captions with a harmless
+  picture. The meme model sees the picture and ranks far better (0.73).
+- **The meme model could add detections once calibrated**: it scores 67 of
+  the 167 hateful memes the text path misses at or above 0.55, at the cost
+  of 47 benign memes.
+- **It could not remove the text path's false alerts** on benign
+  confounders (21 %), even once calibrated: fusion may raise a score, never
+  lower it (I-2). That is the design's safety trade-off, and it should be
+  stated as such.
+
 ## Run
 
 ```bash
@@ -159,6 +215,7 @@ python -m component2_hate_speech_detection.meme_model.train --logreg
 python -m component2_hate_speech_detection.meme_model.grid --encoder clip-b32
 python -m component2_hate_speech_detection.meme_model.train --fusion align --rgcl 1 --knn 10 --tag rgcl
 python -m component2_hate_speech_detection.meme_model.calibrate --run meme_clip-b32_align
+python -m component2_hate_speech_detection.tools.export_meme_onnx --run meme_clip-b32_align
 ```
 
 Training runs on a GPU (`--device auto` picks it up; Colab or Thunder). Head
