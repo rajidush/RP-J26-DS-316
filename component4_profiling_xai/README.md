@@ -16,7 +16,9 @@ Input rows follow
 plus a `child_id` column. The schema does not carry `child_id`, so
 [`integration/comp3_to_comp4.py`](../integration/comp3_to_comp4.py) validates
 each record against the schema and adds it from device configuration (gap logged
-in `docs/interface-contracts/CHANGELOG.md`). Component 3 needs no changes.
+in `docs/interface-contracts/CHANGELOG.md`). The adapter currently defaults to a
+placeholder device child ID; a real device-configuration source remains planned.
+Component 3 needs no changes. Exported synthetic sessions already carry `child_id`.
 
 | Input column | Use |
 |---|---|
@@ -44,6 +46,14 @@ silently producing wrong features.
 | Silhouette / Davies–Bouldin | 0.643 / 0.521 |
 | Stability (ARI over seeds) / hold-out ARI | 1.0 / 1.0 |
 
+These are clustering evaluation metrics, not classification accuracy. The recorded
+silhouette and Davies–Bouldin values are 0.6428149815444244 and
+0.5213693812644375 respectively; the table rounds them. Metadata also records
+DBSCAN (`eps=1.2`, `min_samples=3`, 4 noise children) and the shares-only ablation
+(silhouette 0.7333882955552604, ARI versus the final model 1.0).
+The trend-window correction did not retrain or modify the trained model, scaler,
+or metadata, and did not change overall emotional pattern predictions.
+
 | Cluster | Pattern | Severity |
 |---|---|---|
 | 1 | Calm / reflective | 0 |
@@ -63,7 +73,15 @@ models/emotional_pattern_metadata.json   # features, cluster names, severity ord
 
 ## Trend over time
 
-Sessions are split into 14-day windows starting from the earliest session. In each
+Sessions are converted to UTC and split into 14-day windows starting at midnight
+on **each child's own earliest UTC session date**. Each child's final window is
+also determined from that child's history. Previously, batch processing used the
+earliest session across all children, while the dashboard supplied one child at a
+time. That shifted window boundaries and produced different trend labels for 7
+of 40 children. Per-child anchors make complete trend records identical whether
+the same history is processed individually or as part of the full dataset.
+
+In each
 window, a child with **≥ 3 sessions** is classified with the same model; windows
 with fewer are marked `"Not enough data"` (or `"No sessions"`) and skipped.
 
@@ -78,6 +96,13 @@ mean(last 2 windows) − mean(first 2 windows):
 | < 3 reliable windows | `not enough data` |
 
 All of these settings are read from `trend_settings` in the metadata file.
+
+The **overall emotional pattern** uses all supplied sessions for a child. The
+dashboard's **current pattern** uses the latest 14-day window with at least three
+sessions, falling back to the overall pattern if no window qualifies. With fewer
+than three sessions overall, the dashboard shows insufficient data instead of a
+pattern. A trend describes change across reliable windows, not either pattern
+alone; a latest-window pattern can differ from the overall pattern.
 
 ## Setup
 
@@ -109,9 +134,23 @@ It prints the pattern counts and the children whose trend is worsening, and writ
 | `outputs/child_emotional_patterns.csv` | `child_id, sessions, cluster, pattern` |
 | `outputs/emotion_trend.json` | per child: `trend`, `worsening`, `severity_change`, `overall_pattern`, and each window's `window_start`, `sessions`, `reliable`, `pattern` |
 
-On the training data: 12 Defensive, 12 Calm / reflective, 10 Distressed,
-6 Withdrawn / unclear; trends 30 stable, 4 improving, 2 worsening (C004, C012),
-4 not enough data.
+On the 40-child synthetic training dataset (754 sessions): 12 Defensive,
+12 Calm / reflective, 10 Distressed, 6 Withdrawn / unclear. The regenerated
+`outputs/emotion_trend.json` contains all 40 children with these verified trends:
+
+| Trend | Children |
+|---|---|
+| Stable | 26 |
+| Improving | 7 |
+| Worsening | 3 |
+| Not enough data | 4 |
+
+The worsening children are C004, C012 and C035. The metadata's
+`results.trend_status_counts` still records the historical pre-correction counts
+(30 stable, 4 improving, 2 worsening, 4 not enough data); use the regenerated JSON
+for current trend results. `outputs/child_emotional_patterns.csv` was unchanged.
+The previous JSON is preserved as
+`outputs/emotion_trend.before_per_child_windowing.json.bak`.
 
 From Python:
 
@@ -135,16 +174,63 @@ and features are defined in one place only.
 have every column in `REQUIRED_COLUMNS`, that a schema-breaking record never
 reaches Component 4, and that FSM sessions get an emotional pattern.
 
-## Tests
+The implemented Streamlit application (`streamlit run ui/app.py` from the
+repository root) reads existing SQLite session records on application reruns
+(`DATABASE_URL`, default `sqlite:///project.db`). With the database source active,
+Function 1 queries the selected child's sessions and recomputes its report.
+Records need `child_id` for per-child analysis. An uploaded CSV takes priority
+over the database; if no database child IDs exist, synthetic demo data is used.
+The dashboard computes results from sessions rather than loading the saved batch
+JSON.
+
+New Component 3 CSV/JSONL exports are **not automatically imported**. Run the
+existing JSONL import script separately from the repository root, then rerun the
+dashboard:
 
 ```bash
-pytest component4_profiling_xai/tests -v
+python scripts/import_comp3_sessions.py
+# Or specify a JSONL export:
+python scripts/import_comp3_sessions.py path/to/educator_sessions.jsonl
 ```
 
-`tests/test_emotional_pattern.py` uses two mock children (no CSV needed) to check
+The default input is `component3_socratic_educator/out/educator_sessions.jsonl`;
+duplicate session IDs are skipped. CSV upload supports temporary dashboard
+analysis but does not import records into SQLite. Automatic ingestion and
+periodic dashboard refresh remain **future integration work**; an idle page does
+not automatically refresh when exports or database records change.
+
+## Tests
+
+From the repository root:
+
+```bash
+python -B -m pytest -p no:cacheprovider component4_profiling_xai/tests/test_emotional_pattern.py -v
+```
+
+**Verified Function 1 result: 5 passed.** Four tests use two mock children to check
 that a mostly-calm child is labelled Calm / reflective and a mostly-unclear child
 Withdrawn / unclear, that unknown emotion labels and missing columns are
 rejected, and that every child gets a valid trend and an `overall_pattern`.
+
+The fifth test loads `data/educator_sessions.csv` and verifies that complete trend
+records and overall pattern predictions match between batch and individual-child
+processing for **all 40 children**, and that each first window starts on the
+child's earliest UTC date. The regenerated saved JSON was also checked to match
+the corrected batch results exactly.
+
+Manual Streamlit dashboard verification reported by the user:
+
+| Child | Trend |
+|---|---|
+| C001 | Improving |
+| C024 | Improving |
+| C035 | Worsening |
+
+These three dashboard checks agree with the saved JSON. They check displayed
+trend labels for those children, not every UI state or automatic ingestion.
+The automated tests verify the specified mock behavior, validation cases and
+dataset consistency; they do not establish classification accuracy, clinical
+validity, generalization to real children, or complete real-time integration.
 
 ---
 

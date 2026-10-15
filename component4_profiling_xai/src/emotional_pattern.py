@@ -107,7 +107,7 @@ def run_emotional_pattern(data, artifact_dir=ARTIFACT_DIR):
 
 
 def build_emotion_trend(sessions, artifact_dir=ARTIFACT_DIR):
-    """Pattern per 2-week window + trend per child."""
+    """Pattern per 2-week window, anchored to each child's first UTC day."""
     model, scaler, metadata = load_artifacts(artifact_dir)
     names = metadata["cluster_names"]
     severity = metadata["severity_order"]
@@ -119,11 +119,12 @@ def build_emotion_trend(sessions, artifact_dir=ARTIFACT_DIR):
     threshold = cfg["change_threshold"]
 
     sessions = sessions.copy()
-    start = sessions["timestamp"].min().normalize()
+    starts = sessions.groupby("child_id")["timestamp"].min().dt.normalize()
     sessions["window"] = (
-        (sessions["timestamp"] - start).dt.days // window_days + 1
+        (sessions["timestamp"] - sessions["child_id"].map(starts)).dt.days
+        // window_days + 1
     )
-    n_windows = int(sessions["window"].max())
+    window_counts = sessions.groupby("child_id")["window"].max()
     counts = sessions.groupby(["child_id", "window"]).size()
 
     patterns = {}
@@ -145,6 +146,8 @@ def build_emotion_trend(sessions, artifact_dir=ARTIFACT_DIR):
 
     result = {}
     for child in sorted(sessions["child_id"].unique()):
+        start = starts.loc[child]
+        n_windows = int(window_counts.loc[child])
         windows, sev = [], []
 
         for w in range(1, n_windows + 1):
