@@ -10,6 +10,7 @@ tokenizers>=0.20           # ONNX heads run without transformers/torch
 # Readers
 pillow>=10.0
 rapidocr>=3.0              # PP-OCRv6 tiny screen OCR on ONNX Runtime
+opencv-python>=4.8         # picture finder for memes on screen (rapidocr installs it too)
 faster-whisper>=1.1        # speech to text (Whisper tiny INT8) with Silero VAD
 
 # Agent + capture (Windows)

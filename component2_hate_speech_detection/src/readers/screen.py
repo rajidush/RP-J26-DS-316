@@ -160,6 +160,11 @@ class ScreenReader:
     def reset(self) -> None:
         self._thumb, self._regions = None, []
 
+    @property
+    def lines(self) -> List[Region]:
+        """The screen's current text lines, each box normalised to the frame (kept between reads)."""
+        return list(self._regions)
+
     def _grow_to_whole_lines(self, rect: List[float]) -> List[float]:
         """Extend a re-read area to fully contain every known line it touches.
 

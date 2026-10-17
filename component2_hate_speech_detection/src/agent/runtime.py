@@ -36,6 +36,7 @@ from ..engine.analyzer import Analyzer, Observation, TextSpan
 from ..engine.decide import persona_for_age
 from ..engine.meme_scorer import MemeScorer
 from ..engine.verdict import Verdict
+from ..readers.pictures import PictureReader
 from ..readers.screen import ScreenReader
 from ..readers.speech import SpeechReader
 
@@ -46,6 +47,7 @@ class AgentConfig:
     screen: bool = True
     audio: bool = True
     screen_interval_s: float = 2.0
+    memes: bool = True               # score pictures on screen with the meme model (evidence only)
     battery_interval_s: float = 6.0
     alert_cooldown_s: float = 300.0
     low_priority: bool = True
@@ -76,7 +78,8 @@ class AgentStats:
         "audio_dropped": 0, "verdicts": 0, "alerts": 0, "repeats_suppressed": 0,
     })
     timings: Dict[str, Rolling] = field(default_factory=lambda: {
-        k: Rolling() for k in ("screen_check_ms", "diff_ms", "ocr_ms", "score_ms", "asr_ms", "audio_verdict_ms")
+        k: Rolling() for k in ("screen_check_ms", "diff_ms", "ocr_ms", "meme_ms", "score_ms", "asr_ms",
+                               "audio_verdict_ms")
     })
 
     def inc(self, key: str, n: int = 1) -> None:
@@ -105,6 +108,7 @@ class Agent:
         self.screen_reader = screen_reader or ScreenReader()
         self.speech_reader = speech_reader or SpeechReader()
         self.meme_scorer = meme_scorer or MemeScorer()
+        self.picture_reader = PictureReader(self.meme_scorer)
         self.context, self.locked, self.battery_saver = context, locked, battery_saver
         self.on_alert = on_alert
         self.stats = AgentStats()
@@ -190,6 +194,13 @@ class Agent:
             return None
         with self._ocr_lock:
             read = self.screen_reader.read(frame)
+            lines = self.screen_reader.lines
+        vision, meme_ms = None, 0.0
+        if read.changed and self.config.memes:
+            t_meme = time.perf_counter()
+            vision = self.picture_reader.read(frame, lines)
+            meme_ms = round((time.perf_counter() - t_meme) * 1000, 1)
+            self.stats.timings["meme_ms"].add(meme_ms)
         frame.close()
         del frame
         self.stats.inc("screen_checks")
@@ -201,8 +212,8 @@ class Agent:
         self.stats.inc("partial_reads" if read.mode == "partial" else "full_reads")
         self.stats.inc("ocr_crops", read.crops)
         self.stats.timings["ocr_ms"].add(read.ocr_ms)
-        obs = Observation(read.spans, source="screen", app=self.context(),
-                          read_ms={"diff_ms": read.diff_ms, "ocr_ms": read.ocr_ms})
+        obs = Observation(read.spans, source="screen", app=self.context(), vision=vision,
+                          read_ms={"diff_ms": read.diff_ms, "ocr_ms": read.ocr_ms, "meme_ms": meme_ms})
         verdict = self.analyzer.analyze(obs, self.config.age)
         self.stats.timings["screen_check_ms"].add((time.perf_counter() - t) * 1000)
         self._handle(verdict)
@@ -252,13 +263,13 @@ class Agent:
 
     def check_image(self, image: Image.Image) -> Verdict:
         with self._ocr_lock:
-            read = ScreenReader(self.screen_reader.ocr).read(image)
-        # A dropped image is scored as one meme, with its OCR text as the caption.
-        # Live screen frames are not: there a meme is a small part of the frame,
-        # and the model has only been measured on whole memes (meme_model/README).
+            reader = ScreenReader(self.screen_reader.ocr)
+            read = reader.read(image)
+        # A dropped meme is scored whole, as the model was measured; a dropped
+        # screenshot has its pictures found and scored like the live screen.
         read_ms = {"ocr_ms": read.ocr_ms}
         t = time.perf_counter()
-        vision = self.meme_scorer.score(image, " ".join(s.text for s in read.spans))
+        vision = self.picture_reader.read(image, reader.lines, whole_image=True)
         if vision is not None:
             read_ms["meme_ms"] = round((time.perf_counter() - t) * 1000, 1)
         obs = Observation(read.spans, source="screen", vision=vision, read_ms=read_ms)

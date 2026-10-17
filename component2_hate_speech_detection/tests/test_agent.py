@@ -1,5 +1,6 @@
 """Agent runtime: loops, de-duplication, lock pause and stats (proposal NFR1-NFR8)."""
 import time
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -7,6 +8,7 @@ from PIL import Image, ImageDraw
 
 from component2_hate_speech_detection.src.agent.runtime import Agent, AgentConfig
 from component2_hate_speech_detection.src.engine.analyzer import Analyzer
+from component2_hate_speech_detection.src.engine.meme_scorer import MemeScorer
 from component2_hate_speech_detection.src.readers.asr import SAMPLE_RATE, AsrEngine
 from component2_hate_speech_detection.src.readers.screen import ScreenReader
 from component2_hate_speech_detection.src.readers.speech import SpeechReader
@@ -36,13 +38,14 @@ class FrameSource:
         return img
 
 
-def make_agent(lexicon_scorer, codes=(), locked=lambda: False, **config):
+def make_agent(lexicon_scorer, codes=(), locked=lambda: False, meme_scorer=None, **config):
     return Agent(
         config=AgentConfig(audio=False, **config),
         analyzer=Analyzer(scorer=lexicon_scorer),
         screen_source=FrameSource(codes),
         screen_reader=ScreenReader(ScriptedOcr()),
         speech_reader=SpeechReader(AsrEngine(transcribe_fn=lambda a: "you should kys")),
+        meme_scorer=meme_scorer or MemeScorer(root=Path(__file__).parent / "no-meme-model"),
         context=lambda: {"exe": "Discord.exe", "category": "chat", "title_hash": ""},
         locked=locked,
         battery_saver=lambda: False,
@@ -114,3 +117,51 @@ def test_background_loop_runs_and_stops_cleanly(lexicon_scorer):
     finally:
         agent.stop()
     assert agent.stats.counts["alerts"] == 1 and agent.state == "stopped"
+
+
+class PictureFrames:
+    """A chat screen; from the second frame on, a photo is posted in it."""
+
+    name = "scripted-frames"
+
+    def __init__(self):
+        self.n = 0
+
+    def grab(self):
+        self.n += 1
+        img = Image.new("RGB", (1280, 720), (49, 51, 56))
+        if self.n >= 2:
+            noise = np.random.default_rng(7).integers(0, 256, (240, 320, 3), dtype=np.uint8)
+            img.paste(Image.fromarray(noise), (400, 300))
+        return img
+
+
+class CountingMeme:
+    name, available, calibrated = "fake-meme", True, False
+
+    def __init__(self):
+        self.calls = 0
+
+    def probability(self, image, caption=""):
+        self.calls += 1
+        return 0.8
+
+
+def test_a_meme_posted_on_screen_is_scored_once_as_evidence(lexicon_scorer):
+    meme = CountingMeme()
+    agent = make_agent(lexicon_scorer, meme_scorer=meme)
+    agent.screen_source = PictureFrames()
+    first = agent.screen_tick()                       # the chat before the photo: nothing to score
+    assert first is None or not [e for e in first.evidence if e.source == "vision"]
+    verdict = agent.screen_tick()
+    vision = [e for e in verdict.evidence if e.source == "vision"]
+    assert vision and vision[0].score == 0.8 and vision[0].rule_id == "uncalibrated:evidence_only"
+    assert verdict.rung == "L0" and meme.calls == 1
+
+
+def test_meme_reading_can_be_switched_off(lexicon_scorer):
+    meme = CountingMeme()
+    agent = make_agent(lexicon_scorer, meme_scorer=meme, memes=False)
+    agent.screen_source = PictureFrames()
+    agent.screen_tick(), agent.screen_tick()
+    assert meme.calls == 0
