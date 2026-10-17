@@ -1,0 +1,379 @@
+{
+  "date": "2026-10-11",
+  "encoder": "clip-b32",
+  "rule": "max mean val AUROC over seeds; ties -> fewer parameters; test not used",
+  "seeds": [
+    316,
+    317,
+    318
+  ],
+  "winner": {
+    "fusion": "align",
+    "proj_dim": 1024,
+    "pre_layers": 3,
+    "hidden": 1024,
+    "dropout": 0.4
+  },
+  "ranked": [
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "align",
+      "pre_layers": 3,
+      "dropout": 0.4,
+      "trainable_parameters": 4200449,
+      "val_auroc": [
+        0.8212,
+        0.0034
+      ],
+      "test_auroc": [
+        0.7538,
+        0.0037
+      ],
+      "best_epochs": [
+        9,
+        8,
+        10
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "align",
+      "pre_layers": 3,
+      "dropout": 0.2,
+      "trainable_parameters": 4200449,
+      "val_auroc": [
+        0.8185,
+        0.0024
+      ],
+      "test_auroc": [
+        0.753,
+        0.0038
+      ],
+      "best_epochs": [
+        8,
+        6,
+        8
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "concat",
+      "pre_layers": 3,
+      "dropout": 0.2,
+      "trainable_parameters": 5249025,
+      "val_auroc": [
+        0.8162,
+        0.005
+      ],
+      "test_auroc": [
+        0.7152,
+        0.0054
+      ],
+      "best_epochs": [
+        11,
+        18,
+        14
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "align",
+      "pre_layers": 1,
+      "dropout": 0.2,
+      "trainable_parameters": 2101249,
+      "val_auroc": [
+        0.8156,
+        0.0018
+      ],
+      "test_auroc": [
+        0.7447,
+        0.003
+      ],
+      "best_epochs": [
+        18,
+        18,
+        18
+      ]
+    },
+    {
+      "proj_dim": 128,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "cross",
+      "pre_layers": 3,
+      "dropout": 0.4,
+      "trainable_parameters": 19009793,
+      "val_auroc": [
+        0.8149,
+        0.0058
+      ],
+      "test_auroc": [
+        0.7364,
+        0.0194
+      ],
+      "best_epochs": [
+        11,
+        9,
+        13
+      ]
+    },
+    {
+      "proj_dim": 128,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "cross",
+      "pre_layers": 3,
+      "dropout": 0.2,
+      "trainable_parameters": 19009793,
+      "val_auroc": [
+        0.814,
+        0.0116
+      ],
+      "test_auroc": [
+        0.7356,
+        0.0181
+      ],
+      "best_epochs": [
+        9,
+        9,
+        20
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "concat",
+      "pre_layers": 3,
+      "dropout": 0.4,
+      "trainable_parameters": 5249025,
+      "val_auroc": [
+        0.8139,
+        0.0049
+      ],
+      "test_auroc": [
+        0.7176,
+        0.0092
+      ],
+      "best_epochs": [
+        20,
+        19,
+        19
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "align",
+      "pre_layers": 1,
+      "dropout": 0.4,
+      "trainable_parameters": 2101249,
+      "val_auroc": [
+        0.8135,
+        0.0013
+      ],
+      "test_auroc": [
+        0.7341,
+        0.0035
+      ],
+      "best_epochs": [
+        20,
+        20,
+        20
+      ]
+    },
+    {
+      "proj_dim": 128,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "cross",
+      "pre_layers": 1,
+      "dropout": 0.2,
+      "trainable_parameters": 16910593,
+      "val_auroc": [
+        0.8023,
+        0.0061
+      ],
+      "test_auroc": [
+        0.7013,
+        0.0155
+      ],
+      "best_epochs": [
+        7,
+        20,
+        11
+      ]
+    },
+    {
+      "proj_dim": 128,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "cross",
+      "pre_layers": 1,
+      "dropout": 0.4,
+      "trainable_parameters": 16910593,
+      "val_auroc": [
+        0.7982,
+        0.0045
+      ],
+      "test_auroc": [
+        0.695,
+        0.0073
+      ],
+      "best_epochs": [
+        9,
+        16,
+        11
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "concat",
+      "pre_layers": 1,
+      "dropout": 0.2,
+      "trainable_parameters": 3149825,
+      "val_auroc": [
+        0.7968,
+        0.0023
+      ],
+      "test_auroc": [
+        0.6793,
+        0.0017
+      ],
+      "best_epochs": [
+        9,
+        5,
+        8
+      ]
+    },
+    {
+      "proj_dim": 1024,
+      "hidden": 1024,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "grad_clip": 0.1,
+      "batch_size": 64,
+      "epochs": 20,
+      "patience": 5,
+      "class_weight": false,
+      "rgcl": 0.0,
+      "knn": 0,
+      "fusion": "concat",
+      "pre_layers": 1,
+      "dropout": 0.4,
+      "trainable_parameters": 3149825,
+      "val_auroc": [
+        0.7961,
+        0.0019
+      ],
+      "test_auroc": [
+        0.6791,
+        0.004
+      ],
+      "best_epochs": [
+        7,
+        9,
+        8
+      ]
+    }
+  ]
+}

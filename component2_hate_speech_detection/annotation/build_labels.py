@@ -8,8 +8,9 @@ Inputs (never committed -- dataset licence + public repo):
              train.json, dev_seen.json, dev_unseen.json (JSON lines)
 
 Outputs (in component2_hate_speech_detection/data/labels/, git-ignored):
-  memes_labels.jsonl       gold D1-D3 + derived D4-D5 + severity prior, all splits
-  annotation_dev_seen.csv  worksheet for annotated D6-D8 on dev_seen
+  memes_labels.jsonl/.csv  gold D1-D3 + derived D4-D5 + severity prior, all splits
+  annotation_dev_seen.csv  worksheet for annotated D6-D9 on dev_seen
+  finetune/*.jsonl/.csv    train / val / test files for model fine-tuning
 
 Run from the repo root:
     python -m component2_hate_speech_detection.annotation.build_labels \
@@ -20,6 +21,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import random
 from collections import Counter
 from pathlib import Path
 from typing import Iterable, Optional
@@ -41,11 +43,35 @@ ATTACK_EMPTY = "attack_empty"
 SEVERITY_3_ATTACKS = {"dehumanizing", "inciting_violence"}
 SEVERITY_2_ATTACKS = {"slurs", "contempt", "inferiority", "exclusion", "mocking"}
 
+# Fine-tuning split: a validation set carved out of train, so dev_seen stays an
+# untouched test set (test_seen labels were never released).
+#
+# Grouped by caption: memes sharing a caption never straddle train and val. A
+# plain random split put 30 % of val captions in train, so a model could score
+# on val by remembering captions (leakage; Kapoor & Narayanan, 2023).
+# Confounder-matched: dev_seen was built with benign confounders, and 31 % of its
+# memes sit in caption groups holding *both* labels; a random val had 2 %, so it
+# rewarded caption memorisation that dev_seen punishes (measured 2026-10-11:
+# text-only probe val AUROC 0.80 vs dev_seen 0.64). Val therefore takes whole
+# both-label groups up to FINETUNE_FLIP_SHARE, then single-label groups up to the
+# train hateful share.
+FINETUNE_VAL_SIZE = 500
+FINETUNE_SEED = 316
+FINETUNE_FLIP_SHARE = 0.30
+
+LABEL_COLUMNS = [
+    "id", "split", "img", "text", "hateful", "hateful_kaggle", "label_source", "label_conflict",
+    "protected_category", "attack_type", "c2_risk_category", "text_sufficient", "severity_rule_prior",
+]
+FINETUNE_COLUMNS = ["id", "img", "text", "label", "protected_category", "attack_type", "label_conflict"]
+
 WORKSHEET_COLUMNS = [
-    "id", "img", "text", "hateful", "protected_category", "attack_type",
+    "id", "img", "text", "hateful", "label_conflict", "protected_category", "attack_type",
     "text_sufficient", "severity_rule_prior",
-    "draft_harm_locus", "draft_framing", "draft_child_severity", "draft_notes", "drafted_by",
-    "final_harm_locus", "final_framing", "final_child_severity", "annotator", "date", "notes",
+    "draft_harm_locus", "draft_framing", "draft_child_severity", "draft_gold_check", "draft_notes",
+    "drafted_by",
+    "final_harm_locus", "final_framing", "final_child_severity", "final_gold_check",
+    "annotator", "date", "notes",
 ]
 
 
@@ -90,20 +116,34 @@ def text_sufficient(record: dict, benign: set[str]) -> Optional[bool]:
 
 
 def merge_record(kaggle: dict, split: str, woah: Optional[dict]) -> dict:
-    hateful = hateful_from_kaggle(kaggle)
-    pc = list(woah["gold_pc"]) if woah else None
-    attack = list(woah["gold_attack"]) if woah else None
-    if woah and hateful is None:
-        hateful = woah["gold_hate"][0]
+    """CODEBOOK D1: the WOAH 2021 label wins over the Kaggle (phase-1) label.
+
+    WOAH is the later release and its binary label is the one consistent with its own
+    target/attack labels; taking the Kaggle label would pair "not_hateful" with
+    "dehumanizing". The Kaggle label is kept for provenance and conflicts are flagged.
+    """
+    kaggle_label = hateful_from_kaggle(kaggle)
+    woah_label = woah["gold_hate"][0] if woah else None
+    hateful = woah_label or kaggle_label
     return {
         "id": int(kaggle["id"]),
         "split": split,
         "img": kaggle["img"],
         "text": kaggle["text"],
         "hateful": hateful,
-        "protected_category": pc,
-        "attack_type": attack,
+        "hateful_kaggle": kaggle_label,
+        "label_source": "woah2021" if woah_label else ("kiela2020" if kaggle_label else None),
+        "label_conflict": None not in (kaggle_label, woah_label) and kaggle_label != woah_label,
+        "protected_category": list(woah["gold_pc"]) if woah else None,
+        "attack_type": list(woah["gold_attack"]) if woah else None,
     }
+
+
+def fine_grained_missing(record: dict) -> bool:
+    """A hateful meme whose WOAH target or attack label is empty (WOAH is incomplete there)."""
+    if record["hateful"] != "hateful" or record["protected_category"] is None:
+        return False
+    return PC_EMPTY in record["protected_category"] or ATTACK_EMPTY in record["attack_type"]
 
 
 def build(kaggle_by_split: dict[str, list[dict]], woah_records: list[dict]) -> tuple[list[dict], dict]:
@@ -117,8 +157,10 @@ def build(kaggle_by_split: dict[str, list[dict]], woah_records: list[dict]) -> t
             rec = merge_record(row, split, woah)
             if woah:
                 report["woah_matched"] += 1
-                if hateful_from_kaggle(row) not in (None, woah["gold_hate"][0]):
-                    report["hate_label_mismatch"] += 1
+            if rec["label_conflict"]:
+                report[f"label_conflict:{split}"] += 1
+            if fine_grained_missing(rec):
+                report[f"fine_grained_missing:{split}"] += 1
             records.append(rec)
 
     benign = benign_texts(records)
@@ -153,8 +195,8 @@ def worksheet_rows(records: Iterable[dict], existing: Optional[dict[int, dict]] 
     rows = []
     for rec in sorted((r for r in records if r["split"] == ANNOTATION_SPLIT), key=lambda r: r["id"]):
         row = {col: "" for col in WORKSHEET_COLUMNS}
-        for col in ("id", "img", "text", "hateful", "protected_category", "attack_type",
-                    "text_sufficient", "severity_rule_prior"):
+        for col in ("id", "img", "text", "hateful", "label_conflict", "protected_category",
+                    "attack_type", "text_sufficient", "severity_rule_prior"):
             row[col] = _cell(rec.get(col))
         previous = existing.get(rec["id"], {})
         for col in WORKSHEET_COLUMNS:
@@ -171,12 +213,89 @@ def read_worksheet(path: Path) -> dict[int, dict]:
         return {int(r["id"]): r for r in csv.DictReader(f)}
 
 
+def caption_groups(rows: list[dict]) -> list[list[dict]]:
+    """Memes grouped by normalised caption, in a stable order (first id)."""
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        groups.setdefault(normalise_text(r["text"]), []).append(r)
+    return sorted(groups.values(), key=lambda g: g[0]["id"])
+
+
+def pick_val_ids(train: list[dict], size: int = FINETUNE_VAL_SIZE, flip_share: float = FINETUNE_FLIP_SHARE,
+                 seed: int = FINETUNE_SEED) -> set[int]:
+    """Whole caption groups: both-label groups first, then single-label groups by label."""
+    rng = random.Random(seed)
+    groups = caption_groups(train)
+    flip = [g for g in groups if len({r["hateful"] for r in g}) > 1]
+    plain = {label: [g for g in groups if len({r["hateful"] for r in g}) == 1 and g[0]["hateful"] == label]
+             for label in ("hateful", "not_hateful")}
+    rng.shuffle(flip)
+    for pool in plain.values():
+        rng.shuffle(pool)
+
+    chosen: list[dict] = []
+
+    def fill(pool: list[list[dict]], room: int) -> None:
+        taken = 0
+        for g in pool:
+            if taken + len(g) <= room:  # skip groups that would overshoot; singletons close the gap
+                chosen.extend(g)
+                taken += len(g)
+            if taken == room:
+                return
+
+    fill(flip, round(size * flip_share))
+    hateful_share = sum(r["hateful"] == "hateful" for r in train) / len(train) if train else 0.0
+    hateful_room = max(0, round(size * hateful_share) - sum(r["hateful"] == "hateful" for r in chosen))
+    fill(plain["hateful"], min(hateful_room, size - len(chosen)))
+    fill(plain["not_hateful"], size - len(chosen))
+    return {r["id"] for r in chosen}
+
+
+def finetune_splits(records: list[dict]) -> dict[str, list[dict]]:
+    """train/val from train (val grouped by caption and confounder-matched, fixed seed), dev_seen as test."""
+    def row(rec: dict) -> dict:
+        return {
+            "id": rec["id"], "img": rec["img"], "text": rec["text"],
+            "label": None if rec["hateful"] is None else int(rec["hateful"] == "hateful"),
+            "protected_category": rec["protected_category"], "attack_type": rec["attack_type"],
+            "label_conflict": rec["label_conflict"],
+        }
+
+    train = sorted((r for r in records if r["split"] == "train"), key=lambda r: r["id"])
+    val_ids = pick_val_ids([r for r in train if r["hateful"]])
+
+    def split_rows(name: str) -> list[dict]:
+        return [row(r) for r in sorted(records, key=lambda r: r["id"]) if r["split"] == name]
+
+    return {
+        "train": [row(r) for r in train if r["id"] not in val_ids],
+        "val": [row(r) for r in train if r["id"] in val_ids],
+        "test": split_rows(ANNOTATION_SPLIT),
+        "unlabelled_test_seen": split_rows("test_seen"),
+    }
+
+
+def write_jsonl_and_csv(rows: list[dict], jsonl_path: Path, columns: list[str]) -> None:
+    """Same rows twice: JSONL for code, CSV (same name) for spreadsheets.
+
+    CSV cells follow the worksheet convention: lists joined with "|", booleans as
+    true/false, missing values empty. utf-8-sig so Excel shows accented captions.
+    An empty split still gets a header-only CSV, so no stale file is left behind.
+    """
+    with open(jsonl_path, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    with open(jsonl_path.with_suffix(".csv"), "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows({k: _cell(r.get(k)) for k in columns} for r in rows)
+
+
 def write_outputs(records: list[dict], out_dir: Path) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     labels_path = out_dir / "memes_labels.jsonl"
-    with open(labels_path, "w", encoding="utf-8") as f:
-        for rec in records:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    write_jsonl_and_csv(records, labels_path, LABEL_COLUMNS)
 
     sheet_path = out_dir / f"annotation_{ANNOTATION_SPLIT}.csv"
     # Never lose annotation work: rebuilding keeps existing draft_/final_ values.
@@ -185,6 +304,11 @@ def write_outputs(records: list[dict], out_dir: Path) -> tuple[Path, Path]:
         writer = csv.DictWriter(f, fieldnames=WORKSHEET_COLUMNS)
         writer.writeheader()
         writer.writerows(rows)
+
+    finetune_dir = out_dir / "finetune"
+    finetune_dir.mkdir(exist_ok=True)
+    for name, split_rows in finetune_splits(records).items():
+        write_jsonl_and_csv(split_rows, finetune_dir / f"{name}.jsonl", FINETUNE_COLUMNS)
     return labels_path, sheet_path
 
 

@@ -1,0 +1,139 @@
+{
+  "run": "meme_clip-b32_align",
+  "date": "2026-10-15",
+  "encoder": "clip-b32",
+  "seed": 317,
+  "temperature": 2.3367,
+  "base_rates": {
+    "train": 0.354,
+    "val": 0.354,
+    "test": 0.492,
+    "reference": 0.354
+  },
+  "calibrators": {
+    "temperature": {
+      "val_cv": {
+        "ece": 0.0492,
+        "null_ece_95": 0.0671,
+        "p_value": 0.4345
+      },
+      "test_raw_ece": 0.1227,
+      "test_at_reference": {
+        "ece": 0.0764,
+        "null_ece_95": 0.0661,
+        "p_value": 0.0075
+      },
+      "test_mean_p": 0.371
+    },
+    "platt": {
+      "val_cv": {
+        "ece": 0.0435,
+        "null_ece_95": 0.0674,
+        "p_value": 0.64
+      },
+      "test_raw_ece": 0.1451,
+      "test_at_reference": {
+        "ece": 0.0744,
+        "null_ece_95": 0.0648,
+        "p_value": 0.008
+      },
+      "test_mean_p": 0.347
+    },
+    "isotonic": {
+      "val_cv": {
+        "ece": 0.0304,
+        "null_ece_95": 0.062,
+        "p_value": 0.919
+      },
+      "test_raw_ece": 0.1357,
+      "test_at_reference": {
+        "ece": 0.0805,
+        "null_ece_95": 0.0525,
+        "p_value": 0.0005
+      },
+      "test_mean_p": 0.356
+    }
+  },
+  "bands_val_cv": [
+    {
+      "band": [
+        0.0,
+        0.35
+      ],
+      "n": 280,
+      "mean_p": 0.156,
+      "observed": 0.136
+    },
+    {
+      "band": [
+        0.35,
+        0.55
+      ],
+      "n": 58,
+      "mean_p": 0.454,
+      "observed": 0.534
+    },
+    {
+      "band": [
+        0.55,
+        0.75
+      ],
+      "n": 69,
+      "mean_p": 0.673,
+      "observed": 0.565
+    },
+    {
+      "band": [
+        0.75,
+        1.0
+      ],
+      "n": 93,
+      "mean_p": 0.773,
+      "observed": 0.742
+    }
+  ],
+  "bands_test_at_reference": [
+    {
+      "band": [
+        0.0,
+        0.35
+      ],
+      "n": 256,
+      "mean_p": 0.157,
+      "observed": 0.222
+    },
+    {
+      "band": [
+        0.35,
+        0.55
+      ],
+      "n": 103,
+      "mean_p": 0.435,
+      "observed": 0.348
+    },
+    {
+      "band": [
+        0.55,
+        0.75
+      ],
+      "n": 81,
+      "mean_p": 0.646,
+      "observed": 0.633
+    },
+    {
+      "band": [
+        0.75,
+        1.0
+      ],
+      "n": 60,
+      "mean_p": 0.771,
+      "observed": 0.716
+    }
+  ],
+  "gate": {
+    "rule": "consistency-resampling p >= 0.05 on val (5-fold) and on test at the reference base rate, for the shipped temperature-scaled score",
+    "val_cv_p": 0.4345,
+    "test_p": 0.0075,
+    "passes": false
+  }
+}

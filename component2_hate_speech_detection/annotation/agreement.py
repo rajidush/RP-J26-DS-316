@@ -3,9 +3,11 @@ Agreement + consistency report for the C2 annotation worksheet (CODEBOOK section
 
     python -m component2_hate_speech_detection.annotation.agreement
     python -m component2_hate_speech_detection.annotation.agreement --second <other annotator's csv>
+    python -m component2_hate_speech_detection.annotation.agreement --second <blind csv> --draft
 
-Without --second: AI draft vs human final (how much the human changed).
-With --second:    human final vs a second human's final, on the overlapping ids.
+Without --second:         AI draft vs human final (how much the human changed; anchored).
+With --second:            human final vs a second human's final, on the overlapping ids.
+With --second + --draft:  AI draft vs a blind human's final - the unbiased AI reliability figure.
 """
 from __future__ import annotations
 
@@ -20,12 +22,14 @@ from component2_hate_speech_detection.annotation.build_labels import ANNOTATION_
 HARM_LOCUS = ("text", "image", "multimodal", "none")
 FRAMING = ("commits", "reports", "quotes", "condemns", "none")
 SEVERITY = ("0", "1", "2", "3")
+GOLD_CHECK = ("agree", "disagree", "unsure")
 
 # (worksheet suffix, allowed values, quadratic-weighted?)
 DIMENSIONS = {
     "harm_locus": (HARM_LOCUS, False),
     "framing": (FRAMING, False),
     "child_severity": (SEVERITY, True),
+    "gold_check": (GOLD_CHECK, False),
 }
 
 
@@ -65,7 +69,8 @@ def consistency_errors(rows: list[dict]) -> list[str]:
         locus, sev = r.get("final_harm_locus", ""), r.get("final_child_severity", "")
         if locus == "text" and r.get("text_sufficient") == "false":
             errors.append(f"{r['id']}: harm_locus=text but the same caption is benign elsewhere")
-        if locus == "none" and r.get("hateful") == "hateful":
+        # A meme whose gold label the annotator disputes may legitimately carry no harm.
+        if locus == "none" and r.get("hateful") == "hateful" and r.get("final_gold_check") != "disagree":
             errors.append(f"{r['id']}: harm_locus=none on a gold-hateful meme")
         for dim, (allowed, _) in DIMENSIONS.items():
             value = r.get(f"final_{dim}", "")
@@ -91,6 +96,8 @@ def main(argv: Optional[list[str]] = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--sheet", type=Path, default=DEFAULT_OUT_DIR / f"annotation_{ANNOTATION_SPLIT}.csv")
     parser.add_argument("--second", type=Path, help="second annotator's worksheet (same columns)")
+    parser.add_argument("--draft", action="store_true",
+                        help="with --second: compare this sheet's AI draft with the second sheet's finals")
     args = parser.parse_args(argv)
 
     rows = read_rows(args.sheet)
@@ -98,8 +105,10 @@ def main(argv: Optional[list[str]] = None) -> None:
     print(f"rows: {len(rows)}   fully human-labelled: {finals}")
 
     other = read_rows(args.second) if args.second else rows
-    col_a, col_b = ("final_", "final_") if args.second else ("draft_", "final_")
-    print(f"\nagreement ({'human vs human' if args.second else 'AI draft vs human final'}):")
+    col_a = "draft_" if args.draft or not args.second else "final_"
+    col_b = "final_"
+    label = ("AI draft vs blind human" if args.draft else "human vs human") if args.second else "AI draft vs human final"
+    print(f"\nagreement ({label}):")
     for dim, (labels, quadratic) in DIMENSIONS.items():
         a, b = pairs(rows, col_a + dim, other, col_b + dim)
         if not a:

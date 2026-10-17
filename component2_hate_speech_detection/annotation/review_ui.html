@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meme Review</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2330; --muted: #5d6677; --line: #dfe3ea;
+    --accent: #2f5bd3; --accent-ink: #ffffff; --warn: #a15c00; --bad: #b42318; --ok: #1f7a3f;
+    --chip: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b2029; --ink: #e6e9ef; --muted: #9aa3b2; --line: #2c3340;
+      --accent: #6d8ff0; --accent-ink: #0d1017; --warn: #e3a44a; --bad: #f0857a; --ok: #6fcf8f;
+      --chip: #252c38;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 16px;
+           border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+  header h1 { font-size: 16px; margin: 0; }
+  .mode { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip); }
+  .mode.blind { background: var(--warn); color: var(--accent-ink); }
+  .spacer { flex: 1; }
+  .progress { color: var(--muted); font-variant-numeric: tabular-nums; }
+  select, textarea, button { font: inherit; color: inherit; }
+  select { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .warning { margin: 12px 16px 0; padding: 8px 12px; border-left: 3px solid var(--warn); background: var(--panel);
+             color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr); gap: 16px; padding: 16px; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .meme img { width: 100%; max-height: 72vh; object-fit: contain; display: block; border-radius: 6px; background: #000; }
+  .caption { margin-top: 10px; font-size: 16px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .chip { background: var(--chip); border-radius: 99px; padding: 2px 10px; font-size: 13px; }
+  .chip.hateful { color: var(--bad); font-weight: 600; }
+  .chip.flag { color: var(--warn); font-weight: 600; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 14px 0 6px; }
+  h2:first-child { margin-top: 0; }
+  .draft { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; font-size: 14px; }
+  .draft .note { color: var(--muted); margin-top: 4px; }
+  .group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .group button { border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .group button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .group button kbd { opacity: .6; font-size: 11px; margin-left: 4px; }
+  textarea { width: 100%; min-height: 56px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .actions button { border-radius: 6px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); }
+  .actions .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .status { min-height: 20px; margin-top: 8px; font-size: 13px; }
+  .status.err { color: var(--bad); } .status.ok { color: var(--ok); }
+  .help { color: var(--muted); font-size: 12px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Meme review</h1>
+  <span id="mode" class="mode"></span>
+  <span class="spacer"></span>
+  <label>Show
+    <select id="filter">
+      <option value="todo">Not yet reviewed</option>
+      <option value="flagged">Gold questioned by draft</option>
+      <option value="conflict">Kaggle vs WOAH conflict</option>
+      <option value="done">Reviewed</option>
+      <option value="all">All</option>
+    </select>
+  </label>
+  <span id="progress" class="progress"></span>
+</header>
+<div class="warning">These memes contain hateful, sexual and violent content. Take breaks; the work saves after every meme.</div>
+<main>
+  <section class="card meme">
+    <img id="img" alt="">
+    <div id="caption" class="caption"></div>
+    <div id="where" class="meta"></div>
+  </section>
+  <section class="card">
+    <h2>Gold labels (published)</h2>
+    <div id="gold" class="chips"></div>
+    <div id="draftBox">
+      <h2>AI draft</h2>
+      <div id="draft" class="draft"></div>
+    </div>
+    <h2>D6 Harm locus</h2>
+    <div class="group" data-dim="harm_locus"></div>
+    <h2>D7 Framing</h2>
+    <div class="group" data-dim="framing"></div>
+    <h2>D8 Child severity</h2>
+    <div class="group" data-dim="child_severity"></div>
+    <h2>D9 Gold check (is the gold hateful label right?)</h2>
+    <div class="group" data-dim="gold_check"></div>
+    <h2>Notes</h2>
+    <textarea id="notes" maxlength="500"></textarea>
+    <div class="actions">
+      <button id="prev">&larr; Back</button>
+      <button id="accept">Accept draft <kbd>A</kbd></button>
+      <button id="save" class="primary">Save &amp; next <kbd>Enter</kbd></button>
+      <button id="next">Skip &rarr;</button>
+    </div>
+    <div id="status" class="status" role="status"></div>
+    <div class="help">Keys: 0-3 severity &middot; A accept draft &middot; Enter save &middot; &larr; &rarr; move. See CODEBOOK.md for definitions.</div>
+  </section>
+</main>
+<script>
+const OPTIONS = {
+  harm_locus: ["text", "image", "multimodal", "none"],
+  framing: ["commits", "reports", "quotes", "condemns", "none"],
+  child_severity: ["0", "1", "2", "3"],
+  gold_check: ["agree", "disagree", "unsure"],
+};
+const DIMS = Object.keys(OPTIONS);
+let state = { rows: [], blind: false }, view = [], pos = 0, choice = {};
+const $ = (id) => document.getElementById(id);
+
+function reviewed(r) { return DIMS.every((d) => r["final_" + d]); }
+function flagged(r) { return r.draft_gold_check === "disagree" || r.draft_gold_check === "unsure"; }
+
+function applyFilter() {
+  const f = $("filter").value;
+  view = state.rows.filter((r) =>
+    f === "all" ? true : f === "done" ? reviewed(r) : f === "flagged" ? flagged(r)
+      : f === "conflict" ? r.label_conflict === "true" : !reviewed(r));
+  pos = Math.min(pos, Math.max(view.length - 1, 0));
+  render();
+}
+
+function chip(text, cls) { const s = document.createElement("span"); s.className = "chip " + (cls || ""); s.textContent = text; return s; }
+
+function render() {
+  const done = state.rows.filter(reviewed).length;
+  $("progress").textContent = `${done} / ${state.rows.length} reviewed · ${view.length ? pos + 1 : 0} of ${view.length} shown`;
+  const r = view[pos];
+  if (!r) { $("img").removeAttribute("src"); $("caption").textContent = "Nothing to show for this filter."; return; }
+  $("img").src = "/img/" + r.img.split("/").pop();
+  $("img").alt = "meme " + r.id;
+  $("caption").textContent = r.text;
+  $("where").textContent = `id ${r.id}` + (r.annotator ? ` · last saved by ${r.annotator} on ${r.date}` : "");
+  const gold = $("gold"); gold.replaceChildren(
+    chip(r.hateful, r.hateful === "hateful" ? "hateful" : ""),
+    chip("target: " + (r.protected_category || "-")),
+    chip("attack: " + (r.attack_type || "-")));
+  if (r.label_conflict === "true") gold.append(chip("Kaggle and WOAH disagree", "flag"));
+  if (r.text_sufficient === "false") gold.append(chip("same caption is benign elsewhere"));
+  $("draftBox").hidden = state.blind;
+  if (!state.blind) {
+    const d = $("draft"); d.replaceChildren();
+    d.append(`locus ${r.draft_harm_locus} · framing ${r.draft_framing} · severity ${r.draft_child_severity} · gold check ${r.draft_gold_check}`);
+    const n = document.createElement("div"); n.className = "note"; n.textContent = r.draft_notes; d.append(n);
+  }
+  choice = Object.fromEntries(DIMS.map((dim) => [dim, r["final_" + dim] || ""]));
+  $("notes").value = r.notes || "";
+  paint(); status("");
+}
+
+function paint() {
+  document.querySelectorAll(".group").forEach((g) => {
+    const dim = g.dataset.dim;
+    if (!g.children.length) {
+      OPTIONS[dim].forEach((v) => {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = v; b.dataset.value = v;
+        if (dim === "child_severity") { const k = document.createElement("kbd"); k.textContent = v; b.append(k); }
+        b.onclick = () => pick(dim, v); g.append(b);
+      });
+    }
+    [...g.children].forEach((b) => b.setAttribute("aria-pressed", String(choice[dim] === b.dataset.value)));
+  });
+}
+
+function pick(dim, v) {
+  choice[dim] = v;
+  // Codebook: severity 0 exactly when there is no harm locus.
+  if (dim === "harm_locus" && v === "none") choice.child_severity = "0";
+  if (dim === "child_severity" && v === "0") choice.harm_locus = "none";
+  if (dim === "child_severity" && v !== "0" && choice.harm_locus === "none") choice.harm_locus = "";
+  if (dim === "harm_locus" && v !== "none" && choice.child_severity === "0") choice.child_severity = "";
+  paint();
+}
+
+function acceptDraft() {
+  const r = view[pos]; if (!r || state.blind) return;
+  DIMS.forEach((d) => { choice[d] = r["draft_" + d] || ""; }); paint();
+}
+
+function status(msg, cls) { const s = $("status"); s.textContent = msg; s.className = "status " + (cls || ""); }
+
+async function save() {
+  const r = view[pos]; if (!r) return;
+  const body = { id: r.id, notes: $("notes").value };
+  DIMS.forEach((d) => { body["final_" + d] = choice[d]; });
+  const res = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const out = await res.json();
+  if (out.errors.length) { status(out.errors.join(" · "), "err"); return; }
+  DIMS.forEach((d) => { r["final_" + d] = choice[d]; });
+  r.notes = body.notes; r.annotator = state.annotator; r.date = new Date().toISOString().slice(0, 10);
+  if ($("filter").value === "todo") { view.splice(pos, 1); pos = Math.min(pos, Math.max(view.length - 1, 0)); }
+  else pos = Math.min(pos + 1, view.length - 1);
+  render(); status("Saved", "ok");
+}
+
+function move(step) { pos = Math.max(0, Math.min(view.length - 1, pos + step)); render(); }
+
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+  if (e.key >= "0" && e.key <= "3") pick("child_severity", e.key);
+  else if (e.key === "a" || e.key === "A") acceptDraft();
+  else if (e.key === "Enter") { e.preventDefault(); save(); }
+  else if (e.key === "ArrowRight") move(1);
+  else if (e.key === "ArrowLeft") move(-1);
+});
+$("filter").onchange = () => { pos = 0; applyFilter(); };
+$("prev").onclick = () => move(-1);
+$("next").onclick = () => move(1);
+$("accept").onclick = acceptDraft;
+$("save").onclick = save;
+
+fetch("/api/state").then((r) => r.json()).then((s) => {
+  state = s;
+  $("mode").textContent = s.blind ? "BLIND - AI draft hidden" : "verification · " + s.annotator;
+  $("mode").classList.toggle("blind", s.blind);
+  $("accept").hidden = s.blind;
+  applyFilter();
+});
+</script>
+</body>
+</html>
