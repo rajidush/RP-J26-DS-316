@@ -30,7 +30,8 @@ and 15, and no change to any of the 321 decisions on the 107 existing cases:
     held-out, first report    16 / 20 caught (was 0),  1 / 16 ("i'd kill for some sleep")
     held-out, after idiom     16 / 20 caught,          0 / 16 (that case moved to dev)
 
-The model ships as fp32 ONNX: INT8 flipped 6 decisions in the export gate.
+The model ships as ONNX with only its embedding table in INT8: full MatMul
+INT8 flipped decisions in the export gate, the embedding-only variant none.
 """
 from __future__ import annotations
 

@@ -111,11 +111,11 @@ def windows(text: str) -> List[str]:
 
 
 class Backend(Protocol):
-    """Runs one model over a batch of texts and returns full label distributions."""
+    """Runs one model over a batch of texts (or text pairs) and returns full label distributions."""
 
     name: str
 
-    def __call__(self, texts: List[str]) -> List[LabelRows]: ...
+    def __call__(self, texts: List[str], pairs: Optional[List[str]] = None) -> List[LabelRows]: ...
 
 
 class TorchBackend:
@@ -130,13 +130,15 @@ class TorchBackend:
             model=model_id,
             tokenizer=model_id,
             device=-1,  # CPU only: the whole project is a CPU claim
+            dtype="float32",  # some checkpoints are stored fp16, which is slow and inexact on CPU
             truncation=True,
             max_length=max_length,
             top_k=None,  # full distribution, so multi-label heads work
         )
 
-    def __call__(self, texts: List[str]) -> List[LabelRows]:
-        out = self._pipe(texts)
+    def __call__(self, texts: List[str], pairs: Optional[List[str]] = None) -> List[LabelRows]:
+        inputs = texts if pairs is None else [{"text": t, "text_pair": p} for t, p in zip(texts, pairs)]
+        out = self._pipe(inputs)
         return [entry if isinstance(entry, list) else [entry] for entry in out]
 
 
@@ -190,6 +192,41 @@ class TextHead:
         ranked = sorted(rows, key=lambda r: float(r.get("score") or 0.0), reverse=True)
         labels = {normalize_label(r.get("label")): round(float(r.get("score") or 0.0), 4) for r in ranked[:3]}
         return hate_score_from_labels(rows), category_from_labels(rows), labels
+
+
+class ZeroShotHead(TextHead):
+    """An NLI model asked one yes/no question per hypothesis ("does this text entail X?").
+
+    `read` returns the highest entailment probability over all hypotheses and
+    windows, the hypothesis that gave it, and every hypothesis's probability,
+    so the explanation names which tactic was read.
+    """
+
+    def __init__(self, model_id: str, hypotheses: Dict[str, str], backend: str = "auto") -> None:
+        super().__init__(model_id, backend)
+        self.hypotheses = dict(hypotheses)
+
+    def read(self, text: str) -> Tuple[Optional[float], Optional[str], Dict[str, float]]:
+        if not (text or "").strip() or not self._ensure_loaded():
+            return None, None, {}
+        names = list(self.hypotheses)
+        chunks = windows(text)
+        firsts = [c for c in chunks for _ in names]
+        seconds = [self.hypotheses[n] for _ in chunks for n in names]
+        try:
+            rows = self._backend(firsts, seconds)  # type: ignore[misc]
+        except Exception as exc:
+            self.last_error = f"{type(exc).__name__}: {exc}"[:200]
+            return None, None, {}
+        per: Dict[str, float] = {}
+        for i, row in enumerate(rows):
+            entail = next((float(r["score"]) for r in row if normalize_label(r.get("label")) == "entailment"), None)
+            if entail is None:
+                return None, None, {}  # not an NLI vocabulary: never guess
+            name = names[i % len(names)]
+            per[name] = round(max(per.get(name, 0.0), entail), 4)
+        best = max(per, key=per.get)
+        return per[best], best, per
 
 
 def make_backend(model_id: str, kind: str = "auto") -> Backend:

@@ -1,12 +1,38 @@
 """Grooming: one-message tactics alert as grooming; ordinary secrets between friends do not (proposal FR2).
 
-The lexicon rules are pinned here. Recall on realistic messages through the
-full engine is measured by evaluation/grooming.py.
+The lexicon rules and the specialist's gates are pinned here, with the
+zero-shot model faked. Recall on realistic messages through the full engine
+is measured by evaluation/grooming.py.
 """
 import pytest
 
 from component2_hate_speech_detection.src.engine.analyzer import Analyzer
 from component2_hate_speech_detection.src.engine.lexicon import Lexicon
+from component2_hate_speech_detection.src.engine.text_scorer import TextScorer
+
+
+class FakeTacticReader:
+    """Stands in for the zero-shot model: a fixed tactic reading, and a count of calls."""
+
+    def __init__(self, score, tactic="secrecy"):
+        self.name, self.loaded, self._reading, self.calls = "fake:zeroshot", True, (score, tactic, {tactic: score}), 0
+
+    def read(self, text):
+        self.calls += 1
+        return self._reading
+
+
+class Quiet:
+    def __init__(self, name):
+        self.name, self.loaded = name, True
+
+    def read(self, text):
+        return 0.02, None, {}
+
+
+def scorer(reading=0.95, tactic="secrecy"):
+    reader = FakeTacticReader(reading, tactic)
+    return TextScorer(heads=[Quiet("fake:a"), Quiet("fake:b")], grooming_head=reader), reader
 
 
 @pytest.mark.parametrize("text, family", [
@@ -61,3 +87,52 @@ def test_grooming_is_urgent_for_every_age_and_blocked_for_the_youngest(make_scor
         v = analyzer.analyze_text("send me pics and don't tell your parents", age)
         assert v.top_category == "grooming" and v.urgent and v.rung == rung
         assert v.to_trigger_payload()["risk_category"] == "grooming_language"
+
+
+# -- the zero-shot specialist ------------------------------------------------
+
+def test_a_tactic_the_rules_miss_is_read_by_the_model():
+    s, reader = scorer(0.95, "secrecy")
+    d = s.score("make sure your parents never find out about our chats")
+    assert d.category == "grooming" and d.grooming_counted and d.grooming_tactic == "secrecy"
+    assert reader.calls == 1
+
+
+def test_the_model_is_not_asked_about_messages_off_topic():
+    s, reader = scorer(0.99)
+    d = s.score("gg that last round was insane")
+    assert reader.calls == 0 and d.grooming_score is None and d.category == "none"
+
+
+def test_a_surprise_being_kept_quiet_does_not_count():
+    s, _ = scorer(0.99, "secrecy")
+    d = s.score("keep the surprise party a secret from dad ok")
+    assert d.grooming_gate == "surprise_context" and not d.grooming_counted and d.category != "grooming"
+
+
+def test_a_reading_below_trust_is_ignored(decision_params):
+    s, _ = scorer(decision_params["grooming_model"]["trust"] - 0.05)
+    d = s.score("make sure your parents never find out about our chats")
+    assert not d.grooming_counted and d.category != "grooming"
+
+
+def test_no_model_reading_changes_nothing():
+    s, _ = scorer(None)
+    d = s.score("make sure your parents never find out about our chats")
+    without = TextScorer(heads=[Quiet("fake:a"), Quiet("fake:b")]).score(
+        "make sure your parents never find out about our chats")
+    assert (d.score, d.category) == (without.score, without.category) and d.grooming_score is None
+
+
+def test_the_verdict_names_the_tactic_and_carries_no_text():
+    s, _ = scorer(0.95, "meeting")
+    v = Analyzer(scorer=s).analyze_text("i'll wait for you outside school, don't tell anyone", 12)
+    assert v.top_category == "grooming" and v.urgent and "reads as meeting" in v.explanation
+    families = v.to_trigger_payload()["context_metadata"]["matched_families"]
+    assert "grooming_model:meeting" in families and not any("school" in f for f in families)
+
+
+def test_custom_heads_load_no_grooming_model_and_the_ablation_switch_removes_it():
+    assert TextScorer(heads=[Quiet("fake:a")]).grooming_head is None
+    assert TextScorer(use_grooming=False).grooming_head is None
+    assert TextScorer(use_heads=False).grooming_head is None

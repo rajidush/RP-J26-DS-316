@@ -30,6 +30,10 @@ Rules (as for `heldout_set.py`)
 2. `dev_cases()` may be looked at while designing a fix. `heldout_cases()`
    says the same tactics in different words and is never tuned on; a case
    used to tune moves to dev and is replaced.
+3. Done once, on 18 Oct 2026: after the word rules were reported (held-out
+   4 / 20), every held-out miss had been read, so the whole first held-out
+   part moved to dev (`_HELDOUT_1`) and a second one (`_HELDOUT`) was
+   written before any model was tried.
 
 Buckets: secrecy · isolation · risk · sexual · meeting (harmful);
 surprise · friends · family · school · gaming (benign).
@@ -51,6 +55,18 @@ what they catch is right and they add no false alert, but per-message
 grooming needs a model that reads meaning, not more patterns. The held-out
 false alert is not a grooming rule: the hate head reads "i'll trade you my
 skin for your pickaxe" as hate (0.99).
+
+Then the grooming specialist (`src/engine/grooming.py`, a zero-shot NLI
+model), designed on the 40 + 32 dev lines; the second held-out part
+(`_HELDOUT`) was reported once, on 18 Oct 2026:
+
+                       before    rules only    rules + model
+    dev                0 / 40    22 / 40       27 / 40        false alerts 1 / 32 (hate head, "skin")
+    held-out (2nd)     0 / 20     2 / 20        6 / 20        false alerts 1 / 16
+
+The held-out false alert, "dont tell your mom about the cake we're making for
+her", is the hide-contact rule: a friend's surprise and a groomer's secrecy
+use the same words. It alerted before too, as sexual harassment.
 
 Both parts and the rules were written by the same person, so even the
 held-out number is optimistic; an independently written or real-data set is
@@ -113,7 +129,8 @@ _DEV: List[TextCase] = [
     _ok("i'm on my phone in my room, want to call?", "friends"),
 ]
 
-_HELDOUT: List[TextCase] = [
+# The first held-out part, reported once (word rules, 4 / 20), then moved to dev (rule 3).
+_HELDOUT_1: List[TextCase] = [
     _harm("make sure your parents never find out about our chats", "secrecy"),
     _harm("clear your history after we talk ok", "secrecy"),
     _harm("our friendship is special, nobody else needs to know", "secrecy"),
@@ -154,8 +171,50 @@ _HELDOUT: List[TextCase] = [
 ]
 
 
+# Written 18 Oct 2026 after _HELDOUT_1 moved to dev, before any model was tried.
+_HELDOUT: List[TextCase] = [
+    _harm("u cant let ur mom know we're friends", "secrecy"),
+    _harm("lets keep our chats private from your parents", "secrecy"),
+    _harm("use the hidden app i told you about so nobody sees our messages", "secrecy"),
+    _harm("if your parents found out about me they'd freak, so don't", "secrecy"),
+    _harm("message me from the account your mum doesnt know about", "secrecy"),
+    _harm("your teachers dont respect you like i do", "isolation"),
+    _harm("i get you better than your own family does", "isolation"),
+    _harm("those friends of yours are holding you back, stick with me", "isolation"),
+    _harm("you act so much older than the kids in your class", "isolation"),
+    _harm("is your bedroom door shut? good, put your camera on", "risk"),
+    _harm("ok your parents are out so we can video now right", "risk"),
+    _harm("check nobody is around and then call me", "risk"),
+    _harm("send me a pic of you in your pjs, our secret", "sexual"),
+    _harm("i'll top up your vbucks if you show me a photo of yourself", "sexual"),
+    _harm("you're too pretty to be 12, show me more of you", "sexual"),
+    _harm("has anyone ever touched you? you can tell me, i won't judge", "sexual"),
+    _harm("i'll be at the bus stop at 4, come by yourself", "meeting"),
+    _harm("dont mention to anyone that we're meeting saturday", "meeting"),
+    _harm("i'll get you a new game if you meet me at the mall", "meeting"),
+    _harm("tell your dad you're at practice and i'll pick you up", "meeting"),
+
+    _ok("dont tell your mom about the cake we're making for her", "surprise"),
+    _ok("we're planning a surprise for miss lee, keep it quiet", "surprise"),
+    _ok("dont tell anyone who i fancy ok", "friends"),
+    _ok("you can always talk to me if you're sad, that's what friends do", "friends"),
+    _ok("can you delete the group chat pic, i look weird", "friends"),
+    _ok("want to come to mine after school? my mum said its fine", "friends"),
+    _ok("your dad said to be home by six", "family"),
+    _ok("my mum will pick us both up after the match", "family"),
+    _ok("is your brother home? he has my charger", "family"),
+    _ok("my parents are away this weekend so i'm staying at my aunt's", "family"),
+    _ok("send me a photo of the timetable pls", "school"),
+    _ok("our class talked about not meeting people from the internet", "school"),
+    _ok("the quiz answers are secret till friday, miss said", "school"),
+    _ok("add me on xbox, my tag is the same", "gaming"),
+    _ok("i'll give you 100 coins if you help me beat this level", "gaming"),
+    _ok("meet me in the lobby in 5", "gaming"),
+]
+
+
 def dev_cases() -> List[TextCase]:
-    return list(_DEV)
+    return list(_DEV) + list(_HELDOUT_1)
 
 
 def heldout_cases() -> List[TextCase]:
@@ -164,4 +223,4 @@ def heldout_cases() -> List[TextCase]:
 
 def summary() -> dict:
     return {name: {"total": len(cases), "harmful": sum(c.hate for c in cases), "benign": sum(not c.hate for c in cases)}
-            for name, cases in (("dev", _DEV), ("heldout", _HELDOUT))}
+            for name, cases in (("dev", _DEV + _HELDOUT_1), ("heldout", _HELDOUT))}

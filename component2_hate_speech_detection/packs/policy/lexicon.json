@@ -109,7 +109,8 @@
   },
   "contexts": {
     "gaming": "\\b(?:match|game|gaming|round|lobby|respawn|spawn|noob|gg|ez|team|teammate|boss|raid|level|server|killstreak|headshot|squad|clutch|scoreboard|rank|loot|xp|queue|map|player|players|minecraft|fortnite|roblox|valorant|overwatch|cod|warzone|apex|smash)\\b",
-    "figurative": "\\b(?:lol|lmao|lmfao|haha+|jk|homework|exam|test|quiz|maths?|essay|monday|traffic|cringe|embarrass(?:ed|ing)?|so\\s+tired|bored)\\b"
+    "figurative": "\\b(?:lol|lmao|lmfao|haha+|jk|homework|exam|test|quiz|maths?|essay|monday|traffic|cringe|embarrass(?:ed|ing)?|so\\s+tired|bored)\\b",
+    "surprise": "\\b(?:surprise|surprises|birthday|party|got\\s+(?:him|her|them))\\b"
   },
   "families": [
     {

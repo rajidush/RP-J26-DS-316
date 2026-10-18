@@ -4,11 +4,13 @@
     python -m component2_hate_speech_detection.evaluation.grooming --split heldout --before DIR   # report once
 
 For each age band (9, 12, 15): grooming messages alerted *as grooming* (and
-urgent), benign lines alerted at all, and misses at age 9. `--before DIR`
-loads an older policy pack (the four `packs/policy` files, e.g. from
-`git show <commit>:<path>`) and adds its numbers plus every decision on the
-107 dev + held-out cases that differs between the two packs. Held-out
-results are written to `evaluation/results/grooming.json` with the dev ones.
+urgent), benign lines alerted at all, and misses at age 9, for the engine
+with the grooming specialist and with the rules alone (the same heads,
+`use_grooming=False`). Every decision on the 107 dev + held-out cases that
+the specialist changes is listed. `--before DIR` loads an older policy pack
+(the four `packs/policy` files, e.g. from `git show <commit>:<path>`) and
+adds its numbers too. Held-out results are written to
+`evaluation/results/grooming.json` with the dev ones.
 """
 from __future__ import annotations
 
@@ -59,13 +61,13 @@ def evaluate(cases, analyzer: Analyzer) -> dict:
     return out
 
 
-def changes_elsewhere(now: Analyzer, before: Analyzer) -> dict:
+def changes_elsewhere(now: Analyzer, other: Analyzer) -> dict:
     changed = []
     for c in dev_cases() + heldout_cases():
         for age in AGES:
-            a, b = now.analyze_text(c.text, age), before.analyze_text(c.text, age)
+            a, b = now.analyze_text(c.text, age), other.analyze_text(c.text, age)
             if (a.rung, a.top_category, a.urgent) != (b.rung, b.top_category, b.urgent):
-                changed.append({"text": c.text, "age": age, "before": [b.rung, b.top_category, b.urgent],
+                changed.append({"text": c.text, "age": age, "other": [b.rung, b.top_category, b.urgent],
                                 "now": [a.rung, a.top_category, a.urgent]})
     return {"decisions_compared": len(dev_cases() + heldout_cases()) * len(AGES), "changed": changed}
 
@@ -78,23 +80,26 @@ def main(argv=None) -> None:
 
     now = Analyzer()
     now.scorer.warm_up()
+    # The same model heads throughout, so only the specialist or the policy pack differs.
+    shared = dict(heads=now.scorer.heads, self_harm_head=now.scorer.self_harm_head)
+    rules_only = Analyzer(now.policy, TextScorer(now.policy, use_grooming=False, **shared))
     before: Optional[Analyzer] = None
     if args.before:
         old = load_policy(args.before)
-        # The same model heads, so only the policy pack differs.
-        before = Analyzer(old, TextScorer(old, heads=now.scorer.heads, self_harm_head=now.scorer.self_harm_head))
+        before = Analyzer(old, TextScorer(old, **shared))
 
     def report(cases) -> dict:
-        r = {"now": evaluate(cases, now)}
+        r = {"rules_and_model": evaluate(cases, now), "rules_only": evaluate(cases, rules_only)}
         if before is not None:
             r["before"] = evaluate(cases, before)
         return r
 
     out = {"engine": now.scorer.name, "policy_version": now.policy.version,
-           "split": args.split, **report(gr_dev() if args.split == "dev" else gr_heldout())}
+           "split": args.split, **report(gr_dev() if args.split == "dev" else gr_heldout()),
+           "existing_107_cases_model_vs_rules_only": changes_elsewhere(now, rules_only)}
     if before is not None:
         out["before_policy_version"] = before.policy.version
-        out["existing_107_cases"] = changes_elsewhere(now, before)
+        out["existing_107_cases_now_vs_before"] = changes_elsewhere(now, before)
     print(json.dumps(out, indent=2))
     if args.split == "heldout":
         RESULTS.write_text(json.dumps({"dev": report(gr_dev()), "heldout": out}, indent=2) + "\n", encoding="utf-8")

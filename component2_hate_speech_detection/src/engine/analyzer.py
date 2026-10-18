@@ -188,6 +188,10 @@ class Analyzer:
             if s.detail.self_harm_counted:
                 out.append(Evidence(producer=s.detail.self_harm_model, score=s.detail.self_harm_score,
                                     box=s.span.box, source=s.span.source))
+            if s.detail.grooming_counted:
+                out.append(Evidence(producer=s.detail.grooming_model, score=s.detail.grooming_score,
+                                    rule_id=f"grooming_model:{s.detail.grooming_tactic}", box=s.span.box,
+                                    source=s.span.source))
         return out
 
 
@@ -223,6 +227,13 @@ def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored:
         elif detail.self_harm_gate:
             parts.append(f"Self-harm model: {detail.self_harm_score:.2f}, not counted "
                          f"({detail.self_harm_gate.replace('_', ' ')}).")
+    if detail.grooming_score is not None and detail.grooming_score >= 0.5:
+        tactic = detail.grooming_tactic.replace("_", " ")
+        if detail.grooming_counted:
+            parts.append(f"Grooming model: {detail.grooming_score:.2f}, reads as {tactic}.")
+        elif detail.grooming_gate:
+            parts.append(f"Grooming model: {detail.grooming_score:.2f} ({tactic}), not counted "
+                         f"({detail.grooming_gate.replace('_', ' ')}).")
     if detail.gaming_capped:
         parts.append("Game context: model score capped so trash talk doesn't trigger.")
     if detail.framing_reason:
