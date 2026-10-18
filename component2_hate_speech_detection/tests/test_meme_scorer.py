@@ -88,12 +88,12 @@ class FixedMeme:
     available = True
 
     def __init__(self, score=0.9, calibrated=False):
-        self.signal = Signal("vision", score, calibrated, "fake-meme")
+        self.p, self.calibrated = score, calibrated
         self.captions = []
 
-    def score(self, image, caption=""):
+    def probability(self, image, caption=""):
         self.captions.append(caption)
-        return self.signal
+        return self.p
 
 
 def agent_with(lexicon_scorer, meme):

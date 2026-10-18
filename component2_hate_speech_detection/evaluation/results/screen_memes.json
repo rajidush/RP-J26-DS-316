@@ -1,0 +1,69 @@
+{
+  "split": "test",
+  "regions": {
+    "feed-light": {
+      "pages": 40,
+      "pictures": 40,
+      "recall@0.5": 1.0,
+      "recall@0.7": 1.0,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 117.2
+    },
+    "feed-dark": {
+      "pages": 40,
+      "pictures": 40,
+      "recall@0.5": 1.0,
+      "recall@0.7": 1.0,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 116.5
+    },
+    "chat-dark": {
+      "pages": 40,
+      "pictures": 40,
+      "recall@0.5": 1.0,
+      "recall@0.7": 1.0,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 94.4
+    },
+    "gallery": {
+      "pages": 40,
+      "pictures": 196,
+      "recall@0.5": 0.99,
+      "recall@0.7": 0.99,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 114.9
+    },
+    "article": {
+      "pages": 40,
+      "pictures": 40,
+      "recall@0.5": 0.95,
+      "recall@0.7": 0.95,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 94.1
+    },
+    "text-chat": {
+      "pages": 40,
+      "pictures": 0,
+      "recall@0.5": null,
+      "recall@0.7": null,
+      "false_per_page": 0.0,
+      "merged_boxes": 0,
+      "median_ms": 86.6
+    }
+  },
+  "scores": {
+    "memes": 500,
+    "found": 0.984,
+    "auroc_meme_alone_ocr_caption": 0.7327,
+    "auroc_whole_frame": 0.5651,
+    "auroc_screen_crops": 0.7134,
+    "auroc_screen_crops_found_only": 0.7207,
+    "auroc_alone_same_memes": 0.7361,
+    "median_ms_find_and_score": 184.5
+  }
+}

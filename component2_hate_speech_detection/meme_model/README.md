@@ -180,8 +180,7 @@ scored as one meme, with its OCR text as the caption. The score reaches the
 analyzer as a `vision` signal with `calibrated = False` (copied from the I-1
 gate into `meme.json`), so it is shown as evidence ("meme model 0.82
 (evidence only)") and never changes the score, rung or C3 payload. Live screen
-frames are not scored: a meme is a small part of a screen, and the model is
-measured on whole memes only.
+frames are scored too, through the picture finder (next section).
 
 **End to end: the 500 test memes through the app path** (real OCR, both text
 heads, meme scorer, decision):
@@ -207,6 +206,61 @@ heads, meme scorer, decision):
   lower it (I-2). That is the design's safety trade-off, and it should be
   stated as such.
 
+## Memes on a live screen (2026-10-17)
+
+A meme on a screen is a small part of the frame. Scored as one image with all
+the screen's text as its caption, the meme model falls to **0.565 AUROC**,
+close to chance. So the screen path first finds the pictures
+([`src/readers/pictures.py`](../src/readers/pictures.py)), then scores each
+crop with the OCR text inside it as the caption.
+
+**Finder.** Classical, no model, after Chen et al. (ESEC/FSE 2020) and UIED (Xie
+et al., 2020): mark blocks that are not a flat UI fill (a flat block counts as
+UI only in the page's own UI colours), drop thin text with a morphological
+opening, cut at background-coloured gutters with recursive XY-cut (Nagy &
+Seth, 1984), and reject text paragraphs by flatness and colourfulness (Hasler
+& Suesstrunk, 2003). Measured with `evaluation/screen_memes.py` on built
+1920x1080 screens with known boxes: thresholds set on val memes, test
+reported once.
+
+| Layout (test, 40 pages each) | Memes | Found at IoU >= 0.7 | False finds per page | Time per frame |
+|---|---|---|---|---|
+| Social feed, light | 40 | 100 % | 0 | 117 ms |
+| Social feed, dark | 40 | 100 % | 0 | 117 ms |
+| Chat with an attached meme | 40 | 100 % | 0 | 94 ms |
+| Gallery, 2x2 or 3x2, 4-16 px gutters | 196 | 99 % | 0 | 115 ms |
+| Article with an inline picture | 40 | 95 % | 0 | 94 ms |
+| Busy chat, no picture | 0 | - | 0 | 87 ms |
+
+The first finder ("busy texture") found 10-40 % of val memes: it missed the
+smooth parts of photos. Treating only flat UI colours as background fixed it
+(80-95 %, then 97-100 % on val).
+
+**Scores.** Each of the 500 test memes on its own feed, chat or article page,
+full-screen OCR, the shipped INT8 model; a meme the finder misses scores 0:
+
+| How the meme is scored | AUROC |
+|---|---|
+| The meme alone, OCR caption (reference) | 0.733 |
+| The whole screen as one image | 0.565 |
+| **The finder's crop, OCR text inside it** | **0.713** (98.4 % found) |
+| Crop, found memes only, vs those memes alone | 0.721 vs 0.736 |
+
+**Wiring.** `Agent.screen_tick` runs the finder on every changed frame
+(`AgentConfig.memes`, on by default) and scores each new picture once: a
+16x16 thumbnail fingerprint caches its score, so a meme that stays on screen
+is not scored again. The strongest picture goes to the analyzer as evidence
+only. Driving the real agent over a feed: the frame where a meme appears costs
+~0.1 s to find plus 65 ms to score (plus ~3.5 s once, to load the model), an
+unchanged frame 17 ms, and a new chat line under the same meme 0.48 s in all
+with the meme taken from the cache. A dropped screenshot is read the same way;
+a dropped meme is still scored whole.
+
+**Limits.** Built screens are cleaner than real ones (no compression, ads or
+video). The next check is real page captures, such as C1's scraped pages with
+memes pasted in. A meme on a white page with a white backdrop has no visible
+edge, so the finder can cut it short.
+
 ## Run
 
 ```bash
@@ -216,6 +270,7 @@ python -m component2_hate_speech_detection.meme_model.grid --encoder clip-b32
 python -m component2_hate_speech_detection.meme_model.train --fusion align --rgcl 1 --knn 10 --tag rgcl
 python -m component2_hate_speech_detection.meme_model.calibrate --run meme_clip-b32_align
 python -m component2_hate_speech_detection.tools.export_meme_onnx --run meme_clip-b32_align
+python -m component2_hate_speech_detection.evaluation.screen_memes --split test --scores
 ```
 
 Training runs on a GPU (`--device auto` picks it up; Colab or Thunder). Head
@@ -233,9 +288,13 @@ are suitable to commit.
 - Burbi, G. et al. (2023). Mapping memes to words for multimodal hateful meme classification. *ICCV Workshops*.
 - Cao, R. et al. (2022). Prompting for multimodal hateful meme classification. *EMNLP*.
 - Cao, R. et al. (2023). Pro-Cap: Leveraging a frozen vision-language model for hateful meme detection. *ACM MM*.
+- Chen, J. et al. (2020). Object detection for graphical user interface: old fashioned or deep learning or a combination? *ESEC/FSE*.
 - Guo, C. et al. (2017). On calibration of modern neural networks. *ICML*.
+- Hasler, D. & Suesstrunk, S. (2003). Measuring colourfulness in natural images. *Proc. SPIE 5007, Human Vision and Electronic Imaging VIII*.
 - Kiela, D. et al. (2020). The Hateful Memes Challenge. *NeurIPS*.
 - Kumar, G. K. & Nandakumar, K. (2022). Hate-CLIPper: Multimodal hateful meme classification based on cross-modal interaction of CLIP features. *NLP4PI Workshop*. arXiv:2210.05916.
 - Mei, J. et al. (2024). Improving hateful meme detection through retrieval-guided contrastive learning. *ACL*, 5333–5347.
+- Nagy, G. & Seth, S. (1984). Hierarchical representation of optically scanned documents. *Proc. 7th International Conference on Pattern Recognition*.
 - Radford, A. et al. (2021). Learning transferable visual models from natural language supervision. *ICML*.
 - Saerens, M., Latinne, P. & Decaestecker, C. (2002). Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure. *Neural Computation*, 14(1), 21–41.
+- Xie, M. et al. (2020). UIED: a hybrid tool for GUI element detection. *ESEC/FSE Demonstrations*.
