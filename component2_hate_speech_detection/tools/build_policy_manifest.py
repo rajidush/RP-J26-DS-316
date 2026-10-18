@@ -8,7 +8,7 @@ import argparse
 import json
 from datetime import datetime, timezone
 
-from component2_hate_speech_detection.src.engine.policy import OPTIONAL_PACK_FILES, PACK_DIR, PACK_FILES, sha256_file
+from component2_hate_speech_detection.src.engine.policy import PACK_DIR, PACK_FILES, sha256_file
 
 
 def main() -> None:
@@ -23,8 +23,7 @@ def main() -> None:
         "version": args.version or current.get("version", "1.0.0"),
         "min_engine": "1.0.0",
         "created": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "files": {name: "sha256:" + sha256_file(PACK_DIR / name) for name in PACK_FILES
-                  + tuple(n for n in OPTIONAL_PACK_FILES if (PACK_DIR / n).exists())},
+        "files": {name: "sha256:" + sha256_file(PACK_DIR / name) for name in PACK_FILES},
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps(manifest, indent=2))

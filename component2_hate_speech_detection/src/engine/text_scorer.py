@@ -18,10 +18,9 @@ Layering, and why each layer is here:
                  ("you're trash at this game" scored 0.93 on toxic-bert).
     framing      applied last, to the combined score, so no layer routes around it.
 
-No model is asked about a text with no real words (OCR garbage such as
+No model is asked about a text with no word-shaped token (OCR garbage such as
 "OLMPCCHW", which the Dynabench head scored 0.998): its reading would decide a
-child's outcome on noise. The keyword layer still reads it, so "k y s" and
-"g o d i e" are caught as before.
+child's outcome on noise. The keyword layer still reads every text.
 
 Corroboration (proposal design rule 1, FR3). Combining heads with max() lets
 either head's false positive through: 156 of 165 sampled Berkeley false

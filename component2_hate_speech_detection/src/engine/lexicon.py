@@ -18,9 +18,13 @@ grooming, not sexual harassment.
 Every hit names the phrase or family that fired, so a parent or reviewer can
 read the exact rule behind a detection.
 
-`has_word` tells language from OCR garbage: a text with no English word of 3+
-letters ("OLMPCCHW", "A-A∨±S-") gives the models nothing to read, so the
-scorer does not ask them (`packs/policy/words.json`).
+`has_word` tells language from OCR garbage by the shape of its words, not a
+dictionary: a dictionary has no slurs or slang, and "youre a fag" must still
+reach the models. A word-like token has letters only, consistent capitals
+("fag", "FAG", "Fag", not "RKonsern"), a vowel, and no run of consonants
+longer than English allows ("OLMPCCHW" has seven). A text with no word-like
+token ("A-A∨±S-") gives the models nothing to read, so the scorer does not
+ask them. Limits live in `packs/policy/decision.json` (`model_needs_words`).
 """
 from __future__ import annotations
 
@@ -93,7 +97,10 @@ class Lexicon:
         self._high_band = bands["high"]
         self._mid_band = bands["mid"]
         self._cue_score = float(bands["cue"])
-        self._words = (policy or default_policy()).words
+        rule = (policy or default_policy()).decision.get("model_needs_words", {})
+        self._word = re.compile(rf"[A-Za-z]{{{int(rule.get('min_letters', 2))},}}")
+        self._too_many_consonants = re.compile(
+            rf"[b-df-hj-np-tv-xz]{{{int(rule.get('max_consonant_run', 5)) + 1},}}", re.IGNORECASE)
         self._gaming_score = float(bands["gaming"])
         self._neutral_score = float(bands["neutral"])
         self._empty_score = float(bands["empty"])
@@ -112,11 +119,13 @@ class Lexicon:
         despace = lambda s: _SPACED.sub(lambda m: re.sub(r"\s+", "", m.group(0)), s)  # noqa: E731
         return (blob, doubled, singled, despace(blob), despace(singled))
 
+    def _word_like(self, token: str) -> bool:
+        cased = token.islower() or token.isupper() or token.istitle()
+        return cased and bool(re.search(r"[aeiouy]", token, re.IGNORECASE)) and not self._too_many_consonants.search(token)
+
     def has_word(self, text: str) -> bool:
-        """At least one English word of 3+ letters (after leetspeak); always True without a word list."""
-        if not self._words:
-            return True
-        return any(w in self._words for w in re.findall(r"[a-z]{3,}", self.normalize(text)))
+        """At least one word-shaped token: language, as opposed to OCR garbage."""
+        return any(self._word_like(t) for t in self._word.findall(text or ""))
 
     def in_context(self, name: str, text: str) -> bool:
         pattern = self._contexts.get(name)

@@ -24,8 +24,6 @@ from pathlib import Path
 
 PACK_DIR = Path(__file__).resolve().parents[2] / "packs" / "policy"
 PACK_FILES = ("lexicon.json", "framing.json", "decision.json")
-# Verified whenever the manifest lists it; packs older than 1.3.0 have none.
-OPTIONAL_PACK_FILES = ("words.json",)
 
 
 class PolicyIntegrityError(RuntimeError):
@@ -38,7 +36,6 @@ class Policy:
     framing: dict
     decision: dict
     version: str  # manifest version, recorded on every Verdict (FR-C2-14)
-    words: frozenset = frozenset()  # English words a text needs before a model's reading counts
 
 
 def sha256_file(path: Path) -> str:
@@ -53,7 +50,7 @@ def load_policy(pack_dir: Path = PACK_DIR) -> Policy:
     files = manifest.get("files", {})
 
     loaded = {}
-    for name in PACK_FILES + tuple(n for n in OPTIONAL_PACK_FILES if n in files):
+    for name in PACK_FILES:
         path = pack_dir / name
         expected = files.get(name, "")
         if not path.exists():
@@ -68,7 +65,6 @@ def load_policy(pack_dir: Path = PACK_DIR) -> Policy:
         framing=loaded["framing.json"],
         decision=loaded["decision.json"],
         version=str(manifest.get("version", "0.0.0")),
-        words=frozenset(loaded["words.json"]["words"]) if "words.json" in loaded else frozenset(),
     )
 
 

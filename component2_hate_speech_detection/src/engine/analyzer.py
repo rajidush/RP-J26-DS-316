@@ -219,7 +219,7 @@ def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored:
     if detail.hits:
         parts.append("Matched rule(s): " + ", ".join(detail.hits[:4]) + ".")
     if detail.no_real_words and (detail.hits or v.rung != "L0"):
-        parts.append("No real words to read (likely OCR noise): language models not asked.")
+        parts.append("No words to read (likely OCR noise): language models not asked.")
     if detail.head_scores:
         heads = ", ".join(f"{k.split(':')[-1]} {s:.2f}" for k, s in detail.head_scores.items())
         parts.append(f"Language models: {heads} ({detail.corroboration.replace('_', ' ')}).")

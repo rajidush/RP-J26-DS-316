@@ -2,11 +2,10 @@
   "pack": "c2-policy",
   "version": "1.3.0",
   "min_engine": "1.0.0",
-  "created": "2026-10-18T09:41:37Z",
+  "created": "2026-10-18T11:04:07Z",
   "files": {
     "lexicon.json": "sha256:f536662f69b20afb050d48a004952d3df313087c0ffb9aa4654619fb8ea7ee5e",
     "framing.json": "sha256:ede4eead93cbbd17b8a44439a7e0a3a232dfa37b5d39e7c7839b9a8c68663add",
-    "decision.json": "sha256:b705367e72c959dc8f6a65a613954f72c95cb099df795efb9e52d7c0ce580753",
-    "words.json": "sha256:11c97f8cc3ce85454fa2eba2cca85631ffb56fe43b5c08b397608a44adeb0420"
+    "decision.json": "sha256:d8fb917dbf9611fb286407762b0e11313c6d9f514c508c622a1736a6ef397694"
   }
 }
