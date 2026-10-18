@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator
+from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES, GrammarConstrainedGenerator
 from component3_socratic_educator.src.schemas import RiskCategory
 
 
@@ -56,7 +56,7 @@ def test_live_model_reaches_intercept_and_session_completes():
 # what it was sent and returns a canned reply, so no LM Studio is needed.
 import json
 
-from component3_socratic_educator.src import grammar_decoder as gd
+from component3_socratic_educator.src import config, grammar_decoder as gd
 
 OPENER = gd.INTERCEPT_OPENERS[0]
 
@@ -82,6 +82,15 @@ def test_intercept_asks_the_model_with_the_json_schema_and_no_category():
     assert call["response_format"]["type"] == "json_schema"
     assert call["response_format"]["json_schema"]["schema"] == gd.INTERCEPT_SCHEMA
     assert "violence" not in call["prompt"].lower()          # Q7: the category is never sent
+
+
+def test_intercept_samples_at_the_fixed_configured_temperature():
+    _, model = _line({"opener": OPENER, "question": "What were you doing just now?"})
+    assert model.calls[0]["temperature"] == config.INTERCEPT_TEMPERATURE
+    model = _fake_model({"opener": OPENER, "question": "What were you doing just now?"})
+    GrammarConstrainedGenerator(model_call=model, temperature=0.2).generate_with_source(
+        "INTERCEPT", RiskCategory.VIOLENCE)
+    assert model.calls[0]["temperature"] == 0.2
 
 
 def test_a_valid_constrained_reply_becomes_the_line():
@@ -190,3 +199,37 @@ def test_a_blocked_line_keeps_what_the_model_said_as_evidence():
     assert line.source == "fallback" and line.model_output == f"{OPENER} Did that alert worry you?"
     line, _ = _line("not json at all")
     assert line.reason == "invalid_json" and line.model_output == "not json at all"
+
+
+# --- 14 Oct: INQUIRE picks its line by the reply type of the child's latest reply ---
+
+SUPPORTIVE = INQUIRE_LINES["stated_emotion"]
+
+
+@pytest.mark.parametrize("reply_type", list(INQUIRE_LINES))
+def test_each_reply_type_gets_a_line_from_its_own_pool(reply_type):
+    gen = GrammarConstrainedGenerator()
+    for attempt in range(3):
+        line = gen.generate_with_source("INQUIRE", RiskCategory.VIOLENCE, attempt, reply_type=reply_type)
+        assert line.text in INQUIRE_LINES[reply_type] and line.source == "template"
+
+
+def test_a_pool_never_repeats_a_line_within_the_three_attempts():
+    gen = GrammarConstrainedGenerator()
+    for reply_type in INQUIRE_LINES:
+        lines = [gen.generate("INQUIRE", RiskCategory.HATE_SPEECH, a, reply_type=reply_type) for a in range(3)]
+        assert len(set(lines)) == 3, reply_type
+
+
+def test_no_inquire_line_hints_at_blame():
+    # "Is there another way you could've reacted?" was asked to a distressed child (12 Oct run).
+    for pool in INQUIRE_LINES.values():
+        for line in pool:
+            assert "reacted" not in line and "should have" not in line.lower()
+
+
+def test_the_inquire_grammar_is_exactly_the_template_lines():
+    gen = GrammarConstrainedGenerator()
+    assert all(gen.validate("INQUIRE", line) for pool in INQUIRE_LINES.values() for line in pool)
+    assert not gen.validate("INQUIRE", "I understand. Is there another way you could've reacted?")
+    assert not gen.validate("INQUIRE", "That makes sense. What did you see?")

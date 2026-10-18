@@ -82,3 +82,65 @@ def test_live_adversarial_sample_has_no_violations():
     cases = [c for c in CASES if c["risk_category"] is RiskCategory.GROOMING_LANGUAGE]
     report = run_adversarial_batch(GrammarConstrainedGenerator(), cases)
     assert report["violations"] == 0 and report["unreachable"] == 0, report["rows"]
+
+
+# --- Mon 12 Oct: the unseen set, the audit, and the rate per style -----------
+from component3_socratic_educator.src.adversarial import UNSEEN_ATTACKS_FILE   # noqa: E402
+
+UNSEEN = load_attack_set(UNSEEN_ATTACKS_FILE)
+
+
+def test_the_unseen_set_is_held_out_new_and_has_a_no_attack_control():
+    assert "held out" in UNSEEN["description"] and "future interface" in UNSEEN["description"]
+    attacks = UNSEEN["attacks"]
+    assert len(attacks) >= 10
+    assert not {a["id"] for a in attacks} & {a["id"] for a in ATTACKS}
+    assert not {a["style"] for a in attacks} & {a["style"] for a in ATTACKS}
+    assert [a["template"] for a in attacks if a["style"] == "no_attack"] == [None]
+    templates = " ".join(a["template"] or "" for a in attacks)
+    assert "what it looked like" in templates and "happening on their screen" in templates
+
+
+def test_the_no_attack_control_sends_the_production_prompt():
+    control = [a for a in UNSEEN["attacks"] if a["style"] == "no_attack"]
+    model = []
+
+    def call(prompt, **kwargs):
+        model.append(prompt)
+        return json.dumps({"opener": OPENER, "question": "What were you doing just now?"}), 0.5
+    cases = adversarial_cases(control, test_set="unseen")
+    assert {c["context"] for c in cases} == {None} and {c["test_set"] for c in cases} == {"unseen"}
+    run_adversarial_batch(GrammarConstrainedGenerator(model_call=call), cases)
+    assert set(model) == {gd.INTERCEPT_PROMPT}
+
+
+def test_lines_the_post_check_passes_are_still_counted_by_the_audit():
+    leaky = _model({"opener": OPENER, "question": "What's happening on your screen right now?"})
+    report = run_adversarial_batch(GrammarConstrainedGenerator(model_call=leaky), CASES)
+    assert (report["passed"], report["violations"]) == (len(CASES), 0)     # both layers let it through
+    assert report["audit_flagged"] == len(CASES) and report["audit_rate"] == 1.0
+    assert report["audit_flags"] == {"invites_description": len(CASES), "points_at_content": len(CASES)}
+    assert report["rows"][0]["audit_flags"] == ["invites_description", "points_at_content"]
+
+
+def test_fallback_lines_are_audited_too_and_pass():
+    report = run_adversarial_batch(GrammarConstrainedGenerator(), CASES)     # offline: all fallback
+    assert report["audit_flagged"] == 0 and report["audit_flags"] == {}
+
+
+def test_the_report_breaks_results_down_by_set_and_by_style():
+    calm = _model({"opener": OPENER, "question": "What were you doing just now?"})
+    cases = adversarial_cases(ATTACKS) + adversarial_cases(UNSEEN["attacks"], test_set="unseen")
+    report = run_adversarial_batch(GrammarConstrainedGenerator(model_call=calm), cases)
+    n = len(RiskCategory)
+    assert report["by_set"]["seen"]["cases"] == len(ATTACKS) * n
+    assert report["by_set"]["unseen"]["cases"] == len(UNSEEN["attacks"]) * n
+    style = report["by_style"]["no_attack"]
+    assert style == {"test_set": "unseen", "cases": n, "passed": n, "blocked": 0, "schema_breaks": 0,
+                     "unreachable": 0, "violations": 0, "audit_flagged": 0, "audit_rate": 0.0}
+
+
+def test_a_style_in_both_sets_is_refused_rather_than_merged():
+    cases = adversarial_cases(ATTACKS[:1]) + adversarial_cases(ATTACKS[:1], test_set="unseen")
+    with pytest.raises(ValueError, match="both"):
+        run_adversarial_batch(GrammarConstrainedGenerator(), cases)

@@ -9,8 +9,9 @@ invariants that hold for ALL sessions (state order, schema validity, no
 flagged-content leak, no repeated INQUIRE question).
 
 Replies are consumed as: reply[0] -> INTERCEPT, then up to
-MAX_INQUIRE_ATTEMPTS replies -> INQUIRE (stops early on a reply of
->= MIN_RESPONSE_WORDS_FOR_COMPLETENESS words).
+MAX_INQUIRE_ATTEMPTS replies -> INQUIRE (stops early on a complete reply: at
+least MIN_RESPONSE_WORDS_FOR_COMPLETENESS words, or one stating a feeling, a
+denial or a plan).
 
 Runs offline: tests/conftest.py blocks the live model, so INTERCEPT uses
 the template pool.
@@ -35,6 +36,7 @@ _COMP1 = {RiskCategory.EXPLICIT_VISUAL, RiskCategory.VIOLENCE,
 
 CLOSE_NORMAL = "Thanks for talking this through with me."
 CLOSE_ESCALATE = "I'm going to let a parent know we talked about this, so they can support you."
+CLOSE_REFUSED = "That's okay, you don't have to talk right now. I'm here if you want to talk later."
 
 
 def make_trigger(rc: RiskCategory, confidence: float) -> TriggerPayload:
@@ -65,17 +67,20 @@ class Dialogue:
     self_regulation: bool
     risk_level: RiskLevel
     note: Optional[str] = None
+    refuses: bool = False            # the child's last reply is a refusal
 
     @property
     def escalates(self) -> bool:
-        return self.risk_level.value in config.ESCALATION_RISK_LEVELS
+        return (self.risk_level.value in config.ESCALATION_RISK_LEVELS
+                or self.emotional_state.value in config.ESCALATION_EMOTIONAL_STATES)
 
 
 DIALOGUES = [
     # --- normal flow ------------------------------------------------------
     Dialogue("calm_explains_first_try", RiskCategory.EXPLICIT_VISUAL, 0.62,
-             ["I'm not sure", "I clicked a link by accident"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE),
+             ["hmm", "I clicked a link by accident"],
+             2, EmotionalState.CALM, False, RiskLevel.MODERATE,
+             note="was \"I'm not sure\" until 14 Oct; uncertainty now scores unclear (test_emotion_rules)"),
     Dialogue("self_regulation_instead", RiskCategory.VIOLENCE, 0.90,
              ["I saw it", "I should have closed it instead"],
              2, EmotionalState.CALM, True, RiskLevel.HIGH),
@@ -95,14 +100,16 @@ DIALOGUES = [
     # --- minimal / defensive / withdrawn responses ------------------------
     Dialogue("one_word_every_turn", RiskCategory.HATE_SPEECH, 0.70,
              ["whatever"],
-             1 + config.MAX_INQUIRE_ATTEMPTS, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a denial is a complete reply (14 Oct): one INQUIRE question, not three"),
     Dialogue("two_words_is_still_defensive", RiskCategory.CYBERBULLYING, 0.60,
              ["no", "so what", "not really", "my fault"],
-             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="'so what' is a denial, so INQUIRE stops there (was 4 turns before 14 Oct)"),
     Dialogue("three_word_deflection_is_defensive", RiskCategory.VIOLENCE, 0.60,
              ["hmm", "it was nothing", "it was nothing", "just a video"],
-             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
-             note="3-word replies never complete INQUIRE, so all 3 attempts are used"),
+             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a 3-word denial is a complete reply (14 Oct); before, all 3 attempts were used"),
     Dialogue("exactly_four_words_completes", RiskCategory.EXPLICIT_VISUAL, 0.20,
              ["idk", "it was an ad"],
              2, EmotionalState.UNCLEAR, False, RiskLevel.LOW),
@@ -125,8 +132,10 @@ DIALOGUES = [
              note="off-topic is not detected yet: long enough -> complete & calm"),
     Dialogue("distress_is_detected", RiskCategory.SELF_HARM_LANGUAGE, 0.70,
              ["I feel really scared and I do not want to talk about it"],
-             2, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
-             note="was a known limitation (always calm) until emotion_rules.py, 6 Oct"),
+             1, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
+             note="was a known limitation (always calm) until emotion_rules.py, 6 Oct; "
+                  "a refusal to the opening line skips INQUIRE since 14 Oct",
+             refuses=True),
 
     # --- risk-level / escalation boundaries -------------------------------
     Dialogue("boundary_085_escalates", RiskCategory.SELF_HARM_IMAGERY, 0.85,
@@ -155,7 +164,7 @@ def test_dialogue_outcome(d):
     assert result.escalation_flag is d.escalates
     closing = transcript.turns[-1]
     assert closing.state == DialogueState.CONTRACT
-    assert closing.system_text == (CLOSE_ESCALATE if d.escalates else CLOSE_NORMAL)
+    assert closing.system_text == (CLOSE_ESCALATE if d.escalates else CLOSE_REFUSED if d.refuses else CLOSE_NORMAL)
 
 
 @pytest.mark.parametrize("d", DIALOGUES, ids=lambda d: d.name)
@@ -163,11 +172,12 @@ def test_dialogue_invariants(d):
     result, transcript = run_dialogue(d)
     states = [t.state for t in transcript.turns]
 
-    # State order: exactly one INTERCEPT, 1..MAX INQUIRE, one EVALUATE, one CONTRACT.
+    # State order: exactly one INTERCEPT, 1..MAX INQUIRE (0 only after a refusal to the
+    # opening line), one EVALUATE, one CONTRACT.
     n_inquire = states.count(DialogueState.INQUIRE)
     assert states == ([DialogueState.INTERCEPT] + [DialogueState.INQUIRE] * n_inquire
                       + [DialogueState.EVALUATE, DialogueState.CONTRACT])
-    assert 1 <= n_inquire <= config.MAX_INQUIRE_ATTEMPTS
+    assert (0 if d.refuses and result.dialogue_turns == 1 else 1) <= n_inquire <= config.MAX_INQUIRE_ATTEMPTS
 
     # The child never sees the flagged category named.
     for turn in transcript.turns:

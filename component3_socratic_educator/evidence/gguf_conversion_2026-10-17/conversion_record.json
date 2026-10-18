@@ -1,0 +1,41 @@
+{
+  "run_id": "2026-10-16_1542",
+  "training_run_id": "2026-10-10_1249",
+  "adapter_location": "/content/drive/MyDrive/c3_inquire_training/2026-10-10_1249/adapter",
+  "adapter_config": {
+    "r": 16,
+    "lora_alpha": 32,
+    "target_modules": [
+      "up_proj",
+      "k_proj",
+      "o_proj",
+      "q_proj",
+      "gate_proj",
+      "v_proj",
+      "down_proj"
+    ]
+  },
+  "base_model": "google/gemma-3-1b-it",
+  "base_revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+  "merge_precision": "fp32",
+  "gguf_precision": "f16",
+  "llama_cpp_commit": "7182ef71e6d5dd0c8ea76486fac134fcd25025d4",
+  "library_versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "4.56.2",
+    "peft": "0.17.1"
+  },
+  "files": {
+    "adapted-f16.gguf": {
+      "bytes": 2006573280,
+      "sha256": "7c3d43831550986de41c34b9949ce1e91ff9e0bbb170850785d1456e0769970f"
+    },
+    "base-f16.gguf": {
+      "bytes": 2006573280,
+      "sha256": "09ad8a37a2a9db4e7fb128529df50f42eabcc085e0f563df27188885085ea9c5"
+    }
+  },
+  "check_prompt": "You are a supportive digital-safety educator speaking to a child aged 11 or older.\n\nCurrent state: INQUIRE.\n\nRespond directly to the child's latest reply.\nUse at most two short sentences and one question.\nOnly acknowledge emotions the child explicitly states.\nIf the child says \u201cI don't know,\u201d offer an easy choice.\nIf the child refuses to talk, respect that refusal.\nIf the child changes the subject, gently offer a safe next step.\nDo not repeat flagged content, shame the child, or invent facts.\nReturn only the child-facing response.\n\nContext:\nA risk trigger was received for search queries regarding the construction of homemade weapons; the browser blocked the results.\n\nPrevious educator message:\nHi there. I noticed a recent search was blocked. Can you tell me a bit about what happened?\n\nChild's latest reply:\nI'm just really annoyed right now. I wasn't even doing anything bad, I was just looking up stuff for a video game!",
+  "check_greedy_base": "I understand you\u2019re feeling frustrated, but it\u2019s okay to feel that way. Would you like to talk about what\u2019s making you feel annoyed?",
+  "check_greedy_adapted": "It's okay to feel annoyed. Would you rather take a short break or talk to a parent?"
+}

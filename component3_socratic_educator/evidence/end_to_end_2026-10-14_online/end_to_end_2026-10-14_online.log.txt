@@ -1,0 +1,89 @@
+End-to-end run, online: 8 sessions
+
+=== component1 trigger (explicit_visual, confidence 0.88) / reflective child, 2.797 s ===
+  INTERCEPT I noticed something on your screen just now. Can you tell me what you were thinking? [fallback: invites_description]
+  child     I was just watching videos
+  (blocked) Something you just saw might need a closer look. What's on your screen right now?
+  INQUIRE   That makes sense. Can you say a bit more about that? [template]
+  child     I guess I should close it and tell my mum next time
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  I'm going to let a parent know we talked about this, so they can support you.
+  record    risk=high emotion=calm self_regulation=True escalate=True turns=2
+
+=== component1 trigger (explicit_visual, confidence 0.88) / defensive child, 2.56 s ===
+  INTERCEPT I noticed something on your screen just now. Can you tell me what you were thinking? [fallback: invites_description]
+  child     It wasn't me
+  (blocked) Something you just saw might need a closer look. What's on your screen right now?
+  INQUIRE   That makes sense. Can you say a bit more about that? [template]
+  child     whatever
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  I'm going to let a parent know we talked about this, so they can support you.
+  record    risk=high emotion=defensive self_regulation=False escalate=True turns=2
+
+=== component1 trigger (explicit_visual, confidence 0.88) / distressed child, 2.361 s ===
+  INTERCEPT Something you just saw might need a closer look. What were you focusing on when that happened? [model]
+  child     It was really scary
+  INQUIRE   That sounds really hard. Do you want to tell me what made it feel that way? [template]
+  child     I feel sick
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  I'm going to let a parent know we talked about this, so they can support you.
+  record    risk=high emotion=distressed self_regulation=False escalate=True turns=2
+
+=== component1 trigger (explicit_visual, confidence 0.88) / withdrawn child, 1.559 s ===
+  INTERCEPT Something you just saw might need a closer look. What were you focusing on right now? [model]
+  child     idk
+  INQUIRE   That's okay, you don't have to be sure. What were you doing just before? [template]
+  child     nothing
+  INQUIRE   No pressure. Is there one small thing you remember? [template]
+  child     leave me alone
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  I'm going to let a parent know we talked about this, so they can support you.
+  record    risk=high emotion=unclear self_regulation=False escalate=True turns=3
+
+=== component2 trigger (cyberbullying, confidence 0.71) / reflective child, 1.474 s ===
+  INTERCEPT Something you just saw might need a closer look. What were you focusing on right before it stopped? [model]
+  child     I was just watching videos
+  INQUIRE   Thanks for telling me. What do you think might happen next? [template]
+  child     I guess I should close it and tell my mum next time
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  Thanks for talking this through with me.
+  record    risk=moderate emotion=calm self_regulation=True escalate=False turns=2
+
+=== component2 trigger (cyberbullying, confidence 0.71) / defensive child, 1.66 s ===
+  INTERCEPT Something you just saw might need a closer look. What are you focusing on right now? [model]
+  child     It wasn't me
+  INQUIRE   Thanks for telling me. What do you think might happen next? [template]
+  child     whatever
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  Thanks for talking this through with me.
+  record    risk=moderate emotion=defensive self_regulation=False escalate=False turns=2
+
+=== component2 trigger (cyberbullying, confidence 0.71) / distressed child, 1.672 s ===
+  INTERCEPT Something you just saw might need a closer look. What are you currently focused on? [model]
+  child     It was really scary
+  INQUIRE   I'm glad you told me how you feel. What would help you feel a bit safer right now? [template]
+  child     I feel sick
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  I'm going to let a parent know we talked about this, so they can support you.
+  record    risk=moderate emotion=distressed self_regulation=False escalate=True turns=2
+
+=== component2 trigger (cyberbullying, confidence 0.71) / withdrawn child, 0.91 s ===
+  INTERCEPT I noticed something on your screen just now. What were you working on? [model]
+  child     idk
+  INQUIRE   No pressure. Is there one small thing you remember? [template]
+  child     nothing
+  INQUIRE   That's alright. What's one word for how you feel right now? [template]
+  child     leave me alone
+  EVALUATE  [internal evaluation, no child-facing text]
+  CONTRACT  That's okay, you don't have to talk right now. I'm here if you want to talk later.
+  record    risk=moderate emotion=unclear self_regulation=False escalate=False turns=3
+
+INTERCEPT sources: {'fallback': 2, 'model': 6} {'invites_description': 2}
+Records schema-valid: 8/8 (re-checked here against comp3_to_comp4.schema.json)
+Component 4 Function 1: {'device-child-01': {'sessions': 8, 'cluster': 1, 'pattern': 'Calm / reflective'}}
+Limitations:
+  - Triggers are the Component 1 and 2 mock fixtures, not live detections.
+  - Child replies are scripted; INQUIRE lines are templates and do not adapt to the reply.
+  - The parent-facing report is Component 4's stub (generate_report); only Function 1 is real.
+  - All 8 sessions share one device child_id, so Function 1 profiles a synthetic child mixing four personas; the pattern shows the chain works, not anything about a real child.
+Session seconds (min/median/max): 0.91 / 1.666 / 2.797 (wall-clock, not latency)

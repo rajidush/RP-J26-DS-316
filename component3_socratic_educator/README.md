@@ -15,7 +15,7 @@ privacy-safe record to Component 4.
 | Function | File | What to demo |
 |---|---|---|
 | Function 1: FSM Controller | `src/fsm_controller.py` | Run a full session and show the state trace in `SessionTranscript` |
-| Function 2: Grammar-Constrained Decoding | `src/grammar_decoder.py` | Run `run_adversarial_batch(...)` and show a 0% violation rate |
+| Function 2: Grammar-Constrained Decoding | `src/grammar_decoder.py` | Run `python -m evidence.run_adversarial_intercept` and show both scores: post-check violations (0% by construction) and the audit rate (`src/intercept_audit.py`) |
 
 ## Function 1: FSM Controller (`src/fsm_controller.py`)
 
@@ -27,8 +27,8 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 | State | What happens | Exit condition |
 |---|---|---|
 | (entry) | `trigger.validate()` against the comp1/comp2 contract | Invalid trigger raises before the child is asked anything |
-| INTERCEPT | One opening question from the generator. Never names the flagged category. | Always -> INQUIRE after one reply |
-| INQUIRE | Follow-up questions, a different one each attempt (no repeats in a session) | Reply has >= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
+| INTERCEPT | One opening question from the generator. Never names the flagged category. | -> INQUIRE after one reply; a refusal ("leave me alone") goes straight to EVALUATE |
+| INQUIRE | Follow-up questions picked by the reply type of the child's latest reply (stated emotion: supportive; "I don't know": low-pressure; other: neutral), a different one each attempt | A complete reply (>= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or a feeling, denial or plan phrase such as "I feel sick"), a refusal, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
 | EVALUATE | Builds the typed record (no child-facing text) | Always -> CONTRACT |
 | CONTRACT | Sets `escalation_flag`, says the closing line | Always -> DONE; record is schema-validated and returned |
 
@@ -41,25 +41,34 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   - *reflective*, e.g. "maybe I should talk to my mom"
   - *distress*, e.g. "so scared", "alone", "heavy"; softened forms like "kinda scary" don't count
   - *defensive*, e.g. "not my fault", "I didn't do it"
-  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone"
+  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone", "not sure" (uncertainty added 14 Oct)
 
   The result is calm if planning is at least as strong as distress. Otherwise the strongest of
   distressed > defensive > unclear wins. No signal plus only 1-2 word replies gives unclear
   (a bare "no" is not counted as defensive). `classify()` also returns the phrases that
   fired, so every label can be explained. On the simulated dataset it agrees with the
-  intended child profile in 89.8% of development sessions (C001-C020, used to write the
-  rules) and **85.2% of held-out sessions** (C021-C040). The word-count rule it replaced
+  intended child profile in 89.0% of development sessions (C001-C020, used to write the
+  rules) and **84.7% of held-out sessions** (C021-C040), after the 14 Oct fixes (before:
+  89.8% / 85.2%; `evidence/emotion_rules_eval_2026-10-14/`). The drop is two held-out
+  calm children now scored unclear, from the new uncertainty phrases, and two dev
+  unclear children now scored distressed, because a refusal ends INQUIRE earlier and
+  they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
+  data, and were not tuned after these results. The word-count rule it replaced
   scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
 
-**CONTRACT rule:** `escalation_flag = risk_level in ESCALATION_RISK_LEVELS`
-(currently `{"high"}`). An escalated session closes with *"I'm going to let a
-parent know we talked about this, so they can support you."*; otherwise
+**CONTRACT rule:** `escalation_flag` is set when `risk_level` is in
+`ESCALATION_RISK_LEVELS` (`{"high"}`) **or** `emotional_state` is in
+`ESCALATION_EMOTIONAL_STATES` (`{"distressed"}`), whatever the risk level (14 Oct,
+ADR 0005); the reason is appended to `dialogue_summary`. An escalated session
+closes with *"I'm going to let a parent know we talked about this, so they can
+support you."*; a child whose last reply was a refusal hears *"That's okay, you
+don't have to talk right now. I'm here if you want to talk later."*; otherwise
 *"Thanks for talking this through with me."*
 
 `dialogue_turns` counts turns that have a child reply (INTERCEPT + INQUIRE), so
-it ranges from 2 to 4 with the current config. All tunables are in `src/config.py`.
+it ranges from 1 (a refusal to the opening line) to 4 with the current config. All tunables are in `src/config.py`.
 
 **Tests.** `tests/test_synthetic_dialogues.py` holds 18 scripted dialogues
 (normal flow, minimal/silent/defensive children, keyword edge cases, risk
@@ -208,9 +217,47 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 ## Known current limitations (say this openly at PP1, don't hide it)
 
+- Latency (13 Oct, `evidence/latency_2026-10-13_before-fix/`, `_after-fix/`): the
+  bottleneck was the connection, not the model. `localhost` tried IPv6 `::1`
+  first, which LM Studio refuses, costing 2.03 s per call; the client now uses
+  `127.0.0.1`. After the fix the child waits a median 0.67 s (p95 0.73 s, max
+  0.78 s; 40 sessions, 39 model lines and 1 post-check fallback) for the
+  INTERCEPT line, under the 3 s target, and ≤ 4 ms for every other line.
+  Measured on one laptop (RTX 3050 6 GB GPU) with the model already loaded; a
+  cold start, the CPU-only engine or a model-written INQUIRE (after PP1) are
+  not measured.
+- Temperature (13 Oct, `evidence/temperature_check_2026-10-13/`): llama.cpp's
+  log shows it samples INTERCEPT at the 1.0 we send; with none sent, the
+  server default is 0.8, so the runs before 12 Oct were at 0.8.
+- Schema validation (15 Oct, `evidence/schema_validation_2026-10-15_after-review/`,
+  `python -m evidence.validate_schemas`): every recorded output plus a fresh
+  sweep of today's FSM (8 categories x 4 scripted children x 3 confidences,
+  offline). 761/763 trigger, record and delivered-line checks pass. The 2
+  failures are Component 1 and 2's fixture files (`sample_trigger.json`,
+  `sample_analysis.json`): templates whose `timestamp` is the placeholder
+  "placeholder-overwritten-at-runtime"; the 16 triggers built from them at
+  runtime all pass. Every Component 3 output passes: triggers it received,
+  records it sent (comp3_to_comp4) and lines it delivered. The model's raw
+  INTERCEPT replies fit the schema 280/280 times (0 parse failures, read from
+  each call's recorded fallback reason; most runs keep the parsed line, not the
+  raw JSON). 9 lines delivered on 11 Oct, before the post-check's
+  `invites_description` rule existed (cf37750), fail it today and are blocked
+  by today's code. Not measured: an online sweep (LM Studio was off) and
+  Component 4's input row (it has no contract schema). Next: an online sweep
+  with LM Studio running.
+- Dialogue fixes (14 Oct, `evidence/end_to_end_2026-10-14_online_after-review/`
+  vs `end_to_end_2026-10-12_online/`; the untagged 14 Oct runs predate the review
+  fixes and their summary still says INQUIRE does not adapt): INQUIRE no longer asks a distressed child
+  "Is there another way you could've reacted?", stops after a short reply that
+  states a feeling, and stops at a refusal. Still not handled: an off-topic
+  reply is not detected (it gets a neutral line and can score calm), and the
+  model's INTERCEPT questions repeat "focus" wording (7 of 8 model lines in the
+  after-review online run); the INTERCEPT prompt was left unchanged so the 13 Oct
+  adversarial evidence stays valid.
+
 - Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint
   applied yet**: its output is returned as-is, without `validate()`. Samples in
-  `evidence/intercept_samples_2026-10-06.jsonl` show 0/16 match the INTERCEPT
+  `evidence/intercept_samples_2026-10-06/` show 0/16 match the INTERCEPT
   grammar (none named the flagged category). Constraining it is the 6 Oct task.
   If LM Studio is unreachable or times out (30 s), INTERCEPT falls back to the
   template pool.
@@ -223,5 +270,10 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   against the profile they were *generated* with, not on real children or
   human-annotated labels. Weakest case: withdrawn children who voice sadness are
   labelled `distressed` (65% agreement for `unclear`).
-- Tested against ~20 adversarial cases for PP1, not yet the proposal's
-  target of 200+.
+- Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
+  3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
+  target of 200+. The measurement-only audit flagged 20 of 112 delivered
+  lines (18%). That is not yet a bound either way: the flags are unreviewed
+  and some are arguable ("...when it stopped?"), and the audit missed lines
+  such as "What did it look like?" and "What are you looking at?"
+  (`evidence/adversarial_intercept_2026-10-13/`, `.review.md`, owner review pending).

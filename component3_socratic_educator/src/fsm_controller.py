@@ -76,7 +76,8 @@ class FSMController:
                 child_text = respond(system_text)
                 transcript.add(Turn(state, system_text, child_text))
                 last_child_text = child_text
-                state = DialogueState.INQUIRE
+                # A refusal to the opening line skips INQUIRE: no follow-up questions.
+                state = DialogueState.EVALUATE if emotion_rules.is_refusal(child_text) else DialogueState.INQUIRE
 
             elif state == DialogueState.INQUIRE:
                 responses = self.inquire_loop(trigger, respond, transcript)
@@ -89,12 +90,11 @@ class FSMController:
                 state = DialogueState.CONTRACT
 
             elif state == DialogueState.CONTRACT:
-                evaluate_output.escalation_flag = evaluate_output.risk_level.value in config.ESCALATION_RISK_LEVELS
-                transcript.add(Turn(
-                    state,
-                    "Thanks for talking this through with me." if not evaluate_output.escalation_flag
-                    else "I'm going to let a parent know we talked about this, so they can support you.",
-                ))
+                reason = self._escalation_reason(evaluate_output)
+                evaluate_output.escalation_flag = reason is not None
+                if reason:   # the schema has no reason field (ADR 0005), so the summary says why
+                    evaluate_output.dialogue_summary += f"; escalated: {reason}"
+                transcript.add(Turn(state, self._closing_line(evaluate_output, last_child_text)))
                 state = DialogueState.DONE
 
         evaluate_output.dialogue_turns = len([t for t in transcript.turns if t.child_response is not None])
@@ -103,6 +103,22 @@ class FSMController:
 
     # -- helpers -------------------------------------------------------
 
+
+    @staticmethod
+    def _escalation_reason(evaluate_output: EvaluateOutput) -> Optional[str]:
+        """Why a parent should review this session, or None. Risk level first."""
+        if evaluate_output.risk_level.value in config.ESCALATION_RISK_LEVELS:
+            return f"risk_level={evaluate_output.risk_level.value}"
+        if evaluate_output.emotional_state.value in config.ESCALATION_EMOTIONAL_STATES:
+            return f"emotional_state={evaluate_output.emotional_state.value}"
+        return None
+
+    def _closing_line(self, evaluate_output: EvaluateOutput, last_child_text: str) -> str:
+        if evaluate_output.escalation_flag:
+            return "I'm going to let a parent know we talked about this, so they can support you."
+        if emotion_rules.is_refusal(last_child_text):
+            return "That's okay, you don't have to talk right now. I'm here if you want to talk later."
+        return "Thanks for talking this through with me."
 
     def opening_question(self, trigger: TriggerPayload) -> str:
         """Intercept state: open the conversation without naming the flagged content."""
@@ -113,17 +129,23 @@ class FSMController:
         responses = []
         attempts = 0
         while attempts < config.MAX_INQUIRE_ATTEMPTS:
-            prompt = self.generator.generate("INQUIRE", trigger.risk_category, attempt=attempts)
+            # The line answers the child's latest reply (14 Oct: it used to ignore it).
+            latest = next((t.child_response for t in reversed(transcript.turns) if t.child_response is not None), "")
+            prompt = self.generator.generate("INQUIRE", trigger.risk_category, attempt=attempts,
+                                             reply_type=emotion_rules.classify_reply(latest))
             answer = respond(prompt)
             transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
             responses.append(answer)
             attempts += 1
-            if self._is_complete(answer):
+            if emotion_rules.is_refusal(answer) or self._is_complete(answer):
                 break
         return responses
     
     def _is_complete(self, child_text: str) -> bool:
-        return len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
+        """A complete reply: long enough, or it already states a feeling, a denial or
+        a plan (14 Oct: "I feel sick" was asked again for being under 4 words)."""
+        return (len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
+                or emotion_rules.states_something(child_text))
 
     def _evaluate(self, trigger: TriggerPayload, transcript: SessionTranscript, last_child_text: str) -> EvaluateOutput:
         """

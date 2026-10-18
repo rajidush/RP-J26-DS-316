@@ -1,0 +1,36 @@
+{
+  "started_at": "2026-10-17T10:42:39+00:00",
+  "runtime_seconds": 123.8,
+  "prompts": {
+    "source": "evidence\\inquire_dataset_2026-10-10\\test.jsonl",
+    "count": 50,
+    "form": "the full training-format prompt as one user message, no system message"
+  },
+  "generation_settings": {
+    "temperature": 0,
+    "max_tokens": 128,
+    "other": "server defaults, not set by this script (top_p, top_k, repeat penalty)"
+  },
+  "runtime": {
+    "server": "http://127.0.0.1:1234/v1/chat/completions",
+    "lm_studio": "0.4.19 build 2 (last recorded app version in historical-version-info.json, not read from the server)",
+    "python": "3.13.1",
+    "machine": "Windows-11-10.0.26200-SP0",
+    "gguf_precision": "f16",
+    "gpu": "not recorded"
+  },
+  "models": {
+    "control": {
+      "model_id": "gemma3-1b-it-base",
+      "file": "base-f16.gguf",
+      "sha256": "09ad8a37a2a9db4e7fb128529df50f42eabcc085e0f563df27188885085ea9c5"
+    },
+    "adapted": {
+      "model_id": "gemma3-1b-inquire-adapted",
+      "file": "adapted-f16.gguf",
+      "sha256": "7c3d43831550986de41c34b9949ce1e91ff9e0bbb170850785d1456e0769970f"
+    }
+  },
+  "conversion_record": "see evidence/gguf_conversion_<date>/conversion_record.json (not read by this script)",
+  "comparable_to": "evidence/inquire_comparison_2026-10-10/ (Colab, fp32, greedy, max_new_tokens 128)"
+}

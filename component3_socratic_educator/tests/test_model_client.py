@@ -37,3 +37,18 @@ def test_response_format_is_passed_through_unchanged(monkeypatch):
     fmt = {"type": "json_schema", "json_schema": {"name": "x", "strict": True, "schema": {"type": "object"}}}
     model_client.call_local_model("p", response_format=fmt, timeout=5)
     assert sent["body"]["response_format"] == fmt and sent["timeout"] == 5
+
+
+def test_temperature_is_sent_only_when_set(monkeypatch):
+    sent = _capture(monkeypatch)
+    model_client.call_local_model("p")
+    assert "temperature" not in sent["body"]          # server default
+    model_client.call_local_model("p", temperature=0.5)
+    assert sent["body"]["temperature"] == 0.5
+
+
+def test_the_server_is_addressed_by_its_ipv4_loopback_address():
+    # "localhost" resolves to ::1 first on Windows; LM Studio listens on IPv4 only, so
+    # every call waited ~2 s for the refused IPv6 connect (13 Oct latency run).
+    from urllib.parse import urlparse
+    assert urlparse(model_client.LM_STUDIO_URL).hostname == "127.0.0.1"

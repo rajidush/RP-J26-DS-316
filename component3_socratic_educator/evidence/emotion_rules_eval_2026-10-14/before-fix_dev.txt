@@ -1,0 +1,10 @@
+split=dev  sessions=382  children=20
+agreement with intended state: 343/382 = 89.8%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                       91           1          12           6      83%
+defensive                   5          96           2           2      91%
+distressed                  3           0         116           0      97%
+unclear                     1           1           6          40      83%
+
+output counts: {'distressed': 136, 'defensive': 98, 'calm': 100, 'unclear': 48}

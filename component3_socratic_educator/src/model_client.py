@@ -9,15 +9,21 @@ import json
 
 from . import config
 
-LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
+# 127.0.0.1, not "localhost": on Windows "localhost" resolves to ::1 first, LM Studio
+# listens on IPv4 only, and the refused IPv6 connect cost ~2 s per call (13 Oct).
+LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 
 def call_local_model(prompt: str, timeout: float = 30.0, response_format: dict | None = None,
-                     max_tokens: int = 60) -> tuple[str, float]:
+                     max_tokens: int = 60, temperature: float | None = None,
+                     model: str | None = None) -> tuple[str, float]:
+    # `model` is for the viva demo's shadow calls (src/shadow.py); the dialogue never passes it.
     payload = {
-        "model": config.LOCAL_MODEL_ID,
+        "model": model or config.LOCAL_MODEL_ID,
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
+    if temperature is not None:          # None leaves the server's default
+        payload["temperature"] = temperature
     if response_format is not None:
         payload["response_format"] = response_format
     req = urllib.request.Request(

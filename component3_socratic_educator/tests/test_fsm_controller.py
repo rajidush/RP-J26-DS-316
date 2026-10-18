@@ -102,3 +102,98 @@ def test_run_actually_uses_inquire_loop():
     _, transcript = controller.run(trigger, respond=lambda _: "no")
     inquire_turns = [t for t in transcript.turns if t.state.name == "INQUIRE"]
     assert len(inquire_turns) == config.MAX_INQUIRE_ATTEMPTS
+
+
+# --- 14 Oct fixes -------------------------------------------------------------
+
+def _inquire_replies(replies):
+    """Run a session; return the replies the child was asked for during INQUIRE."""
+    it = iter(replies)
+    _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    return [t.child_response for t in transcript.turns if t.state == DialogueState.INQUIRE]
+
+
+@pytest.mark.parametrize("reply", ["I feel sick", "so scared", "not my fault", "I'll tell mum"])
+def test_a_short_reply_that_states_a_feeling_denial_or_plan_is_complete(reply):
+    # 12 Oct run: "I feel sick" (3 words) was asked again; it had already said something.
+    assert _inquire_replies(["hmm", reply, "never asked"]) == [reply]
+
+
+def test_a_short_reply_with_nothing_in_it_is_still_followed_up():
+    assert _inquire_replies(["hmm", "ok", "no", "fine"]) == ["ok", "no", "fine"]
+
+
+REFUSAL_CLOSE = "That's okay, you don't have to talk right now. I'm here if you want to talk later."
+
+
+@pytest.mark.parametrize("refusal", ["leave me alone", "I don't want to talk", "I do not want to talk about it",
+                                     "stop asking", "go away"])
+def test_a_refusal_ends_inquire_at_once(refusal):
+    # 12 Oct run: the withdrawn child was asked again after "leave me alone".
+    assert _inquire_replies(["hmm", refusal, "never asked"]) == [refusal]
+
+
+def test_a_refusal_to_the_opening_line_skips_inquire():
+    assert _inquire_replies(["leave me alone", "never asked"]) == []
+
+
+def test_a_refusing_child_who_is_not_escalated_hears_that_it_is_okay_not_to_talk():
+    it = iter(["hmm", "leave me alone"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it))
+    assert result.escalation_flag is False
+    assert transcript.turns[-1].system_text == REFUSAL_CLOSE
+
+
+def test_a_refusing_child_who_is_escalated_still_hears_the_parent_line():
+    it = iter(["hmm", "leave me alone"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.9), respond=lambda _: next(it))
+    assert result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text
+
+
+def _inquire_lines(replies):
+    it = iter(replies)
+    _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    return [t.system_text for t in transcript.turns if t.state == DialogueState.INQUIRE]
+
+
+def test_a_child_who_states_a_feeling_gets_a_supportive_line():
+    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
+    assert _inquire_lines(["It was really scary"])[0] in INQUIRE_LINES["stated_emotion"]
+
+
+def test_a_child_who_does_not_know_gets_a_low_pressure_line_not_thanks():
+    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
+    lines = _inquire_lines(["idk", "nothing", "I was just watching videos"])
+    assert all(line in INQUIRE_LINES["dont_know"] for line in lines[:2])
+    assert not any(line.startswith("Thanks for telling me") for line in lines[:2])
+
+
+def test_a_distressed_child_is_escalated_even_at_moderate_risk():
+    # 12 Oct run: "I can't stop crying about it" at confidence 0.71 was not escalated (ADR 0005).
+    it = iter(["It was really scary", "I can't stop crying about it"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
+    assert result.risk_level.value == "moderate" and result.emotional_state.value == "distressed"
+    assert result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text
+    assert result.dialogue_summary.endswith("escalated: emotional_state=distressed")
+
+
+def test_the_summary_says_why_a_high_risk_session_escalated():
+    result, _ = FSMController().run(make_trigger(confidence=0.9), respond=lambda _: "I clicked a link by accident")
+    assert result.dialogue_summary.endswith("escalated: risk_level=high")
+
+
+def test_a_calm_moderate_risk_session_is_not_escalated_and_says_nothing_about_it():
+    result, _ = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: "I clicked a link by accident")
+    assert result.escalation_flag is False and "escalated" not in result.dialogue_summary
+
+
+def test_a_refusal_with_distress_ends_inquire_and_still_escalates():
+    # Agreed 14 Oct: the refusal is respected, and the distress gets a parent involved.
+    it = iter(["hmm", "leave me alone, I'm so scared", "never asked"])
+    result, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it))
+    assert [t.child_response for t in transcript.turns if t.state == DialogueState.INQUIRE] == [
+        "leave me alone, I'm so scared"]
+    assert result.emotional_state.value == "distressed" and result.escalation_flag is True
+    assert "parent" in transcript.turns[-1].system_text

@@ -21,7 +21,7 @@ from component3_socratic_educator.src.model_client import LM_STUDIO_URL
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "live_model: needs LM Studio running on localhost:1234")
+    config.addinivalue_line("markers", "live_model: needs LM Studio running on 127.0.0.1:1234")
 
 
 def _lm_studio_up() -> bool:
@@ -36,7 +36,7 @@ def _lm_studio_up() -> bool:
 def _block_live_model(request, monkeypatch):
     if request.node.get_closest_marker("live_model"):
         if not _lm_studio_up():
-            pytest.skip("LM Studio not reachable on localhost:1234")
+            pytest.skip("LM Studio not reachable on 127.0.0.1:1234")
         return
 
     def _offline(*_a, **_k):
