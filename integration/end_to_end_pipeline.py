@@ -10,6 +10,7 @@ calls passing dicts that match the shared JSON Schemas.
 Run from the project root:
     python integration/end_to_end_pipeline.py
     python integration/end_to_end_pipeline.py --source component2
+    python integration/end_to_end_pipeline.py --source component2 --text "nobody likes you, just leave the group" --age 10
     python integration/end_to_end_pipeline.py --offline     # no model: INTERCEPT uses its fallback line
 
 As each component owner finishes their real implementation, they replace
@@ -20,6 +21,7 @@ import argparse
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 # One sys.path entry is all that's needed: every component is imported by
 # its unique top-level package name (component1_screen_monitoring, etc.),
@@ -48,8 +50,15 @@ def offline_model(*_args, **_kwargs):
     raise ConnectionError("offline run: no model called")
 
 
-def build_trigger_from(source: str) -> TriggerPayload:
-    raw = comp1_capture() if source == "component1" else comp2_analyze()
+def build_trigger_from(source: str, text: Optional[str] = None, age: int = 10) -> Optional[TriggerPayload]:
+    """C1's simulated capture, C2's mock fixture, or -- given `text` -- C2's real engine for a
+    child of `age`. None means C2 checked the text and found nothing that should wake C3."""
+    if source == "component1":
+        raw = comp1_capture()
+    else:
+        raw = comp2_analyze(text, age=age) if text is not None else comp2_analyze()
+        if raw is None:
+            return None
     raw["risk_category"] = RiskCategory(raw["risk_category"])
     return TriggerPayload(**raw)
 
@@ -95,10 +104,16 @@ def main():
     parser.add_argument("--source", choices=["component1", "component2"], default="component1",
                          help="Which upstream detector triggers this session")
     parser.add_argument("--offline", action="store_true", help="Run without the model (fallback INTERCEPT line)")
+    parser.add_argument("--text", help="Component 2 only: a message to check with the real C2 engine "
+                                       "(without it, C2's mock fixture is used)")
+    parser.add_argument("--age", type=int, default=10, help="Component 2 only: the child's age, 8-15")
     args = parser.parse_args()
 
     print(f"--- Step 1/4: {args.source} detects a risk and emits a trigger ---")
-    trigger = build_trigger_from(args.source)
+    trigger = build_trigger_from(args.source, text=args.text, age=args.age)
+    if trigger is None:
+        print("Component 2 checked the text and found nothing that should start a conversation. No session.")
+        return
     print(f"Trigger: risk_category={trigger.risk_category.value}, confidence={trigger.confidence_score}")
 
     print("\n--- Step 2/4: Component 3 runs the Socratic dialogue (FSM + grammar-constrained decoding) ---")

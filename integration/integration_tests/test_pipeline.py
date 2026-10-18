@@ -82,3 +82,29 @@ def test_every_turn_is_logged_with_where_its_line_came_from():
 def test_the_record_reaches_component4_as_its_input_row():
     log = _run()
     assert log["component4_row"] == {"child_id": DEVICE_CHILD_ID, **log["record"]}
+
+
+@pytest.fixture
+def lexicon_only_c2():
+    """Component 2's real engine with its keyword layer only: fast, offline, no model files."""
+    from component2_hate_speech_detection.src.component2 import set_analyzer
+    from component2_hate_speech_detection.src.engine.analyzer import Analyzer
+    from component2_hate_speech_detection.src.engine.text_scorer import TextScorer
+
+    set_analyzer(Analyzer(scorer=TextScorer(use_heads=False)))
+    yield
+    set_analyzer(None)
+
+
+def test_real_component2_detection_starts_a_session(lexicon_only_c2):
+    trigger = build_trigger_from("component2", text="you should kys", age=10)
+    assert trigger.risk_category.value == "cyberbullying"
+    assert trigger.context_metadata["c2_category"] == "threat"
+    assert "kys" not in json.dumps(trigger.to_dict())                 # no flagged text reaches C3
+    replies = iter(SCRIPT)
+    log = run_session(trigger, lambda _p: next(replies), model_call=offline_model)
+    _validate_against_schema(log["record"], "comp3_to_comp4.schema.json")
+
+
+def test_real_component2_lets_ordinary_chat_through(lexicon_only_c2):
+    assert build_trigger_from("component2", text="want to play minecraft after school?", age=10) is None

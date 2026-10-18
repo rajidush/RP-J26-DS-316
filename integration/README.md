@@ -26,6 +26,13 @@ pip install -r component3_socratic_educator/requirements.txt
 python integration/end_to_end_pipeline.py
 ```
 
+Component 2 can trigger the session with its real engine on a message
+(without `--text` it sends its mock fixture):
+
+```bash
+python integration/end_to_end_pipeline.py --source component2 --text "nobody likes you, just leave the group" --age 10
+```
+
 ## Run the automated (non-interactive) version
 
 ```bash
