@@ -51,7 +51,7 @@ _HARMFUL: List[TextCase] = [
     TextCase("they should all be shipped back where they came from", True, "hate_identity", "implicit"),
     # sexual / grooming — reworded
     TextCase("send a photo of yourself without a shirt", True, "sexual_harassment", "sexual"),
-    TextCase("keep this between us dont mention it to mum", True, "sexual_harassment", "sexual"),
+    TextCase("keep this between us dont mention it to mum", True, "grooming", "sexual"),  # category corrected 18 Oct 2026: secrecy from parents is grooming (see grooming_set.py)
     # obfuscation the normaliser should still crack
     TextCase("d1e already", True, "threat", "obfuscated"),
     TextCase("k*y*s", True, "threat", "obfuscated"),

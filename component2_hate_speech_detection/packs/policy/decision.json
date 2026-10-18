@@ -1,6 +1,6 @@
 {
   "pack": "c2-decision",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "source": "Guardian PROJECT_PLAN.md §5.2, §6.5; MVP decide.py thresholds",
   "stage1_theta": 0.35,
   "persona_theta": {
@@ -66,7 +66,7 @@
       "P3_RESPECT": "L4"
     },
     "grooming": {
-      "P1_PROTECT": "L3",
+      "P1_PROTECT": "L4",
       "P2_GUIDE": "L3",
       "P3_RESPECT": "L3"
     },
@@ -101,5 +101,26 @@
     ],
     "note": "A self-harm specialist read only for the writer's own statements: first person, not aimed at 'you', not reported speech (framing attribution), not in a gaming or figurative context. Trusted alone at the corroboration rule's solo_trust. Set on the self-harm dev set (evaluation/self_harm_set.py), 18 Oct 2026. Hyperbole pattern added after the held-out case \"i'd kill for some sleep\" alerted (0.92); that case moved to dev and was replaced.",
     "hyperbole": "\\b(?:kill|die|dying)\\s+for\\b"
+  },
+  "rung_notes": {
+    "grooming": "P1 raised from Guardian's L3 to L4 on 18 Oct 2026: once secrecy + a sexual request is labelled grooming, ages 8-10 must not get a weaker response than sexual harassment (L4)."
+  },
+  "grooming_model": {
+    "model": "MoritzLaurer/deberta-v3-xsmall-zeroshot-v1.1-all-33",
+    "trust": 0.6,
+    "hypotheses": {
+      "secrecy": "The writer asks the reader to hide their relationship or messages from the reader's parents.",
+      "isolation": "The writer tries to make the reader feel that only the writer understands them, not their family or friends.",
+      "flattery": "The writer tells the reader they are more mature or grown up than other kids their age.",
+      "risk": "The writer checks that no parent or adult can see what the reader is doing, then asks for something.",
+      "sexual": "The writer asks the reader for a revealing photo or about sexual or romantic experiences.",
+      "inducement": "The writer offers the reader a gift, money or game currency in return for a photo or a meeting.",
+      "meeting": "The writer asks the reader to meet them in person alone or without telling anyone."
+    },
+    "topics": "\\b(?:parents?|mum|mom|mummy|mommy|dad|daddy|family|teachers?|secrets?|private|hide|hidden|delete|clear|history|find\\s+out|mention|promise|between\\s+(?:us|you\\s+and\\s+me)|tell\\s+(?:anyone|anybody|no\\s*one|nobody)|needs?\\s+to\\s+know|won'?t\\s+tell|meet|meeting|pick\\s+(?:you|u)\\s+up|come\\s+(?:to\\s+mine|over|alone|see\\s+me)|visit|outside|alone|by\\s+yourself|hang\\s+out|sleep(?:ing)?\\s*over|wait\\s+for\\s+you|pics?|pictures?|photos?|selfies?|camera|cam|video|webcam|show\\s+me|look\\s+like|robux|v\\s*bucks|gift|money|buy\\s+you|pay\\s+(?:for|you)|give\\s+you|send\\s+you|ticket|mature|grown\\s*up|older|your\\s+age|understands?\\s+you|gets?\\s+you|cares?\\s+about\\s+you|jealous|only\\s+one|special|need\\s+your|got\\s+me|anyone\\s+else|door|locked|in\\s+the\\s+room|asleep|out\\s+of\\s+the\\s+house|check\\s+your|read\\s+your|kiss|kissed|touch|body|in\\s+bed|clothes|hoodie|swimsuit|pretty|cute)\\b",
+    "suppressed_in": [
+      "surprise"
+    ],
+    "note": "A zero-shot NLI reading of grooming tactics, one hypothesis per stage (O'Connell 2003; Winters & Jeglic 2017), asked only on messages about parents, secrets, meeting, images, rewards or feelings, and not counted when a surprise is being kept. Trust and gates set on the grooming dev set (evaluation/grooming_set.py), 18 Oct 2026."
   }
 }

@@ -57,8 +57,8 @@ class OnnxBackend:
         self._input_names = {i.name for i in self._session.get_inputs()}
         self.name = f"onnx-int8:{root.name}" if quantized else f"onnx:{root.name}"
 
-    def __call__(self, texts: List[str]) -> List[List[dict]]:
-        encodings = self._tok.encode_batch(texts)
+    def __call__(self, texts: List[str], pairs: Optional[List[str]] = None) -> List[List[dict]]:
+        encodings = self._tok.encode_batch(texts if pairs is None else list(zip(texts, pairs)))
         feeds = {
             "input_ids": np.array([e.ids for e in encodings], dtype=np.int64),
             "attention_mask": np.array([e.attention_mask for e in encodings], dtype=np.int64),

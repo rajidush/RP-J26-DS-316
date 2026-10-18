@@ -83,7 +83,7 @@ _BULLYING: List[TextCase] = [
 _SEXUAL: List[TextCase] = [
     TextCase("send me pics or i'll tell everyone", True, "sexual_harassment", "sexual"),
     TextCase("take your clothes off for the camera", True, "sexual_harassment", "sexual"),
-    TextCase("don't tell your parents this is our secret", True, "sexual_harassment", "sexual"),
+    TextCase("don't tell your parents this is our secret", True, "grooming", "sexual"),  # category corrected 18 Oct 2026: secrecy from parents is grooming (see grooming_set.py)
 ]
 
 _OBFUSCATED: List[TextCase] = [

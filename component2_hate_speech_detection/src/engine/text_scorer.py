@@ -12,6 +12,8 @@ Layering, and why each layer is here:
                  corroboration (below), not max().
     self-harm    a suicidality specialist, counted only for the writer's own
                  statement and alone only at solo_trust (`self_harm.py`).
+    grooming     a zero-shot tactic reader, asked only about messages on a
+                 grooming topic and not counted for a surprise (`grooming.py`).
     gaming cap   competitive trash talk is the heads' worst blind spot
                  ("you're trash at this game" scored 0.93 on toxic-bert).
     framing      applied last, to the combined score, so no layer routes around it.
@@ -36,7 +38,8 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .framing import FramingGuard
-from .heads import DEFAULT_HEADS, TextHead
+from .grooming import GroomingGate
+from .heads import DEFAULT_HEADS, TextHead, ZeroShotHead
 from .lexicon import Lexicon
 from .policy import Policy, default_policy
 from .self_harm import SelfHarmGate
@@ -64,6 +67,11 @@ class ScoreDetail:
     self_harm_model: str = ""
     self_harm_gate: str = ""        # why the reading was not the writer's own, "" if it was
     self_harm_counted: bool = False
+    grooming_score: Optional[float] = None
+    grooming_tactic: str = ""
+    grooming_model: str = ""
+    grooming_gate: str = ""         # why the reading was not counted, "" if it was
+    grooming_counted: bool = False
 
     @property
     def discounted(self) -> bool:
@@ -82,11 +90,14 @@ class TextScorer:
         use_gaming_cap: bool = True,
         use_self_harm: bool = True,
         self_harm_head: Optional[TextHead] = None,
+        use_grooming: bool = True,
+        grooming_head: Optional[TextHead] = None,
     ) -> None:
         """`model_fn` injects a fake head for tests; `use_*` flags exist for ablation (proposal §3.5).
 
-        The self-harm specialist loads by default only with the default heads;
-        tests and ablations that pass their own `heads` pass `self_harm_head` too.
+        The self-harm and grooming specialists load by default only with the
+        default heads; tests and ablations that pass their own `heads` pass
+        `self_harm_head` / `grooming_head` too.
         """
         policy = policy or default_policy()
         self.lexicon = Lexicon(policy)
@@ -115,7 +126,14 @@ class TextScorer:
                 self.self_harm_head = self_harm_head
             elif heads is None:
                 self.self_harm_head = TextHead(self.self_harm_gate.model_id)
-        workers = len(self.heads) + (1 if self.self_harm_head is not None else 0)
+        self.grooming_gate = GroomingGate(policy, self.lexicon) if "grooming_model" in d else None
+        self.grooming_head: Optional[TextHead] = None
+        if model_fn is None and use_heads and use_grooming and self.grooming_gate is not None:
+            if grooming_head is not None:
+                self.grooming_head = grooming_head
+            elif heads is None:
+                self.grooming_head = ZeroShotHead(self.grooming_gate.model_id, self.grooming_gate.hypotheses)
+        workers = len(self.heads) + sum(h is not None for h in (self.self_harm_head, self.grooming_head))
         self._pool = ThreadPoolExecutor(max_workers=max(1, workers), thread_name_prefix="c2-head")
 
     @property
@@ -123,16 +141,18 @@ class TextScorer:
         if self._model_fn is not None:
             return "lexicon+injected"
         live = [h.name for h in self.heads if h.loaded]
-        if self.self_harm_head is not None and self.self_harm_head.loaded:
-            live.append(self.self_harm_head.name)
+        for specialist in (self.self_harm_head, self.grooming_head):
+            if specialist is not None and specialist.loaded:
+                live.append(specialist.name)
         return "lexicon+" + "+".join(live) if live else "lexicon"
 
     def warm_up(self) -> None:
         """Load the heads now rather than on the first real message."""
         for head in self.heads:
             head.read("warm up")
-        if self.self_harm_head is not None:
-            self.self_harm_head.read("warm up")
+        for specialist in (self.self_harm_head, self.grooming_head):
+            if specialist is not None:
+                specialist.read("warm up")
 
     # -- scoring --------------------------------------------------------------
 
@@ -144,6 +164,11 @@ class TextScorer:
         self_harm_future = None
         if self.self_harm_head is not None and lex.score < self.lexicon_decides_alone and (text or "").strip():
             self_harm_future = self._pool.submit(self.self_harm_head.read, text)
+        # The grooming reader costs ~100 ms, so it is asked only about messages on a grooming topic.
+        grooming_future = None
+        if (self.grooming_head is not None and lex.score < self.lexicon_decides_alone
+                and self.grooming_gate.on_topic(text)):
+            grooming_future = self._pool.submit(self.grooming_head.read, text)
 
         # At or above the HIGH band the heads cannot change the outcome, so they
         # are not run: explicit abuse is the *cheapest* path through Stage 1.
@@ -176,6 +201,18 @@ class TextScorer:
                 if not self_harm_gate and self_harm_score >= self.self_harm_gate.trust and self_harm_score > combined:
                     combined, category, self_harm_counted = self_harm_score, "self_harm", True
 
+        grooming_score, grooming_tactic, grooming_gate, grooming_counted = None, "", "", False
+        if grooming_future is not None:
+            try:
+                grooming_score, tactic, _ = grooming_future.result()
+            except Exception:
+                grooming_score, tactic = None, None
+            if grooming_score is not None:
+                grooming_tactic = tactic or ""
+                grooming_gate = self.grooming_gate.blocked_by(text)
+                if not grooming_gate and grooming_score >= self.grooming_gate.trust and grooming_score > combined:
+                    combined, category, grooming_counted = grooming_score, "grooming", True
+
         detail = ScoreDetail(
             score=round(combined, 4),
             category=category,
@@ -191,6 +228,11 @@ class TextScorer:
             self_harm_model=self.self_harm_head.name if self_harm_score is not None else "",
             self_harm_gate=self_harm_gate,
             self_harm_counted=self_harm_counted,
+            grooming_score=None if grooming_score is None else round(grooming_score, 4),
+            grooming_tactic=grooming_tactic,
+            grooming_model=self.grooming_head.name if grooming_score is not None else "",
+            grooming_gate=grooming_gate,
+            grooming_counted=grooming_counted,
         )
 
         if self.use_framing:
