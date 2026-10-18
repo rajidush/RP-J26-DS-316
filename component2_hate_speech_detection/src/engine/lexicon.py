@@ -11,6 +11,10 @@ threshold: the hit is recorded as evidence and the text is re-read in Stage
 2, but a cue never alerts on its own. Grooming secrecy uses it, because
 grooming is a conversation-level pattern rather than one message.
 
+A combination rule relabels a hit: a sexual request that comes with any
+grooming tactic or cue ("send me pics and don't tell your parents") is
+grooming, not sexual harassment.
+
 Every hit names the phrase or family that fired, so a parent or reviewer can
 read the exact rule behind a detection.
 """
@@ -80,6 +84,7 @@ class Lexicon:
             )
             for f in pack["families"]
         )
+        self._combinations = tuple((c["category"], frozenset(c["over"])) for c in pack.get("combinations", ()))
         bands = pack["bands"]
         self._high_band = bands["high"]
         self._mid_band = bands["mid"]
@@ -121,6 +126,15 @@ class Lexicon:
                 return category
         return "bullying"
 
+    def _combined(self, hit: LexiconHit, families: List[Family]) -> LexiconHit:
+        """Apply the pack's combination rules: the stronger reading names the category."""
+        for category, over in self._combinations:
+            fired = tuple(f.id for f in families if f.category == category)
+            if hit.category in over and fired:
+                extra = tuple(i for i in fired if i not in hit.hits)
+                return LexiconHit(hit.score, category, hit.hits + extra, hit.gaming)
+        return hit
+
     def score(self, text: str) -> LexiconHit:
         blob = self.normalize(text)
         if not blob:
@@ -144,14 +158,14 @@ class Lexicon:
             band = self._high_band
             score = round(min(band["cap"], band["base"] + band["step"] * (len(hits) - 1)), 4)
             category = self._category_for_literals(high) if high else by_band["high"][0].category
-            return LexiconHit(score, category, tuple(hits), gaming)
+            return self._combined(LexiconHit(score, category, tuple(hits), gaming), families)
 
         if mid or by_band["mid"]:
             hits = mid + [f.id for f in by_band["mid"]]
             band = self._mid_band
             score = round(min(band["cap"], band["base"] + band["step"] * len(hits)), 4)
             category = by_band["mid"][0].category if by_band["mid"] and not mid else "bullying"
-            return LexiconHit(score, category, tuple(hits), gaming)
+            return self._combined(LexiconHit(score, category, tuple(hits), gaming), families)
 
         if by_band["cue"]:
             return LexiconHit(self._cue_score, by_band["cue"][0].category,

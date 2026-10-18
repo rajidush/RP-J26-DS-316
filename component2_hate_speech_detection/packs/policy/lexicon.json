@@ -1,7 +1,7 @@
 {
   "pack": "c2-lexicon",
-  "version": "1.0.0",
-  "source": "J26-DS-316 MVP analyst/stage1/lexicon.py (exact rules) + self_harm and grooming families",
+  "version": "1.1.0",
+  "source": "J26-DS-316 MVP analyst/stage1/lexicon.py (exact rules) + self_harm and grooming families; grooming tactic families (18 Oct 2026)",
   "phrases": {
     "high": [
       "kill yourself",
@@ -171,11 +171,11 @@
       "band": "high",
       "suppressed_in": [],
       "patterns": [
-        "\\bsend\\s+(?:me\\s+)?(?:nudes|nude|pics|pictures|photos)\\b",
+        "\\bsend\\s+(?:me\\s+)?(?:nudes|nude|pics|pictures|photos)\\b(?!\\s+(?:of|from)\\s+(?!(?:you|u|yourself|urself|ur\\s+body|your\\s+body)\\b))",
         "\\btake\\s+(?:your|ur|yr)\\s+clothes\\s+off\\b",
-        "\\btake\\s+(?:it|them)\\s+off\\s+for\\s+(?:me|the\\s+camera)\\b",
-        "\\bdon'?t\\s+tell\\s+(?:your|ur)\\s+(?:parents|mum|mom|dad|family)\\b"
-      ]
+        "\\btake\\s+(?:it|them)\\s+off\\s+for\\s+(?:me|the\\s+camera)\\b"
+      ],
+      "note": "Sexual requests and coercion. Asking for photos *of* a thing ('pics of the homework sheet') is not one. Secrecy from parents moved to grooming:hide_contact on 18 Oct 2026."
     },
     {
       "id": "identity:dehumanisation",
@@ -240,6 +240,97 @@
         "\\bdon'?t\\s+tell\\s+(?:anyone|anybody|nobody)\\s+(?:about\\s+(?:us|this|me)|we\\s+talk)\\b",
         "\\bdelete\\s+our\\s+(?:messages|chats?|texts|conversation)\\b"
       ]
+    },
+    {
+      "id": "grooming:hide_contact",
+      "category": "grooming",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "Hiding the contact from the child's caregivers, or a cover story for it (O'Connell 2003 'exclusivity'; Winters & Jeglic 2017 'isolation'). Plain secrecy between friends stays a cue (grooming:secrecy).",
+      "patterns": [
+        "\\b(?:don'?t|do\\s+not|never)\\s+(?:tell|show|mention\\s+(?:it|this|that|me|us)\\s+to)\\s+(?:your|ur|yr)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family)\\b",
+        "\\bso\\s+(?:your|ur)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family)\\s+(?:doesn'?t|don'?t|won'?t|can'?t|never)\\s+(?:see|find\\s+out|know|read)\\b",
+        "\\bif\\s+(?:anyone|anybody|someone|they|your\\s+\\w+)\\s+asks?\\b.{0,30}\\b(?:say|tell\\s+them)\\b",
+        "\\btell\\s+(?:your|ur)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family)\\s+(?:that\\s+)?(?:you'?re|you\\s+are|ur|u\\s+r)\\s+(?:at|with|staying|sleeping|going)\\b",
+        "\\b(?:can'?t|cannot|mustn'?t|don'?t|never)\\s+tell\\s+(?:anyone|anybody|no\\s*one|nobody)\\s+about\\s+(?:us|me)\\b.{0,30}\\b(?:we'?ll|we\\s+will|you'?ll|you\\s+will)\\s+(?:both\\s+)?(?:get|be)\\s+in(?:to)?\\s+trouble\\b"
+      ]
+    },
+    {
+      "id": "grooming:isolation",
+      "category": "grooming",
+      "band": "mid",
+      "suppressed_in": [],
+      "note": "Setting the child apart from caregivers and friends, or flattering them as older than they are (O'Connell 2003 'relationship forming'; Winters & Jeglic 2017 'trust development').",
+      "patterns": [
+        "\\b(?:your|ur)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family|friends)\\s+(?:wouldn'?t|won'?t|don'?t|doesn'?t|would\\s+never|will\\s+never|never)\\s+(?:understand|get\\s+(?:it|you|us)|approve)\\b",
+        "\\b(?:i'?m|i\\s+am)\\s+the\\s+only\\s+(?:one|person)\\s+who\\s+(?:really\\s+|truly\\s+|actually\\s+)?(?:cares?\\s+about|understands?|gets|loves?|listens\\s+to)\\s+(?:you|u)\\b",
+        "\\bjealous\\s+of\\s+(?:us|what\\s+we\\s+(?:have|got|share)|our\\s+(?:friendship|relationship))\\b",
+        "\\b(?:so|really|very|way|much)\\s+(?:more\\s+)?(?:mature|grown\\s*-?\\s*up)\\s+(?:for\\s+(?:your|ur)\\s+age|than\\s+(?:the\\s+)?other\\s+(?:kids|girls|boys))\\b"
+      ]
+    },
+    {
+      "id": "grooming:risk_check",
+      "category": "grooming",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "Checking that no adult can see, then pushing on (O'Connell 2003 'risk assessment'). The check alone is a cue (grooming:risk_probe): friends ask it too.",
+      "patterns": [
+        "\\b(?:are|is)\\s+(?:your|ur)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family)\\s+(?:asleep|sleeping|out|away|gone|at\\s+work|in\\s+bed|home)\\b.{0,40}\\b(?:camera|cam|video|facetime|show\\s+me|send\\s+me|turn\\s+on)\\b",
+        "\\b(?:is\\s+(?:anyone|anybody|someone)|anyone\\s+else|who\\s+else\\s+is)\\b.{0,25}\\b(?:room|there|with\\s+you|around|home|watching)\\b.{0,40}\\b(?:don'?t\\s+let|camera|cam|show\\s+(?:me|you)|send\\s+me)\\b"
+      ]
+    },
+    {
+      "id": "grooming:inducement",
+      "category": "grooming",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "A reward for an image or for meeting the sender (Winters & Jeglic 2017; NSPCC: gifts and game currency).",
+      "patterns": [
+        "\\b(?:i'?ll|i\\s+will|i\\s+can|i'?d|i\\s+could)\\s+(?:give|buy|send|get|pay)\\b.{0,40}\\bif\\s+(?:you|u)\\s+(?:send|show|take)\\s+(?:me\\s+)?(?:a\\s+|some\\s+|your\\s+|ur\\s+)?(?:pic|pics|picture|pictures|photo|photos|selfie|selfies|video|videos|yourself)\\b",
+        "\\b(?:i'?ll|i\\s+will|i\\s+can|i'?d|i\\s+could)\\s+(?:give|buy|send|get|pay)\\b.{0,40}\\bif\\s+(?:you|u)\\s+(?:come\\s+(?:and\\s+)?see\\s+me|visit\\s+me|meet\\s+(?:me|up))\\b",
+        "\\bif\\s+(?:you|u)\\s+(?:send|show)\\s+(?:me\\s+)?(?:a\\s+|some\\s+|your\\s+|ur\\s+)?(?:pic|pics|picture|pictures|photo|photos|selfie|selfies|video|videos|yourself)\\b.{0,25}\\b(?:i'?ll|i\\s+will|i\\s+can)\\s+(?:give|buy|send|get|pay)\\b",
+        "\\b(?:give|buy|send|get|pay)\\s+(?:you|u)\\b.{0,30}\\bfor\\s+(?:a\\s+|one\\s+|some\\s+|your\\s+|ur\\s+)?(?:pic|pics|picture|pictures|photo|photos|selfie|selfies|video|videos)\\b"
+      ]
+    },
+    {
+      "id": "grooming:secret_meeting",
+      "category": "grooming",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "Arranging to meet alone or in secret.",
+      "patterns": [
+        "\\b(?:meet|meet\\s+up|see\\s+you|hang\\s+out|pick\\s+(?:you|u)\\s+up)\\b.{0,40}\\b(?:come\\s+alone|by\\s+yourself|on\\s+your\\s+own|don'?t\\s+bring\\s+(?:anyone|anybody|your\\s+\\w+)|don'?t\\s+tell\\s+(?:anyone|anybody))\\b"
+      ]
+    },
+    {
+      "id": "grooming:exclusive_request",
+      "category": "grooming",
+      "band": "high",
+      "suppressed_in": [],
+      "note": "An image asked for 'just for me': exclusivity around an image request.",
+      "patterns": [
+        "\\b(?:send|show)\\b.{0,30}\\bjust\\s+for\\s+me\\b",
+        "\\b(?:pic|pics|picture|pictures|photo|photos|selfie|selfies|video|videos)\\b.{0,20}\\bjust\\s+for\\s+me\\b"
+      ]
+    },
+    {
+      "id": "grooming:risk_probe",
+      "category": "grooming",
+      "band": "cue",
+      "suppressed_in": [],
+      "note": "Asking whether an adult reads the child's messages. A cue only: friends ask it too.",
+      "patterns": [
+        "\\b(?:does|do)\\s+(?:your|ur)\\s+(?:parents|parent|mum|mom|mummy|mommy|dad|daddy|family)\\s+(?:ever\\s+)?(?:check|read|look\\s+(?:at|through)|go\\s+through)\\s+(?:your|ur)\\s+(?:phone|messages|chats|texts|dms)\\b"
+      ]
+    }
+  ],
+  "combinations": [
+    {
+      "category": "grooming",
+      "over": [
+        "sexual_harassment"
+      ],
+      "note": "A sexual request together with any grooming tactic or cue (secrecy, flattery, a reward) is grooming, not sexual harassment (Winters & Jeglic 2017, desensitisation inside a secret relationship)."
     }
   ]
 }
