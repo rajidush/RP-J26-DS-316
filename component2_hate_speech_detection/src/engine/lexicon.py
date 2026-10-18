@@ -17,6 +17,10 @@ grooming, not sexual harassment.
 
 Every hit names the phrase or family that fired, so a parent or reviewer can
 read the exact rule behind a detection.
+
+`has_word` tells language from OCR garbage: a text with no English word of 3+
+letters ("OLMPCCHW", "A-A∨±S-") gives the models nothing to read, so the
+scorer does not ask them (`packs/policy/words.json`).
 """
 from __future__ import annotations
 
@@ -89,6 +93,7 @@ class Lexicon:
         self._high_band = bands["high"]
         self._mid_band = bands["mid"]
         self._cue_score = float(bands["cue"])
+        self._words = (policy or default_policy()).words
         self._gaming_score = float(bands["gaming"])
         self._neutral_score = float(bands["neutral"])
         self._empty_score = float(bands["empty"])
@@ -106,6 +111,12 @@ class Lexicon:
         singled = _RUNS.sub(lambda m: m.group(1), blob)
         despace = lambda s: _SPACED.sub(lambda m: re.sub(r"\s+", "", m.group(0)), s)  # noqa: E731
         return (blob, doubled, singled, despace(blob), despace(singled))
+
+    def has_word(self, text: str) -> bool:
+        """At least one English word of 3+ letters (after leetspeak); always True without a word list."""
+        if not self._words:
+            return True
+        return any(w in self._words for w in re.findall(r"[a-z]{3,}", self.normalize(text)))
 
     def in_context(self, name: str, text: str) -> bool:
         pattern = self._contexts.get(name)

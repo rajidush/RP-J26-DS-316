@@ -73,7 +73,7 @@ Invariants with named tests:
 |---|---|---|
 | 1 Capture | Frames and audio held in memory only; the raw frame is closed after each check | `src/capture/`, `src/agent/runtime.py` |
 | 2 Read | Screen: a tiny thumbnail diff decides if anything changed; only changed areas are OCR'd. Voice: utterances cut by VAD, then transcribed. Pictures: found on changed frames and scored once each | `src/readers/` |
-| 3 Screen | Keyword layer (hash-verified policy pack) + two text models with the corroboration rule; framing check; gaming cap | `src/engine/lexicon.py`, `text_scorer.py`, `framing.py` |
+| 3 Screen | Keyword layer (hash-verified policy pack) + two text models with the corroboration rule; framing check; gaming cap. Text with no real word (OCR garbage) gets the keyword layer only | `src/engine/lexicon.py`, `text_scorer.py`, `framing.py` |
 | 4 Gate | Below 0.35 the check stops (keeps average CPU low) | `src/engine/analyzer.py` |
 | 5 Confirm and combine | Long text re-read in windows; fusion under I-1 and I-2 | `src/engine/fusion.py` |
 | 6 Decide by age | Persona threshold and rung; verdict with evidence, explanation and child-safe summary | `src/engine/decide.py`, `verdict.py` |
@@ -240,6 +240,6 @@ Primary metrics: recall on harmful content, false alerts on benign and on **repo
 - **Screen memes are measured on built screens**, not real captures; a meme with a white backdrop on a white page can be cut short.
 - **On-screen text loses a little to OCR.** Chat headers (name + time) are now left out of the scored text, but OCR still misreads stretched or starred letters ("kiiiill" → "kifll", "k\*y\*s" → "kxyts"), so those are missed on screen. A sender's name shown without a time stays in the message: it cannot be told apart from a short message.
 - **One known text false alert:** "my brother keeps annoying me i hate it" is flagged (L3) at every age, typed or on screen.
-- **Short OCR fragments can raise false alerts** (one meme was flagged for a misread cut-off word).
+- **On memes, text alone separates hateful from benign only weakly** (age 9: 77 / 246 hateful vs 47 / 254 benign alerted on the test split): the dataset pairs the same captions with harmless images on purpose. OCR garbage with no real words ("OLMPCCHW") is no longer given to the models; on the test split that removed 4 benign and 4 hateful alerts, all of which rested on garbage alone.
 - **Test sets are small:** 107 hand-written messages and 500 memes; meme labels still need a human check; no child-context benchmark yet.
 - **Fusion can never lower a score (I-2)**, so the meme model cannot cancel a text false alarm on a benign meme; that is the design's safety trade-off.
