@@ -1,0 +1,247 @@
+{
+  "dev": {
+    "with_specialist": {
+      "age_9": {
+        "self_harm_caught": "18/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "6/6",
+          "ideation": "5/5",
+          "injury": "3/4",
+          "plan": "4/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      },
+      "missed_at_age_9": [
+        "i scratch my skin until it bleeds",
+        "i'm standing on the edge of the roof"
+      ],
+      "age_12": {
+        "self_harm_caught": "18/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "6/6",
+          "ideation": "5/5",
+          "injury": "3/4",
+          "plan": "4/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      },
+      "age_15": {
+        "self_harm_caught": "18/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "6/6",
+          "ideation": "5/5",
+          "injury": "3/4",
+          "plan": "4/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      }
+    },
+    "without_specialist": {
+      "age_9": {
+        "self_harm_caught": "6/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "5/6",
+          "ideation": "1/5",
+          "injury": "0/4",
+          "plan": "0/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      },
+      "missed_at_age_9": [
+        "i'm going to end my life",
+        "nobody would even notice if i was gone",
+        "everyone would be better off without me",
+        "i don't see the point in living anymore",
+        "i keep thinking about not waking up",
+        "i cut my arms again last night",
+        "i've been hurting myself again",
+        "i burned myself on purpose again",
+        "i scratch my skin until it bleeds",
+        "i have pills saved up for tonight",
+        "i looked up how to tie a noose",
+        "i wrote goodbye letters to my family",
+        "i'm standing on the edge of the roof",
+        "tonight is my last night"
+      ],
+      "age_12": {
+        "self_harm_caught": "6/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "5/6",
+          "ideation": "1/5",
+          "injury": "0/4",
+          "plan": "0/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      },
+      "age_15": {
+        "self_harm_caught": "6/20",
+        "benign_false_alerts": "0/17",
+        "by_bucket": {
+          "direct": "5/6",
+          "ideation": "1/5",
+          "injury": "0/4",
+          "plan": "0/5",
+          "figurative": "0/6",
+          "everyday": "0/4",
+          "gaming": "0/3",
+          "school": "0/2",
+          "feelings": "0/2"
+        }
+      }
+    }
+  },
+  "heldout": {
+    "engine": "lexicon+onnx:roberta-hate-speech-dynabench-r4-target+onnx-int8:toxic-bert+onnx:suicidality",
+    "with_specialist": {
+      "age_9": {
+        "self_harm_caught": "16/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "5/5",
+          "ideation": "4/5",
+          "injury": "3/5",
+          "plan": "4/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      },
+      "missed_at_age_9": [
+        "i'm just a burden to everyone",
+        "i've been cutting again",
+        "i punch myself when i mess up",
+        "i gave away my favourite things today"
+      ],
+      "age_12": {
+        "self_harm_caught": "16/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "5/5",
+          "ideation": "4/5",
+          "injury": "3/5",
+          "plan": "4/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      },
+      "age_15": {
+        "self_harm_caught": "16/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "5/5",
+          "ideation": "4/5",
+          "injury": "3/5",
+          "plan": "4/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      }
+    },
+    "without_specialist": {
+      "age_9": {
+        "self_harm_caught": "0/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "0/5",
+          "ideation": "0/5",
+          "injury": "0/5",
+          "plan": "0/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      },
+      "missed_at_age_9": [
+        "i'm thinking about killing myself",
+        "i want my life to be over",
+        "i'm going to take my own life",
+        "i'd rather be dead than go back to school",
+        "i want to disappear and never come back",
+        "it would be easier if i just wasn't here",
+        "i'm just a burden to everyone",
+        "no one would miss me",
+        "i can't keep going like this anymore",
+        "sometimes i think about how to end things",
+        "i've been cutting again",
+        "the only thing that helps is hurting myself",
+        "i hide the marks on my wrists",
+        "i starve myself to punish myself",
+        "i punch myself when i mess up",
+        "i counted all the pills in the cabinet",
+        "i know which bridge i would jump from",
+        "i gave away my favourite things today",
+        "this is goodbye i love you all",
+        "i've decided tonight's the night"
+      ],
+      "age_12": {
+        "self_harm_caught": "0/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "0/5",
+          "ideation": "0/5",
+          "injury": "0/5",
+          "plan": "0/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      },
+      "age_15": {
+        "self_harm_caught": "0/20",
+        "benign_false_alerts": "0/16",
+        "by_bucket": {
+          "direct": "0/5",
+          "ideation": "0/5",
+          "injury": "0/5",
+          "plan": "0/5",
+          "figurative": "0/5",
+          "everyday": "0/3",
+          "gaming": "0/2",
+          "school": "0/1",
+          "feelings": "0/5"
+        }
+      }
+    },
+    "existing_107_cases": {
+      "decisions_compared": 321,
+      "changed": []
+    }
+  }
+}

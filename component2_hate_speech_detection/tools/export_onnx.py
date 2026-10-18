@@ -1,4 +1,4 @@
-"""Export the text heads to ONNX, quantise where it is safe, and prove it (Guardian GS-010).
+"""Export the text heads (and the self-harm specialist) to ONNX, quantise where safe, and prove it (GS-010).
 
     python -m component2_hate_speech_detection.tools.export_onnx
 
@@ -16,8 +16,10 @@ gate text at ages 9, 12 and 15. Measured on 10 Oct 2026 (132 texts x 3 ages):
     MatMul-only + per-channel         dynabench  4 head flips -> 6 engine changes  (rejected)
                                       toxic-bert 7 head flips -> 0 engine changes  (kept)
 
-So toxic-bert ships INT8 and Dynabench ships fp32 ONNX. The result is written
-to `evaluation/results/onnx_parity.json`.
+So toxic-bert ships INT8 and Dynabench ships fp32 ONNX. The self-harm
+specialist (sentinet/suicidality, `engine/self_harm.py`) goes through the same
+export and the same gate; its gate texts add the self-harm set. The result is
+written to `evaluation/results/onnx_parity.json`.
 """
 from __future__ import annotations
 
@@ -34,14 +36,19 @@ os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 from component2_hate_speech_detection.evaluation.dev_set import all_cases as dev_cases
 from component2_hate_speech_detection.evaluation.heldout_set import all_cases as heldout_cases
+from component2_hate_speech_detection.evaluation.self_harm_set import dev_cases as self_harm_dev
+from component2_hate_speech_detection.evaluation.self_harm_set import heldout_cases as self_harm_heldout
 from component2_hate_speech_detection.src.engine.analyzer import Analyzer
 from component2_hate_speech_detection.src.engine.heads import DEFAULT_HEADS, TextHead, hate_score_from_labels
 from component2_hate_speech_detection.src.engine.onnx_backend import OnnxBackend, onnx_model_dir
+from component2_hate_speech_detection.src.engine.policy import default_policy
 from component2_hate_speech_detection.src.engine.text_scorer import TextScorer
 
 RESULTS = Path(__file__).resolve().parents[1] / "evaluation" / "results" / "onnx_parity.json"
 INT8_SETTINGS = dict(op_types_to_quantize=["MatMul"], per_channel=True)
 GATE_AGES = (9, 12, 15)
+SELF_HARM = default_policy().decision["self_harm_model"]["model"]
+MODELS = (*DEFAULT_HEADS, SELF_HARM)
 
 PARITY_TEXTS = [
     "you should kys", "nobody likes you go back to your country", "they breed like vermin",
@@ -59,7 +66,8 @@ PARITY_TEXTS = [
 
 
 def gate_texts() -> list[str]:
-    return PARITY_TEXTS + [c.text for c in dev_cases()] + [c.text for c in heldout_cases()]
+    return (PARITY_TEXTS + [c.text for c in dev_cases()] + [c.text for c in heldout_cases()]
+            + [c.text for c in self_harm_dev() + self_harm_heldout()])
 
 
 def export_fp32(model_id: str, opset: int = 17) -> Path:
@@ -75,6 +83,13 @@ def export_fp32(model_id: str, opset: int = 17) -> Path:
     model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
     tokenizer.save_pretrained(out)      # tokenizer.json (fast tokenizer)
     model.config.save_pretrained(out)   # id2label + problem_type decide softmax vs sigmoid
+    # transformers 5 leaves default label names (LABEL_0, LABEL_1) out of config.json;
+    # the runtime matches labels by name, so write them explicitly.
+    saved = json.loads((out / "config.json").read_text(encoding="utf-8"))
+    if "id2label" not in saved:
+        saved["id2label"] = {str(i): name for i, name in model.config.id2label.items()}
+        saved["label2id"] = {name: i for i, name in model.config.id2label.items()}
+        (out / "config.json").write_text(json.dumps(saved, indent=2) + "\n", encoding="utf-8")
 
     sample = tokenizer(["export sample text", "a second, longer sample sentence"], padding=True, return_tensors="pt")
     names = ["input_ids", "attention_mask"] + (["token_type_ids"] if "token_type_ids" in sample else [])
@@ -107,7 +122,8 @@ def _head(model_id: str, quantized: bool) -> TextHead:
 
 
 def _decisions(int8_heads: set[str], texts: list[str]) -> list[tuple]:
-    scorer = TextScorer(heads=[_head(m, m in int8_heads) for m in DEFAULT_HEADS])
+    scorer = TextScorer(heads=[_head(m, m in int8_heads) for m in DEFAULT_HEADS],
+                        self_harm_head=_head(SELF_HARM, SELF_HARM in int8_heads))
     analyzer = Analyzer(scorer=scorer)
     return [(analyzer.analyze_text(t, age).rung, analyzer.analyze_text(t, age).top_category)
             for t in texts for age in GATE_AGES]
@@ -136,7 +152,7 @@ def main() -> None:
     report: dict = {"date": time.strftime("%Y-%m-%d"), "gate_texts": len(texts), "gate_ages": list(GATE_AGES),
                     "int8_settings": INT8_SETTINGS, "heads": {}}
 
-    for model_id in DEFAULT_HEADS:
+    for model_id in MODELS:
         if not args.skip_export:
             print(f"exporting {model_id} ...", file=sys.stderr)
             export_fp32(model_id)
@@ -146,10 +162,10 @@ def main() -> None:
         quantize_int8(model_id)
         report["heads"][model_id] = {"fp32_vs_torch_max_diff": round(diff, 6)}
 
-    # Gate each head's INT8 on its own, holding the other head at fp32.
+    # Gate each model's INT8 on its own, holding the others at fp32.
     reference = _decisions(set(), texts)
     keep: set[str] = set()
-    for model_id in DEFAULT_HEADS:
+    for model_id in MODELS:
         changes = _changes(reference, _decisions({model_id}, texts), texts)
         passed = not changes
         report["heads"][model_id].update({"int8_engine_changes": len(changes), "int8_kept": passed,
@@ -160,11 +176,11 @@ def main() -> None:
             (onnx_model_dir(model_id) / "model.int8.onnx").unlink()
 
     combined = _changes(reference, _decisions(keep, texts), texts)
-    report["shipped"] = {m: ("int8" if m in keep else "fp32") for m in DEFAULT_HEADS}
+    report["shipped"] = {m: ("int8" if m in keep else "fp32") for m in MODELS}
     report["shipped_engine_changes_vs_fp32"] = len(combined)
     report["size_mb"] = {
         m: {f.name: round(f.stat().st_size / 2**20, 1) for f in onnx_model_dir(m).glob("*.onnx")}
-        for m in DEFAULT_HEADS
+        for m in MODELS
     }
     RESULTS.parent.mkdir(parents=True, exist_ok=True)
     RESULTS.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

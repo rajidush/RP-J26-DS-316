@@ -10,6 +10,8 @@ Layering, and why each layer is here:
                  and every hit names the rule that fired.
     two heads    read *implicit* harm the lexicon scores at zero. Combined by
                  corroboration (below), not max().
+    self-harm    a suicidality specialist, counted only for the writer's own
+                 statement and alone only at solo_trust (`self_harm.py`).
     gaming cap   competitive trash talk is the heads' worst blind spot
                  ("you're trash at this game" scored 0.93 on toxic-bert).
     framing      applied last, to the combined score, so no layer routes around it.
@@ -37,6 +39,7 @@ from .framing import FramingGuard
 from .heads import DEFAULT_HEADS, TextHead
 from .lexicon import Lexicon
 from .policy import Policy, default_policy
+from .self_harm import SelfHarmGate
 
 Reading = Tuple[float, Optional[str], Dict[str, float]]
 
@@ -57,6 +60,10 @@ class ScoreDetail:
     gaming_capped: bool = False
     framing_reason: str = ""
     discounted_from: Optional[float] = None
+    self_harm_score: Optional[float] = None
+    self_harm_model: str = ""
+    self_harm_gate: str = ""        # why the reading was not the writer's own, "" if it was
+    self_harm_counted: bool = False
 
     @property
     def discounted(self) -> bool:
@@ -73,8 +80,14 @@ class TextScorer:
         use_corroboration: bool = True,
         use_framing: bool = True,
         use_gaming_cap: bool = True,
+        use_self_harm: bool = True,
+        self_harm_head: Optional[TextHead] = None,
     ) -> None:
-        """`model_fn` injects a fake head for tests; `use_*` flags exist for ablation (proposal §3.5)."""
+        """`model_fn` injects a fake head for tests; `use_*` flags exist for ablation (proposal §3.5).
+
+        The self-harm specialist loads by default only with the default heads;
+        tests and ablations that pass their own `heads` pass `self_harm_head` too.
+        """
         policy = policy or default_policy()
         self.lexicon = Lexicon(policy)
         self.framing = FramingGuard(policy)
@@ -95,25 +108,42 @@ class TextScorer:
             self.heads: List[TextHead] = []
         else:
             self.heads = list(heads) if heads is not None else [TextHead(m) for m in DEFAULT_HEADS]
-        self._pool = ThreadPoolExecutor(max_workers=max(1, len(self.heads)), thread_name_prefix="c2-head")
+        self.self_harm_gate = SelfHarmGate(policy, self.lexicon, self.framing) if "self_harm_model" in d else None
+        self.self_harm_head: Optional[TextHead] = None
+        if model_fn is None and use_heads and use_self_harm and self.self_harm_gate is not None:
+            if self_harm_head is not None:
+                self.self_harm_head = self_harm_head
+            elif heads is None:
+                self.self_harm_head = TextHead(self.self_harm_gate.model_id)
+        workers = len(self.heads) + (1 if self.self_harm_head is not None else 0)
+        self._pool = ThreadPoolExecutor(max_workers=max(1, workers), thread_name_prefix="c2-head")
 
     @property
     def name(self) -> str:
         if self._model_fn is not None:
             return "lexicon+injected"
         live = [h.name for h in self.heads if h.loaded]
+        if self.self_harm_head is not None and self.self_harm_head.loaded:
+            live.append(self.self_harm_head.name)
         return "lexicon+" + "+".join(live) if live else "lexicon"
 
     def warm_up(self) -> None:
         """Load the heads now rather than on the first real message."""
         for head in self.heads:
             head.read("warm up")
+        if self.self_harm_head is not None:
+            self.self_harm_head.read("warm up")
 
     # -- scoring --------------------------------------------------------------
 
     def score(self, text: str) -> ScoreDetail:
         lex = self.lexicon.score(text)
         category = lex.category
+
+        # The self-harm specialist runs beside the heads, on the same skip rule.
+        self_harm_future = None
+        if self.self_harm_head is not None and lex.score < self.lexicon_decides_alone and (text or "").strip():
+            self_harm_future = self._pool.submit(self.self_harm_head.read, text)
 
         # At or above the HIGH band the heads cannot change the outcome, so they
         # are not run: explicit abuse is the *cheapest* path through Stage 1.
@@ -135,6 +165,17 @@ class TextScorer:
                 # back to the least specific label rather than claim hate.
                 category = model_category or "bullying"
 
+        self_harm_score, self_harm_gate, self_harm_counted = None, "", False
+        if self_harm_future is not None:
+            try:
+                self_harm_score = self_harm_future.result()[0]
+            except Exception:
+                self_harm_score = None
+            if self_harm_score is not None:
+                self_harm_gate = self.self_harm_gate.blocked_by(text)
+                if not self_harm_gate and self_harm_score >= self.self_harm_gate.trust and self_harm_score > combined:
+                    combined, category, self_harm_counted = self_harm_score, "self_harm", True
+
         detail = ScoreDetail(
             score=round(combined, 4),
             category=category,
@@ -146,6 +187,10 @@ class TextScorer:
             model_labels=labels,
             corroboration=corr,
             gaming_capped=gaming_capped,
+            self_harm_score=None if self_harm_score is None else round(self_harm_score, 4),
+            self_harm_model=self.self_harm_head.name if self_harm_score is not None else "",
+            self_harm_gate=self_harm_gate,
+            self_harm_counted=self_harm_counted,
         )
 
         if self.use_framing:
