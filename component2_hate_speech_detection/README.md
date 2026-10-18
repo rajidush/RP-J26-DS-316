@@ -149,7 +149,7 @@ On the reference laptop (Intel i7-1355U, CPU only). Result files are in `evaluat
 | What | Result |
 |---|---|
 | Typed message, keyword layer + both text models | 19 ms median, 24 ms p95 (107 cases); 755 MB loaded |
-| On-screen chat text (3 chat styles, 107 cases) | 94–95 % same decision as typed text; 0 false alerts on 54 benign messages |
+| On-screen chat text (5 chat styles, 107 cases) | 97.5–100 % same decision as typed text (94–97 % before the chat-header fix); benign alerts on screen equal typed ones |
 | Image checked in the app (OCR + text models + meme model) | 0.42 s median, 0.81 s p95; peak 1,508 MB (budget 2 GB) |
 | Meme model, test (dev_seen, 500 memes) | 0.751 AUROC (logistic-regression baseline 0.675); 0.733 with OCR captions |
 | Memes inside a full screenshot | 0.713 AUROC with the picture finder vs 0.565 scoring the whole screen |
@@ -174,7 +174,7 @@ component2_hate_speech_detection/
 │   └── app/                 C2 Analyst desktop app (pywebview + tray)
 ├── meme_model/              meme classifier: embed, heads, train, calibrate (see its README)
 ├── annotation/              meme labels and the human-validation tools (codebook, datasheet)
-├── evaluation/              dev and held-out text sets, screen meme evaluation, results/
+├── evaluation/              dev and held-out text sets, screen text and screen meme evaluations, results/
 ├── tools/                   ONNX export + parity gates, policy manifest builder
 ├── mock_inputs/             schema-shaped fixture for the mock path
 └── tests/                   pytest suite (offline; models faked where needed)
@@ -238,7 +238,8 @@ Primary metrics: recall on harmful content, false alerts on benign and on **repo
 
 - **The meme score never changes a decision yet.** It failed its calibration gate on the test set (p = 0.008); it is shown as evidence only.
 - **Screen memes are measured on built screens**, not real captures; a meme with a white backdrop on a white page can be cut short.
-- **On-screen text loses a little.** The sender's name and time merge into the message, so 3 bullying messages caught as typed text are missed at ages 12–15; OCR misreads stretched letters ("kiiiill").
+- **On-screen text loses a little to OCR.** Chat headers (name + time) are now left out of the scored text, but OCR still misreads stretched or starred letters ("kiiiill" → "kifll", "k\*y\*s" → "kxyts"), so those are missed on screen. A sender's name shown without a time stays in the message: it cannot be told apart from a short message.
+- **One known text false alert:** "my brother keeps annoying me i hate it" is flagged (L3) at every age, typed or on screen.
 - **Short OCR fragments can raise false alerts** (one meme was flagged for a misread cut-off word).
 - **Test sets are small:** 107 hand-written messages and 500 memes; meme labels still need a human check; no child-context benchmark yet.
 - **Fusion can never lower a score (I-2)**, so the meme model cannot cancel a text false alarm on a benign meme; that is the design's safety trade-off.

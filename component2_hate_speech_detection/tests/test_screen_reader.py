@@ -113,6 +113,58 @@ def test_help_seeking_reply_does_not_hide_the_abuse_above_it(lexicon_scorer):
     assert v.top_category == "bullying" and v.alerts
 
 
+
+# -- chat headers: the sender and time are not part of the message ------------------
+
+def _message(header_lines, body):
+    """A header (list of (x0, x1, text) on one row) above one line of message text."""
+    h = 0.03
+    lines = [{"box": [x0, 0.40, x1, 0.40 + h], "text": t, "conf": 0.9} for x0, x1, t in header_lines]
+    return lines + [_line(0.15, 0.40 + h, 0.40 + 2 * h, body)]
+
+
+@pytest.mark.parametrize("header", [
+    [(0.15, 0.26, "Dilan Today at 4:12 PM")],
+    [(0.15, 0.25, "Dilan Perera 9:41 AM")],
+    [(0.15, 0.27, "Nethmi Yesterday at 21:05")],
+    [(0.15, 0.27, "xx_gamer_99 18/10/2026 16:12")],
+    [(0.15, 0.18, "Kavin"), (0.181, 0.23, "Today at 4:12 PM")],  # OCR split the name from the time
+])
+def test_the_chat_header_is_left_out_of_the_scored_text_but_not_the_box(header):
+    spans = group_blocks(_message(header, "you're worthless and everyone knows it"))
+    (span,) = [s for s in spans if "worthless" in s.text]
+    assert span.text == "you're worthless and everyone knows it"
+    assert span.box[1] == 0.40  # the header is still blurred with its message
+    # A name OCR split off on its own (no overlap with the time) is a block of its own, never the message's.
+    assert all(s.text in ("you're worthless and everyone knows it", "Kavin") for s in spans)
+
+
+def test_a_time_inside_the_bubble_is_dropped_but_a_short_message_beside_it_is_not():
+    h = 0.03
+    lines = [_line(0.03, 0.40, 0.40 + h, "kill urself"), {"box": [0.09, 0.405, 0.11, 0.40 + h], "text": "16:12", "conf": 0.9}]
+    assert [s.text for s in group_blocks(lines)] == ["kill urself"]
+    assert [s.text for s in group_blocks([_line(0.03, 0.40, 0.43, "you're worthless and everyone knows it 16:12")])] == [
+        "you're worthless and everyone knows it"]
+
+
+@pytest.mark.parametrize("first, second", [
+    ("i'll be outside at 4:30", "come alone"),
+    ("see you at 7:30", "dont tell your mum"),
+    ("meet me today at 4:30", "dont tell anyone"),
+])
+def test_a_message_that_ends_in_a_time_is_never_taken_for_a_header(first, second):
+    (span,) = group_blocks(_message([(0.15, 0.30, first)], second))
+    assert span.text == f"{first} {second}"
+
+
+def test_a_name_without_a_time_stays_because_it_cannot_be_told_from_a_short_message():
+    (span,) = group_blocks(_message([(0.15, 0.20, "loser")], "nobody wants you here"))
+    assert span.text == "loser nobody wants you here"
+
+
+def test_a_block_that_is_only_a_header_gives_no_span():
+    assert group_blocks([_line(0.15, 0.40, 0.43, "Today at 4:12 PM")]) == []
+
 # -- real OCR on a rendered chat window -----------------------------------------------
 
 needs_ocr = pytest.mark.skipif(not FONT.exists() or not OcrEngine().available, reason="OCR or font unavailable")
