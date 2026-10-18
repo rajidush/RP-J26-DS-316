@@ -34,7 +34,8 @@ CHILD_SAFE_SUMMARIES: Dict[str, str] = {
 }
 
 # Guardian category -> team schema `risk_category` enum (comp2_to_comp3.schema.json).
-# threat and sexual_harassment have no enum yet: proposed in the interface CHANGELOG.
+# threat and sexual_harassment have no enum yet (not yet proposed in the interface
+# CHANGELOG); the fine category travels in context_metadata.c2_category.
 TEAM_RISK_CATEGORY = {
     "hate_identity": "hate_speech",
     "bullying": "cyberbullying",
@@ -151,8 +152,10 @@ class Verdict:
                 "urgent": self.urgent,
                 "persona": self.persona,
                 "child_safe_summary": self.child_safe_summary,
-                # Rule IDs only, never the flagged text (privacy + contract).
-                "matched_families": sorted({e.rule_id for e in self.evidence if e.rule_id and e.source != "vision"}),
+                # Rule IDs only, never the flagged text (privacy + contract). A literal-phrase
+                # hit is named by its phrase (a slur, "kys"), so it travels as its category.
+                "matched_families": sorted({e.rule_id if ":" in e.rule_id else f"phrase:{self.top_category}"
+                                            for e in self.evidence if e.rule_id and e.source != "vision"}),
                 "framing_reason": self.framing_reason,
                 "verdict_id": self.id,
                 "engine_version": self.engine_version,

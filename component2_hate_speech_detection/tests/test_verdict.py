@@ -82,3 +82,15 @@ def test_fingerprint_is_stable_for_the_same_flagged_text_and_holds_no_text(analy
     assert a.fingerprint == b.fingerprint != c.fingerprint
     assert "kys" not in a.fingerprint and len(a.fingerprint) == 16
     assert analyzer.analyze_text("see you at practice", age=10).fingerprint == ""
+
+
+def test_no_listed_phrase_ever_reaches_the_c3_payload(analyzer):
+    """FR8: a phrase hit is named by the phrase itself (slurs included); C3 gets its category only."""
+    pack = default_policy().lexicon["phrases"]
+    for phrase in pack["high"] + pack["mid"]:
+        for age in (9, 15):
+            payload = analyzer.analyze_text(f"you are a {phrase}", age=age).to_trigger_payload()
+            if payload is None:
+                continue
+            assert phrase not in json.dumps(payload).lower(), (phrase, age)
+            assert all(":" in f for f in payload["context_metadata"]["matched_families"])
