@@ -34,7 +34,8 @@ CHILD_SAFE_SUMMARIES: Dict[str, str] = {
 }
 
 # Guardian category -> team schema `risk_category` enum (comp2_to_comp3.schema.json).
-# threat and sexual_harassment have no enum yet: proposed in the interface CHANGELOG.
+# threat and sexual_harassment have no enum yet (not yet proposed in the interface
+# CHANGELOG); the fine category travels in context_metadata.c2_category.
 TEAM_RISK_CATEGORY = {
     "hate_identity": "hate_speech",
     "bullying": "cyberbullying",
