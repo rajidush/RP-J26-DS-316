@@ -18,6 +18,10 @@ Layering, and why each layer is here:
                  ("you're trash at this game" scored 0.93 on toxic-bert).
     framing      applied last, to the combined score, so no layer routes around it.
 
+No model is asked about a text with no word-shaped token (OCR garbage such as
+"OLMPCCHW", which the Dynabench head scored 0.998): its reading would decide a
+child's outcome on noise. The keyword layer still reads every text.
+
 Corroboration (proposal design rule 1, FR3). Combining heads with max() lets
 either head's false positive through: 156 of 165 sampled Berkeley false
 positives came from a model. Measured on train splits (recall / FP rate):
@@ -72,6 +76,7 @@ class ScoreDetail:
     grooming_model: str = ""
     grooming_gate: str = ""         # why the reading was not counted, "" if it was
     grooming_counted: bool = False
+    no_real_words: bool = False     # models not asked: the text has no English word
 
     @property
     def discounted(self) -> bool:
@@ -92,6 +97,7 @@ class TextScorer:
         self_harm_head: Optional[TextHead] = None,
         use_grooming: bool = True,
         grooming_head: Optional[TextHead] = None,
+        use_word_check: bool = True,
     ) -> None:
         """`model_fn` injects a fake head for tests; `use_*` flags exist for ablation (proposal §3.5).
 
@@ -115,6 +121,7 @@ class TextScorer:
         self.use_corroboration = use_corroboration
         self.use_framing = use_framing
         self.use_gaming_cap = use_gaming_cap
+        self.word_check = use_word_check and bool(d.get("model_needs_words", {}).get("enabled"))
         if model_fn is not None or not use_heads:
             self.heads: List[TextHead] = []
         else:
@@ -159,20 +166,22 @@ class TextScorer:
     def score(self, text: str) -> ScoreDetail:
         lex = self.lexicon.score(text)
         category = lex.category
+        # The models only read language: OCR garbage gets the keyword layer alone.
+        words = not self.word_check or self.lexicon.has_word(text)
 
         # The self-harm specialist runs beside the heads, on the same skip rule.
         self_harm_future = None
-        if self.self_harm_head is not None and lex.score < self.lexicon_decides_alone and (text or "").strip():
+        if self.self_harm_head is not None and lex.score < self.lexicon_decides_alone and words and (text or "").strip():
             self_harm_future = self._pool.submit(self.self_harm_head.read, text)
         # The grooming reader costs ~100 ms, so it is asked only about messages on a grooming topic.
         grooming_future = None
-        if (self.grooming_head is not None and lex.score < self.lexicon_decides_alone
+        if (self.grooming_head is not None and lex.score < self.lexicon_decides_alone and words
                 and self.grooming_gate.on_topic(text)):
             grooming_future = self._pool.submit(self.grooming_head.read, text)
 
         # At or above the HIGH band the heads cannot change the outcome, so they
         # are not run: explicit abuse is the *cheapest* path through Stage 1.
-        if lex.score >= self.lexicon_decides_alone:
+        if lex.score >= self.lexicon_decides_alone or not words:
             model_score, model_category, labels, head_scores, corr = None, None, {}, {}, ""
         else:
             model_score, model_category, labels, head_scores, corr = self._model_reading(text)
@@ -233,6 +242,7 @@ class TextScorer:
             grooming_model=self.grooming_head.name if grooming_score is not None else "",
             grooming_gate=grooming_gate,
             grooming_counted=grooming_counted,
+            no_real_words=not words,
         )
 
         if self.use_framing:

@@ -1,6 +1,6 @@
 {
   "pack": "c2-decision",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "source": "Guardian PROJECT_PLAN.md §5.2, §6.5; MVP decide.py thresholds",
   "stage1_theta": 0.35,
   "persona_theta": {
@@ -122,5 +122,11 @@
       "surprise"
     ],
     "note": "A zero-shot NLI reading of grooming tactics, one hypothesis per stage (O'Connell 2003; Winters & Jeglic 2017), asked only on messages about parents, secrets, meeting, images, rewards or feelings, and not counted when a surprise is being kept. Trust and gates set on the grooming dev set (evaluation/grooming_set.py), 18 Oct 2026."
+  },
+  "model_needs_words": {
+    "enabled": true,
+    "min_letters": 2,
+    "max_consonant_run": 5,
+    "note": "The text heads and specialists are asked only about text with at least one word-shaped token: letters only, consistent capitals, a vowel, no run of more than 5 consonants. OCR garbage such as 'OLMPCCHW' scored 0.998 on the Dynabench head and alerted alone. A first version used an English word list and silenced slur-only messages ('youre a fag', 'coons'); shapes replaced it on 18 Oct 2026. The keyword layer still reads every text. Measured 18 Oct 2026 (memes: val for design, test reported): typed decisions 0 of 864 changed; at age 9 test benign 51 -> 51, hateful 81 -> 80 (the 'RKonsern' meme)."
   }
 }
