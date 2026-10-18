@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-10",
-  "gate_texts": 132,
+  "date": "2026-10-18",
+  "gate_texts": 204,
   "gate_ages": [
     9,
     12,
@@ -97,11 +97,91 @@
       "int8_engine_changes": 0,
       "int8_kept": true,
       "examples": []
+    },
+    "sentinet/suicidality": {
+      "fp32_vs_torch_max_diff": 0.0,
+      "int8_engine_changes": 6,
+      "int8_kept": false,
+      "examples": [
+        {
+          "text": "i burned myself on purpose again",
+          "age": 9,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        },
+        {
+          "text": "i burned myself on purpose again",
+          "age": 12,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        },
+        {
+          "text": "i burned myself on purpose again",
+          "age": 15,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        },
+        {
+          "text": "i'd kill for some sleep",
+          "age": 9,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        },
+        {
+          "text": "i'd kill for some sleep",
+          "age": 12,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        },
+        {
+          "text": "i'd kill for some sleep",
+          "age": 15,
+          "fp32": [
+            "L4",
+            "self_harm"
+          ],
+          "int8": [
+            "L0",
+            "none"
+          ]
+        }
+      ]
     }
   },
   "shipped": {
     "facebook/roberta-hate-speech-dynabench-r4-target": "fp32",
-    "unitary/toxic-bert": "int8"
+    "unitary/toxic-bert": "int8",
+    "sentinet/suicidality": "fp32"
   },
   "shipped_engine_changes_vs_fp32": 0,
   "size_mb": {
@@ -110,6 +190,9 @@
     },
     "unitary/toxic-bert": {
       "model.int8.onnx": 173.7,
+      "model.onnx": 417.9
+    },
+    "sentinet/suicidality": {
       "model.onnx": 417.9
     }
   }

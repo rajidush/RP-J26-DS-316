@@ -185,6 +185,9 @@ class Analyzer:
                                     rule_id=rule, box=s.span.box, redacted_snippet=snippet, source=s.span.source))
             for head, score in s.detail.head_scores.items():
                 out.append(Evidence(producer=head, score=score, box=s.span.box, source=s.span.source))
+            if s.detail.self_harm_counted:
+                out.append(Evidence(producer=s.detail.self_harm_model, score=s.detail.self_harm_score,
+                                    box=s.span.box, source=s.span.source))
         return out
 
 
@@ -214,6 +217,12 @@ def explain(v: Verdict, detail: Optional[ScoreDetail], escalated: bool, ignored:
     if detail.head_scores:
         heads = ", ".join(f"{k.split(':')[-1]} {s:.2f}" for k, s in detail.head_scores.items())
         parts.append(f"Language models: {heads} ({detail.corroboration.replace('_', ' ')}).")
+    if detail.self_harm_score is not None and detail.self_harm_score >= 0.5:
+        if detail.self_harm_counted:
+            parts.append(f"Self-harm model: {detail.self_harm_score:.2f}, about the writer.")
+        elif detail.self_harm_gate:
+            parts.append(f"Self-harm model: {detail.self_harm_score:.2f}, not counted "
+                         f"({detail.self_harm_gate.replace('_', ' ')}).")
     if detail.gaming_capped:
         parts.append("Game context: model score capped so trash talk doesn't trigger.")
     if detail.framing_reason:
