@@ -1,0 +1,81 @@
+{
+  "machine": {
+    "cpu": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel",
+    "cores": 10,
+    "logical": 12,
+    "ram_gb": 31.6,
+    "os": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.6"
+  },
+  "engine": "lexicon+onnx-int8:roberta-hate-speech-dynabench-r4-target+onnx-int8:toxic-bert+onnx-int8:suicidality+onnx-int8:deberta-v3-xsmall-zeroshot-v1.1-all-33",
+  "policy_version": "1.3.0",
+  "phases": {
+    "python started": {
+      "rss_mb": 56,
+      "connections": 0,
+      "torch_loaded": false
+    },
+    "text models loaded": {
+      "rss_mb": 1313,
+      "connections": 0,
+      "torch_loaded": false
+    },
+    "typed messages": {
+      "rss_mb": 1328,
+      "connections": 0,
+      "torch_loaded": false,
+      "n": 288,
+      "median_ms": 36.8,
+      "p95_ms": 161.5,
+      "grooming_topic_median_ms": 138.3,
+      "grooming_topic_n": 112
+    },
+    "chat screen": {
+      "rss_mb": 1399,
+      "connections": 0,
+      "torch_loaded": false,
+      "full_frame_ms": 1049,
+      "partial_ms": 243,
+      "partial_mode": "partial",
+      "unchanged_ms": 11.0,
+      "unchanged_mode": "unchanged"
+    },
+    "meme images": {
+      "rss_mb": 1830,
+      "connections": 0,
+      "torch_loaded": false,
+      "n": 30,
+      "median_ms": 321.6,
+      "p95_ms": 785.2
+    },
+    "speech model loaded": {
+      "rss_mb": 1835,
+      "connections": 0,
+      "torch_loaded": false,
+      "load_ms": 555
+    },
+    "voice clips": {
+      "rss_mb": 1847,
+      "connections": 0,
+      "torch_loaded": false,
+      "clips": [
+        {
+          "seconds_of_speech": 2.8,
+          "ms": 382
+        },
+        {
+          "seconds_of_speech": 2.9,
+          "ms": 377
+        },
+        {
+          "seconds_of_speech": 2.6,
+          "ms": 347
+        }
+      ]
+    }
+  },
+  "peak_rss_mb": 1847,
+  "budget_mb": 2048,
+  "max_connections": 0,
+  "torch_imported": false
+}
