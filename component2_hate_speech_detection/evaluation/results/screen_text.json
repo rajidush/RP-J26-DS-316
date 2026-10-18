@@ -1,0 +1,286 @@
+{
+  "engine": "lexicon+onnx-int8:roberta-hate-speech-dynabench-r4-target+onnx-int8:toxic-bert+onnx-int8:suicidality",
+  "policy_version": "1.1.0",
+  "styles": {
+    "chat-dark-22": {
+      "style_split": "design",
+      "context_only_rungs": [
+        "L0",
+        "L0",
+        "L0"
+      ],
+      "message_read_exactly": "97/107",
+      "median_similarity": 1.0,
+      "median_full_frame_ms": 828,
+      "screen_rung_equals_typed": "319/321",
+      "agreement": 0.9938,
+      "alerted": {
+        "dev harmful age 9": "screen 33/33 typed 33",
+        "dev harmful age 12": "screen 24/33 typed 23",
+        "dev harmful age 15": "screen 24/33 typed 23",
+        "dev benign age 9": "screen 0/34 typed 0",
+        "dev benign age 12": "screen 0/34 typed 0",
+        "dev benign age 15": "screen 0/34 typed 0",
+        "heldout harmful age 9": "screen 6/20 typed 6",
+        "heldout harmful age 12": "screen 5/20 typed 5",
+        "heldout harmful age 15": "screen 5/20 typed 5",
+        "heldout benign age 9": "screen 1/20 typed 1",
+        "heldout benign age 12": "screen 1/20 typed 1",
+        "heldout benign age 15": "screen 1/20 typed 1"
+      },
+      "differences": [
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        }
+      ]
+    },
+    "chat-dark-16": {
+      "style_split": "design",
+      "context_only_rungs": [
+        "L0",
+        "L0",
+        "L0"
+      ],
+      "message_read_exactly": "96/107",
+      "median_similarity": 1.0,
+      "median_full_frame_ms": 857,
+      "screen_rung_equals_typed": "318/321",
+      "agreement": 0.9907,
+      "alerted": {
+        "dev harmful age 9": "screen 32/33 typed 33",
+        "dev harmful age 12": "screen 22/33 typed 23",
+        "dev harmful age 15": "screen 22/33 typed 23",
+        "dev benign age 9": "screen 0/34 typed 0",
+        "dev benign age 12": "screen 0/34 typed 0",
+        "dev benign age 15": "screen 0/34 typed 0",
+        "heldout harmful age 9": "screen 6/20 typed 6",
+        "heldout harmful age 12": "screen 5/20 typed 5",
+        "heldout harmful age 15": "screen 5/20 typed 5",
+        "heldout benign age 9": "screen 1/20 typed 1",
+        "heldout benign age 12": "screen 1/20 typed 1",
+        "heldout benign age 15": "screen 1/20 typed 1"
+      },
+      "differences": [
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "kiiiill yourself",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kifll yourself"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "kiiiill yourself",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kifll yourself"
+        },
+        {
+          "age": 9,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "n o bo d y likes you"
+        }
+      ]
+    },
+    "chat-light-20": {
+      "style_split": "design",
+      "context_only_rungs": [
+        "L0",
+        "L0",
+        "L0"
+      ],
+      "message_read_exactly": "99/107",
+      "median_similarity": 1.0,
+      "median_full_frame_ms": 1195,
+      "screen_rung_equals_typed": "317/321",
+      "agreement": 0.9875,
+      "alerted": {
+        "dev harmful age 9": "screen 33/33 typed 33",
+        "dev harmful age 12": "screen 23/33 typed 23",
+        "dev harmful age 15": "screen 23/33 typed 23",
+        "dev benign age 9": "screen 0/34 typed 0",
+        "dev benign age 12": "screen 0/34 typed 0",
+        "dev benign age 15": "screen 0/34 typed 0",
+        "heldout harmful age 9": "screen 6/20 typed 6",
+        "heldout harmful age 12": "screen 5/20 typed 5",
+        "heldout harmful age 15": "screen 5/20 typed 5",
+        "heldout benign age 9": "screen 1/20 typed 1",
+        "heldout benign age 12": "screen 1/20 typed 1",
+        "heldout benign age 15": "screen 1/20 typed 1"
+      },
+      "differences": [
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "kiiiill yourself",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kifll yourself"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "kiiiill yourself",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kifll yourself"
+        },
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        }
+      ]
+    },
+    "bubbles-1to1": {
+      "style_split": "heldout",
+      "context_only_rungs": [
+        "L0",
+        "L0",
+        "L0"
+      ],
+      "message_read_exactly": "86/107",
+      "median_similarity": 1.0,
+      "median_full_frame_ms": 1256,
+      "screen_rung_equals_typed": "313/321",
+      "agreement": 0.9751,
+      "alerted": {
+        "dev harmful age 9": "screen 32/33 typed 33",
+        "dev harmful age 12": "screen 23/33 typed 23",
+        "dev harmful age 15": "screen 23/33 typed 23",
+        "dev benign age 9": "screen 0/34 typed 0",
+        "dev benign age 12": "screen 0/34 typed 0",
+        "dev benign age 15": "screen 0/34 typed 0",
+        "heldout harmful age 9": "screen 5/20 typed 6",
+        "heldout harmful age 12": "screen 4/20 typed 5",
+        "heldout harmful age 15": "screen 4/20 typed 5",
+        "heldout benign age 9": "screen 1/20 typed 1",
+        "heldout benign age 12": "screen 1/20 typed 1",
+        "heldout benign age 15": "screen 1/20 typed 1"
+      },
+      "differences": [
+        {
+          "age": 9,
+          "bucket": "sexual",
+          "text": "don't tell your parents this is our secret",
+          "typed": "L4",
+          "screen": "L0",
+          "read_as": "don't ell your parents this is our secret"
+        },
+        {
+          "age": 12,
+          "bucket": "sexual",
+          "text": "don't tell your parents this is our secret",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "don't ell your parents this is our secret"
+        },
+        {
+          "age": 15,
+          "bucket": "sexual",
+          "text": "don't tell your parents this is our secret",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "don't ell your parents this is our secret"
+        },
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "n o b o d y likes you",
+          "typed": "L0",
+          "screen": "L3",
+          "read_as": "no bo d y likes you"
+        },
+        {
+          "age": 9,
+          "bucket": "obfuscated",
+          "text": "k*y*s",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kxyts 16:12"
+        },
+        {
+          "age": 12,
+          "bucket": "obfuscated",
+          "text": "k*y*s",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kxyts 16:12"
+        },
+        {
+          "age": 15,
+          "bucket": "obfuscated",
+          "text": "k*y*s",
+          "typed": "L3",
+          "screen": "L0",
+          "read_as": "kxyts 16:12"
+        }
+      ]
+    },
+    "team-chat": {
+      "style_split": "heldout",
+      "context_only_rungs": [
+        "L0",
+        "L0",
+        "L0"
+      ],
+      "message_read_exactly": "98/107",
+      "median_similarity": 1.0,
+      "median_full_frame_ms": 1681,
+      "screen_rung_equals_typed": "321/321",
+      "agreement": 1.0,
+      "alerted": {
+        "dev harmful age 9": "screen 33/33 typed 33",
+        "dev harmful age 12": "screen 23/33 typed 23",
+        "dev harmful age 15": "screen 23/33 typed 23",
+        "dev benign age 9": "screen 0/34 typed 0",
+        "dev benign age 12": "screen 0/34 typed 0",
+        "dev benign age 15": "screen 0/34 typed 0",
+        "heldout harmful age 9": "screen 6/20 typed 6",
+        "heldout harmful age 12": "screen 5/20 typed 5",
+        "heldout harmful age 15": "screen 5/20 typed 5",
+        "heldout benign age 9": "screen 1/20 typed 1",
+        "heldout benign age 12": "screen 1/20 typed 1",
+        "heldout benign age 15": "screen 1/20 typed 1"
+      },
+      "differences": []
+    }
+  }
+}
