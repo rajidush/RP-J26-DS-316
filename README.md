@@ -5,10 +5,10 @@
 
 | Component | Owner | Status | Folder |
 |---|---|---|---|
-| 1 — Screen Monitoring | IT23377844 | `component1_screen_monitoring/` |
-| 2 — Hate-Speech Detection | IT23209152 | `component2_hate_speech_detection/` |
-| 3 — Socratic Educator | IT23155466 | `component3_socratic_educator/` |
-| 4 — Behavioral Profiling / XAI | IT23135116 | `component4_profiling_xai/` |
+| 1 - Screen Monitoring | IT23377844 | `component1_screen_monitoring/` |
+| 2 - Hate-Speech Detection | IT23209152 | `component2_hate_speech_detection/` |
+| 3 - Socratic Educator | IT23155466 | `component3_socratic_educator/` |
+| 4 - Behavioral Profiling / XAI | IT23135116 | `component4_profiling_xai/` |
 
 
 
@@ -132,7 +132,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_git_identity.ps1
 ## How each component should be built
 
 1. Work against your own `mock_inputs/` and the shared schema in
-   `docs/interface-contracts/` — you should never need another
+   `docs/interface-contracts/` - you should never need another
    component's real code to develop or test your own.
 2. Every output your component produces must validate against its
    schema. If you need a new field, add it to the schema first and log
@@ -143,7 +143,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_git_identity.ps1
 
 ## Branching
 
-- `main` — protected, always working
+- `main` - protected, always working
 - Feature branches per person: `c3/fsm-controller`, `c1/frame-capture`,
   `c2/classifier-v1`, `c4/report-format`, etc.
 - Small PRs, one teammate reviews before merge

@@ -1,4 +1,4 @@
-# Component 3 — Socratic Educator
+# Component 3 - Socratic Educator
 
 **Owner:** IT23155466
 **Status:** PP1 scope (2 functions) implemented and tested. INTERCEPT's opening question is written by the live on-device SLM (gemma-3-1B, served by LM Studio) under constrained decoding; INQUIRE, EVALUATE and CONTRACT use template lines and rules. The fine-tuned INQUIRE adapter is a shadow candidate only (not sent to the child).
