@@ -8,6 +8,7 @@ scikit-learn==1.6.1
 joblib>=1.2.0             # loads the .pkl artifacts
 numpy>=1.19.5             # numeric type checks, scaled arrays
 pandas>=1.1.5             # named one-row input for the fitted scaler
+tzdata                    # Asia/Colombo for zoneinfo on Windows (behavioral_dataset.py)
 
 # Testing
 pytest>=8.0
