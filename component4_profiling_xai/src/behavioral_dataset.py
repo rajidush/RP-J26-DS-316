@@ -581,3 +581,162 @@ def build_daily_features(c1: pd.DataFrame | None = None, c2: pd.DataFrame | None
             rows.append(row)
             day += timedelta(days=1)
     return pd.DataFrame(rows, columns=DAILY_COLUMNS)
+
+
+# ------------------------------------------------- model-ready features (Step 2)
+
+# Rolling per-child baselines: each day is compared with the BASELINE_WINDOW
+# days before it (never itself or a later day). A baseline needs at least
+# BASELINE_MIN_DAYS earlier days; before that the columns are NaN and
+# baseline_ready is False.
+BASELINE_METRICS = ["total_events", "c2_flags", "c1_incidents", "night_events", "c2_urgent",
+                    "c2_bullying", "c2_grooming", "c2_self_harm", "c1_blocks"]
+BASELINE_WINDOW = 14
+BASELINE_MIN_DAYS = 7
+BASELINE_STD_FLOOR = 0.5   # z = (x - mean) / (std + floor): no blow-up on flat histories
+BASELINE_COLUMNS = (["baseline_ready"]
+                    + [f"{m}_{s}{BASELINE_WINDOW}" for m in BASELINE_METRICS for s in ("mean", "z")])
+CALENDAR_COLUMNS = ["is_weekend"]
+
+# Ground truth of the synthetic dataset. Never model input.
+LABEL_COLUMNS = ["is_anomaly", "anomaly_type", "episode_id"]
+
+# Proposed model input in builder names (final choice in Step 3). Left out:
+# identifiers and meta; columns that are constant under full coverage and the
+# live C1 / C2 models (observed flags, non-violence C1 categories,
+# c1_uncertain_groups, c2_typed, c2_sexual_harassment); and columns another one
+# determines (c1_violence = c1_incidents, c1_blurs = incidents - blocks,
+# c2_screen = flags - audio, c2_records, c2_blocks = c2_l4_plus).
+MODEL_SOURCE_FEATURES = (
+    ["c1_incidents", "c1_frames_flagged", "c1_total_duration_s", "c1_max_conf", "c1_mean_conf",
+     "c1_night_incidents", "c1_blocks", "c1_escalated", "c1_dismissed",
+     "c2_flags", "c2_threat", "c2_hate_identity", "c2_bullying", "c2_self_harm", "c2_grooming",
+     "c2_profanity", "c2_urgent", "c2_l4_plus", "c2_max_p", "c2_mean_p", "c2_night_flags",
+     "c2_audio", "c2_distinct_apps", "c2_distinct_app_categories",
+     "total_events", "night_events"]
+    + CALENDAR_COLUMNS
+    + [c for c in BASELINE_COLUMNS if c != "baseline_ready"]
+)
+
+# ------------------------------------------------ descriptive dataset names
+
+# The one place builder names map to the names in behavioral_daily.csv and
+# the model. The builder keeps its short c1_ / c2_ names (Step 1 API and
+# tests); to_descriptive_names() renames at the dataset boundary.
+# C1 = Component 1 screen monitoring -> "screen_"; C2 = Component 2 harmful
+# language detection (on-screen text and audio) -> "language_".
+# (builder name, dataset name, C1 / C2 source fields, how it is derived)
+FEATURE_CATALOG = [
+    ("child_id", "child_id", "record child_id / device_map / explicit", "key"),
+    ("date", "date", "C1 started_at, C2 ts", "key: Asia/Colombo local date"),
+    ("child_id_source", "child_id_source", "-", "how child_id was resolved"),
+    ("demo_only", "demo_only", "-", "child_id is the demo placeholder"),
+    ("c1_observed", "screen_monitor_observed", "coverage", "day inside C1 coverage"),
+    ("c1_incidents", "screen_incidents", "incident_id | session_id + duration_visible_ms",
+     "count of incidents"),
+    ("c1_uncertain_groups", "screen_uncertain_groups", "TriggerPayload session_id",
+     "payload sessions that cannot be split into incidents"),
+    ("c1_frames_flagged", "screen_flagged_frames", "frames_flagged | payload count", "sum"),
+    ("c1_total_duration_s", "screen_flagged_seconds",
+     "duration_s | ended_at - started_at | duration_visible_ms", "sum"),
+    ("c1_max_conf", "screen_max_confidence", "max_confidence | confidence_score", "max"),
+    ("c1_mean_conf", "screen_mean_confidence", "mean_confidence | confidence_score",
+     "mean of incident means"),
+    ("c1_night_incidents", "screen_night_incidents", "started_at", "count at 22:00-06:00 local"),
+    ("c1_violence", "screen_violence_incidents", "category | risk_category = violence", "count"),
+    ("c1_explicit_visual", "screen_explicit_visual_incidents", "category = explicit_visual",
+     "count"),
+    ("c1_self_harm_imagery", "screen_self_harm_imagery_incidents",
+     "category = self_harm_imagery", "count"),
+    ("c1_unknown_flagged", "screen_unknown_flagged_incidents", "category = unknown_flagged",
+     "count"),
+    ("c1_blocks", "screen_blocked_incidents", "action = block", "count"),
+    ("c1_blurs", "screen_blurred_incidents", "action = blur", "count"),
+    ("c1_escalated", "screen_escalated_incidents", "escalated", "count of true"),
+    ("c1_dismissed", "screen_dismissed_incidents", "dismissed_by_child", "count of true"),
+    ("c2_observed", "language_monitor_observed", "coverage", "day inside C2 coverage"),
+    ("c2_records", "language_alert_records", "id", "count of records, incl. abstained"),
+    ("c2_flags", "language_flags", "rung != L0 and not abstained", "count of flags"),
+    ("c2_threat", "language_threat_flags", "top_category = threat", "count"),
+    ("c2_hate_identity", "language_hate_identity_flags", "top_category = hate_identity", "count"),
+    ("c2_bullying", "language_bullying_flags", "top_category = bullying", "count"),
+    ("c2_sexual_harassment", "language_sexual_harassment_flags",
+     "top_category = sexual_harassment", "count"),
+    ("c2_self_harm", "language_self_harm_flags", "top_category = self_harm", "count"),
+    ("c2_grooming", "language_grooming_flags", "top_category = grooming", "count"),
+    ("c2_profanity", "language_profanity_flags", "top_category = profanity", "count"),
+    ("c2_urgent", "language_urgent_flags", "urgent", "count of true"),
+    ("c2_l4_plus", "language_block_rung_flags", "rung in L4, L5", "count"),
+    ("c2_blocks", "language_blocked_flags", "recommended_action = block", "count"),
+    ("c2_max_p", "language_max_risk", "p", "max"),
+    ("c2_mean_p", "language_mean_risk", "p", "mean"),
+    ("c2_night_flags", "language_night_flags", "ts", "count at 22:00-06:00 local"),
+    ("c2_screen", "language_screen_text_flags", "source = screen", "count"),
+    ("c2_audio", "language_audio_flags", "source = audio", "count"),
+    ("c2_typed", "language_typed_flags", "source = typed", "count"),
+    ("c2_distinct_apps", "language_distinct_apps", "app.exe", "distinct count"),
+    ("c2_distinct_app_categories", "language_distinct_app_categories", "app.category",
+     "distinct count"),
+    ("total_events", "total_risk_events", "C1 incidents + C2 flags", "sum"),
+    ("night_events", "night_risk_events", "C1 night incidents + C2 night flags", "sum"),
+    ("is_weekend", "is_weekend", "date", "Saturday or Sunday"),
+    ("baseline_ready", "baseline_ready", "date", f">= {BASELINE_MIN_DAYS} earlier days"),
+]
+_BASE_NAMES = {b: d for b, d, _, _ in FEATURE_CATALOG}
+for _m in BASELINE_METRICS:
+    FEATURE_CATALOG.append((f"{_m}_mean{BASELINE_WINDOW}", f"{_BASE_NAMES[_m]}_prev{BASELINE_WINDOW}d_mean",
+                            _m, f"mean of the previous {BASELINE_WINDOW} days"))
+    FEATURE_CATALOG.append((f"{_m}_z{BASELINE_WINDOW}", f"{_BASE_NAMES[_m]}_prev{BASELINE_WINDOW}d_z",
+                            _m, f"(x - prev mean) / (prev std + {BASELINE_STD_FLOOR})"))
+del _m
+
+DESCRIPTIVE_NAMES = {b: d for b, d, _, _ in FEATURE_CATALOG}
+if len(set(DESCRIPTIVE_NAMES.values())) != len(DESCRIPTIVE_NAMES):
+    raise RuntimeError("FEATURE_CATALOG maps two builder columns to one name")
+
+# Model input in dataset (descriptive) names: the columns of behavioral_daily.csv.
+MODEL_FEATURES = [DESCRIPTIVE_NAMES[c] for c in MODEL_SOURCE_FEATURES]
+DATASET_BASELINE_COLUMNS = [DESCRIPTIVE_NAMES[c] for c in BASELINE_COLUMNS]
+
+
+def to_descriptive_names(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename builder columns to dataset names; other columns are left as they are."""
+    renamed = df.rename(columns=DESCRIPTIVE_NAMES)
+    if renamed.columns.duplicated().any():
+        raise ValueError("renaming produced duplicate column names")
+    return renamed
+
+
+def add_calendar_features(daily: pd.DataFrame) -> pd.DataFrame:
+    """Add is_weekend (Saturday / Sunday of the local date)."""
+    out = daily.copy()
+    out["is_weekend"] = pd.to_datetime(out["date"]).dt.dayofweek >= 5
+    return out
+
+
+def add_baseline_features(daily: pd.DataFrame) -> pd.DataFrame:
+    """Add rolling per-child baselines that use only earlier dates.
+
+    Each child's rows must be consecutive dates (as build_daily_features gives).
+    For metric m: m_mean14 = mean of the previous 14 days, m_z14 =
+    (m - m_mean14) / (std of the previous 14 days + 0.5). Days with fewer than
+    7 earlier values get NaN and baseline_ready = False.
+    """
+    out = daily.sort_values(["child_id", "date"]).reset_index(drop=True)
+    dates = pd.to_datetime(out["date"])
+    gaps = dates.groupby(out["child_id"]).diff().dropna()
+    if (gaps != pd.Timedelta(days=1)).any():
+        raise ValueError("each child's rows must be consecutive dates with no gaps or repeats")
+
+    grouped = out.groupby("child_id", sort=False)
+    ready = grouped["total_events"].transform(
+        lambda s: s.shift(1).rolling(BASELINE_WINDOW, min_periods=1).count())
+    out["baseline_ready"] = ready >= BASELINE_MIN_DAYS
+    for m in BASELINE_METRICS:
+        prev = grouped[m].transform(lambda s: s.shift(1))
+        roll = prev.groupby(out["child_id"]).rolling(BASELINE_WINDOW, min_periods=BASELINE_MIN_DAYS)
+        mean = roll.mean().reset_index(level=0, drop=True)
+        std = roll.std().reset_index(level=0, drop=True)
+        out[f"{m}_mean{BASELINE_WINDOW}"] = mean
+        out[f"{m}_z{BASELINE_WINDOW}"] = (out[m] - mean) / (std + BASELINE_STD_FLOOR)
+    return out
