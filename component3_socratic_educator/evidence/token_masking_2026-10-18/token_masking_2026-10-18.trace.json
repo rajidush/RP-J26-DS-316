@@ -1,0 +1,1224 @@
+[
+  {
+    "step": 0,
+    "text_so_far": "",
+    "allowed_count": 8,
+    "blocked_probability": 0.983929,
+    "top_before_mask": [
+      {
+        "token_id": 19058,
+        "text": "Okay",
+        "prob": 0.743145,
+        "allowed": false,
+        "piece": "Okay"
+      },
+      {
+        "token_id": 1509,
+        "text": "It",
+        "prob": 0.120725,
+        "allowed": false,
+        "piece": "It"
+      },
+      {
+        "token_id": 6372,
+        "text": "That",
+        "prob": 0.069508,
+        "allowed": false,
+        "piece": "That"
+      },
+      {
+        "token_id": 236913,
+        "text": "“",
+        "prob": 0.016462,
+        "allowed": false,
+        "piece": "“"
+      },
+      {
+        "token_id": 236777,
+        "text": "I",
+        "prob": 0.016068,
+        "allowed": true,
+        "piece": "I"
+      }
+    ],
+    "chosen": {
+      "token_id": 236777,
+      "text": "I"
+    }
+  },
+  {
+    "step": 1,
+    "text_so_far": "I",
+    "allowed_count": 7,
+    "blocked_probability": 0.840998,
+    "top_before_mask": [
+      {
+        "token_id": 3050,
+        "text": " understand",
+        "prob": 0.751185,
+        "allowed": false,
+        "piece": "▁understand"
+      },
+      {
+        "token_id": 6303,
+        "text": " notice",
+        "prob": 0.117732,
+        "allowed": true,
+        "piece": "▁notice"
+      },
+      {
+        "token_id": 14275,
+        "text": " noticed",
+        "prob": 0.04127,
+        "allowed": true,
+        "piece": "▁noticed"
+      },
+      {
+        "token_id": 236858,
+        "text": "’",
+        "prob": 0.036174,
+        "allowed": false,
+        "piece": "’"
+      },
+      {
+        "token_id": 1460,
+        "text": " see",
+        "prob": 0.035056,
+        "allowed": false,
+        "piece": "▁see"
+      }
+    ],
+    "chosen": {
+      "token_id": 6303,
+      "text": " notice"
+    }
+  },
+  {
+    "step": 2,
+    "text_so_far": "I notice",
+    "allowed_count": 2,
+    "blocked_probability": 1.0,
+    "top_before_mask": [
+      {
+        "token_id": 611,
+        "text": " you",
+        "prob": 0.557104,
+        "allowed": false,
+        "piece": "▁you"
+      },
+      {
+        "token_id": 822,
+        "text": " your",
+        "prob": 0.361853,
+        "allowed": false,
+        "piece": "▁your"
+      },
+      {
+        "token_id": 2613,
+        "text": " something",
+        "prob": 0.057041,
+        "allowed": false,
+        "piece": "▁something"
+      },
+      {
+        "token_id": 496,
+        "text": " a",
+        "prob": 0.012102,
+        "allowed": false,
+        "piece": "▁a"
+      },
+      {
+        "token_id": 600,
+        "text": " that",
+        "prob": 0.005243,
+        "allowed": false,
+        "piece": "▁that"
+      }
+    ],
+    "chosen": {
+      "token_id": 236753,
+      "text": "d"
+    }
+  },
+  {
+    "step": 3,
+    "text_so_far": "I noticed",
+    "allowed_count": 9,
+    "blocked_probability": 0.968539,
+    "top_before_mask": [
+      {
+        "token_id": 611,
+        "text": " you",
+        "prob": 0.761332,
+        "allowed": false,
+        "piece": "▁you"
+      },
+      {
+        "token_id": 600,
+        "text": " that",
+        "prob": 0.093276,
+        "allowed": false,
+        "piece": "▁that"
+      },
+      {
+        "token_id": 822,
+        "text": " your",
+        "prob": 0.067996,
+        "allowed": false,
+        "piece": "▁your"
+      },
+      {
+        "token_id": 2613,
+        "text": " something",
+        "prob": 0.031424,
+        "allowed": true,
+        "piece": "▁something"
+      },
+      {
+        "token_id": 496,
+        "text": " a",
+        "prob": 0.022799,
+        "allowed": false,
+        "piece": "▁a"
+      }
+    ],
+    "chosen": {
+      "token_id": 2613,
+      "text": " something"
+    }
+  },
+  {
+    "step": 4,
+    "text_so_far": "I noticed something",
+    "allowed_count": 4,
+    "blocked_probability": 0.575651,
+    "top_before_mask": [
+      {
+        "token_id": 580,
+        "text": " on",
+        "prob": 0.424349,
+        "allowed": true,
+        "piece": "▁on"
+      },
+      {
+        "token_id": 236858,
+        "text": "’",
+        "prob": 0.154299,
+        "allowed": false,
+        "piece": "’"
+      },
+      {
+        "token_id": 563,
+        "text": " is",
+        "prob": 0.080898,
+        "allowed": false,
+        "piece": "▁is"
+      },
+      {
+        "token_id": 815,
+        "text": " has",
+        "prob": 0.04104,
+        "allowed": false,
+        "piece": "▁has"
+      },
+      {
+        "token_id": 12280,
+        "text": " stopped",
+        "prob": 0.040353,
+        "allowed": false,
+        "piece": "▁stopped"
+      }
+    ],
+    "chosen": {
+      "token_id": 580,
+      "text": " on"
+    }
+  },
+  {
+    "step": 5,
+    "text_so_far": "I noticed something on",
+    "allowed_count": 6,
+    "blocked_probability": 0.001185,
+    "top_before_mask": [
+      {
+        "token_id": 822,
+        "text": " your",
+        "prob": 0.998777,
+        "allowed": true,
+        "piece": "▁your"
+      },
+      {
+        "token_id": 506,
+        "text": " the",
+        "prob": 0.001155,
+        "allowed": false,
+        "piece": "▁the"
+      },
+      {
+        "token_id": 611,
+        "text": " you",
+        "prob": 3.8e-05,
+        "allowed": true,
+        "piece": "▁you"
+      },
+      {
+        "token_id": 600,
+        "text": " that",
+        "prob": 1.9e-05,
+        "allowed": false,
+        "piece": "▁that"
+      },
+      {
+        "token_id": 1023,
+        "text": " our",
+        "prob": 3e-06,
+        "allowed": false,
+        "piece": "▁our"
+      }
+    ],
+    "chosen": {
+      "token_id": 822,
+      "text": " your"
+    }
+  },
+  {
+    "step": 6,
+    "text_so_far": "I noticed something on your",
+    "allowed_count": 7,
+    "blocked_probability": 0.041223,
+    "top_before_mask": [
+      {
+        "token_id": 4322,
+        "text": " screen",
+        "prob": 0.958777,
+        "allowed": true,
+        "piece": "▁screen"
+      },
+      {
+        "token_id": 4744,
+        "text": " device",
+        "prob": 0.040561,
+        "allowed": false,
+        "piece": "▁device"
+      },
+      {
+        "token_id": 5154,
+        "text": " phone",
+        "prob": 0.00027,
+        "allowed": false,
+        "piece": "▁phone"
+      },
+      {
+        "token_id": 16382,
+        "text": " tablet",
+        "prob": 0.000215,
+        "allowed": false,
+        "piece": "▁tablet"
+      },
+      {
+        "token_id": 7359,
+        "text": " devices",
+        "prob": 9.5e-05,
+        "allowed": false,
+        "piece": "▁devices"
+      }
+    ],
+    "chosen": {
+      "token_id": 4322,
+      "text": " screen"
+    }
+  },
+  {
+    "step": 7,
+    "text_so_far": "I noticed something on your screen",
+    "allowed_count": 6,
+    "blocked_probability": 0.898605,
+    "top_before_mask": [
+      {
+        "token_id": 236764,
+        "text": ",",
+        "prob": 0.37996,
+        "allowed": false,
+        "piece": ","
+      },
+      {
+        "token_id": 1271,
+        "text": " –",
+        "prob": 0.227003,
+        "allowed": false,
+        "piece": "▁–"
+      },
+      {
+        "token_id": 5569,
+        "text": " recently",
+        "prob": 0.102096,
+        "allowed": false,
+        "piece": "▁recently"
+      },
+      {
+        "token_id": 1164,
+        "text": " just",
+        "prob": 0.101395,
+        "allowed": true,
+        "piece": "▁just"
+      },
+      {
+        "token_id": 12280,
+        "text": " stopped",
+        "prob": 0.038823,
+        "allowed": false,
+        "piece": "▁stopped"
+      }
+    ],
+    "chosen": {
+      "token_id": 1164,
+      "text": " just"
+    }
+  },
+  {
+    "step": 8,
+    "text_so_far": "I noticed something on your screen just",
+    "allowed_count": 5,
+    "blocked_probability": 0.167375,
+    "top_before_mask": [
+      {
+        "token_id": 1492,
+        "text": " now",
+        "prob": 0.832625,
+        "allowed": true,
+        "piece": "▁now"
+      },
+      {
+        "token_id": 12280,
+        "text": " stopped",
+        "prob": 0.100495,
+        "allowed": false,
+        "piece": "▁stopped"
+      },
+      {
+        "token_id": 132039,
+        "text": " froze",
+        "prob": 0.06297,
+        "allowed": false,
+        "piece": "▁froze"
+      },
+      {
+        "token_id": 237064,
+        "text": "…",
+        "prob": 0.001355,
+        "allowed": false,
+        "piece": "…"
+      },
+      {
+        "token_id": 57807,
+        "text": " paused",
+        "prob": 0.000894,
+        "allowed": false,
+        "piece": "▁paused"
+      }
+    ],
+    "chosen": {
+      "token_id": 1492,
+      "text": " now"
+    }
+  },
+  {
+    "step": 9,
+    "text_so_far": "I noticed something on your screen just now",
+    "allowed_count": 2,
+    "blocked_probability": 0.944409,
+    "top_before_mask": [
+      {
+        "token_id": 1271,
+        "text": " –",
+        "prob": 0.665628,
+        "allowed": false,
+        "piece": "▁–"
+      },
+      {
+        "token_id": 236764,
+        "text": ",",
+        "prob": 0.206807,
+        "allowed": false,
+        "piece": ","
+      },
+      {
+        "token_id": 236761,
+        "text": ".",
+        "prob": 0.055591,
+        "allowed": true,
+        "piece": "."
+      },
+      {
+        "token_id": 236793,
+        "text": ";",
+        "prob": 0.04246,
+        "allowed": false,
+        "piece": ";"
+      },
+      {
+        "token_id": 237028,
+        "text": "—",
+        "prob": 0.017804,
+        "allowed": false,
+        "piece": "—"
+      }
+    ],
+    "chosen": {
+      "token_id": 236761,
+      "text": "."
+    }
+  },
+  {
+    "step": 10,
+    "text_so_far": "I noticed something on your screen just now.",
+    "allowed_count": 30849,
+    "blocked_probability": 0.256843,
+    "top_before_mask": [
+      {
+        "token_id": 108,
+        "text": "\n\n",
+        "prob": 0.194783,
+        "allowed": false,
+        "piece": "\n\n"
+      },
+      {
+        "token_id": 236743,
+        "text": " ",
+        "prob": 0.171826,
+        "allowed": true,
+        "piece": "▁"
+      },
+      {
+        "token_id": 32815,
+        "text": " Tell",
+        "prob": 0.167973,
+        "allowed": true,
+        "piece": "▁Tell"
+      },
+      {
+        "token_id": 2088,
+        "text": " How",
+        "prob": 0.146773,
+        "allowed": true,
+        "piece": "▁How"
+      },
+      {
+        "token_id": 2900,
+        "text": " What",
+        "prob": 0.120049,
+        "allowed": true,
+        "piece": "▁What"
+      }
+    ],
+    "chosen": {
+      "token_id": 236743,
+      "text": " "
+    }
+  },
+  {
+    "step": 11,
+    "text_so_far": "I noticed something on your screen just now. ",
+    "allowed_count": 18095,
+    "blocked_probability": 1.0,
+    "top_before_mask": [
+      {
+        "token_id": 108,
+        "text": "\n\n",
+        "prob": 0.998355,
+        "allowed": false,
+        "piece": "\n\n"
+      },
+      {
+        "token_id": 109,
+        "text": "\n\n\n",
+        "prob": 0.001267,
+        "allowed": false,
+        "piece": "\n\n\n"
+      },
+      {
+        "token_id": 107,
+        "text": "\n",
+        "prob": 0.000338,
+        "allowed": false,
+        "piece": "\n"
+      },
+      {
+        "token_id": 110,
+        "text": "\n\n\n\n",
+        "prob": 3.9e-05,
+        "allowed": false,
+        "piece": "\n\n\n\n"
+      },
+      {
+        "token_id": 106,
+        "text": null,
+        "prob": 1e-06,
+        "allowed": false,
+        "piece": "<end_of_turn>"
+      }
+    ],
+    "chosen": {
+      "token_id": 38786,
+      "text": "Would"
+    }
+  },
+  {
+    "step": 12,
+    "text_so_far": "I noticed something on your screen just now. Would",
+    "allowed_count": 139646,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 611,
+        "text": " you",
+        "prob": 0.999864,
+        "allowed": true,
+        "piece": "▁you"
+      },
+      {
+        "token_id": 625,
+        "text": " it",
+        "prob": 0.000114,
+        "allowed": true,
+        "piece": "▁it"
+      },
+      {
+        "token_id": 600,
+        "text": " that",
+        "prob": 5e-06,
+        "allowed": true,
+        "piece": "▁that"
+      },
+      {
+        "token_id": 6533,
+        "text": " anyone",
+        "prob": 5e-06,
+        "allowed": true,
+        "piece": "▁anyone"
+      },
+      {
+        "token_id": 506,
+        "text": " the",
+        "prob": 3e-06,
+        "allowed": true,
+        "piece": "▁the"
+      }
+    ],
+    "chosen": {
+      "token_id": 611,
+      "text": " you"
+    }
+  },
+  {
+    "step": 13,
+    "text_so_far": "I noticed something on your screen just now. Would you",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 1133,
+        "text": " like",
+        "prob": 0.979101,
+        "allowed": true,
+        "piece": "▁like"
+      },
+      {
+        "token_id": 3666,
+        "text": " mind",
+        "prob": 0.009379,
+        "allowed": true,
+        "piece": "▁mind"
+      },
+      {
+        "token_id": 577,
+        "text": " be",
+        "prob": 0.008301,
+        "allowed": true,
+        "piece": "▁be"
+      },
+      {
+        "token_id": 2597,
+        "text": " feel",
+        "prob": 0.000714,
+        "allowed": true,
+        "piece": "▁feel"
+      },
+      {
+        "token_id": 5278,
+        "text": " prefer",
+        "prob": 0.000615,
+        "allowed": true,
+        "piece": "▁prefer"
+      }
+    ],
+    "chosen": {
+      "token_id": 1133,
+      "text": " like"
+    }
+  },
+  {
+    "step": 14,
+    "text_so_far": "I noticed something on your screen just now. Would you like",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 531,
+        "text": " to",
+        "prob": 0.99999,
+        "allowed": true,
+        "piece": "▁to"
+      },
+      {
+        "token_id": 496,
+        "text": " a",
+        "prob": 6e-06,
+        "allowed": true,
+        "piece": "▁a"
+      },
+      {
+        "token_id": 786,
+        "text": " me",
+        "prob": 3e-06,
+        "allowed": true,
+        "piece": "▁me"
+      },
+      {
+        "token_id": 4024,
+        "text": " share",
+        "prob": 0.0,
+        "allowed": true,
+        "piece": "▁share"
+      },
+      {
+        "token_id": 625,
+        "text": " it",
+        "prob": 0.0,
+        "allowed": true,
+        "piece": "▁it"
+      }
+    ],
+    "chosen": {
+      "token_id": 531,
+      "text": " to"
+    }
+  },
+  {
+    "step": 15,
+    "text_so_far": "I noticed something on your screen just now. Would you like to",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 3442,
+        "text": " tell",
+        "prob": 0.951836,
+        "allowed": true,
+        "piece": "▁tell"
+      },
+      {
+        "token_id": 2910,
+        "text": " talk",
+        "prob": 0.040933,
+        "allowed": true,
+        "piece": "▁talk"
+      },
+      {
+        "token_id": 4024,
+        "text": " share",
+        "prob": 0.006037,
+        "allowed": true,
+        "piece": "▁share"
+      },
+      {
+        "token_id": 1502,
+        "text": " start",
+        "prob": 0.000527,
+        "allowed": true,
+        "piece": "▁start"
+      },
+      {
+        "token_id": 1751,
+        "text": " think",
+        "prob": 0.00028,
+        "allowed": true,
+        "piece": "▁think"
+      }
+    ],
+    "chosen": {
+      "token_id": 3442,
+      "text": " tell"
+    }
+  },
+  {
+    "step": 16,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 786,
+        "text": " me",
+        "prob": 0.999954,
+        "allowed": true,
+        "piece": "▁me"
+      },
+      {
+        "token_id": 496,
+        "text": " a",
+        "prob": 2e-05,
+        "allowed": true,
+        "piece": "▁a"
+      },
+      {
+        "token_id": 775,
+        "text": " us",
+        "prob": 9e-06,
+        "allowed": true,
+        "piece": "▁us"
+      },
+      {
+        "token_id": 822,
+        "text": " your",
+        "prob": 5e-06,
+        "allowed": true,
+        "piece": "▁your"
+      },
+      {
+        "token_id": 1336,
+        "text": "me",
+        "prob": 3e-06,
+        "allowed": true,
+        "piece": "me"
+      }
+    ],
+    "chosen": {
+      "token_id": 786,
+      "text": " me"
+    }
+  },
+  {
+    "step": 17,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me",
+    "allowed_count": 139648,
+    "blocked_probability": 3e-06,
+    "top_before_mask": [
+      {
+        "token_id": 496,
+        "text": " a",
+        "prob": 0.489301,
+        "allowed": true,
+        "piece": "▁a"
+      },
+      {
+        "token_id": 1003,
+        "text": " about",
+        "prob": 0.344213,
+        "allowed": true,
+        "piece": "▁about"
+      },
+      {
+        "token_id": 1144,
+        "text": " what",
+        "prob": 0.160249,
+        "allowed": true,
+        "piece": "▁what"
+      },
+      {
+        "token_id": 1217,
+        "text": " how",
+        "prob": 0.001885,
+        "allowed": true,
+        "piece": "▁how"
+      },
+      {
+        "token_id": 919,
+        "text": " more",
+        "prob": 0.001464,
+        "allowed": true,
+        "piece": "▁more"
+      }
+    ],
+    "chosen": {
+      "token_id": 496,
+      "text": " a"
+    }
+  },
+  {
+    "step": 18,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 2268,
+        "text": " little",
+        "prob": 0.849993,
+        "allowed": true,
+        "piece": "▁little"
+      },
+      {
+        "token_id": 3103,
+        "text": " bit",
+        "prob": 0.149919,
+        "allowed": true,
+        "piece": "▁bit"
+      },
+      {
+        "token_id": 16383,
+        "text": " tiny",
+        "prob": 6.4e-05,
+        "allowed": true,
+        "piece": "▁tiny"
+      },
+      {
+        "token_id": 2321,
+        "text": " few",
+        "prob": 1.5e-05,
+        "allowed": true,
+        "piece": "▁few"
+      },
+      {
+        "token_id": 3823,
+        "text": " quick",
+        "prob": 7e-06,
+        "allowed": true,
+        "piece": "▁quick"
+      }
+    ],
+    "chosen": {
+      "token_id": 2268,
+      "text": " little"
+    }
+  },
+  {
+    "step": 19,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little",
+    "allowed_count": 139648,
+    "blocked_probability": 0.0,
+    "top_before_mask": [
+      {
+        "token_id": 1003,
+        "text": " about",
+        "prob": 0.922338,
+        "allowed": true,
+        "piece": "▁about"
+      },
+      {
+        "token_id": 3103,
+        "text": " bit",
+        "prob": 0.073776,
+        "allowed": true,
+        "piece": "▁bit"
+      },
+      {
+        "token_id": 919,
+        "text": " more",
+        "prob": 0.003845,
+        "allowed": true,
+        "piece": "▁more"
+      },
+      {
+        "token_id": 236881,
+        "text": "?",
+        "prob": 1.6e-05,
+        "allowed": true,
+        "piece": "?"
+      },
+      {
+        "token_id": 1144,
+        "text": " what",
+        "prob": 1.2e-05,
+        "allowed": true,
+        "piece": "▁what"
+      }
+    ],
+    "chosen": {
+      "token_id": 1003,
+      "text": " about"
+    }
+  },
+  {
+    "step": 20,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about",
+    "allowed_count": 139648,
+    "blocked_probability": 3e-06,
+    "top_before_mask": [
+      {
+        "token_id": 1144,
+        "text": " what",
+        "prob": 0.885824,
+        "allowed": true,
+        "piece": "▁what"
+      },
+      {
+        "token_id": 625,
+        "text": " it",
+        "prob": 0.110477,
+        "allowed": true,
+        "piece": "▁it"
+      },
+      {
+        "token_id": 1217,
+        "text": " how",
+        "prob": 0.00148,
+        "allowed": true,
+        "piece": "▁how"
+      },
+      {
+        "token_id": 600,
+        "text": " that",
+        "prob": 0.00097,
+        "allowed": true,
+        "piece": "▁that"
+      },
+      {
+        "token_id": 1298,
+        "text": " where",
+        "prob": 0.0008,
+        "allowed": true,
+        "piece": "▁where"
+      }
+    ],
+    "chosen": {
+      "token_id": 1144,
+      "text": " what"
+    }
+  },
+  {
+    "step": 21,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about what",
+    "allowed_count": 139648,
+    "blocked_probability": 0.004104,
+    "top_before_mask": [
+      {
+        "token_id": 611,
+        "text": " you",
+        "prob": 0.985628,
+        "allowed": true,
+        "piece": "▁you"
+      },
+      {
+        "token_id": 691,
+        "text": " was",
+        "prob": 0.009695,
+        "allowed": true,
+        "piece": "▁was"
+      },
+      {
+        "token_id": 236858,
+        "text": "’",
+        "prob": 0.004104,
+        "allowed": false,
+        "piece": "’"
+      },
+      {
+        "token_id": 236789,
+        "text": "'",
+        "prob": 0.000154,
+        "allowed": true,
+        "piece": "'"
+      },
+      {
+        "token_id": 8432,
+        "text": " happened",
+        "prob": 0.00014,
+        "allowed": true,
+        "piece": "▁happened"
+      }
+    ],
+    "chosen": {
+      "token_id": 611,
+      "text": " you"
+    }
+  },
+  {
+    "step": 22,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about what you",
+    "allowed_count": 139648,
+    "blocked_probability": 0.008421,
+    "top_before_mask": [
+      {
+        "token_id": 964,
+        "text": " were",
+        "prob": 0.990662,
+        "allowed": true,
+        "piece": "▁were"
+      },
+      {
+        "token_id": 236858,
+        "text": "’",
+        "prob": 0.008421,
+        "allowed": false,
+        "piece": "’"
+      },
+      {
+        "token_id": 236789,
+        "text": "'",
+        "prob": 0.000568,
+        "allowed": true,
+        "piece": "'"
+      },
+      {
+        "token_id": 1053,
+        "text": " had",
+        "prob": 0.00018,
+        "allowed": true,
+        "piece": "▁had"
+      },
+      {
+        "token_id": 2473,
+        "text": " might",
+        "prob": 9e-05,
+        "allowed": true,
+        "piece": "▁might"
+      }
+    ],
+    "chosen": {
+      "token_id": 964,
+      "text": " were"
+    }
+  },
+  {
+    "step": 23,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about what you were",
+    "allowed_count": 139648,
+    "blocked_probability": 5e-06,
+    "top_before_mask": [
+      {
+        "token_id": 3490,
+        "text": " doing",
+        "prob": 0.749145,
+        "allowed": true,
+        "piece": "▁doing"
+      },
+      {
+        "token_id": 19541,
+        "text": " focusing",
+        "prob": 0.107258,
+        "allowed": true,
+        "piece": "▁focusing"
+      },
+      {
+        "token_id": 21907,
+        "text": " occupied",
+        "prob": 0.043842,
+        "allowed": true,
+        "piece": "▁occupied"
+      },
+      {
+        "token_id": 2844,
+        "text": " working",
+        "prob": 0.032855,
+        "allowed": true,
+        "piece": "▁working"
+      },
+      {
+        "token_id": 872,
+        "text": " up",
+        "prob": 0.025322,
+        "allowed": true,
+        "piece": "▁up"
+      }
+    ],
+    "chosen": {
+      "token_id": 3490,
+      "text": " doing"
+    }
+  },
+  {
+    "step": 24,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about what you were doing",
+    "allowed_count": 139648,
+    "blocked_probability": 0.000308,
+    "top_before_mask": [
+      {
+        "token_id": 236881,
+        "text": "?",
+        "prob": 0.83514,
+        "allowed": true,
+        "piece": "?"
+      },
+      {
+        "token_id": 1680,
+        "text": " before",
+        "prob": 0.111853,
+        "allowed": true,
+        "piece": "▁before"
+      },
+      {
+        "token_id": 653,
+        "text": " or",
+        "prob": 0.028015,
+        "allowed": true,
+        "piece": "▁or"
+      },
+      {
+        "token_id": 1056,
+        "text": " when",
+        "prob": 0.005421,
+        "allowed": true,
+        "piece": "▁when"
+      },
+      {
+        "token_id": 1651,
+        "text": " while",
+        "prob": 0.004909,
+        "allowed": true,
+        "piece": "▁while"
+      }
+    ],
+    "chosen": {
+      "token_id": 236881,
+      "text": "?"
+    }
+  },
+  {
+    "step": 25,
+    "text_so_far": "I noticed something on your screen just now. Would you like to tell me a little about what you were doing?",
+    "allowed_count": 2,
+    "blocked_probability": 0.002712,
+    "top_before_mask": [
+      {
+        "token_id": 106,
+        "text": null,
+        "prob": 0.997288,
+        "allowed": true,
+        "piece": "<end_of_turn>"
+      },
+      {
+        "token_id": 236743,
+        "text": " ",
+        "prob": 0.002403,
+        "allowed": false,
+        "piece": "▁"
+      },
+      {
+        "token_id": 107,
+        "text": "\n",
+        "prob": 0.000297,
+        "allowed": false,
+        "piece": "\n"
+      },
+      {
+        "token_id": 103453,
+        "text": " 😊",
+        "prob": 7e-06,
+        "allowed": false,
+        "piece": "▁😊"
+      },
+      {
+        "token_id": 108,
+        "text": "\n\n",
+        "prob": 2e-06,
+        "allowed": false,
+        "piece": "\n\n"
+      }
+    ],
+    "chosen": {
+      "token_id": null,
+      "text": "(end of generation)"
+    }
+  }
+]
