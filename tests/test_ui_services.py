@@ -366,45 +366,6 @@ def test_real_model_on_training_csv():
     assert report["overall_pattern"] == "Defensive"  # matches component4 outputs/
 
 
-# --- Function 2 ----------------------------------------------------------------------
-
-def test_behavioral_anomaly_on_sample():
-    status = services.behavioral_anomaly_status()
-    assert status["available"], status["reason"]
-    sample = services.behavioral_sample_input()
-    assert set(status["features"]) <= set(sample)
-    result = services.predict_behavioral_anomaly(sample)
-    assert result["status"] in ("Normal", "Anomaly")
-    assert result["anomaly_score"] == pytest.approx(-result["decision_score"])
-
-
-def test_behavioral_anomaly_rejects_bad_input():
-    sample = services.behavioral_sample_input()
-    sample[services.behavioral_anomaly_status()["features"][0]] = float("nan")
-    with pytest.raises(ValueError):
-        services.predict_behavioral_anomaly(sample)
-
-
-def test_behavioral_anomaly_unavailable_gives_error_never_a_result(monkeypatch):
-    module = services._f2_module()
-
-    def missing():
-        raise FileNotFoundError("Behavioral anomaly artifact not found: x.pkl")
-
-    monkeypatch.setattr(module, "load_artifacts", missing)
-    monkeypatch.setattr(module, "predict_behavioral_anomaly",
-                        lambda data: pytest.fail("model ran without its artifacts"))
-    status = services.behavioral_anomaly_status()
-    assert not status["available"]
-    assert "x.pkl" in status["reason"]
-    with pytest.raises(services.ModelUnavailableError):
-        services.predict_behavioral_anomaly(services.behavioral_sample_input())
-
-
-def test_feature_label():
-    assert services.feature_label("Daily_Usage_Hours") == "Daily usage hours"
-
-
 # --- Function 1: database children ----------------------------------------------------
 
 def test_source_prefers_database_children(temp_db):

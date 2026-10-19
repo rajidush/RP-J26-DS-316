@@ -34,7 +34,6 @@ PAGES_DIR = Path(__file__).resolve().parent / "pages"
 # (file, title, icon, key) -- key also names the sidebar link's container.
 MAIN_PAGES = [
     ("emotional_pattern.py", "Emotional Pattern", ":material/bar_chart:", "emotional-pattern"),
-    ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitor_heart:", "behavioral-anomaly"),
     ("child_profile.py", "Child Profile", ":material/person:", "child-profile"),
 ]
 ADMIN_PAGES = [

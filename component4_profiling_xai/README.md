@@ -231,10 +231,3 @@ trend labels for those children, not every UI state or automatic ingestion.
 The automated tests verify the specified mock behavior, validation cases and
 dataset consistency; they do not establish classification accuracy, clinical
 validity, generalization to real children, or complete real-time integration.
-
----
-
-Function 2 (behavioral anomaly detection, One-Class SVM) lives in
-`src/behavioral_anomaly.py` and is exposed through
-`component4.detect_behavioral_anomaly()`. `component4.generate_report()` is still
-the placeholder parent-facing summary.

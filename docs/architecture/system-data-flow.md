@@ -25,6 +25,5 @@ flowchart LR
 | Adapter (`to_emotional_pattern_row`) | Real. `child_id` is a device placeholder (one device = one child profile). |
 | Component 4 Function 1 (`run_emotional_pattern`) | Real code. Its trained artifacts (`component4_profiling_xai/models/`) are gitignored, so each machine needs a copy or a rerun of Component 4's notebook. |
 | Component 4 `generate_report` | Stub: formats the record as a parent summary. |
-| Component 4 Function 2 (behavioral anomaly) | Not on this path: reads no Component 3 fields. |
 
 **Interface gap:** the `comp3_to_comp4` schema has no `child_id`, which Function 1 groups by. The adapter adds it; the group decision is logged in `docs/interface-contracts/CHANGELOG.md` (2026-10-11).

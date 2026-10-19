@@ -7,7 +7,6 @@ from ui import services
 
 APP = str(services.ROOT / "ui" / "app.py")
 F1_ERROR = "Function 1 model could not be loaded. No emotional pattern is shown."
-F2_ERROR = "Function 2 model could not be loaded. No behavioral anomaly result is shown."
 
 
 def html_of(at, area):
@@ -65,22 +64,3 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
     main = html_of(at, at.main)
     assert F1_ERROR in main and "Could not load the model files" in main
     assert "c4-badge" not in main
-
-
-def test_behavioral_anomaly_page_with_real_model(temp_db):
-    at = run_page("behavioral_anomaly")
-    at.button[0].click().run()
-    main = html_of(at, at.main)
-    assert "c4-badge" in main and F2_ERROR not in main
-
-
-def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, monkeypatch):
-    def missing():
-        raise FileNotFoundError("Behavioral anomaly artifact not found: x.pkl")
-
-    monkeypatch.setattr(services._f2_module(), "load_artifacts", missing)
-    at = run_page("behavioral_anomaly")
-    main = html_of(at, at.main)
-    assert F2_ERROR in main and "x.pkl" in main
-    assert "c4-badge" not in main
-    assert not at.button  # no form to submit

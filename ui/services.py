@@ -1,7 +1,7 @@
 """
 Everything the Component 4 UI does with data: DB queries (via db/),
-Function 1 (Emotional Pattern Clustering), Function 2 (Behavioral Anomaly
-Detection) and the demo dataset. The Streamlit pages only call functions
+Function 1 (Emotional Pattern Clustering) and the demo dataset.
+The Streamlit pages only call functions
 from this module; colours and styling live in ui/theme.py.
 
 Only contract fields are ever read or shown -- never raw conversation content.
@@ -26,8 +26,6 @@ C4_DIR = ROOT / "component4_profiling_xai"
 F1_MODULE_PATH = C4_DIR / "src" / "emotional_pattern.py"
 F1_ARTIFACT_FILES = ("emotional_pattern_kmeans.pkl", "emotional_pattern_scaler.pkl",
                      "emotional_pattern_metadata.json")
-F2_MODULE_PATH = C4_DIR / "src" / "behavioral_anomaly.py"
-F2_SAMPLE_INPUT = C4_DIR / "mock_inputs" / "sample_behavioral_input.json"
 
 # Contract columns shown in tables, in this order. dialogue_summary is the
 # contract's parent-safe summary, shown only in the detail view.
@@ -163,11 +161,6 @@ def _load_module(name, path):
 @lru_cache(maxsize=1)
 def _f1_module():
     return _load_module("c4_emotional_pattern", F1_MODULE_PATH)
-
-
-@lru_cache(maxsize=1)
-def _f2_module():
-    return _load_module("c4_behavioral_anomaly", F2_MODULE_PATH)
 
 
 # --- Function 1: where the per-child sessions come from ------------------------------
@@ -413,44 +406,3 @@ def pattern_features_table(report):
         columns[f"Latest 2-week window: {report['current_pattern']}"] = report["window_features"]
     columns[f"All sessions: {report['overall_pattern']}"] = report["features"]
     return features_table(columns)
-
-
-# --- Function 2: Behavioral Anomaly Detection ----------------------------------------
-
-F2_ARTIFACT_FILES = ("behavioral_anomaly_ocsvm_variation.pkl", "behavioral_scaler_variation.pkl",
-                     "behavioral_features_variation.pkl")
-
-
-def behavioral_anomaly_status():
-    """Can the trained One-Class SVM be used? {"available", "artifact_dir", "reason", "features"}.
-    Same rule as Function 1: no fallback, never a result without the model."""
-    module = _f2_module()
-    status = {"available": False, "artifact_dir": str(module.MODELS_DIR), "reason": None,
-              "features": []}
-    try:
-        _, _, features = _load_strictly(module.load_artifacts)
-    except Exception as exc:  # missing files, unpickling / version problems
-        status["reason"] = f"Could not load the model files: {exc}"
-        return status
-    status.update(available=True, features=features)
-    return status
-
-
-def behavioral_sample_input():
-    """The example record shipped in component4_profiling_xai/mock_inputs/."""
-    with open(F2_SAMPLE_INPUT, encoding="utf-8") as f:
-        return json.load(f)
-
-
-def feature_label(name):
-    return name.replace("_", " ").capitalize()
-
-
-def predict_behavioral_anomaly(data):
-    """Run Function 2 on one behavioral record: status, anomaly_flag,
-    decision_score, anomaly_score. Raises ValueError / TypeError on bad input
-    and ModelUnavailableError if the trained model cannot be loaded."""
-    status = behavioral_anomaly_status()
-    if not status["available"]:
-        raise ModelUnavailableError(status)
-    return _f2_module().predict_behavioral_anomaly(data)

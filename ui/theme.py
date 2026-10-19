@@ -53,12 +53,6 @@ UNKNOWN_STYLE = PatternStyle("Unknown", "#8A97B1", "#EEF1F6", COLORS["navy"], "n
 NOT_ENOUGH_DATA_STYLE = PatternStyle("Not enough data yet", "#9AA6BD", "#F0F3F8", "#3D4A66",
                                      "neutral")
 
-# Status badges for Function 2 reuse the same visual language.
-ANOMALY_STYLES = {
-    "Normal": PatternStyle("Normal", COLORS["green"], "#E5F4E4", "#1F5A1E", "smile"),
-    "Anomaly": PatternStyle("Anomaly", COLORS["red"], "#FDE3E5", "#6E0F17", "frown"),
-}
-
 # Chart colours for the Component 3 enums, matching the pattern colours.
 EMOTION_COLORS = {"calm": COLORS["green"], "unclear": COLORS["blue_pattern"],
                   "defensive": COLORS["red"], "distressed": COLORS["amber"]}
