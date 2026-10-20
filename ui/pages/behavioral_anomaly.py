@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import streamlit as st
 
 from ui import services, theme
@@ -31,6 +33,8 @@ except ValueError as exc:
     source = services.behavioral_daily_source()
 demo = source["source"] == "demo"
 ids = source["child_ids"]
+if demo:
+    st.caption("Demo · Synthetic child data")
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
@@ -45,59 +49,41 @@ except ValueError as exc:
     st.stop()
 
 table = report["daily"]
-first, last = table["date"].min(), table["date"].max()
-picked = st.date_input("Days shown", value=(first, last), min_value=first, max_value=last,
-                       key=f"f2_range_{child}", help="Local dates (Asia/Colombo).")
-# While a range is being picked, Streamlit returns only its first date.
-start, end = (tuple(picked) + (last,))[:2] if isinstance(picked, (tuple, list)) else (picked, last)
-shown = table[(table["date"] >= start) & (table["date"] <= end)]
-if shown.empty:
-    st.warning("No days in the selected range.")
-    st.stop()
-
-latest = shown.iloc[-1]
-with theme.card("latest-day", "Latest Day"):
-    theme.flag_status(bool(latest["unusual"]), latest["date"], latest["anomaly_score"])
-    c1, c2 = st.columns(2)
-    c1.metric("Days shown", len(shown))
-    c2.metric("Flagged days", int(shown["unusual"].sum()))
+latest = table.iloc[-1]
+last = latest["date"]
+window_start = last - timedelta(days=29)
+recent = table[table["date"].between(window_start, last)]
+with theme.card("latest-day", "Latest Prediction"):
+    theme.flag_status(bool(latest["unusual"]), latest["date"])
+    st.metric("Flagged days · latest 30 days", int(recent["unusual"].sum()))
+    st.caption(f"{window_start} to {last} · ending on this child's latest recorded day")
     if latest["imputed"]:
         theme.note("Some values were missing and were filled in.")
 
-with theme.card("anomaly-history", "Daily Anomaly Score"):
-    st.plotly_chart(theme.anomaly_history_figure(shown, report["threshold"]),
+with theme.card("anomaly-history", "Daily Behavioral Anomaly History"):
+    st.plotly_chart(theme.anomaly_history_figure(table),
                     config=theme.PLOTLY_CONFIG, width="stretch")
     theme.screen_reader_text(
-        f"Chart of daily anomaly scores for {child} from {start} to {end}. "
-        f"{int(shown['unusual'].sum())} of {len(shown)} days are flagged, shown as amber diamonds "
-        "above the dashed decision line; other days are grey circles. The same values are in "
-        "the daily scores table.")
-    with st.expander("Daily scores table"):
-        st.dataframe(shown[["date", "unusual", "anomaly_score", "imputed"]].round(4),
-                     hide_index=True, width="stretch",
-                     column_config={"unusual": st.column_config.CheckboxColumn("flagged"),
-                                    "anomaly_score": "score"})
+        f"Daily behavioral anomaly history for {child} from {table['date'].min()} to {last}. "
+        f"{int(table['unusual'].sum())} of {len(table)} recorded days are flagged. "
+        "Flagged days are amber diamonds; days not flagged are grey circles. "
+        "Each chart point includes its date and status.")
 
-with theme.card("weekly-summary", "Weekly Summary"):
-    st.dataframe(services.weekly_summary(shown).round(3).rename(columns={
-        "week_start": "week (Mon)", "unusual_days": "flagged days", "urgent_days": "urgent days",
-        "highest_score": "highest score", "mean_score": "mean score",
-        "partial_week": "partial week"}), hide_index=True, width="stretch")
-
-with theme.card("flagged-days", "Flagged Day Details"):
-    flagged_dates = list(shown.loc[shown["unusual"], "date"])
+with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
+    st.caption("Observed differences from typical training values; these are not exact model attributions.")
+    flagged_dates = list(table.loc[table["unusual"], "date"])
     if not flagged_dates:
-        st.write("No flagged days in this range.")
+        st.write("No flagged days for this child.")
     else:
         day = st.selectbox("Flagged day", flagged_dates[::-1], key=f"f2_day_{child}")
-        st.dataframe(services.explanation_table(report["explanations"][day]),
+        st.dataframe(services.explanation_table(report["explanations"][day]).head(3),
                      hide_index=True, width="stretch")
 
 with theme.card("urgent-alerts", "Urgent Alerts (rule-based)"):
+    st.caption("Independent rules for urgent language, grooming, self-harm or self-harm imagery; separate from behavioral predictions.")
     urgent = report["urgent"]
-    urgent = urgent[(urgent["date"] >= start) & (urgent["date"] <= end)]
     if urgent.empty:
-        st.write("No urgent alerts in this range.")
+        st.write("No urgent rule-based alerts for this child.")
     else:
         st.dataframe(urgent.rename(columns={"reasons": "rule matched"}), hide_index=True,
                      width="stretch")
@@ -117,7 +103,7 @@ with st.expander("About the data and model"):
     st.markdown(
         f"**Reading the page.** An amber diamond with \"!\" marks a day the model flagged as "
         f"unusual; a grey circle with \"–\" marks a day it did not flag. A day is flagged when "
-        f"its anomaly score is above the dashed line, the saved decision threshold "
+        f"its anomaly score is above the saved decision threshold "
         f"({report['threshold']:.4f}, the {meta['threshold_quantile']:.0%} quantile of normal "
         "training days). **Not flagged is not proof that a child is safe**: the model is known "
         "to miss some concerning patterns, such as multi-day bullying runs.")
@@ -128,6 +114,9 @@ with st.expander("About the data and model"):
                 "language flag, or self-harm imagery on screen), independent of the anomaly score. "
                 "Grooming and self-harm counts are also model inputs, so an urgent day is often "
                 "flagged too, but the two outputs are never merged.")
+    st.write(f"**Latest raw anomaly score:** {latest['anomaly_score']:.4f}")
+    st.write("**Calculation:** anomaly score = −pipeline.score_samples(features); "
+             "flagged when score > saved threshold. The history chart shows this decision only.")
     for key, value in services.model_card(meta).items():
         st.write(f"**{key}:** {value}")
     st.markdown(f"_{meta['disclaimer']}_")

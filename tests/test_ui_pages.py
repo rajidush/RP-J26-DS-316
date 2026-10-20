@@ -71,7 +71,7 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
 F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
 F2_URGENT_TITLE = "Urgent Alerts (rule-based)"
 F2_ABOUT = "About the data and model"
-F2_BANNED = ("Normal", "Unusual", "Threshold", "Synthetic Data")   # never visible on the main page
+F2_BANNED = ("threshold", "score", "Days shown", "Weekly Summary")   # never visible on the main page
 
 
 def visible_main_text(at):
@@ -86,6 +86,7 @@ def visible_main_text(at):
     about_md = {m.value for m in about.markdown}
     text += " ".join(m.value for m in at.markdown if m.value not in about_md)
     text += " ".join(m.label for m in at.metric)
+    text += " ".join(c.value for c in at.caption)
     return text
 
 
@@ -109,25 +110,28 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
     assert len(at.selectbox(key="f2_child").options) == 40
     assert "c4-flag" in main and "c4-badge" not in main
     assert len(at.get("plotly_chart")) == 1
-    assert len(at.dataframe) >= 3                         # daily, weekly, urgent / details
-    assert F2_URGENT_TITLE in main and "Weekly Summary" in main
-    assert [m.label for m in at.metric] == ["Days shown", "Flagged days"]
+    assert len(at.dataframe) == 2                         # top deviations and separate urgent alerts
+    assert not at.date_input
+    assert F2_URGENT_TITLE in main and "Weekly Summary" not in main
+    assert [m.label for m in at.metric] == ["Flagged days · latest 30 days"]
     labels = [e.label for e in at.expander]
     assert F2_ABOUT in labels and "Use your own data (daily-feature CSV)" in labels
     assert F2_ERROR not in main
 
 
-def test_main_page_has_no_status_words_threshold_or_synthetic_banner(temp_db):
+def test_main_page_is_minimal_with_demo_label_and_no_raw_scores(temp_db):
     at = run_page("behavioral_anomaly")
     text = visible_main_text(at).lower()
     # The helper sees real visible text (so the check below is not vacuous) ...
-    assert "flagged days" in text and "weekly summary" in text and "score" in text
+    assert "flagged days" in text and "demo" in text and "synthetic child data" in text
     # ... but not the screen-reader-only chart description.
     assert "amber diamonds" not in text
     for word in F2_BANNED:
         assert word.lower() not in text, word
-    weekly = next(d.value for d in at.dataframe if "week (Mon)" in d.value.columns)
-    assert "flagged days" in weekly.columns
+    assert "Daily scores table" not in [e.label for e in at.expander]
+    assert not any("week (Mon)" in d.value.columns for d in at.dataframe)
+    deviations = next(d.value for d in at.dataframe if "Feature" in d.value.columns)
+    assert len(deviations) == 3
 
 
 def test_status_icon_has_a_text_description(temp_db):
@@ -191,3 +195,25 @@ def test_function2_failure_leaves_function1_page_working(child_with_sessions, tm
                                   "dashboard", "sessions", "escalations", "add_record"])
 def test_every_page_renders(temp_db, page):
     run_page(page)
+
+
+def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_db):
+    from datetime import timedelta
+    at = run_page("behavioral_anomaly")
+    for child in ["C001", "C009"]:
+        at.selectbox(key="f2_child").set_value(child).run()
+        assert not at.exception
+        report = services.behavioral_report(services.behavioral_daily_source()["daily"], child)
+        daily = report["daily"]
+        end = daily.date.max()
+        expected = int(daily.loc[daily.date.between(end-timedelta(days=29),end), "unusual"].sum())
+        assert at.metric[0].value == str(expected)
+        assert len(at.get("plotly_chart")) == 1
+
+
+def test_about_keeps_raw_model_details_and_explanations_are_descriptive(temp_db):
+    at = run_page("behavioral_anomaly")
+    about = next(e for e in at.expander if e.label == F2_ABOUT)
+    text = " ".join(m.value for m in about.markdown)
+    assert "Latest raw anomaly score" in text and "pipeline.score_samples" in text
+    assert "not exact model attributions" in " ".join(c.value for c in at.caption)

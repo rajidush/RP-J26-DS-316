@@ -401,8 +401,8 @@ def flag_icon_svg(flagged, size=56):
             f'viewBox="0 0 56 56" fill="{style.color}">{shape}{glyph}</svg>')
 
 
-def flag_status(flagged, date, score):
-    """Latest-day indicator: icon + date + score. The status is in the icon's
+def flag_status(flagged, date):
+    """Latest-day indicator: icon, date and accessible status. The status is in the icon's
     alt text / aria-label / tooltip, never only in its colour."""
     style = FLAG_STYLES[bool(flagged)]
     label = f"{date}: {style.description}"
@@ -410,7 +410,7 @@ def flag_status(flagged, date, score):
         f'<div class="c4-flag" role="img" aria-label="{escape(label)}" title="{escape(label)}">'
         f'{svg_img(flag_icon_svg(flagged), alt=label)}'
         f'<div><div class="c4-flag-date">{escape(str(date))}</div>'
-        f'<div class="c4-flag-score">score {score:.3f}</div></div></div>'
+        f'<div>{escape(style.name)}</div></div></div>'
     )
 
 
@@ -419,30 +419,25 @@ def screen_reader_text(text):
     st.html(f'<p class="c4-sr-only">{escape(text)}</p>')
 
 
-def anomaly_history_figure(daily, threshold):
-    """Daily anomaly scores; the saved threshold is a dashed line (no text label).
+def anomaly_history_figure(daily):
+    """Display saved daily decisions without exposing raw model scores.
 
-    daily: behavioral_report()["daily"] (date, anomaly_score, unusual).
-    Flagged days are larger amber diamonds, others small grey circles; the
-    status is also in each point's hover text. Urgent rule alerts are
-    deliberately not drawn here (they are a separate output).
+    Uses the existing unusual flags unchanged. Urgent rules remain separate.
     """
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=daily["date"], y=daily["anomaly_score"], mode="lines",
-        line=dict(color="#B7C3D9", width=1.5), hoverinfo="skip", showlegend=False))
     for flagged in (False, True):
         mine = daily[daily["unusual"] == flagged]
         style = FLAG_STYLES[flagged]
         fig.add_trace(go.Scatter(
-            x=mine["date"] if len(mine) else [None], y=mine["anomaly_score"] if len(mine) else [None],
+            x=mine["date"] if len(mine) else [None],
+            y=[int(flagged)] * len(mine) if len(mine) else [None],
             mode="markers", name=style.name, showlegend=False,
             marker=dict(color=style.color, symbol=style.shape, size=13 if flagged else 7,
                         line=dict(color="#fff", width=1)),
-            hovertemplate=f"<b>{style.name}</b><br>%{{x|%Y-%m-%d}}<br>score %{{y:.3f}}<extra></extra>"))
-    fig.add_hline(y=threshold, line=dict(color=COLORS["navy"], dash="dash", width=1.5))
+            hovertemplate=f"<b>{style.name}</b><br>%{{x|%Y-%m-%d}}<extra></extra>"))
     axis = dict(showgrid=True, gridcolor=COLORS["grid"], griddash="dash", zeroline=False,
                 linecolor="#C9D3E3", showline=True)
     fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d")
-    fig.update_yaxes(**axis, title=dict(text="anomaly score", font=dict(size=13)))
-    return _base_layout(fig, height=380)
+    fig.update_yaxes(**axis, tickvals=[0, 1], ticktext=["Not flagged", "Flagged"],
+                     range=[-0.3, 1.3], fixedrange=True)
+    return _base_layout(fig, height=300)

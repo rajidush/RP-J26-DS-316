@@ -99,14 +99,16 @@ def _anomaly_days():
                          "unusual": [False, True, False, True]})
 
 
-def test_anomaly_figure_has_unlabelled_threshold_line_and_marks_flagged_days():
-    fig = theme.anomaly_history_figure(_anomaly_days(), threshold=-12.5)
-    lines = [s for s in fig.layout.shapes if s.type == "line"]
-    assert len(lines) == 1 and lines[0].y0 == lines[0].y1 == -12.5
+def test_anomaly_figure_shows_decisions_without_scores_or_thresholds():
+    fig = theme.anomaly_history_figure(_anomaly_days())
+    assert not fig.layout.shapes
+    assert list(fig.layout.yaxis.ticktext) == ["Not flagged", "Flagged"]
+    assert all("score" not in t.hovertemplate for t in fig.data)
     assert not fig.layout.annotations                        # no "threshold" text
     by_name = {t.name: t for t in fig.data if t.name}
     assert set(by_name) == {"Flagged", "Not flagged"}
-    assert list(by_name["Flagged"].y) == [-12.0, -11.0]
+    assert list(by_name["Flagged"].y) == [1, 1]
+    assert list(by_name["Not flagged"].y) == [0, 0]
     assert not any(t.showlegend for t in fig.data)            # no Normal/Unusual legend
     # Status is not colour-only: shapes and sizes differ, and the hover names it.
     assert by_name["Flagged"].marker.symbol != by_name["Not flagged"].marker.symbol
@@ -114,7 +116,7 @@ def test_anomaly_figure_has_unlabelled_threshold_line_and_marks_flagged_days():
 
 
 def test_anomaly_figure_without_flagged_days():
-    fig = theme.anomaly_history_figure(_anomaly_days().assign(unusual=False), threshold=-10.0)
+    fig = theme.anomaly_history_figure(_anomaly_days().assign(unusual=False))
     flagged = next(t for t in fig.data if t.name == "Flagged")
     assert list(flagged.y) == [None]
 
