@@ -1,0 +1,9 @@
+{
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "alerts": 201,
+  "eligible_days": 201,
+  "false_alerts_per_child": 0.0,
+  "limitation": "Agreement with synthetic event policy eligibility only; no independent clinical/safety ground truth."
+}
