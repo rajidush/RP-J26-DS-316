@@ -69,7 +69,24 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
 # --- Function 2: Behavioral Anomaly page ----------------------------------------------
 
 F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
-F2_URGENT_TITLE = "Urgent Safety Alerts (rule-based, not the anomaly model)"
+F2_URGENT_TITLE = "Urgent Alerts (rule-based)"
+F2_ABOUT = "About the data and model"
+F2_BANNED = ("Normal", "Unusual", "Threshold", "Synthetic Data")   # never visible on the main page
+
+
+def visible_main_text(at):
+    """What a sighted viewer reads on the main page, outside the About expander:
+    HTML text (screen-reader-only text and tag attributes removed), Markdown and
+    metric labels."""
+    import re
+    html = html_of(at, at.main)
+    html = re.sub(r'<p class=\\?"c4-sr-only\\?">.*?</p>', " ", html)
+    text = re.sub(r"<[^>]+>", " ", html)
+    about = next(e for e in at.expander if e.label == F2_ABOUT)
+    about_md = {m.value for m in about.markdown}
+    text += " ".join(m.value for m in at.markdown if m.value not in about_md)
+    text += " ".join(m.label for m in at.metric)
+    return text
 
 
 def test_emotional_pattern_is_still_the_default_page(temp_db):
@@ -88,26 +105,66 @@ def test_sidebar_shows_both_model_statuses(temp_db):
 def test_behavioral_anomaly_page_with_real_model(temp_db):
     at = run_page("behavioral_anomaly")
     main = html_of(at, at.main)
-    assert "SYNTHETIC DATA" in main and "DEMO PREDICTIONS" in main
     assert at.selectbox(key="f2_child").options[0] == "C001"
     assert len(at.selectbox(key="f2_child").options) == 40
-    assert "c4-badge" in main
-    assert "It does not prove that the child is safe" in main
+    assert "c4-flag" in main and "c4-badge" not in main
     assert len(at.get("plotly_chart")) == 1
-    assert len(at.dataframe) >= 3                         # daily, weekly, urgent / explanation
-    assert F2_URGENT_TITLE in main
-    assert "not an exact cause" in main
+    assert len(at.dataframe) >= 3                         # daily, weekly, urgent / details
+    assert F2_URGENT_TITLE in main and "Weekly Summary" in main
+    assert [m.label for m in at.metric] == ["Days shown", "Flagged days"]
     labels = [e.label for e in at.expander]
-    assert "About this model" in labels and "Use your own data (daily-feature CSV)" in labels
-    assert "One-Class SVM" in " ".join(m.value for m in at.markdown)
+    assert F2_ABOUT in labels and "Use your own data (daily-feature CSV)" in labels
     assert F2_ERROR not in main
+
+
+def test_main_page_has_no_status_words_threshold_or_synthetic_banner(temp_db):
+    at = run_page("behavioral_anomaly")
+    text = visible_main_text(at).lower()
+    # The helper sees real visible text (so the check below is not vacuous) ...
+    assert "flagged days" in text and "weekly summary" in text and "score" in text
+    # ... but not the screen-reader-only chart description.
+    assert "amber diamonds" not in text
+    for word in F2_BANNED:
+        assert word.lower() not in text, word
+    weekly = next(d.value for d in at.dataframe if "week (Mon)" in d.value.columns)
+    assert "flagged days" in weekly.columns
+
+
+def test_status_icon_has_a_text_description(temp_db):
+    import re
+    at = run_page("behavioral_anomaly")                    # C001: latest day not flagged
+    main = html_of(at, at.main)
+    assert re.search(r'aria-label=\\?"2026-09-28: Not flagged: the model found no unusual pattern', main)
+    assert re.search(r'alt=\\?"2026-09-28: Not flagged', main)
+    assert "This is not proof that the child is safe" in main          # part of the description
+    assert "c4-sr-only" in main and "amber diamonds" in main            # chart description
+
+
+def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
+    daily = services.behavioral_daily_source()["daily"]
+    flagged_last = next(c for c in services.child_ids(daily)
+                        if services.behavioral_report(daily, c)["latest"]["unusual"])
+    at = run_page("behavioral_anomaly")
+    at.selectbox(key="f2_child").set_value(flagged_last).run()
+    assert not at.exception
+    assert "Flagged: the model found an unusual pattern" in html_of(at, at.main)
+
+
+def test_about_section_discloses_synthetic_data_and_threshold(temp_db):
+    at = run_page("behavioral_anomaly")
+    about = " ".join(m.value for m in next(e for e in at.expander if e.label == F2_ABOUT).markdown)
+    assert "synthetic demo data" in about and "no real child is involved" in about
+    assert "Not flagged is not proof that a child is safe" in about
+    assert "-12.5158" in about and "decision threshold" in about
+    assert "not an exact cause" in about and "never merged" in about
+    assert "One-Class SVM" in about
 
 
 def test_behavioral_anomaly_page_switches_child(temp_db):
     at = run_page("behavioral_anomaly")
     at.selectbox(key="f2_child").set_value("C009").run()
     assert not at.exception
-    assert at.selectbox(key="f2_day_C009").value is not None   # C009 has unusual days
+    assert at.selectbox(key="f2_day_C009").value is not None   # C009 has flagged days
 
 
 def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp_path, monkeypatch):
@@ -116,7 +173,7 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp
     main = html_of(at, at.main)
     assert F2_ERROR in main
     assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
-    assert "c4-badge" not in main
+    assert "c4-flag" not in main
     assert not at.get("plotly_chart")
     assert not at.selectbox and not at.dataframe
     assert F2_URGENT_TITLE not in main

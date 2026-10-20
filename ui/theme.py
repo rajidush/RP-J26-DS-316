@@ -156,6 +156,12 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
 .c4-badge-label {{ font-size: 2.3rem; font-weight: 800; line-height: 1.1; }}
 .c4-badge-sub {{ font-size: .95rem; opacity: .85; margin-top: .25rem; }}
 
+.c4-flag {{ display: flex; align-items: center; gap: 1rem; padding: .4rem 0; }}
+.c4-flag img {{ width: 56px; height: 56px; flex: none; }}
+.c4-flag-date {{ font-size: 1.6rem; font-weight: 800; color: {COLORS["navy"]}; line-height: 1.1; }}
+.c4-flag-score {{ font-size: .95rem; color: {COLORS["muted"]}; margin-top: .2rem; }}
+.c4-sr-only {{ position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }}
 .c4-note {{ color: {COLORS["muted"]}; font-size: .85rem; margin: .4rem 0 0; }}
 .c4-tag {{
     display: inline-block; font-size: .78rem; font-weight: 600; padding: .15rem .6rem;
@@ -363,65 +369,80 @@ PLOTLY_CONFIG = {"displayModeBar": False}
 # --- Function 2: behavioral anomaly ----------------------------------------------------
 
 @dataclass(frozen=True)
-class StatusStyle:
-    label: str
+class FlagStyle:
+    name: str          # short accessible name (hover, alt text)
     color: str
-    background: str
-    text: str
+    shape: str         # Plotly marker symbol; also differs from the other style
+    description: str   # full accessible description (screen readers, tooltip)
 
 
-# No faces here: an anomaly status is about data, not the child's emotions.
-# "Normal" is deliberately neutral grey-blue, not green: it is not "safe".
-ANOMALY_STYLES = {
-    "Unusual": StatusStyle("Unusual", COLORS["amber"], "#FEF2D6", "#6B4800"),
-    "Normal": StatusStyle("Normal", "#8A97B1", "#EEF1F6", COLORS["navy"]),
+# Status is shown with an icon, not a word. Flagged and not-flagged differ in
+# shape and symbol as well as colour, so colour is never the only cue.
+# Not-flagged is neutral grey, not green: it is not "safe".
+FLAG_STYLES = {
+    True: FlagStyle("Flagged", COLORS["amber"], "diamond",
+                    "Flagged: the model found an unusual pattern on this day"),
+    False: FlagStyle("Not flagged", "#8A97B1", "circle",
+                     "Not flagged: the model found no unusual pattern on this day. "
+                     "This is not proof that the child is safe"),
 }
-URGENT_COLOR = COLORS["red"]
 
 
-def status_badge(status, subtitle=None):
-    """Large Normal / Unusual badge for the Function 2 page (no face icon)."""
-    style = ANOMALY_STYLES[status]
-    sub = f'<div class="c4-badge-sub">{escape(subtitle)}</div>' if subtitle else ""
+def flag_icon_svg(flagged, size=56):
+    """Amber diamond with "!" (flagged) or grey circle with a dash (not flagged)."""
+    style = FLAG_STYLES[bool(flagged)]
+    if flagged:
+        shape = '<path d="M28 3 L53 28 L28 53 L3 28 Z"/>'
+        glyph = '<path d="M28 16 V32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'                 '<circle cx="28" cy="40" r="3" fill="#fff"/>'
+    else:
+        shape = '<circle cx="28" cy="28" r="24"/>'
+        glyph = '<path d="M18 28 H38" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
+            f'viewBox="0 0 56 56" fill="{style.color}">{shape}{glyph}</svg>')
+
+
+def flag_status(flagged, date, score):
+    """Latest-day indicator: icon + date + score. The status is in the icon's
+    alt text / aria-label / tooltip, never only in its colour."""
+    style = FLAG_STYLES[bool(flagged)]
+    label = f"{date}: {style.description}"
     st.html(
-        f'<div class="c4-badge" style="background:{style.background};border-color:{style.color}55;'
-        f'color:{style.text}"><div><div class="c4-badge-label">{escape(style.label)}</div>'
-        f'{sub}</div></div>'
+        f'<div class="c4-flag" role="img" aria-label="{escape(label)}" title="{escape(label)}">'
+        f'{svg_img(flag_icon_svg(flagged), alt=label)}'
+        f'<div><div class="c4-flag-date">{escape(str(date))}</div>'
+        f'<div class="c4-flag-score">score {score:.3f}</div></div></div>'
     )
 
 
-def anomaly_history_figure(daily, threshold):
-    """Daily anomaly scores with the saved threshold as a dashed line.
+def screen_reader_text(text):
+    """Text for screen readers only (visually hidden)."""
+    st.html(f'<p class="c4-sr-only">{escape(text)}</p>')
 
-    daily: behavioral_report()["daily"] (date, anomaly_score, unusual, label).
-    Normal and Unusual days are separate legend entries; urgent rule alerts are
+
+def anomaly_history_figure(daily, threshold):
+    """Daily anomaly scores; the saved threshold is a dashed line (no text label).
+
+    daily: behavioral_report()["daily"] (date, anomaly_score, unusual).
+    Flagged days are larger amber diamonds, others small grey circles; the
+    status is also in each point's hover text. Urgent rule alerts are
     deliberately not drawn here (they are a separate output).
     """
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=daily["date"], y=daily["anomaly_score"], mode="lines",
         line=dict(color="#B7C3D9", width=1.5), hoverinfo="skip", showlegend=False))
-    for status in ("Normal", "Unusual"):
-        mine = daily[daily["label"] == status]
-        style = ANOMALY_STYLES[status]
+    for flagged in (False, True):
+        mine = daily[daily["unusual"] == flagged]
+        style = FLAG_STYLES[flagged]
         fig.add_trace(go.Scatter(
             x=mine["date"] if len(mine) else [None], y=mine["anomaly_score"] if len(mine) else [None],
-            mode="markers", name=f"{status} day",
-            marker=dict(color=style.color, size=11 if status == "Unusual" else 7,
+            mode="markers", name=style.name, showlegend=False,
+            marker=dict(color=style.color, symbol=style.shape, size=13 if flagged else 7,
                         line=dict(color="#fff", width=1)),
-            customdata=mine[["margin"]].to_numpy() if len(mine) else None,
-            hovertemplate=f"<b>{status}</b><br>%{{x|%Y-%m-%d}}<br>score %{{y:.3f}}"
-                          "<br>margin %{customdata[0]:+.3f}<extra></extra>"))
-    fig.add_hline(y=threshold, line=dict(color=COLORS["navy"], dash="dash", width=1.5),
-                  annotation_text=f"threshold {threshold:.3f}", annotation_position="top left",
-                  annotation_font=dict(size=13, color=COLORS["navy"]))
+            hovertemplate=f"<b>{style.name}</b><br>%{{x|%Y-%m-%d}}<br>score %{{y:.3f}}<extra></extra>"))
+    fig.add_hline(y=threshold, line=dict(color=COLORS["navy"], dash="dash", width=1.5))
     axis = dict(showgrid=True, gridcolor=COLORS["grid"], griddash="dash", zeroline=False,
                 linecolor="#C9D3E3", showline=True)
     fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d")
-    fig.update_yaxes(**axis, title=dict(text="anomaly score (higher = more unusual)", font=dict(size=13)))
-    # Legend above the plot: below it, it collides with the angled date ticks.
-    fig.update_layout(legend=dict(orientation="h", x=1, xanchor="right", y=1.02,
-                                  yanchor="bottom", itemclick=False, itemdoubleclick=False))
-    fig = _base_layout(fig, height=400)
-    fig.update_layout(margin=dict(t=40))
-    return fig
+    fig.update_yaxes(**axis, title=dict(text="anomaly score", font=dict(size=13)))
+    return _base_layout(fig, height=380)

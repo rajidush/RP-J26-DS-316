@@ -96,27 +96,34 @@ def _anomaly_days():
     import pandas as pd
     return pd.DataFrame({"date": pd.date_range("2026-07-01", periods=4).date,
                          "anomaly_score": [-13.0, -12.0, -12.9, -11.0],
-                         "margin": [-0.5, 0.5, -0.4, 1.5],
-                         "label": ["Normal", "Unusual", "Normal", "Unusual"]})
+                         "unusual": [False, True, False, True]})
 
 
-def test_anomaly_figure_has_threshold_line_and_marks_unusual_days():
+def test_anomaly_figure_has_unlabelled_threshold_line_and_marks_flagged_days():
     fig = theme.anomaly_history_figure(_anomaly_days(), threshold=-12.5)
     lines = [s for s in fig.layout.shapes if s.type == "line"]
     assert len(lines) == 1 and lines[0].y0 == lines[0].y1 == -12.5
+    assert not fig.layout.annotations                        # no "threshold" text
     by_name = {t.name: t for t in fig.data if t.name}
-    assert set(by_name) == {"Normal day", "Unusual day"}
-    assert list(by_name["Unusual day"].y) == [-12.0, -11.0]
-    assert by_name["Unusual day"].marker.color == theme.ANOMALY_STYLES["Unusual"].color
+    assert set(by_name) == {"Flagged", "Not flagged"}
+    assert list(by_name["Flagged"].y) == [-12.0, -11.0]
+    assert not any(t.showlegend for t in fig.data)            # no Normal/Unusual legend
+    # Status is not colour-only: shapes and sizes differ, and the hover names it.
+    assert by_name["Flagged"].marker.symbol != by_name["Not flagged"].marker.symbol
+    assert "Flagged" in by_name["Flagged"].hovertemplate
 
 
-def test_anomaly_figure_without_unusual_days():
-    days = _anomaly_days().assign(label="Normal")
-    fig = theme.anomaly_history_figure(days, threshold=-10.0)
-    unusual = next(t for t in fig.data if t.name == "Unusual day")
-    assert list(unusual.y) == [None]
+def test_anomaly_figure_without_flagged_days():
+    fig = theme.anomaly_history_figure(_anomaly_days().assign(unusual=False), threshold=-10.0)
+    flagged = next(t for t in fig.data if t.name == "Flagged")
+    assert list(flagged.y) == [None]
 
 
-def test_normal_status_is_not_shown_as_safe_green():
-    assert set(theme.ANOMALY_STYLES) == {"Normal", "Unusual"}
-    assert theme.ANOMALY_STYLES["Normal"].color != theme.COLORS["green"]
+def test_flag_styles_are_not_colour_only_and_not_safe_green():
+    flagged, not_flagged = theme.FLAG_STYLES[True], theme.FLAG_STYLES[False]
+    assert flagged.shape != not_flagged.shape
+    assert theme.flag_icon_svg(True) != theme.flag_icon_svg(False)
+    assert not_flagged.color != theme.COLORS["green"]
+    assert "not proof that the child is safe" in not_flagged.description
+    for style in (flagged, not_flagged):
+        assert "Normal" not in style.description and "Unusual" not in style.description

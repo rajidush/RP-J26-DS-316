@@ -2,13 +2,7 @@ import streamlit as st
 
 from ui import services, theme
 
-theme.page_header("Behavioral Anomaly (Function 2)",
-                  "Days on which a child's screen and language risk events look unusual "
-                  "compared with normal days.")
-
-NORMAL_IS_NOT_SAFE = ("Normal means the model found no unusual pattern in these 27 daily "
-                      "features. It does not prove that the child is safe, and the model is known "
-                      "to miss some concerning patterns (for example, multi-day bullying runs).")
+theme.page_header("Behavioral Anomaly (Function 2)")
 
 
 def show_model_error(status):
@@ -35,23 +29,12 @@ try:
 except ValueError as exc:
     st.error(f"Could not read the uploaded CSV: {exc}")
     source = services.behavioral_daily_source()
-
 demo = source["source"] == "demo"
-if demo:
-    theme.note("SYNTHETIC DATA – DEMO PREDICTIONS. Children C001–C040 and all their events are "
-               "generated (behavioral_daily.csv); no real child is involved. These IDs are not "
-               "the Function 1 demo children with the same names.")
 ids = source["child_ids"]
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
                          key="f2_child")
-    if demo:
-        theme.note("Bundled synthetic daily dataset. Components 1 and 2 have no database storage "
-                   "yet, so no live data is available.")
-    else:
-        theme.note(f"Data from the uploaded CSV ({theme.plural(len(source['daily']), 'row')}, "
-                   f"{theme.plural(len(ids), 'child', 'children')}).")
 
 try:
     report = services.behavioral_report(source["daily"], child)
@@ -63,8 +46,8 @@ except ValueError as exc:
 
 table = report["daily"]
 first, last = table["date"].min(), table["date"].max()
-picked = st.date_input("Days shown (local dates, Asia/Colombo)", value=(first, last),
-                       min_value=first, max_value=last, key=f"f2_range_{child}")
+picked = st.date_input("Days shown", value=(first, last), min_value=first, max_value=last,
+                       key=f"f2_range_{child}", help="Local dates (Asia/Colombo).")
 # While a range is being picked, Streamlit returns only its first date.
 start, end = (tuple(picked) + (last,))[:2] if isinstance(picked, (tuple, list)) else (picked, last)
 shown = table[(table["date"] >= start) & (table["date"] <= end)]
@@ -74,72 +57,84 @@ if shown.empty:
 
 latest = shown.iloc[-1]
 with theme.card("latest-day", "Latest Day"):
-    theme.status_badge(latest["label"],
-                       subtitle=f"{latest['date']} · score {latest['anomaly_score']:.3f} vs "
-                                f"threshold {report['threshold']:.3f} "
-                                f"(margin {latest['margin']:+.3f})")
-    c1, c2, c3 = st.columns(3)
+    theme.flag_status(bool(latest["unusual"]), latest["date"], latest["anomaly_score"])
+    c1, c2 = st.columns(2)
     c1.metric("Days shown", len(shown))
-    c2.metric("Unusual days", int(shown["unusual"].sum()))
-    c3.metric("Saved threshold", f"{report['threshold']:.3f}")
-    theme.note(NORMAL_IS_NOT_SAFE)
+    c2.metric("Flagged days", int(shown["unusual"].sum()))
     if latest["imputed"]:
-        theme.note("This day had missing values; the model filled them with training medians.")
+        theme.note("Some values were missing and were filled in.")
 
-with theme.card("anomaly-history",
-                "Daily Anomaly Score" + (" (synthetic demo predictions)" if demo else "")):
+with theme.card("anomaly-history", "Daily Anomaly Score"):
     st.plotly_chart(theme.anomaly_history_figure(shown, report["threshold"]),
                     config=theme.PLOTLY_CONFIG, width="stretch")
-    theme.note("A day is Unusual when its score is above the dashed threshold (the 97% quantile "
-               "of normal training days). Margin = score − threshold.")
-    with st.expander("Daily predictions table"):
-        st.dataframe(shown[["date", "label", "anomaly_score", "threshold", "margin", "imputed"]]
-                     .rename(columns={"label": "prediction", "anomaly_score": "score"})
-                     .round(4), hide_index=True, width="stretch")
+    theme.screen_reader_text(
+        f"Chart of daily anomaly scores for {child} from {start} to {end}. "
+        f"{int(shown['unusual'].sum())} of {len(shown)} days are flagged, shown as amber diamonds "
+        "above the dashed decision line; other days are grey circles. The same values are in "
+        "the daily scores table.")
+    with st.expander("Daily scores table"):
+        st.dataframe(shown[["date", "unusual", "anomaly_score", "imputed"]].round(4),
+                     hide_index=True, width="stretch",
+                     column_config={"unusual": st.column_config.CheckboxColumn("flagged"),
+                                    "anomaly_score": "score"})
 
 with theme.card("weekly-summary", "Weekly Summary"):
-    weekly = services.weekly_summary(shown)
-    st.dataframe(weekly.round(3).rename(columns={
-        "week_start": "week (Mon)", "unusual_days": "unusual days",
-        "urgent_days": "urgent-rule days", "highest_score": "highest score",
-        "mean_score": "mean score", "partial_week": "partial week"}),
-        hide_index=True, width="stretch")
-    theme.note("Urgent-rule days are counted from the separate rule below, not from the model.")
+    st.dataframe(services.weekly_summary(shown).round(3).rename(columns={
+        "week_start": "week (Mon)", "unusual_days": "flagged days", "urgent_days": "urgent days",
+        "highest_score": "highest score", "mean_score": "mean score",
+        "partial_week": "partial week"}), hide_index=True, width="stretch")
 
-with theme.card("why-unusual", "Why Was This Day Unusual?"):
-    unusual_dates = [d for d in shown.loc[shown["unusual"], "date"]]
-    if not unusual_dates:
-        st.write("No unusual days in the selected range.")
+with theme.card("flagged-days", "Flagged Day Details"):
+    flagged_dates = list(shown.loc[shown["unusual"], "date"])
+    if not flagged_dates:
+        st.write("No flagged days in this range.")
     else:
-        day = st.selectbox("Unusual day", unusual_dates[::-1], key=f"f2_day_{child}")
+        day = st.selectbox("Flagged day", flagged_dates[::-1], key=f"f2_day_{child}")
         st.dataframe(services.explanation_table(report["explanations"][day]),
                      hide_index=True, width="stretch")
-        theme.note("These are the observed values furthest from an average normal training day, "
-                   "in standard deviations. They describe the day; they are not an exact cause. "
-                   "The model combines all 27 features non-linearly.")
 
-with theme.card("urgent-alerts", "Urgent Safety Alerts (rule-based, not the anomaly model)"):
+with theme.card("urgent-alerts", "Urgent Alerts (rule-based)"):
     urgent = report["urgent"]
     urgent = urgent[(urgent["date"] >= start) & (urgent["date"] <= end)]
     if urgent.empty:
-        st.write("No urgent-rule alerts in the selected range.")
+        st.write("No urgent alerts in this range.")
     else:
         st.dataframe(urgent.rename(columns={"reasons": "rule matched"}), hide_index=True,
                      width="stretch")
-    theme.note("A day is urgent when it has any urgent, grooming or self-harm language flag, or "
-               "self-harm imagery on screen. This fixed rule is independent of the anomaly score. "
-               "Because grooming and self-harm counts are also model inputs, an urgent day is "
-               "often Unusual too, but the two outputs are never merged.")
 
-with st.expander("About this model"):
+with st.expander("About the data and model"):
     meta = report["status"]["metadata"]
+    if demo:
+        st.markdown("**Data source: synthetic demo data.** Children C001–C040 and all their "
+                    "events are generated (`behavioral_daily.csv`); no real child is involved, and "
+                    "these results are demo predictions, not findings about real children. These "
+                    "IDs are not the Function 1 demo children with the same names. Components 1 "
+                    "and 2 have no database storage yet, so no live data is available.")
+    else:
+        st.markdown(f"**Data source: uploaded CSV** ({theme.plural(len(source['daily']), 'row')}, "
+                    f"{theme.plural(len(ids), 'child', 'children')}). The model itself was "
+                    "trained on synthetic data only.")
+    st.markdown(
+        f"**Reading the page.** An amber diamond with \"!\" marks a day the model flagged as "
+        f"unusual; a grey circle with \"–\" marks a day it did not flag. A day is flagged when "
+        f"its anomaly score is above the dashed line, the saved decision threshold "
+        f"({report['threshold']:.4f}, the {meta['threshold_quantile']:.0%} quantile of normal "
+        "training days). **Not flagged is not proof that a child is safe**: the model is known "
+        "to miss some concerning patterns, such as multi-day bullying runs.")
+    st.markdown("**Flagged day details** list the observed values furthest from an average "
+                "normal training day, in standard deviations. They describe the day; they are not "
+                "an exact cause, because the model combines all 27 features non-linearly.")
+    st.markdown("**Urgent alerts** come from a fixed rule (any urgent, grooming or self-harm "
+                "language flag, or self-harm imagery on screen), independent of the anomaly score. "
+                "Grooming and self-harm counts are also model inputs, so an urgent day is often "
+                "flagged too, but the two outputs are never merged.")
     for key, value in services.model_card(meta).items():
         st.write(f"**{key}:** {value}")
-    theme.note(meta["disclaimer"])
-    theme.note("Known limits (Step 4A review): detections are driven mainly by rare categories "
-               "(grooming, self-harm, urgent, night violence); multi-day bullying runs and volume "
-               "spikes are often missed; very quiet days can score close to the threshold. "
-               "An experimental Step 4 model exists for research only and is not used here.")
+    st.markdown(f"_{meta['disclaimer']}_")
+    st.markdown("Known limits (Step 4A review): detections are driven mainly by rare categories "
+                "(grooming, self-harm, urgent, night violence); multi-day bullying runs and volume "
+                "spikes are often missed; very quiet days can score close to the threshold. An "
+                "experimental Step 4 model exists for research only and is not used here.")
 
 with st.expander("Use your own data (daily-feature CSV)"):
     st.file_uploader("Daily-feature CSV with child_id, date (YYYY-MM-DD) and the 27 model "
