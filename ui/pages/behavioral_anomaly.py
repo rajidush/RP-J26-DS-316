@@ -4,7 +4,7 @@ import streamlit as st
 
 from ui import services, theme
 
-theme.page_header("Behavioral Anomaly (Function 2)")
+theme.page_header("Behavioral Anomaly Detection")
 
 
 def show_model_error(status):
@@ -26,10 +26,7 @@ if not f2_status["available"]:
     show_model_error(f2_status)
 
 source = services.behavioral_daily_source()
-demo = source["source"] == "demo"
 ids = source["child_ids"]
-if demo:
-    st.caption("Demo · Synthetic child data")
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,

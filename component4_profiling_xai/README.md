@@ -288,14 +288,15 @@ Unusual too; the dashboard shows the two side by side and never merges them.
 
 `streamlit run ui/app.py` from the repository root, then open **Behavioral
 Anomaly** in the sidebar (Emotional Pattern stays the default page). The page
+heading is **Behavioral Anomaly Detection**. These are synthetic demo predictions,
+not findings about real children; the data source is documented below. The page
 shows, for the selected child:
 
 - a child selector and latest prediction with an accessible icon and text (Flagged / Not flagged);
 - the number of flagged days in the latest 30 calendar days, ending on the selected child's latest recorded date;
 - one daily behavioral anomaly history chart showing saved decisions, with no raw scores or threshold line;
 - the top 3 observed feature deviations for a selected flagged day;
-- urgent rule-based alerts in their own card;
-- a small visible **Demo · Synthetic child data** label.
+- urgent rule-based alerts in their own card.
 
 The date-range filter, detailed daily history and weekly summary tables, technical
 model expander and CSV-upload expander are absent from this page. Raw model scores

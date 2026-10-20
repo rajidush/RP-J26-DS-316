@@ -91,7 +91,7 @@ def test_emotional_pattern_is_still_the_default_page(temp_db):
     at = run_page()
     main = html_of(at, at.main)
     assert "Emotional Pattern (Function 1)" in main
-    assert "Behavioral Anomaly (Function 2)" not in main
+    assert "Behavioral Anomaly Detection" not in main
 
 
 def test_sidebar_shows_both_model_statuses(temp_db):
@@ -103,6 +103,9 @@ def test_sidebar_shows_both_model_statuses(temp_db):
 def test_behavioral_anomaly_page_with_real_model(temp_db):
     at = run_page("behavioral_anomaly")
     main = html_of(at, at.main)
+    assert "Behavioral Anomaly Detection" in main
+    assert "Behavioral Anomaly (Function 2)" not in main
+    assert not any("Synthetic child data" in c.value for c in at.caption)
     assert at.selectbox(key="f2_child").options[0] == "C001"
     assert len(at.selectbox(key="f2_child").options) == 40
     assert "c4-flag" in main and "c4-badge" not in main
@@ -116,11 +119,12 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
     assert F2_ERROR not in main
 
 
-def test_main_page_is_minimal_with_demo_label_and_no_raw_scores(temp_db):
+def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
     at = run_page("behavioral_anomaly")
     text = visible_main_text(at).lower()
     # The helper sees real visible text (so the check below is not vacuous) ...
-    assert "flagged days" in text and "demo" in text and "synthetic child data" in text
+    assert "flagged days" in text and "behavioral anomaly detection" in text
+    assert "synthetic child data" not in text
     # ... but not the screen-reader-only chart description.
     assert "amber diamonds" not in text
     for word in F2_BANNED:
@@ -215,5 +219,5 @@ def test_stale_upload_state_does_not_change_demo_source(temp_db):
     assert not at.exception
     assert not at.error
     assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]
-    assert "Demo" in " ".join(c.value for c in at.caption)
+    assert "Demo" not in " ".join(c.value for c in at.caption)
     assert not at.expander and not at.get("file_uploader")
