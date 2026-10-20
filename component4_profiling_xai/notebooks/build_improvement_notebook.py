@@ -9,12 +9,15 @@ cells = []
 def md(s): cells.append(nbf.v4.new_markdown_cell(s))
 def code(s): cells.append(nbf.v4.new_code_cell(s))
 
-md('''# Function 2 — Step 4A model improvement
-Research only: production artifacts and Step 3 remain unchanged. Fresh seed 20261020 was generated and hashed before this notebook was developed. Never tune against the old test partition or the fresh holdout. F2 is the sole primary selection objective; ties prefer recall, then fewer false alerts.
+md('''# Function 2 — Step 4A model improvement (research only)
 
-Behavioral ground truth is the generator's observed `volume_spike`, `late_night_violence`, and `bullying_run` episodes. Grooming/self-harm episode days are excluded from behavioral metrics (not relabeled normal). All injected days are excluded from novelty-detector fitting. This is an operational definition, not independently annotated behavior. Urgent outputs are evaluated separately against event-level synthetic rule eligibility, not against behavioral labels.
+The production model and the Step 3 notebook are unchanged.
 
-The saved model's fixed configuration is refitted inside each fold. It retains legacy content-risk features as a comparator. Proposed detectors use activity counts and causal within-child changes, with no severity/confidence, urgent, grooming or self-harm inputs. Counts are flagged activity, not total device usage.''')
+- **Data:** fresh held-out set (seed 20261020), generated and hashed before development. The old test split is never used.
+- **Selection:** mean forward-fold F2; ties → higher recall, then fewer false alerts.
+- **Labels:** observed `volume_spike`, `late_night_violence` and `bullying_run` episodes (operational, not human-annotated). Grooming/self-harm days are excluded from behavioral metrics (not relabeled normal); all injected days are excluded from fitting. Urgent alerts are scored separately against synthetic rule eligibility.
+- **Models:** comparator = saved Step 3 configuration, refitted per fold with its content-risk features. Proposed = activity SVM and Isolation Forest on activity counts and causal within-child changes (no severity, urgent, grooming or self-harm inputs), and a statistical detector: maximum absolute standardized log-count deviation with a 3-day persistence channel.
+- Counts are flagged events, not total device usage.''')
 code('''from pathlib import Path
 import hashlib, json, sys, platform
 import numpy as np
@@ -40,10 +43,10 @@ def verify_frozen():
     for name, digest in {**manifest['heldout'], **manifest['protected']}.items():
         assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest, name
 verify_frozen()
-# Read only original development days; original test rows never enter development.
+# Development days only (<= 73); original test rows excluded.
 dev = pd.read_csv(C / 'data' / 'behavioral_daily.csv')
 dev = dev.loc[dev.day_index <= 73].copy()
-# Read configuration keys only; historical metrics are not used for selection.
+# Config keys only; historical metrics are not used.
 legacy_config = json.loads((C / 'models' / 'behavioral_anomaly_metadata.json').read_text())
 legacy = {k: legacy_config[k] for k in ['features', 'params', 'threshold_quantile']}
 del legacy_config
@@ -56,7 +59,7 @@ print('Forward folds:', FOLDS, 'primary objective: mean fold F2')''')
 code('''def activity_features(d):
     d = d.sort_values(['child_id', 'day_index']).copy()
     x = pd.DataFrame(index=d.index)
-    # Remove grooming/self-harm counts from language volume. No labels used.
+    # Drop grooming/self-harm counts from language volume (no labels used).
     language = (d.language_flags - d.language_grooming_flags - d.language_self_harm_flags).clip(lower=0)
     values = {'screen_count': d.screen_incidents,
               'screen_seconds': d.screen_flagged_seconds,
@@ -102,7 +105,6 @@ def fit_score(name, train, target, x):
         model = make_pipeline(SimpleImputer(strategy='median'), StandardScaler(), OneClassSVM(nu=.05, gamma='scale'))
         a, b = x.loc[normal.index], x.loc[target.index]
     else:
-        # Maximum absolute standardized log-count deviation, with a 3-day persistence channel.
         cols = [c for c in x if c.endswith('_change')]
         score = x[cols].abs().max(axis=1).fillna(0)
         return score.loc[normal.index].to_numpy(), score.loc[target.index].to_numpy()
@@ -131,7 +133,7 @@ best_each = ranking.drop_duplicates('detector')
 selected = best_each.iloc[0]
 fold_results.to_csv(OUT / 'forward_fold_metrics.csv', index=False)
 ranking.to_csv(OUT / 'validation_ranking.csv', index=False)
-# Freeze all final comparator thresholds before opening fresh held-out data.
+# Lock all thresholds before opening the held-out data.
 final_train = dev.loc[dev.day_index >= 15]
 locked = []
 for row in best_each.itertuples():
@@ -145,11 +147,11 @@ lock_digest = hashlib.sha256((OUT / 'selection_lock.json').read_bytes()).hexdige
 print(best_each.to_string(index=False))
 print('Selected and locked before holdout:', lock['selected'], lock_digest)''')
 md('''## Final evaluation — first held-out access
-All candidate definitions, quantiles and final thresholds are locked above. Below, each candidate is reported for comparison; the winner is not changed after evaluation. Histories use only prior observed days, including earlier evaluation days, as in sequential deployment. Fresh synthetic children are independent draws but have the same generator and calendar; this is not a real-world or calendar-shift test.''')
+
+Candidates and thresholds are locked above; the winner is not changed afterwards. Histories use earlier days only. Same generator and calendar, so this is not a real-world or calendar-shift test.''')
 code('''verify_frozen()
 assert hashlib.sha256((OUT / 'selection_lock.json').read_bytes()).hexdigest() == lock_digest
 held = pd.read_csv(HOLD / 'behavioral_daily.csv')
-# Distinct indexes keep development and heldout histories and identities separate.
 held.index = held.index + len(dev) + 10000
 hx = activity_features(held)
 combined_x = pd.concat([x, hx])
@@ -168,7 +170,6 @@ final = pd.DataFrame(final_rows)
 final.to_csv(OUT / 'heldout_behavioral_metrics.csv', index=False)
 pd.concat(predictions).to_csv(OUT / 'heldout_predictions.csv', index=False)
 print(final.to_string(index=False))
-# Episode denominators include planned behavioral episodes with no surviving injected event.
 episodes = pd.read_csv(HOLD / 'behavioral_episodes.csv')
 episode_rows = []
 for name, p in zip([c['detector'] for c in locked], predictions):
@@ -184,8 +185,7 @@ print('Planned-episode detection and mean delay among detected:')
 print(episode_table.groupby('detector').agg(detection=('detected','mean'), mean_delay_days=('delay_days','mean')).to_string())
 print('Selected model by episode type and intensity:')
 print(episode_table.loc[episode_table.detector == lock['selected']].groupby(['anomaly_type','intensity']).detected.agg(['mean','count']).to_string())''')
-code('''# Independent rule output. No threshold fitting; this is a wiring/policy test.
-def high_risk_rule(d):
+code('''def high_risk_rule(d):
     return ((d.language_urgent_flags > 0) | (d.language_grooming_flags > 0)
             | (d.language_self_harm_flags > 0) | (d.screen_self_harm_imagery_incidents > 0))
 event_truth = set()
@@ -208,15 +208,19 @@ rule_result = dict(precision=precision_score(y_rule,rp,zero_division=0), recall=
 print(json.dumps(rule_result,indent=2))
 print('Behavioral and urgent alerts remain separate outputs. No combined accuracy claimed.')''')
 md('''## Verification and limitations
-The tests below check causal history, child isolation, label independence, rule behavior, and artifact preservation. Model selection averages three folds of unequal duration; fold values are included, and validation is selection evidence rather than an unbiased performance estimate. Episode recall counts one detection anywhere in the episode; late detections are detailed separately. False alerts per child cover the evaluated window, not a daily rate. Planned episodes with no surviving injected event are included in the separate episode table.
 
-Synthetic injections define both distributions and labels. No real-world generalization, upstream risk classifier accuracy, clinical assessment, or safety effectiveness is established. The generator provides flagged events rather than comprehensive activity; urgent event volume can still affect upstream screen durations. Removing grooming/self-harm days from behavioral evaluation narrows the target. Cold-start days 1–14 are excluded from behavioral evaluation but included for urgent rules. No production replacement is made; review and approval remain required after validation.''')
-code('''# Future perturbations cannot change earlier features.
-base = activity_features(dev)
+Checks: causal history, child isolation, label independence, rule behavior, artifact preservation.
+
+- Validation (3 folds of unequal length) is selection evidence, not an unbiased estimate.
+- An episode counts as detected if any day is flagged; late detections and planned episodes with no surviving injected event are shown separately. False alerts per child cover the whole window.
+- Synthetic injections define data and labels: no real-world, classifier-accuracy, clinical or safety claim.
+- Flagged events only, not full device activity; urgent-event volume can affect screen durations.
+- Excluding grooming/self-harm days narrows the target. Days 1–14 are not scored behaviorally but are included for urgent rules.
+- The production model is not replaced; review and approval are still required.''')
+code('''base = activity_features(dev)
 changed = dev.copy()
 changed.loc[changed.day_index > 50, 'screen_incidents'] += 100000
 pd.testing.assert_frame_equal(base.loc[dev.day_index <= 50], activity_features(changed).loc[dev.day_index <= 50])
-# Child histories cannot contaminate each other.
 child = dev.child_id.iloc[0]
 changed = dev.copy()
 changed.loc[changed.child_id == child, 'screen_incidents'] += 100000
@@ -240,13 +244,24 @@ verification = {'checks_passed': ['future causality', 'child isolation', 'label 
 (OUT / 'verification.json').write_text(json.dumps(verification,indent=2))
 print(json.dumps(verification,indent=2))''')
 md('''## Recorded run outcome (2026-10-20)
-Forward-time validation selected activity SVM at the 0.95 normal-training-score quantile, with mean fold F2 **0.4469** (legacy configuration **0.3760**). On the fresh heldout, F2 was **0.3414** versus **0.2504**. Recall improved from **26.27%** to **40.68%**, while precision was **20.78%** versus **21.09%**, F1 **0.2751** versus **0.2340**, and false alerts per child **4.575** versus **2.900** over days 15–90.
 
-Observed-episode detection was **31/47 (65.96%)**, versus **19/47 (40.43%)**. Including planned episodes with no surviving injected event gives **31/52 (59.62%)**, versus **19/52 (36.54%)**. Selected-model volume-spike detection was only **3/16** planned episodes; this remains a serious limitation. The rule output matched **201/201** synthetic eligible child-days with no extra alerts; these are rule-consistency results, not independently measured high-risk classification accuracy.
+Selected: activity SVM, 0.95 normal-training-score quantile. Mean fold F2 **0.4469** vs **0.3760** (legacy).
 
-The eight notebook verification checks passed. The existing anomaly, feature-builder and synthetic-generator regression tests passed **64/64** (`regression_tests.xml`). The first pytest invocation had four temporary-directory setup errors; rerunning with an explicit writable temporary directory resolved them. The notebook was executed cell-by-cell in a shared Python namespace, including all assertions, and validated with nbformat (nbclient is unavailable).
+| Fresh held-out | Activity SVM | Legacy |
+|---|---:|---:|
+| F2 | **0.3414** | **0.2504** |
+| Recall | **40.68%** | **26.27%** |
+| Precision | **20.78%** | **21.09%** |
+| F1 | **0.2751** | **0.2340** |
+| False alerts per child (days 15–90) | **4.575** | **2.900** |
+| Observed episodes detected | **31/47 (65.96%)** | **19/47 (40.43%)** |
+| Incl. planned episodes with no surviving event | **31/52 (59.62%)** | **19/52 (36.54%)** |
 
-The result supports further investigation, with an increased alert burden and low absolute recall. It does not justify production replacement. No changes were made after heldout evaluation to candidates, thresholds or the selected winner. This heldout has now been consumed and must not become a tuning set.''')
+- Volume spikes: **3/16** planned episodes (serious limitation).
+- Urgent rule: **201/201** eligible child-days, no extra alerts (rule consistency only).
+- Verification: 8/8 notebook checks; regression tests **64/64** (`regression_tests.xml`) after one rerun with a writable temporary directory (four setup errors). Run cell by cell in one namespace; nbformat-validated (nbclient unavailable).
+
+**Conclusion:** worth further study, but more alerts and low recall; no production replacement. Nothing changed after the held-out evaluation; this held-out set is now used up and must not be used for tuning.''')
 
 nb = nbf.v4.new_notebook(cells=cells, metadata={'kernelspec': {'display_name':'Python 3','language':'python','name':'python3'}})
 path = ROOT / 'component4_profiling_xai/notebooks/Function_2_Model_Improvement.ipynb'
