@@ -70,21 +70,18 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
 
 F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
 F2_URGENT_TITLE = "Urgent Alerts (rule-based)"
-F2_ABOUT = "About the data and model"
 F2_BANNED = ("threshold", "score", "Days shown", "Weekly Summary")   # never visible on the main page
 
 
 def visible_main_text(at):
-    """What a sighted viewer reads on the main page, outside the About expander:
+    """What a sighted viewer reads on the main page:
     HTML text (screen-reader-only text and tag attributes removed), Markdown and
     metric labels."""
     import re
     html = html_of(at, at.main)
     html = re.sub(r'<p class=\\?"c4-sr-only\\?">.*?</p>', " ", html)
     text = re.sub(r"<[^>]+>", " ", html)
-    about = next(e for e in at.expander if e.label == F2_ABOUT)
-    about_md = {m.value for m in about.markdown}
-    text += " ".join(m.value for m in at.markdown if m.value not in about_md)
+    text += " ".join(m.value for m in at.markdown)
     text += " ".join(m.label for m in at.metric)
     text += " ".join(c.value for c in at.caption)
     return text
@@ -114,8 +111,8 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
     assert not at.date_input
     assert F2_URGENT_TITLE in main and "Weekly Summary" not in main
     assert [m.label for m in at.metric] == ["Flagged days · latest 30 days"]
-    labels = [e.label for e in at.expander]
-    assert F2_ABOUT in labels and "Use your own data (daily-feature CSV)" in labels
+    assert not at.expander
+    assert not at.get("file_uploader")
     assert F2_ERROR not in main
 
 
@@ -153,15 +150,6 @@ def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
     assert not at.exception
     assert "Flagged: the model found an unusual pattern" in html_of(at, at.main)
 
-
-def test_about_section_discloses_synthetic_data_and_threshold(temp_db):
-    at = run_page("behavioral_anomaly")
-    about = " ".join(m.value for m in next(e for e in at.expander if e.label == F2_ABOUT).markdown)
-    assert "synthetic demo data" in about and "no real child is involved" in about
-    assert "Not flagged is not proof that a child is safe" in about
-    assert "-12.5158" in about and "decision threshold" in about
-    assert "not an exact cause" in about and "never merged" in about
-    assert "One-Class SVM" in about
 
 
 def test_behavioral_anomaly_page_switches_child(temp_db):
@@ -211,9 +199,21 @@ def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_
         assert len(at.get("plotly_chart")) == 1
 
 
-def test_about_keeps_raw_model_details_and_explanations_are_descriptive(temp_db):
+def test_explanations_remain_descriptive_without_technical_expanders(temp_db):
     at = run_page("behavioral_anomaly")
-    about = next(e for e in at.expander if e.label == F2_ABOUT)
-    text = " ".join(m.value for m in about.markdown)
-    assert "Latest raw anomaly score" in text and "pipeline.score_samples" in text
+    assert not at.expander
+    assert not at.get("file_uploader")
     assert "not exact model attributions" in " ".join(c.value for c in at.caption)
+
+
+def test_stale_upload_state_does_not_change_demo_source(temp_db):
+    at = AppTest.from_file(APP, default_timeout=120)
+    # An upload left over from the old UI must not override the bundled source.
+    at.session_state["f2_csv"] = "invalid stale CSV"
+    at.run()
+    at.switch_page("pages/behavioral_anomaly.py").run()
+    assert not at.exception
+    assert not at.error
+    assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]
+    assert "Demo" in " ".join(c.value for c in at.caption)
+    assert not at.expander and not at.get("file_uploader")

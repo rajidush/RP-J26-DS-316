@@ -290,20 +290,65 @@ Unusual too; the dashboard shows the two side by side and never merges them.
 Anomaly** in the sidebar (Emotional Pattern stays the default page). The page
 shows, for the selected child:
 
-- the latest day's Normal / Unusual status with score, saved threshold and margin (score − threshold);
-- a daily score chart with the threshold line, and a daily predictions table;
-- a Monday-based weekly summary (unusual days, urgent-rule days, partial weeks marked);
-- "Why was this day unusual?": the top observed deviations, with the child's previous 14-day median for context;
+- a child selector and latest prediction with an accessible icon and text (Flagged / Not flagged);
+- the number of flagged days in the latest 30 calendar days, ending on the selected child's latest recorded date;
+- one daily behavioral anomaly history chart showing saved decisions, with no raw scores or threshold line;
+- the top 3 observed feature deviations for a selected flagged day;
 - urgent rule-based alerts in their own card;
-- "About this model", read from the saved metadata.
+- a small visible **Demo · Synthetic child data** label.
 
-Data: components 1 and 2 have no database storage yet (`db/comp1.py` and
-`db/comp2.py` are placeholders), so the page uses the bundled synthetic dataset,
-labelled **SYNTHETIC DATA – DEMO PREDICTIONS**, or an uploaded daily-feature CSV
-(`child_id`, `date` as YYYY-MM-DD, the 27 features; `screen_self_harm_imagery_incidents`
-optional). Synthetic labels and other extra columns are dropped as soon as the
-file is read, and missing values are imputed and marked. The demo IDs C001–C040
-are not the Function 1 demo children with the same names.
+The date-range filter, detailed daily history and weekly summary tables, technical
+model expander and CSV-upload expander are absent from this page. Raw model scores
+and threshold values are not displayed. Model calculations remain unchanged:
+`anomaly_score = -pipeline.score_samples(X)` and `flagged = anomaly_score > threshold`.
+The saved threshold is **-12.515804087687126**, the **97th percentile** of normal
+training-day scores; the pipeline and metadata remain the source of truth. A
+score equal to the threshold is not flagged. The chart displays these existing
+binary decisions rather than changing or rescaling the model score.
+
+Data source: the page always uses the bundled `data/behavioral_daily.csv` (40
+synthetic children, C001–C040, over 90 days). No real child is involved, and these
+predictions are not findings about real children. These IDs are not the Function 1
+demo children with the same names. Components 1 and 2 have no database storage
+yet (`db/comp1.py` and `db/comp2.py` are placeholders), so this page does not read
+live behavioral events or import data into the database. Missing feature values
+are imputed by the saved pipeline and marked on the latest prediction if present.
+Synthetic labels and other extra columns are dropped before inference.
+
+The CSV-loading service functions (`ui.services.load_daily_csv` and
+`behavioral_daily_source(uploaded_csv=...)`) remain available for programmatic
+use and tests. They accept `child_id`, `date` as YYYY-MM-DD and the 27 model
+features (`screen_self_harm_imagery_incidents` is optional). There is no CSV
+upload control on the Function 2 page, and stale upload session state is ignored.
+Function 1's independent data-source controls are unchanged.
+
+### Interpretation and evaluation limitations
+
+The amber diamond with an exclamation mark means **Flagged**; the grey circle
+with a dash means **Not flagged**. Shape, text and accessible descriptions convey
+the status independently of color. **Not flagged is not proof that a child is safe.**
+The flagged-day count covers recorded days in the latest 30-calendar-day window,
+not the last 30 rows or the current wall-clock month. History and urgent alerts
+cover the selected child's complete available record.
+
+The top deviations compare observed features with typical normal training values,
+in standardized units, with the child's previous 14-day median for context. They
+are descriptive observations, not exact XAI feature attribution or causes of the
+prediction. The SVM combines the 27 features nonlinearly. Urgent rules remain a
+separate output, independent of anomaly scores, and the outputs are never merged.
+
+The Step 3 precision/recall/F1 above come from its original synthetic test split
+and target definition. They do not establish real-world, clinical or safety
+accuracy, and should not be equated with the separate Step 4 behavioral-only
+held-out comparison. Step 4 refitted the existing configuration on different
+training rows; it did not evaluate the untouched saved Step 3 model directly.
+The experimental approach increased recall and F2 but also false alerts, with
+weak bullying and volume-spike detection. It remains experimental and is not
+loaded by the dashboard. The fresh synthetic holdout is now consumed and must
+not be used for future tuning. See the
+[Step 4 report](outputs/step4a_improvement/REPORT.md) for the protocol, results
+and limitations. Synthetic-only, same-generator evaluation does not establish
+generalization to real children or new activity distributions.
 
 The UI loads `src/` as a package under a unique name (`c4_component4_src`),
 because `behavioral_anomaly.py` uses relative imports. `src` itself is never
