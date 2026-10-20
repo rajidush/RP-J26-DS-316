@@ -21,10 +21,18 @@ Writes results/screen_eval.json, results/screen_eval.md (slide table),
 results/screen_eval_predictions.csv (one row per image × model × strategy) and
 results/screen_eval_examples.png (8 misclassified examples; violent ones blurred).
 
+--subset clean evaluates only the composites whose RLVS frame is from the val or
+test split of results/splits.csv (frames the checkpoint never trained on), plus
+all plain scraped pages; recorded screens are left out (no RLVS provenance).
+Outputs then go to results/screen_eval_clean.{json,md}, _predictions.csv and
+_examples.png, so the full-set results are not overwritten.
+
 Usage
 -----
     python component1_screen_monitoring/src/eval_screens.py
     python component1_screen_monitoring/src/eval_screens.py --limit 50     # quick check
+    python component1_screen_monitoring/src/eval_screens.py --subset clean \
+        --model-dir component1_screen_monitoring/models/violence-vit-screen-ft-v2   # compare models
 """
 from __future__ import annotations
 
@@ -46,6 +54,9 @@ STRATEGIES = ("full", "tiles")
 SOURCES = ("scraped", "composite", "recorded")
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 RESULTS_DIR = COMPONENT_ROOT / "results"
+SPLITS_CSV = RESULTS_DIR / "splits.csv"          # RLVS train/val/test split used to train the checkpoint
+SUBSETS = ("all", "clean")
+CLEAN_RLVS_SPLITS = {"val", "test"}
 
 #: Evaluated if present: the base checkpoint in HF format (if converted) and the fine-tuned one.
 CANDIDATE_MODEL_DIRS = [COMPONENT_ROOT / "models" / "violence-vit-pretrained-hf", MODEL_DIR]
@@ -69,6 +80,40 @@ def collect_dataset(root: Path = SCREENS_DIR) -> list[dict]:
             items += [{"path": p, "source": source, "label": label}
                       for p in sorted(folder.iterdir()) if p.suffix.lower() in IMAGE_EXTS]
     return items
+
+
+def composite_rlvs_splits(composites_csv: Path, splits_csv: Path = SPLITS_CSV) -> dict[str, str]:
+    """composites.csv filename ('violence/x_0.png') → RLVS split of its source frame."""
+    split_of = {r["path"]: r["split"] for r in csv.DictReader(open(splits_csv))}
+    out = {}
+    for r in csv.DictReader(open(composites_csv)):
+        _, cls, name = r["source_frame"].split("/")          # 'raw/violence/1045.jpg'
+        out[r["filename"]] = split_of[f"{cls} /{name}"]       # splits.csv key 'violence /1045.jpg'
+    return out
+
+
+def filter_subset(items: list[dict], subset: str, root: Path = SCREENS_DIR,
+                  splits_csv: Path = SPLITS_CSV) -> list[dict]:
+    """
+    'all' → unchanged. 'clean' → scraped pages + composites whose RLVS frame is in
+    CLEAN_RLVS_SPLITS (not seen when the checkpoint was trained); recorded dropped.
+    """
+    if subset == "all":
+        return items
+    if subset != "clean":
+        raise ValueError(f"unknown subset {subset!r} (choose from {SUBSETS})")
+    split_of = composite_rlvs_splits(root / "composites.csv", splits_csv)
+    out = []
+    for item in items:
+        if item["source"] == "scraped":
+            out.append(item)
+        elif item["source"] == "composite":
+            key = Path(item["path"]).relative_to(root / "composite").as_posix()
+            if key not in split_of:
+                raise ValueError(f"{key} is not in composites.csv — cannot tell its RLVS split")
+            if split_of[key] in CLEAN_RLVS_SPLITS:
+                out.append(item)
+    return out
 
 
 def compute_metrics(labels: list[int], preds: list[int]) -> dict:
@@ -140,6 +185,9 @@ def to_markdown(result: dict) -> str:
         "| Source | Strategy | n (viol/safe) | Accuracy | Precision | Recall | F1 | Missed | False alarms | ms/img |",
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
+    if result.get("subset") == "clean":
+        lines[2:2] = ["**Subset: clean** — only composites whose RLVS frame is from the RLVS "
+                      "val/test split (never trained on), plus the plain scraped pages.", ""]
     for source in SOURCES + ("overall",):
         for strategy, per in result["metrics"].items():
             m = per.get(source)
@@ -231,12 +279,18 @@ def main() -> None:
     ap.add_argument("--model-dir", type=Path, action="append", default=None,
                     help="model directory to evaluate (repeatable; default: every existing "
                          "directory in CANDIDATE_MODEL_DIRS)")
+    ap.add_argument("--subset", choices=SUBSETS, default="all",
+                    help="'clean' = only composites with RLVS val/test frames + scraped pages "
+                         "(writes screen_eval_clean.*)")
     args = ap.parse_args()
     model_dirs = args.model_dir or [d for d in CANDIDATE_MODEL_DIRS if (d / "config.json").exists()]
     if not model_dirs:
         sys.exit("No model directory found — see the component README.")
+    missing = [d for d in model_dirs if not (Path(d) / "config.json").exists()]
+    if missing:
+        sys.exit(f"Not a Hugging Face model directory (no config.json): {missing}")
 
-    items = collect_dataset(args.root)
+    items = filter_subset(collect_dataset(args.root), args.subset, args.root)
     if not items:
         sys.exit(f"No images under {args.root} — scrape / composite / record first.")
     if args.limit:
@@ -259,13 +313,15 @@ def main() -> None:
 
     report = {
         "evaluated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "threshold": args.threshold, "limit": args.limit, "counts": counts, "models": models,
+        "threshold": args.threshold, "limit": args.limit, "subset": args.subset,
+        "counts": counts, "models": models,
     }
+    stem = "screen_eval" if args.subset == "all" else f"screen_eval_{args.subset}"
     RESULTS_DIR.mkdir(exist_ok=True)
-    (RESULTS_DIR / "screen_eval.json").write_text(json.dumps(report, indent=2))
+    (RESULTS_DIR / f"{stem}.json").write_text(json.dumps(report, indent=2))
     md = report_markdown(report)
-    (RESULTS_DIR / "screen_eval.md").write_text(md)
-    with open(RESULTS_DIR / "screen_eval_predictions.csv", "w", newline="") as f:
+    (RESULTS_DIR / f"{stem}.md").write_text(md)
+    with open(RESULTS_DIR / f"{stem}_predictions.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(all_rows[0]))
         w.writeheader()
         for r in all_rows:
@@ -273,10 +329,10 @@ def main() -> None:
                  if Path(r["file"]).is_relative_to(args.root) else r["file"]}
             w.writerow(r)
     examples = pick_examples([r for r in all_rows if r["model"] == models[-1]["model_dir"]])
-    save_examples(examples, RESULTS_DIR / "screen_eval_examples.png")
+    save_examples(examples, RESULTS_DIR / f"{stem}_examples.png")
     print(md)
-    print("Saved → results/screen_eval.json, screen_eval.md, screen_eval_predictions.csv, "
-          f"screen_eval_examples.png ({len(examples)} examples)")
+    print(f"Saved → results/{stem}.json, {stem}.md, {stem}_predictions.csv, "
+          f"{stem}_examples.png ({len(examples)} examples)")
 
 
 if __name__ == "__main__":
