@@ -1,5 +1,15 @@
 # Component 1 — Screen Monitoring
-# Runtime dependencies
+# Runtime dependencies — the same list installs on macOS, Windows and Linux:
+#     pip install -r requirements.txt
+#
+# No platform-specific packages are needed. The overlay's OS integration
+# (capture exclusion, keyboard focus) uses the standard-library ctypes module:
+#   macOS   → src/macos_window.py      (NSWindow sharingType none)
+#   Windows → src/capture_exclusion.py (SetWindowDisplayAffinity)
+# If a Mac-only package is ever added, give it an environment marker, e.g.
+#     pyobjc-framework-Cocoa; sys_platform == "darwin"
+# PyTorch: on Windows/Linux with an NVIDIA GPU, install the CUDA build from
+# https://pytorch.org first if you want GPU inference; the default wheel is CPU-only there.
 
 # Screenshot capture (uncomment the backend you target)
 mss>=9.0.1              # cross-platform, fastest

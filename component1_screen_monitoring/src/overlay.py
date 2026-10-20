@@ -13,20 +13,46 @@ Responsibilities
   drives the overlay from there.
 * Keep all real Tk calls on the main thread (required by Tk, and strictly
   enforced on macOS) by queueing commands and draining them with root.after().
+* A visible "Dismiss" button (and Esc) hides the overlay and notifies the
+  controller via the on_dismiss callback.
+* Exclude the overlay window from screen capture via
+  capture_exclusion.exclude_from_capture() (macOS sharingType none / Windows
+  WDA_EXCLUDEFROMCAPTURE), so Function 1 keeps seeing the content underneath.
+  If that is unavailable, capture_excluded stays False and the monitor uses the
+  "pause" fallback, which needs hide_and_wait() / restore() below.
 
 Dependencies
 ------------
     tkinter (Python standard library — no extra install)
     Pillow>=10.3.0  (ImageFilter for the blur, ImageTk to display it)
+    capture_exclusion.py — per-platform capture exclusion (ctypes, no extra install)
+    macos_window.py      — macOS keyboard focus for Esc (imported only on macOS)
 """
 from __future__ import annotations
 
+import logging
 import queue
+import sys
 import threading
+import time
 import tkinter as tk
-from typing import Any
+from typing import Any, Callable
 
 from PIL import Image, ImageFilter, ImageTk
+
+try:
+    from .capture_exclusion import exclude_from_capture
+except ImportError:
+    from capture_exclusion import exclude_from_capture
+
+
+def _macwin():
+    """macos_window module — imported lazily and only on macOS."""
+    try:
+        from . import macos_window
+    except ImportError:
+        import macos_window
+    return macos_window
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +90,9 @@ POLL_INTERVAL_MS: int = 50
 
 BLOCK_BG = "#111111"
 TEXT_FG = "#ffffff"
+WINDOW_TITLE = "Component 1 — Response Overlay"
+
+log = logging.getLogger(__name__)
 
 
 class ResponseOverlay:
@@ -80,20 +109,26 @@ class ResponseOverlay:
         overlay.run()               # blocks until overlay.stop()
 
     where ``worker`` calls ``overlay.show_blur(img)`` / ``overlay.show_block()``
-    / ``overlay.hide()`` as needed. Pressing Esc while the overlay is visible
-    hides it (developer safety hatch).
+    / ``overlay.hide()`` as needed. The Dismiss button (or Esc) hides the
+    overlay and calls *on_dismiss* on the Tk thread.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, on_dismiss: Callable[[], None] | None = None,
+                 exclude_from_capture: bool = True) -> None:
         self._commands: queue.Queue[tuple[str, Any]] = queue.Queue()
         self._visible = False
         self._stopped = False
         self._mode: str | None = None
+        self._peeking = False                       # hidden by hide_and_wait(), mode kept
         self._photo: ImageTk.PhotoImage | None = None   # keep a reference or Tk drops it
+        self.on_dismiss = on_dismiss
+        self._want_exclusion = exclude_from_capture
+        self.capture_excluded = False               # True once capture exclusion is active
+        self.exclusion_checked = False              # True after the first attempt (first show)
 
         self.root = tk.Tk()
         self.root.withdraw()                         # start hidden
-        self.root.title("Component 1 — Response Overlay")
+        self.root.title(WINDOW_TITLE)
         self.root.configure(bg=BLOCK_BG)
         self.root.overrideredirect(True)             # no title bar / borders
 
@@ -109,18 +144,27 @@ class ResponseOverlay:
         )
         self._label.pack(fill="both", expand=True)
 
-        self.root.bind("<Escape>", lambda _e: self.hide())
+        self.dismiss_button = tk.Button(self.root, text="Dismiss  (Esc)", command=self._dismiss,
+                                        font=("Helvetica", 18), padx=18, pady=8)
+        self.dismiss_button.place(relx=0.5, rely=0.88, anchor="center")
+
+        self.root.bind("<Escape>", lambda _e: self._dismiss())
         self.root.after(POLL_INTERVAL_MS, self._poll)
 
     # -- thread-safe public API ---------------------------------------------
 
-    def show_blur(self, image: Image.Image, caption: str = "") -> None:
-        """Cover the screen with a blurred copy of *image*. Safe from any thread."""
-        self._commands.put(("blur", (blur_image(image, self.screen_size), caption)))
+    def show_blur(self, image: Image.Image, caption: str = "",
+                  on_visible: Callable[[float], None] | None = None) -> None:
+        """
+        Cover the screen with a blurred copy of *image*. Safe from any thread.
+        *on_visible(epoch_s)* is called on the Tk thread once the window is shown.
+        """
+        self._commands.put(("blur", (blur_image(image, self.screen_size), caption, on_visible)))
 
-    def show_block(self, message: str = "Content blocked") -> None:
+    def show_block(self, message: str = "Content blocked",
+                   on_visible: Callable[[float], None] | None = None) -> None:
         """Cover the screen with a solid panel and *message*. Safe from any thread."""
-        self._commands.put(("block", message))
+        self._commands.put(("block", (message, on_visible)))
 
     def hide(self) -> None:
         """Request the overlay be hidden. Safe to call from any thread."""
@@ -129,6 +173,22 @@ class ResponseOverlay:
     def stop(self) -> None:
         """Request the overlay close and run() return. Safe from any thread."""
         self._commands.put(("stop", None))
+
+    def hide_and_wait(self, timeout: float = 2.0, settle_s: float = 0.12) -> bool:
+        """
+        Fallback "peek": withdraw the window WITHOUT forgetting its mode, and block
+        (worker thread) until it is off screen, so one clean frame can be captured.
+        Pair with restore(). Returns False if the Tk thread did not respond.
+        """
+        done = threading.Event()
+        self._commands.put(("peek_hide", done))
+        ok = done.wait(timeout)
+        time.sleep(settle_s)                         # let the window server redraw
+        return ok
+
+    def restore(self) -> None:
+        """Re-show the overlay hidden by hide_and_wait(), same mode and content."""
+        self._commands.put(("restore", None))
 
     @property
     def is_visible(self) -> bool:
@@ -155,18 +215,28 @@ class ResponseOverlay:
                 return
 
             if cmd == "blur":
-                blurred, caption = arg
+                blurred, caption, on_visible = arg
                 self._photo = ImageTk.PhotoImage(blurred, master=self.root)
                 self._label.configure(image=self._photo, text=caption)
-                self._present("blur")
+                self._present("blur", on_visible)
             elif cmd == "block":
+                message, on_visible = arg
                 self._photo = None
-                self._label.configure(image="", text=arg)
-                self._present("block")
-            elif cmd == "hide" and self._visible:
+                self._label.configure(image="", text=message)
+                self._present("block", on_visible)
+            elif cmd == "hide" and (self._visible or self._peeking):
                 self.root.withdraw()
-                self._visible = False
+                self._visible = self._peeking = False
                 self._mode = None
+            elif cmd == "peek_hide":
+                if self._visible:
+                    self.root.withdraw()
+                    self.root.update()
+                    self._visible, self._peeking = False, True
+                arg.set()
+            elif cmd == "restore" and self._peeking:
+                self._peeking = False
+                self._present(self._mode)
             elif cmd == "stop":
                 self._visible = False
                 self._mode = None
@@ -175,14 +245,51 @@ class ResponseOverlay:
                 self.root.destroy()
                 return
 
-    def _present(self, mode: str) -> None:
+    def _present(self, mode: str, on_visible: Callable[[float], None] | None = None) -> None:
         self._mode = mode
         if not self._visible:
             self.root.deiconify()
             self.root.lift()
             self.root.attributes("-topmost", True)   # re-assert after deiconify
-            self.root.focus_force()                  # so Esc reaches us
+            if self._want_exclusion and not self.exclusion_checked:
+                self.capture_excluded = exclude_from_capture(self.root)
+                self.exclusion_checked = True
+            self.take_keyboard_focus()               # so Esc reaches us
             self._visible = True
+        self.root.update_idletasks()
+        if on_visible is not None:
+            on_visible(time.time())
+
+    def _dismiss(self) -> None:
+        """Dismiss button / Esc (Tk thread): hide now, then tell the controller."""
+        if not self._visible:
+            return
+        self.root.withdraw()
+        self._visible, self._mode = False, None
+        if self.on_dismiss is not None:
+            self.on_dismiss()
+
+    # -- keyboard focus (so Esc reaches the borderless window) ---------------
+
+    def ns_window(self):
+        """This overlay's NSWindow pointer on macOS, else None."""
+        if sys.platform != "darwin":
+            return None
+        self.root.update_idletasks()
+        return _macwin().find_window(WINDOW_TITLE)
+
+    def take_keyboard_focus(self) -> bool:
+        """
+        Bring the window to the front with keyboard focus. Tk's focus_force is
+        enough on Windows/Linux; on macOS a borderless window must also be
+        allowed to become the key window (verified: Esc then works).
+        """
+        self.root.focus_force()
+        if sys.platform != "darwin":
+            return True
+        macwin, win = _macwin(), self.ns_window()
+        macwin.allow_key_focus(win)
+        return macwin.make_key(win)
 
     def _poll(self) -> None:
         self.process_pending()
