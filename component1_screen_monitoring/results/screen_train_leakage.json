@@ -1,0 +1,99 @@
+{
+  "ok": true,
+  "checks": {
+    "url_lists_shared_urls": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0,
+      "n_train": 192,
+      "n_test": 41
+    },
+    "url_lists_shared_websites": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "scraped_shared_urls": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "scraped_shared_websites": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "shared_page_ids": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0,
+      "n_train_pages": 162,
+      "n_test_pages": 36
+    },
+    "identical_page_screenshots": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "training_backgrounds_not_training_pages": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "shared_rlvs_frames": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0,
+      "n_train_frames": 1500,
+      "n_test_frames": 300
+    },
+    "identical_rlvs_frames": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "shared_video_groups": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0,
+      "note": "video groups are APPROXIMATE (near-identical frames), see rlvs_groups.py"
+    },
+    "training_frames_near_test": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "training_frames_not_rlvs_train": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "train_val_shared_page_id": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "train_val_shared_site": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    },
+    "train_val_shared_video_group": {
+      "ok": true,
+      "shared": [],
+      "n_shared": 0
+    }
+  },
+  "test_composites_rlvs_split": {
+    "distinct_frames_by_rlvs_split": {
+      "test": 49,
+      "train": 203,
+      "val": 48
+    },
+    "composites_by_rlvs_split": {
+      "train": 278,
+      "test": 70,
+      "val": 68
+    }
+  }
+}

@@ -24,6 +24,12 @@ Usage
     pip install playwright && playwright install chromium
     python component1_screen_monitoring/src/scrape_screenshots.py            # skip already-captured URLs
     python component1_screen_monitoring/src/scrape_screenshots.py --overwrite
+
+    # TRAINING pages (disjoint from the test list — refuses to run otherwise)
+    python component1_screen_monitoring/src/scrape_screenshots.py \
+        --urls component1_screen_monitoring/data/screens/urls_train.txt \
+        --out  component1_screen_monitoring/data/screens/train_pages \
+        --log  component1_screen_monitoring/data/screens/train_sources.csv
 """
 from __future__ import annotations
 
@@ -41,8 +47,10 @@ from urllib.robotparser import RobotFileParser
 
 try:
     from .config import SCREENS_DIR
+    from .dataset_checks import assert_disjoint_url_lists
 except ImportError:
     from config import SCREENS_DIR
+    from dataset_checks import assert_disjoint_url_lists
 
 USER_AGENT = ("RP-J26-DS-316-research-screenshotter/0.1 "
               "(university research project; non-commercial; "
@@ -221,10 +229,17 @@ def scrape(urls: list[str], out_dir: Path = OUT_DIR, log_path: Path = SOURCES_CS
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--urls", type=Path, default=URLS_FILE)
+    ap.add_argument("--out", type=Path, default=OUT_DIR, help="folder for the screenshots")
+    ap.add_argument("--log", type=Path, default=SOURCES_CSV, help="CSV log of every attempt")
     ap.add_argument("--overwrite", action="store_true", help="re-capture URLs already on disk")
     args = ap.parse_args()
-    scrape(read_urls(args.urls), overwrite=args.overwrite)
-    print(f"Log → {SOURCES_CSV}")
+    if args.urls.resolve() != URLS_FILE.resolve():
+        # Any list other than the TEST list must not share a URL or website with it.
+        assert_disjoint_url_lists(args.urls, URLS_FILE)
+        if args.out.resolve() == OUT_DIR.resolve() or args.log.resolve() == SOURCES_CSV.resolve():
+            ap.error("a non-test URL list must use its own --out and --log (the test set is read-only)")
+    scrape(read_urls(args.urls), out_dir=args.out, log_path=args.log, overwrite=args.overwrite)
+    print(f"Log → {args.log}")
 
 
 if __name__ == "__main__":
