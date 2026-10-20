@@ -34,6 +34,7 @@ PAGES_DIR = Path(__file__).resolve().parent / "pages"
 # (file, title, icon, key) -- key also names the sidebar link's container.
 MAIN_PAGES = [
     ("emotional_pattern.py", "Emotional Pattern", ":material/bar_chart:", "emotional-pattern"),
+    ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitoring:", "behavioral-anomaly"),
     ("child_profile.py", "Child Profile", ":material/person:", "child-profile"),
 ]
 ADMIN_PAGES = [
@@ -66,6 +67,7 @@ for page, key in admin:
     with st.sidebar.container(key=f"navsm-{key}"):
         st.page_link(page)
 theme.sidebar_model_status("Function 1 model", services.function1_status()["available"])
+theme.sidebar_model_status("Function 2 model", services.function2_status()["available"])
 st.sidebar.html(f'<p class="c4-note" style="margin:.6rem .6rem 0">Database: '
                 f'{database_url.split("://")[0]}</p>')
 

@@ -2,6 +2,7 @@
 
 **Owner:** IT23135116
 **Status:** Function 1 complete — Component 3 session records → per-child emotional pattern (K-Means) + 2-week trend.
+Function 2 integrated in the dashboard — daily C1/C2 risk features → Normal / Unusual day (One-Class SVM), on **synthetic** data only ([details](#function-2--behavioral-anomaly-detection)).
 
 ## What it does
 
@@ -231,3 +232,97 @@ trend labels for those children, not every UI state or automatic ingestion.
 The automated tests verify the specified mock behavior, validation cases and
 dataset consistency; they do not establish classification accuracy, clinical
 validity, generalization to real children, or complete real-time integration.
+
+## Function 2 — Behavioral Anomaly Detection
+
+Flags days on which a child's Component 1 (screen) and Component 2 (language)
+risk events look unusual compared with normal days. **Synthetic data only**:
+the model was trained and evaluated on `data/behavioral_daily.csv` (40 generated
+children × 90 days, `src/behavioral_synthetic.py`). Nothing here establishes
+real-world detection accuracy.
+
+| | |
+|---|---|
+| Model (production) | Step 3 One-Class SVM, `nu=0.01`, `gamma=0.001` (RBF), notebook `notebooks/Function_2_Behavioral_Anomaly_Detection.ipynb` |
+| Input | 27 daily features (`FEATURE_SET_A` in `src/behavioral_anomaly.py`): screen, language, combined counts, `is_weekend`; no 14-day baselines |
+| Preprocessing | median imputer → `StandardScaler`, inside the saved pipeline, fitted on normal training days |
+| Score / threshold | `anomaly_score = -score_samples(X)`; a day is **Unusual** when score > `-12.5158` (97 % quantile of normal training days) |
+| Artifacts | `models/behavioral_anomaly_pipeline.pkl`, `models/behavioral_anomaly_metadata.json` (scikit-learn 1.6.1) |
+| Synthetic test result | precision 0.627, recall 0.604, F1 0.615 (one-time Step 3 evaluation) |
+
+The Step 4A model-improvement notebook (`notebooks/Function_2_Model_Improvement.ipynb`)
+is **experimental**. Its detectors are not saved as artifacts and the dashboard
+never loads them; a test checks that the production files still match the
+hashes Step 4A protected.
+
+Known limits (Step 4A review): detections are driven mainly by rare categories
+(grooming, self-harm, urgent, night violence); multi-day bullying runs and
+volume spikes are often missed; very quiet days can score close to the
+threshold. A **Normal** day is therefore not proof that a child is safe.
+
+### In code
+
+```python
+from src.behavioral_anomaly import predict_anomalies
+flags = predict_anomalies(daily)        # child_id, date, anomaly_score, is_flagged
+
+from src.urgent_alerts import urgent_alerts
+alerts = urgent_alerts(daily)           # child_id, date, is_urgent, reasons
+```
+
+`validate_artifacts()` checks that a pipeline and its metadata belong together
+(steps, fitted column order, feature list, threshold). `explain_day()` lists a
+day's observed values furthest from an average normal training day, in the
+pipeline's own standardised units. It describes the input, not the model's
+reasoning: the One-Class SVM combines all 27 features non-linearly.
+
+### Urgent alerts are separate
+
+`src/urgent_alerts.py` flags a child-day with any urgent, grooming or self-harm
+language flag, or self-harm imagery on screen (the Step 4A rule, unchanged). It
+never reads anomaly scores or labels, and the model never reads its output.
+Grooming and self-harm counts are also model inputs, so urgent days are often
+Unusual too; the dashboard shows the two side by side and never merges them.
+
+### Dashboard
+
+`streamlit run ui/app.py` from the repository root, then open **Behavioral
+Anomaly** in the sidebar (Emotional Pattern stays the default page). The page
+shows, for the selected child:
+
+- the latest day's Normal / Unusual status with score, saved threshold and margin (score − threshold);
+- a daily score chart with the threshold line, and a daily predictions table;
+- a Monday-based weekly summary (unusual days, urgent-rule days, partial weeks marked);
+- "Why was this day unusual?": the top observed deviations, with the child's previous 14-day median for context;
+- urgent rule-based alerts in their own card;
+- "About this model", read from the saved metadata.
+
+Data: components 1 and 2 have no database storage yet (`db/comp1.py` and
+`db/comp2.py` are placeholders), so the page uses the bundled synthetic dataset,
+labelled **SYNTHETIC DATA – DEMO PREDICTIONS**, or an uploaded daily-feature CSV
+(`child_id`, `date` as YYYY-MM-DD, the 27 features; `screen_self_harm_imagery_incidents`
+optional). Synthetic labels and other extra columns are dropped as soon as the
+file is read, and missing values are imputed and marked. The demo IDs C001–C040
+are not the Function 1 demo children with the same names.
+
+The UI loads `src/` as a package under a unique name (`c4_component4_src`),
+because `behavioral_anomaly.py` uses relative imports. `src` itself is never
+imported, so it cannot clash with other components' `src` packages. Set
+`C4_F2_ARTIFACT_DIR` to load the model files from another folder. If they are
+missing, unreadable, from another scikit-learn version, or not the Step 3
+model, the page shows only an error card.
+
+### Function 2 tests
+
+From the repository root:
+
+```bash
+python -B -m pytest -p no:cacheprovider component4_profiling_xai/tests/test_behavioral_anomaly.py component4_profiling_xai/tests/test_urgent_alerts.py tests/test_ui_f2_services.py tests/test_ui_pages.py tests/test_ui_theme.py -q
+```
+
+They cover artifact validation, explanation maths, the urgent rule, model
+loading failures, CSV validation, agreement with the model and the saved Step 3
+test counts, label independence, the weekly summary, the separation of urgent
+alerts and the experimental model, and page rendering with and without the
+model. The full UI and Component 4 suite (`python -m pytest tests component4_profiling_xai/tests`)
+passed with **244 tests** after the dashboard integration (172 before it).

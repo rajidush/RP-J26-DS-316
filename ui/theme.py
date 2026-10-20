@@ -358,3 +358,70 @@ def bar_figure(counts, colors, height=300):
 
 
 PLOTLY_CONFIG = {"displayModeBar": False}
+
+
+# --- Function 2: behavioral anomaly ----------------------------------------------------
+
+@dataclass(frozen=True)
+class StatusStyle:
+    label: str
+    color: str
+    background: str
+    text: str
+
+
+# No faces here: an anomaly status is about data, not the child's emotions.
+# "Normal" is deliberately neutral grey-blue, not green: it is not "safe".
+ANOMALY_STYLES = {
+    "Unusual": StatusStyle("Unusual", COLORS["amber"], "#FEF2D6", "#6B4800"),
+    "Normal": StatusStyle("Normal", "#8A97B1", "#EEF1F6", COLORS["navy"]),
+}
+URGENT_COLOR = COLORS["red"]
+
+
+def status_badge(status, subtitle=None):
+    """Large Normal / Unusual badge for the Function 2 page (no face icon)."""
+    style = ANOMALY_STYLES[status]
+    sub = f'<div class="c4-badge-sub">{escape(subtitle)}</div>' if subtitle else ""
+    st.html(
+        f'<div class="c4-badge" style="background:{style.background};border-color:{style.color}55;'
+        f'color:{style.text}"><div><div class="c4-badge-label">{escape(style.label)}</div>'
+        f'{sub}</div></div>'
+    )
+
+
+def anomaly_history_figure(daily, threshold):
+    """Daily anomaly scores with the saved threshold as a dashed line.
+
+    daily: behavioral_report()["daily"] (date, anomaly_score, unusual, label).
+    Normal and Unusual days are separate legend entries; urgent rule alerts are
+    deliberately not drawn here (they are a separate output).
+    """
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=daily["date"], y=daily["anomaly_score"], mode="lines",
+        line=dict(color="#B7C3D9", width=1.5), hoverinfo="skip", showlegend=False))
+    for status in ("Normal", "Unusual"):
+        mine = daily[daily["label"] == status]
+        style = ANOMALY_STYLES[status]
+        fig.add_trace(go.Scatter(
+            x=mine["date"] if len(mine) else [None], y=mine["anomaly_score"] if len(mine) else [None],
+            mode="markers", name=f"{status} day",
+            marker=dict(color=style.color, size=11 if status == "Unusual" else 7,
+                        line=dict(color="#fff", width=1)),
+            customdata=mine[["margin"]].to_numpy() if len(mine) else None,
+            hovertemplate=f"<b>{status}</b><br>%{{x|%Y-%m-%d}}<br>score %{{y:.3f}}"
+                          "<br>margin %{customdata[0]:+.3f}<extra></extra>"))
+    fig.add_hline(y=threshold, line=dict(color=COLORS["navy"], dash="dash", width=1.5),
+                  annotation_text=f"threshold {threshold:.3f}", annotation_position="top left",
+                  annotation_font=dict(size=13, color=COLORS["navy"]))
+    axis = dict(showgrid=True, gridcolor=COLORS["grid"], griddash="dash", zeroline=False,
+                linecolor="#C9D3E3", showline=True)
+    fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d")
+    fig.update_yaxes(**axis, title=dict(text="anomaly score (higher = more unusual)", font=dict(size=13)))
+    # Legend above the plot: below it, it collides with the angled date ticks.
+    fig.update_layout(legend=dict(orientation="h", x=1, xanchor="right", y=1.02,
+                                  yanchor="bottom", itemclick=False, itemdoubleclick=False))
+    fig = _base_layout(fig, height=400)
+    fig.update_layout(margin=dict(t=40))
+    return fig

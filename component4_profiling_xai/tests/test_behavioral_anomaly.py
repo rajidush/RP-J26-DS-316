@@ -160,3 +160,89 @@ def test_saved_model_loads_and_scores_dataset():
         df = pd.read_csv(DATA)
         out = BA.predict_anomalies(df[df.split == "test"])
         assert len(out) == 680 and out["anomaly_score"].notna().all()
+
+
+# ------------------------------------------------------------------ dashboard helpers (Step 5B)
+
+needs_saved_model = pytest.mark.skipif(not (BA.ARTIFACT_DIR / BA.PIPELINE_FILE).is_file(),
+                                       reason="model not trained yet")
+
+
+@needs_saved_model
+def test_validate_artifacts_accepts_the_saved_model():
+    pipe, meta = BA.load_artifacts()
+    BA.validate_artifacts(pipe, meta, expected_features=BA.FEATURE_SET_A)
+
+
+@needs_saved_model
+@pytest.mark.parametrize("change, message", [
+    (lambda m: m.update(features=m["features"][::-1]), "different columns"),
+    (lambda m: m.update(features=m["features"][:-1]), "different columns"),
+    (lambda m: m.update(features=m["features"] + ["extra"]), "different columns"),
+    (lambda m: m.update(n_features=30), "n_features"),
+    (lambda m: m.update(threshold=float("nan")), "finite"),
+    (lambda m: m.update(threshold="-12.5"), "finite"),
+    (lambda m: m.update(threshold=True), "finite"),
+    (lambda m: m.pop("threshold"), "finite"),
+    (lambda m: m.update(pipeline_steps=["scaler", "model"]), "steps"),
+])
+def test_validate_artifacts_rejects_mismatched_metadata(change, message):
+    pipe, meta = BA.load_artifacts()
+    change(meta)
+    with pytest.raises(ValueError, match=message):
+        BA.validate_artifacts(pipe, meta)
+
+
+@needs_saved_model
+def test_validate_artifacts_checks_the_expected_feature_set():
+    pipe, meta = BA.load_artifacts()
+    with pytest.raises(ValueError, match="expected feature set"):
+        BA.validate_artifacts(pipe, meta, expected_features=BA.FEATURE_SET_B)
+
+
+@needs_saved_model
+def test_explain_day_uses_the_pipelines_own_scaling():
+    pipe, meta = BA.load_artifacts()
+    row = BA.feature_matrix(make_daily(1, seed=9), meta["features"])
+    row.loc[row.index[0], "language_grooming_flags"] = 3.0
+    table = BA.explain_day(pipe, row, top_n=5)
+
+    assert len(table) == 5
+    assert list(table.columns) == ["feature", "observed", "typical", "z", "direction"]
+    assert set(table["feature"]) <= set(meta["features"])
+    assert table["z"].abs().is_monotonic_decreasing
+    expected = dict(zip(meta["features"], pipe[:-1].transform(row)[0]))
+    for f, z in zip(table["feature"], table["z"]):
+        assert z == pytest.approx(expected[f])
+    scaler = pipe.named_steps["scaler"]
+    i = meta["features"].index("language_grooming_flags")
+    top = table.iloc[0]
+    assert top["feature"] == "language_grooming_flags"
+    assert top["typical"] == pytest.approx(scaler.mean_[i])
+    assert top["direction"] == "higher than typical"
+
+
+@needs_saved_model
+def test_explain_day_takes_one_row():
+    pipe, meta = BA.load_artifacts()
+    with pytest.raises(ValueError, match="exactly one row"):
+        BA.explain_day(pipe, BA.feature_matrix(make_daily(2), meta["features"]))
+
+
+FREEZE_MANIFEST = (Path(__file__).resolve().parents[1] / "data" / "step4a_heldout_seed20261020"
+                   / "freeze_manifest.json")
+
+
+@needs_saved_model
+@pytest.mark.skipif(not FREEZE_MANIFEST.is_file(), reason="Step 4A freeze manifest not present")
+def test_production_model_is_the_step3_model():
+    # The dashboard must run the Step 3 artifacts that Step 4A protected, not a replacement.
+    import hashlib
+
+    protected = json.loads(FREEZE_MANIFEST.read_text())["protected"]
+    for name in (BA.PIPELINE_FILE, BA.METADATA_FILE):
+        digest = next(h for k, h in protected.items() if k.replace("\\", "/").endswith(f"models/{name}"))
+        assert hashlib.sha256((BA.ARTIFACT_DIR / name).read_bytes()).hexdigest() == digest, name
+    _, meta = BA.load_artifacts()
+    assert (meta["algorithm"], meta["feature_set"], meta["n_features"]) == ("one_class_svm", "A_daily", 27)
+    assert meta["features"] == BA.FEATURE_SET_A

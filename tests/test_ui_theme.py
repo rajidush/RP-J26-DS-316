@@ -88,3 +88,35 @@ def test_timeline_hover_pluralises_sessions():
                                           "sessions": 1}])
     defensive = next(t for t in fig.data if t.name == "Defensive")
     assert defensive.customdata[0][1] == "1 session"
+
+
+# --- Function 2 ------------------------------------------------------------------------
+
+def _anomaly_days():
+    import pandas as pd
+    return pd.DataFrame({"date": pd.date_range("2026-07-01", periods=4).date,
+                         "anomaly_score": [-13.0, -12.0, -12.9, -11.0],
+                         "margin": [-0.5, 0.5, -0.4, 1.5],
+                         "label": ["Normal", "Unusual", "Normal", "Unusual"]})
+
+
+def test_anomaly_figure_has_threshold_line_and_marks_unusual_days():
+    fig = theme.anomaly_history_figure(_anomaly_days(), threshold=-12.5)
+    lines = [s for s in fig.layout.shapes if s.type == "line"]
+    assert len(lines) == 1 and lines[0].y0 == lines[0].y1 == -12.5
+    by_name = {t.name: t for t in fig.data if t.name}
+    assert set(by_name) == {"Normal day", "Unusual day"}
+    assert list(by_name["Unusual day"].y) == [-12.0, -11.0]
+    assert by_name["Unusual day"].marker.color == theme.ANOMALY_STYLES["Unusual"].color
+
+
+def test_anomaly_figure_without_unusual_days():
+    days = _anomaly_days().assign(label="Normal")
+    fig = theme.anomaly_history_figure(days, threshold=-10.0)
+    unusual = next(t for t in fig.data if t.name == "Unusual day")
+    assert list(unusual.y) == [None]
+
+
+def test_normal_status_is_not_shown_as_safe_green():
+    assert set(theme.ANOMALY_STYLES) == {"Normal", "Unusual"}
+    assert theme.ANOMALY_STYLES["Normal"].color != theme.COLORS["green"]

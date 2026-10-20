@@ -170,6 +170,61 @@ def load_artifacts(artifact_dir=ARTIFACT_DIR) -> tuple[Pipeline, dict]:
     return pipeline, metadata
 
 
+PIPELINE_STEPS = ["imputer", "scaler", "model"]
+
+
+def validate_artifacts(pipeline: Pipeline, metadata: dict, expected_features=None) -> None:
+    """Check that a loaded pipeline and its metadata belong together.
+
+    Raises ValueError when the pipeline steps, the fitted column order, the
+    metadata feature list (and expected_features, when given) or the threshold
+    disagree. scikit-learn itself rejects reordered named columns at scoring
+    time; this catches a mismatched pair of files before anything is scored.
+    """
+    features = list(metadata.get("features") or [])
+    steps = [name for name, _ in pipeline.steps]
+    if steps != PIPELINE_STEPS or metadata.get("pipeline_steps", steps) != steps:
+        raise ValueError(f"pipeline steps {steps} do not match {PIPELINE_STEPS}")
+    fitted = list(getattr(pipeline, "feature_names_in_", []))
+    if fitted != features:
+        raise ValueError("the pipeline was fitted on different columns (or order) "
+                         "than the metadata feature list")
+    if expected_features is not None and features != list(expected_features):
+        raise ValueError("the metadata feature list differs from the expected feature set")
+    if metadata.get("n_features", len(features)) != len(features):
+        raise ValueError(f"metadata n_features={metadata.get('n_features')} but "
+                         f"{len(features)} features are listed")
+    threshold = metadata.get("threshold")
+    if isinstance(threshold, bool) or not isinstance(threshold, (int, float)) \
+            or not np.isfinite(threshold):
+        raise ValueError(f"metadata threshold {threshold!r} is not a finite number")
+
+
+def explain_day(pipeline: Pipeline, row: pd.DataFrame, top_n: int = 5) -> pd.DataFrame:
+    """Descriptive view of one day: how far each observed value is from the
+    average normal training day, in the pipeline's own standardised units.
+
+    row: a one-row feature_matrix (the pipeline's columns, in order). Returns
+    the top_n features by |z| with feature, observed, typical (training mean),
+    z and direction. This describes the input; it is NOT an attribution of the
+    model's score (the One-Class SVM combines all features non-linearly).
+    """
+    if len(row) != 1:
+        raise ValueError("explain_day takes exactly one row")
+    features = list(pipeline.feature_names_in_)
+    z = pipeline[:-1].transform(row[features])[0]
+    scaler = pipeline.named_steps["scaler"]
+    table = pd.DataFrame({
+        "feature": features,
+        "observed": row[features].iloc[0].to_numpy(dtype=float),
+        "typical": scaler.mean_,
+        "z": z,
+    })
+    table["direction"] = np.where(table["z"] >= 0, "higher than typical", "lower than typical")
+    order = table["z"].abs().sort_values(ascending=False, kind="stable").index
+    return table.loc[order].head(top_n).reset_index(drop=True)
+
+
 def predict_anomalies(daily: pd.DataFrame, artifact_dir=ARTIFACT_DIR) -> pd.DataFrame:
     """Score daily rows with the saved model.
 

@@ -64,3 +64,73 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
     main = html_of(at, at.main)
     assert F1_ERROR in main and "Could not load the model files" in main
     assert "c4-badge" not in main
+
+
+# --- Function 2: Behavioral Anomaly page ----------------------------------------------
+
+F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
+F2_URGENT_TITLE = "Urgent Safety Alerts (rule-based, not the anomaly model)"
+
+
+def test_emotional_pattern_is_still_the_default_page(temp_db):
+    at = run_page()
+    main = html_of(at, at.main)
+    assert "Emotional Pattern (Function 1)" in main
+    assert "Behavioral Anomaly (Function 2)" not in main
+
+
+def test_sidebar_shows_both_model_statuses(temp_db):
+    sidebar = html_of(at := run_page(), at.sidebar)
+    assert "Function 1 model" in sidebar and "Function 2 model" in sidebar
+    assert "not loaded" not in sidebar
+
+
+def test_behavioral_anomaly_page_with_real_model(temp_db):
+    at = run_page("behavioral_anomaly")
+    main = html_of(at, at.main)
+    assert "SYNTHETIC DATA" in main and "DEMO PREDICTIONS" in main
+    assert at.selectbox(key="f2_child").options[0] == "C001"
+    assert len(at.selectbox(key="f2_child").options) == 40
+    assert "c4-badge" in main
+    assert "It does not prove that the child is safe" in main
+    assert len(at.get("plotly_chart")) == 1
+    assert len(at.dataframe) >= 3                         # daily, weekly, urgent / explanation
+    assert F2_URGENT_TITLE in main
+    assert "not an exact cause" in main
+    labels = [e.label for e in at.expander]
+    assert "About this model" in labels and "Use your own data (daily-feature CSV)" in labels
+    assert "One-Class SVM" in " ".join(m.value for m in at.markdown)
+    assert F2_ERROR not in main
+
+
+def test_behavioral_anomaly_page_switches_child(temp_db):
+    at = run_page("behavioral_anomaly")
+    at.selectbox(key="f2_child").set_value("C009").run()
+    assert not at.exception
+    assert at.selectbox(key="f2_day_C009").value is not None   # C009 has unusual days
+
+
+def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp_path, monkeypatch):
+    monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))   # empty folder
+    at = run_page("behavioral_anomaly")
+    main = html_of(at, at.main)
+    assert F2_ERROR in main
+    assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
+    assert "c4-badge" not in main
+    assert not at.get("plotly_chart")
+    assert not at.selectbox and not at.dataframe
+    assert F2_URGENT_TITLE not in main
+
+
+def test_function2_failure_leaves_function1_page_working(child_with_sessions, tmp_path, monkeypatch):
+    monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
+    at = run_page()
+    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
+    assert "c4-badge" in main and F1_ERROR not in main
+    assert "Function 2 model" in sidebar and "not loaded" in sidebar
+
+
+@pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile",
+                                  "dashboard", "sessions", "escalations", "add_record"])
+def test_every_page_renders(temp_db, page):
+    run_page(page)
