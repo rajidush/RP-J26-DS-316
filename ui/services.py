@@ -1,15 +1,18 @@
 """
 Everything the Component 4 UI does with data: DB queries (via db/),
 Function 1 (Emotional Pattern Clustering), Function 2 (Behavioral Anomaly
-Detection) and the demo dataset. The Streamlit pages only call functions
+Detection) and the demo datasets.
+The Streamlit pages only call functions
 from this module; colours and styling live in ui/theme.py.
 
 Only contract fields are ever read or shown -- never raw conversation content.
 """
+import importlib
 import importlib.util
 import json
 import os
 import random
+import sys
 import warnings
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
@@ -26,8 +29,6 @@ C4_DIR = ROOT / "component4_profiling_xai"
 F1_MODULE_PATH = C4_DIR / "src" / "emotional_pattern.py"
 F1_ARTIFACT_FILES = ("emotional_pattern_kmeans.pkl", "emotional_pattern_scaler.pkl",
                      "emotional_pattern_metadata.json")
-F2_MODULE_PATH = C4_DIR / "src" / "behavioral_anomaly.py"
-F2_SAMPLE_INPUT = C4_DIR / "mock_inputs" / "sample_behavioral_input.json"
 
 # Contract columns shown in tables, in this order. dialogue_summary is the
 # contract's parent-safe summary, shown only in the detail view.
@@ -163,11 +164,6 @@ def _load_module(name, path):
 @lru_cache(maxsize=1)
 def _f1_module():
     return _load_module("c4_emotional_pattern", F1_MODULE_PATH)
-
-
-@lru_cache(maxsize=1)
-def _f2_module():
-    return _load_module("c4_behavioral_anomaly", F2_MODULE_PATH)
 
 
 # --- Function 1: where the per-child sessions come from ------------------------------
@@ -416,41 +412,281 @@ def pattern_features_table(report):
 
 
 # --- Function 2: Behavioral Anomaly Detection ----------------------------------------
+#
+# Only the saved Step 3 model is used: One-Class SVM on the 27 daily features
+# (Set A). The experimental Step 4A detectors are research outputs and are
+# never loaded here. If the model cannot be loaded or its files disagree,
+# callers get ModelUnavailableError and must show no prediction.
+#
+# Data: components 1 and 2 have no database storage yet (db/comp1.py and
+# db/comp2.py are placeholders), so rows come from an uploaded daily-feature
+# CSV or the bundled SYNTHETIC dataset. Synthetic ground-truth labels are
+# dropped on load and never shown.
 
-F2_ARTIFACT_FILES = ("behavioral_anomaly_ocsvm_variation.pkl", "behavioral_scaler_variation.pkl",
-                     "behavioral_features_variation.pkl")
+F2_PACKAGE = "c4_component4_src"          # unique name: never clashes with another `src`
+F2_ARTIFACT_FILES = ("behavioral_anomaly_pipeline.pkl", "behavioral_anomaly_metadata.json")
+F2_EXPECTED_MODEL = {"algorithm": "one_class_svm", "feature_set": "A_daily", "n_features": 27}
+F2_DEMO_DATA = C4_DIR / "data" / "behavioral_daily.csv"
+F2_CONTEXT_DAYS = 14                      # the child's own previous days shown for context
+F2_TOP_FEATURES = 5
 
 
-def behavioral_anomaly_status():
-    """Can the trained One-Class SVM be used? {"available", "artifact_dir", "reason", "features"}.
-    Same rule as Function 1: no fallback, never a result without the model."""
-    module = _f2_module()
-    status = {"available": False, "artifact_dir": str(module.MODELS_DIR), "reason": None,
-              "features": []}
+def _c4_package():
+    """component4_profiling_xai/src as a package under a unique name, so its
+    relative imports work. (Loading single files, as for Function 1, fails for
+    behavioral_anomaly.py: "attempted relative import with no known parent
+    package".) Registered once in sys.modules; `src` itself is never imported."""
+    if F2_PACKAGE not in sys.modules:
+        src = C4_DIR / "src"
+        spec = importlib.util.spec_from_file_location(
+            F2_PACKAGE, src / "__init__.py", submodule_search_locations=[str(src)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules[F2_PACKAGE] = package
+        try:
+            spec.loader.exec_module(package)
+        except Exception:
+            del sys.modules[F2_PACKAGE]
+            raise
+    return sys.modules[F2_PACKAGE]
+
+
+def _f2_module():
+    _c4_package()
+    return importlib.import_module(f"{F2_PACKAGE}.behavioral_anomaly")
+
+
+def _urgent_module():
+    _c4_package()
+    return importlib.import_module(f"{F2_PACKAGE}.urgent_alerts")
+
+
+def f2_artifact_dir():
+    """Where the trained Function 2 artifacts live; override with C4_F2_ARTIFACT_DIR."""
+    return Path(os.environ.get("C4_F2_ARTIFACT_DIR", C4_DIR / "models"))
+
+
+def function2_status(artifact_dir=None):
+    """Can the saved Step 3 Function 2 model be used?
+    {"available", "artifact_dir", "missing", "reason", "metadata", "pipeline"}."""
+    artifact_dir = Path(artifact_dir or f2_artifact_dir())
+    missing = [f for f in F2_ARTIFACT_FILES if not (artifact_dir / f).is_file()]
+    status = {"available": False, "artifact_dir": str(artifact_dir), "missing": missing,
+              "reason": None, "metadata": None, "pipeline": None}
+    if missing:
+        status["reason"] = f"Missing in {artifact_dir}: " + ", ".join(missing)
+        return status
     try:
-        _, _, features = _load_strictly(module.load_artifacts)
-    except Exception as exc:  # missing files, unpickling / version problems
+        import sklearn
+
+        f2 = _f2_module()
+        pipeline, metadata = _load_strictly(lambda: f2.load_artifacts(artifact_dir))
+        trained_with = metadata.get("sklearn_version")
+        if trained_with and trained_with != sklearn.__version__:
+            raise RuntimeError(f"model was trained with scikit-learn {trained_with}, "
+                               f"but {sklearn.__version__} is installed")
+        for key, expected in F2_EXPECTED_MODEL.items():
+            if metadata.get(key) != expected:
+                raise RuntimeError(f"expected the Step 3 model ({key}={expected!r}), "
+                                   f"found {key}={metadata.get(key)!r}")
+        f2.validate_artifacts(pipeline, metadata, expected_features=f2.FEATURE_SET_A)
+    except Exception as exc:  # unreadable pickle, wrong sklearn, wrong or mismatched files
         status["reason"] = f"Could not load the model files: {exc}"
         return status
-    status.update(available=True, features=features)
+    status.update(available=True, metadata=metadata, pipeline=pipeline)
     return status
 
 
-def behavioral_sample_input():
-    """The example record shipped in component4_profiling_xai/mock_inputs/."""
-    with open(F2_SAMPLE_INPUT, encoding="utf-8") as f:
-        return json.load(f)
+F2_FEATURE_LABELS = {
+    "screen_incidents": "Screen: flagged incidents",
+    "screen_flagged_frames": "Screen: flagged frames",
+    "screen_flagged_seconds": "Screen: flagged seconds",
+    "screen_max_confidence": "Screen: highest detection confidence",
+    "screen_mean_confidence": "Screen: average detection confidence",
+    "screen_night_incidents": "Screen: incidents at night (22:00-06:00)",
+    "screen_blocked_incidents": "Screen: blocked incidents",
+    "screen_escalated_incidents": "Screen: escalated incidents",
+    "screen_dismissed_incidents": "Screen: incidents dismissed by the child",
+    "language_flags": "Language: flags (all categories)",
+    "language_threat_flags": "Language: threat flags",
+    "language_hate_identity_flags": "Language: identity-hate flags",
+    "language_bullying_flags": "Language: bullying flags",
+    "language_self_harm_flags": "Language: self-harm flags",
+    "language_grooming_flags": "Language: grooming flags",
+    "language_profanity_flags": "Language: profanity flags",
+    "language_urgent_flags": "Language: urgent flags",
+    "language_block_rung_flags": "Language: flags at block level",
+    "language_max_risk": "Language: highest risk score",
+    "language_mean_risk": "Language: average risk score",
+    "language_night_flags": "Language: flags at night (22:00-06:00)",
+    "language_audio_flags": "Language: flags from audio",
+    "language_distinct_apps": "Language: different apps flagged",
+    "language_distinct_app_categories": "Language: different app types flagged",
+    "total_risk_events": "All risk events (screen + language)",
+    "night_risk_events": "All risk events at night",
+    "is_weekend": "Weekend day (1 = yes)",
+}
+
+_BOOL_TEXT = {"true": 1.0, "false": 0.0, "1": 1.0, "0": 0.0, "1.0": 1.0, "0.0": 0.0}
 
 
-def feature_label(name):
-    return name.replace("_", " ").capitalize()
+def _clean_daily(df, what):
+    """Validate daily rows: keys, the 27 model features and the urgent-rule
+    columns. Every other column (synthetic labels included) is dropped.
+    Raises ValueError with a readable message."""
+    features = list(_f2_module().FEATURE_SET_A)
+    urgent_cols = list(_urgent_module().URGENT_RULE_COLUMNS)
+    missing = [c for c in ["child_id", "date"] + features if c not in df.columns]
+    if missing:
+        raise ValueError(f"{what} is missing required columns: {', '.join(missing)}")
+    keep = ["child_id", "date"] + features + [c for c in urgent_cols if c not in features]
+    out = df[[c for c in keep if c in df.columns]].copy()
+    if out["child_id"].isna().any():
+        raise ValueError(f"{what} has rows without a child_id")
+    out["child_id"] = out["child_id"].astype(str).str.strip()
+    if (out["child_id"] == "").any():
+        raise ValueError(f"{what} has rows without a child_id")
+    dates = pd.to_datetime(out["date"].astype(str), errors="coerce", format="%Y-%m-%d")
+    if dates.isna().any():
+        bad = out.loc[dates.isna(), "date"].astype(str).head(3).tolist()
+        raise ValueError(f"{what} has dates that are not YYYY-MM-DD: {bad}")
+    out["date"] = dates.dt.date
+    if out.duplicated(["child_id", "date"]).any():
+        raise ValueError(f"{what} has more than one row for the same child and date")
+
+    weekend = out["is_weekend"]
+    if not (pd.api.types.is_bool_dtype(weekend) or pd.api.types.is_numeric_dtype(weekend)):
+        weekend = weekend.map(lambda v: v if pd.isna(v)
+                              else _BOOL_TEXT.get(str(v).strip().lower(), "bad"))
+        if (weekend == "bad").any():
+            raise ValueError(f"{what}: is_weekend must be True/False or 1/0")
+    out["is_weekend"] = pd.to_numeric(weekend).astype(float)
+    for col in [c for c in out.columns if c not in ("child_id", "date", "is_weekend")]:
+        try:
+            out[col] = pd.to_numeric(out[col], errors="raise").astype(float)
+        except (ValueError, TypeError):
+            raise ValueError(f"{what}: column {col} must be numeric") from None
+    # Not every export has C1's self-harm imagery count (C1 has no live
+    # self-harm model): NaN = not available, which never triggers the rule.
+    for col in urgent_cols:
+        if col not in out.columns:
+            out[col] = float("nan")
+    return out.sort_values(["child_id", "date"]).reset_index(drop=True)
 
 
-def predict_behavioral_anomaly(data):
-    """Run Function 2 on one behavioral record: status, anomaly_flag,
-    decision_score, anomaly_score. Raises ValueError / TypeError on bad input
-    and ModelUnavailableError if the trained model cannot be loaded."""
-    status = behavioral_anomaly_status()
+def load_daily_csv(file):
+    """A daily-feature CSV (the columns of behavioral_daily.csv): child_id, date
+    (YYYY-MM-DD local day) and the 27 model features. Extra columns, synthetic
+    labels included, are dropped as soon as the file is read."""
+    return _clean_daily(pd.read_csv(file), "The CSV")
+
+
+@lru_cache(maxsize=2)
+def _demo_daily(path, mtime):
+    return _clean_daily(pd.read_csv(path), f"The bundled dataset {Path(path).name}")
+
+
+def behavioral_daily_source(uploaded_csv=None):
+    """Function 2's daily rows: an uploaded daily-feature CSV, else the bundled
+    synthetic dataset. {"source": "upload" | "demo", "daily", "child_ids"}."""
+    if uploaded_csv is not None:
+        daily, source = load_daily_csv(uploaded_csv), "upload"
+    else:
+        daily = _demo_daily(str(F2_DEMO_DATA), F2_DEMO_DATA.stat().st_mtime).copy()
+        source = "demo"
+    return {"source": source, "daily": daily, "child_ids": child_ids(daily)}
+
+
+def weekly_summary(table):
+    """Monday-to-Sunday weeks from a behavioral_report daily table."""
+    week = pd.to_datetime(table["date"]).dt.to_period("W-SUN").dt.start_time.dt.date
+    weeks = table.assign(week_start=week).groupby("week_start").agg(
+        days=("date", "size"), unusual_days=("unusual", "sum"), urgent_days=("urgent", "sum"),
+        highest_score=("anomaly_score", "max"), mean_score=("anomaly_score", "mean"))
+    weeks[["unusual_days", "urgent_days"]] = weeks[["unusual_days", "urgent_days"]].astype(int)
+    weeks["partial_week"] = weeks["days"] < 7
+    return weeks.reset_index()
+
+
+def _day_explanation(f2, pipeline, X, i):
+    """Top observed deviations for row i, plus the child's own previous days."""
+    table = f2.explain_day(pipeline, X.iloc[[i]], top_n=F2_TOP_FEATURES)
+    previous = X.iloc[max(0, i - F2_CONTEXT_DAYS):i]
+    table["child_recent_median"] = [previous[f].median() if len(previous) else float("nan")
+                                    for f in table["feature"]]
+    table.insert(0, "label", [F2_FEATURE_LABELS.get(f, f) for f in table["feature"]])
+    return table
+
+
+def behavioral_report(daily, child_id, artifact_dir=None):
+    """Everything the Behavioral Anomaly page shows for one child.
+
+    daily: rows from behavioral_daily_source(). Raises ModelUnavailableError if
+    the saved model cannot be used -- checked first, so no result of any kind
+    is produced without it. Synthetic labels are never read.
+
+    Returns {"child_id", "status", "threshold", "daily" (date, label,
+    anomaly_score, threshold, margin, unusual, imputed, urgent), "weekly",
+    "explanations" {date: table} for unusual days, "urgent" (urgent days with
+    reasons), "latest" (the last daily row)}.
+    """
+    status = function2_status(artifact_dir)
     if not status["available"]:
         raise ModelUnavailableError(status)
-    return _f2_module().predict_behavioral_anomaly(data)
+    f2, pipeline, metadata = _f2_module(), status["pipeline"], status["metadata"]
+    rows = daily[daily["child_id"].astype(str) == str(child_id)].sort_values("date")
+    rows = rows.reset_index(drop=True)
+    if rows.empty:
+        raise ValueError(f"No daily rows for child {child_id}")
+
+    X = f2.feature_matrix(rows, metadata["features"])
+    scores = f2.anomaly_scores(pipeline, X)
+    threshold = float(metadata["threshold"])
+    urgent = _urgent_module().urgent_alerts(rows)
+    table = pd.DataFrame({
+        "date": rows["date"].to_numpy(),
+        "anomaly_score": scores,
+        "threshold": threshold,
+        "margin": scores - threshold,
+        "unusual": scores > threshold,
+        "imputed": X.isna().any(axis=1).to_numpy(),
+        "urgent": urgent["is_urgent"].to_numpy(),
+    })
+    table.insert(1, "label", table["unusual"].map({True: "Unusual", False: "Normal"}))
+
+    explanations = {table.at[i, "date"]: _day_explanation(f2, pipeline, X, i)
+                    for i in table.index[table["unusual"]]}
+    is_urgent = urgent["is_urgent"].to_numpy()
+    urgent_days = pd.DataFrame({"date": rows["date"].to_numpy()[is_urgent],
+                                "reasons": urgent["reasons"].to_numpy()[is_urgent]})
+    return {"child_id": str(child_id), "status": status, "threshold": threshold,
+            "daily": table, "weekly": weekly_summary(table), "explanations": explanations,
+            "urgent": urgent_days, "latest": table.iloc[-1].to_dict()}
+
+
+def explanation_table(explanation):
+    """One day's explanation as a readable table for the page."""
+    return pd.DataFrame({
+        "Feature": explanation["label"],
+        "Observed": explanation["observed"].round(3),
+        "Typical normal training day": explanation["typical"].round(3),
+        f"Child's previous {F2_CONTEXT_DAYS}-day median": explanation["child_recent_median"].round(3),
+        "Difference (standard deviations)": explanation["z"].round(2),
+        "Direction": explanation["direction"],
+    })
+
+
+def model_card(metadata):
+    """The page's "About this model" rows, read from the saved metadata."""
+    test = metadata.get("test", {})
+    return {
+        "Algorithm": "One-Class SVM (RBF kernel)",
+        "Parameters": ", ".join(f"{k}={v}" for k, v in metadata["params"].items()),
+        "Features": f"{metadata['n_features']} daily features (screen, language, combined, weekend)",
+        "Preprocessing": "median imputation, then standardisation (fitted on normal training days)",
+        "Decision threshold": (f"score > {metadata['threshold']:.4f} (the "
+                               f"{metadata['threshold_quantile']:.0%} quantile of normal training days)"),
+        "Trained on": f"{metadata['trained_on']} (synthetic), scikit-learn {metadata['sklearn_version']}",
+        "Synthetic test result": (f"precision {test.get('precision', float('nan')):.3f}, "
+                                  f"recall {test.get('recall', float('nan')):.3f}, "
+                                  f"F1 {test.get('f1', float('nan')):.3f}"),
+    }

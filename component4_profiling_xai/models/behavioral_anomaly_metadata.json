@@ -1,0 +1,139 @@
+{
+  "function": "Function 2 - Behavioral Anomaly Detection",
+  "disclaimer": "Trained and evaluated on SYNTHETIC data (behavioral_daily.csv). Metrics do not establish real-world detection accuracy.",
+  "sklearn_version": "1.6.1",
+  "trained_on": "behavioral_daily.csv",
+  "dataset_sha256": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+  "generator_version": "1.0.0",
+  "seed": 42,
+  "algorithm": "one_class_svm",
+  "feature_set": "A_daily",
+  "n_features": 27,
+  "features": [
+    "screen_incidents",
+    "screen_flagged_frames",
+    "screen_flagged_seconds",
+    "screen_max_confidence",
+    "screen_mean_confidence",
+    "screen_night_incidents",
+    "screen_blocked_incidents",
+    "screen_escalated_incidents",
+    "screen_dismissed_incidents",
+    "language_flags",
+    "language_threat_flags",
+    "language_hate_identity_flags",
+    "language_bullying_flags",
+    "language_self_harm_flags",
+    "language_grooming_flags",
+    "language_profanity_flags",
+    "language_urgent_flags",
+    "language_block_rung_flags",
+    "language_max_risk",
+    "language_mean_risk",
+    "language_night_flags",
+    "language_audio_flags",
+    "language_distinct_apps",
+    "language_distinct_app_categories",
+    "total_risk_events",
+    "night_risk_events",
+    "is_weekend"
+  ],
+  "params": {
+    "nu": 0.01,
+    "gamma": 0.001
+  },
+  "pipeline_steps": [
+    "imputer",
+    "scaler",
+    "model"
+  ],
+  "score": "anomaly_score = -pipeline.score_samples(X); higher = more anomalous",
+  "threshold": -12.515804087687126,
+  "threshold_quantile": 0.97,
+  "threshold_rule": "flag a day when anomaly_score > threshold (quantile of normal training-day scores)",
+  "training_rows": {
+    "definition": "split == train, baseline_ready, is_anomaly == 0",
+    "n": 1894,
+    "dates": [
+      "2026-07-08",
+      "2026-08-25"
+    ]
+  },
+  "selection": "validation F1, then validation PR-AUC, then fewer features",
+  "validation": {
+    "precision": 0.6818181818181818,
+    "recall": 0.6122448979591837,
+    "f1": 0.6451612903225806,
+    "tp": 30.0,
+    "fp": 14.0,
+    "fn": 19.0,
+    "tn": 617.0,
+    "PR_AUC": 0.5951211658055461,
+    "n": 680,
+    "anomalies": 49
+  },
+  "test": {
+    "precision": 0.6274509803921569,
+    "recall": 0.6037735849056604,
+    "f1": 0.6153846153846154,
+    "tp": 32,
+    "fp": 19,
+    "fn": 21,
+    "tn": 608,
+    "PR_AUC": 0.5966228393982116,
+    "ROC_AUC": 0.7098191447744576,
+    "alerts": 51,
+    "n": 680,
+    "anomalies": 53,
+    "f1_ci95": [
+      0.4126984126984127,
+      0.7755190007037297
+    ]
+  },
+  "comparison": [
+    {
+      "algorithm": "one_class_svm",
+      "feature_set": "A_daily",
+      "n_features": 27,
+      "precision": 0.6818181818181818,
+      "recall": 0.6122448979591837,
+      "f1": 0.6451612903225806,
+      "val_PR_AUC": 0.5951211658055461,
+      "threshold_quantile": 0.97,
+      "selected_threshold": -12.515804087687126
+    },
+    {
+      "algorithm": "one_class_svm",
+      "feature_set": "B_full",
+      "n_features": 45,
+      "precision": 0.7878787878787878,
+      "recall": 0.5306122448979592,
+      "f1": 0.6341463414634146,
+      "val_PR_AUC": 0.6059301022528207,
+      "threshold_quantile": 0.995,
+      "selected_threshold": -3.768945702536811
+    },
+    {
+      "algorithm": "isolation_forest",
+      "feature_set": "B_full",
+      "n_features": 45,
+      "precision": 0.75,
+      "recall": 0.4897959183673469,
+      "f1": 0.5925925925925926,
+      "val_PR_AUC": 0.5492753160318178,
+      "threshold_quantile": 0.991,
+      "selected_threshold": 0.5860100447305007
+    },
+    {
+      "algorithm": "isolation_forest",
+      "feature_set": "A_daily",
+      "n_features": 27,
+      "precision": 0.5510204081632653,
+      "recall": 0.5510204081632653,
+      "f1": 0.5510204081632653,
+      "val_PR_AUC": 0.5160442711452543,
+      "threshold_quantile": 0.97,
+      "selected_threshold": 0.5840688503633013
+    }
+  ]
+}

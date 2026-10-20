@@ -1,0 +1,19 @@
+{
+  "seed": 20261020,
+  "purpose": "Frozen before model development; labels and statistics unopened until final evaluation",
+  "heldout": {
+    "component4_profiling_xai\\data\\step4a_heldout_seed20261020\\behavioral_daily.csv": "48cd869e4b5ee08c69a1a0008a532d2481125e961f9c9a9f3c17461aa41115bc",
+    "component4_profiling_xai\\data\\step4a_heldout_seed20261020\\behavioral_episodes.csv": "3652b241d7411b32901d089dfb228d6324e0e9957b634bac5187c92f107c6f06",
+    "component4_profiling_xai\\data\\step4a_heldout_seed20261020\\synthetic_events\\c1_incidents.jsonl": "993563390ecff59b66bfeb0a1d9f59c4afb823d64033e596508025418646097d",
+    "component4_profiling_xai\\data\\step4a_heldout_seed20261020\\synthetic_events\\c2_records.jsonl": "46eb3bc1fe819851831d3b2c3d360cf85887fe539d4030258ce613b854c520eb",
+    "component4_profiling_xai\\data\\step4a_heldout_seed20261020\\behavioral_daily_metadata.json": "cb9c388c8d07a2dd591959c9b54799eeb9e3073d8d51104bacc1ae3311dc4212"
+  },
+  "protected": {
+    "component4_profiling_xai\\data\\behavioral_daily.csv": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+    "component4_profiling_xai\\data\\behavioral_daily_metadata.json": "386b36b926fe6b8eb83efd43ebf5996aeee7dc7f517e36925f4980de12777631",
+    "component4_profiling_xai\\data\\behavioral_episodes.csv": "c472f2b2114850152732ce147abcff5ab86737953f86d2f434260baa0122306d",
+    "component4_profiling_xai\\models\\behavioral_anomaly_metadata.json": "3f5f0fa72eb5ac1cb19644c36d9a96e063a4aa2855515028c97293b406f375a4",
+    "component4_profiling_xai\\models\\behavioral_anomaly_pipeline.pkl": "25634fbafabd133495bc66b9ced5921f27ddaac222902d72f38a5fe1515774b7",
+    "component4_profiling_xai\\notebooks\\Function_2_Behavioral_Anomaly_Detection.ipynb": "9a048f6a6998dde486c32a96284429b1ce3917f90497d230c83c609f5e2f03e3"
+  }
+}

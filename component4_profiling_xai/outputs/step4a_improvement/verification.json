@@ -1,0 +1,13 @@
+{
+  "checks_passed": [
+    "future causality",
+    "child isolation",
+    "label independence",
+    "rule fixtures",
+    "old test excluded",
+    "behavioral feature separation",
+    "original and heldout hashes unchanged",
+    "selection lock unchanged"
+  ],
+  "production_replaced": false
+}
