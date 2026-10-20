@@ -157,7 +157,7 @@ def test_loop_stops_after_max_iterations():
     stats = run_monitoring_loop(FakeDetector([0.1] * 10), interval=2.0, max_iterations=4,
                                 on_payload=payloads.append, capture_fn=_clock_frames(),
                                 sleep_fn=sleeps.append)
-    assert stats == {"frames": 4, "payloads": 0, "errors": 0}
+    assert stats == {"frames": 4, "payloads": 0, "errors": 0, "skipped": 0}
     assert len(sleeps) == 3                    # no sleep after the last frame
     assert payloads == []
 
@@ -210,7 +210,7 @@ def test_loop_survives_a_failing_frame():
     stats = run_monitoring_loop(Flaky([0.1, None, 0.9]), max_iterations=3,
                                 on_payload=lambda p: None, capture_fn=_clock_frames(),
                                 sleep_fn=lambda s: None)
-    assert stats == {"frames": 3, "payloads": 1, "errors": 1}
+    assert stats == {"frames": 3, "payloads": 1, "errors": 1, "skipped": 0}
 
 
 def test_loop_passes_small_previous_frame_and_strategy():
@@ -225,3 +225,34 @@ def test_loop_passes_small_previous_frame_and_strategy():
     assert prevs[0] is None                    # first frame has no previous frame
     assert all(p.mode == "L" and p.width <= 160 for p in prevs[1:])   # downscaled copy only
     assert {s for _, s in det.region_calls} == {"tiles"}
+
+
+def test_on_result_called_for_every_frame_with_payload_or_none():
+    seen = []
+    run_monitoring_loop(FakeDetector([0.1, 0.9, 0.2]), max_iterations=3, capture_fn=_clock_frames(),
+                        sleep_fn=lambda s: None, on_payload=lambda p: None,
+                        on_result=lambda f, d, p: seen.append(p))
+    assert len(seen) == 3
+    assert seen[0] is None and seen[2] is None
+    validate_payload(seen[1])
+    assert "image" not in seen[1] and all(not hasattr(v, "size") for v in seen[1].values())
+
+
+def test_should_stop_ends_loop():
+    n = {"i": 0}
+
+    def stop():
+        n["i"] += 1
+        return n["i"] > 2
+
+    stats = run_monitoring_loop(FakeDetector([0.1] * 9), capture_fn=_clock_frames(),
+                                sleep_fn=lambda s: None, should_stop=stop)
+    assert stats["frames"] == 2
+
+
+def test_cli_respond_requires_live_or_mock():
+    import subprocess
+    script = Path(__file__).resolve().parents[1] / "src" / "run_monitor.py"
+    r = subprocess.run([sys.executable, str(script), "--once", "--respond"],
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 2 and "--respond works with --live or --mock" in r.stderr
