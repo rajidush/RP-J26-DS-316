@@ -2,7 +2,7 @@ import streamlit as st
 
 from ui import services, theme
 
-theme.page_header("Emotional Pattern (Function 1)",
+theme.page_header("Emotional Pattern",
                   "See your child's current emotional pattern and how it has changed over time.")
 
 
@@ -24,27 +24,15 @@ f1_status = services.function1_status()
 if not f1_status["available"]:
     show_model_error(f1_status)
 
-uploaded = st.session_state.get("f1_csv")
-try:
-    source = services.child_session_source(uploaded)
-except ValueError as exc:
-    st.error(f"Could not read the uploaded CSV: {exc}")
-    source = services.child_session_source()
-
+source = services.child_session_source()
 ids = source["child_ids"]
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, index=ids.index("C004") if "C004" in ids else 0,
                          label_visibility="collapsed", width=440)
-    if source["source"] == "database":
-        theme.note(f"{theme.plural(len(ids), 'child', 'children')} from the database. child_id comes from Component 3's "
-                   "data harness and is pending a contract update.")
-    elif source["source"] == "demo":
+    if source["source"] == "demo":
         theme.note("DEMO DATA: synthetic children C001-C005. The database has no sessions with "
                    "child_id yet; run scripts/import_comp3_sessions.py to load Component 3's data.")
-    else:
-        theme.note(f"Data from the uploaded CSV "
-                   f"({theme.plural(len(source['sessions']), 'session')}).")
 
 try:
     report = services.emotional_pattern_report(services.sessions_for_child(source, child), child)
@@ -88,8 +76,3 @@ with theme.card("pattern-timeline", "Emotion Pattern Change Over Time"):
             st.write("The badge uses the latest 2-week window. The overall pattern uses all sessions.")
             st.dataframe(services.pattern_features_table(report), hide_index=True,
                          width="stretch")
-
-with st.expander("Use your own data (CSV with child_id)"):
-    st.file_uploader("Sessions CSV, e.g. component4_profiling_xai/data/educator_sessions.csv. "
-                     "Only child_id and the Component 3 fields are read; nothing is stored.",
-                     type=["csv"], key="f1_csv")

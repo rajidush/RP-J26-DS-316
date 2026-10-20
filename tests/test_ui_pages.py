@@ -42,6 +42,17 @@ def test_emotional_pattern_page_with_real_model(child_with_sessions):
     assert "Function 1 model" in sidebar and "not loaded" not in sidebar
 
 
+def test_emotional_pattern_page_has_no_upload_label_or_contract_notice(child_with_sessions):
+    at = run_page()
+    main = html_of(at, at.main)
+    assert "Emotional Pattern" in main and "(Function 1)" not in main
+    assert "Use your own data (CSV with child_id)" not in [e.label for e in at.expander]
+    assert not at.get("file_uploader")
+    assert "pending a contract update" not in main
+    assert "from the database" not in main                 # no child-count note
+    assert at.selectbox[0].value == "K1"                   # database children still loaded
+
+
 def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_sessions,
                                                                   tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F1_ARTIFACT_DIR", str(tmp_path))  # empty folder
