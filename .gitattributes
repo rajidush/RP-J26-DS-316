@@ -3,3 +3,9 @@ component2_hate_speech_detection/packs/** -text
 
 # C3 evidence is hash-checked (dataset manifest, run records) and must stay byte-identical: no line-ending conversion.
 component3_socratic_educator/evidence/** -text
+
+# C4 Function 2 synthetic dataset: tests regenerate it byte-for-byte and check the SHA-256 in its metadata.
+component4_profiling_xai/data/behavioral_daily.csv -text
+component4_profiling_xai/data/behavioral_episodes.csv -text
+component4_profiling_xai/data/behavioral_daily_metadata.json -text
+component4_profiling_xai/data/synthetic_events/** -text

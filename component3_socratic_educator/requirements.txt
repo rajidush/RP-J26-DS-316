@@ -2,8 +2,13 @@ jsonschema>=4.20
 rfc3339-validator>=0.1.4   # lets jsonschema check "format": "date-time"
 pytest>=8.0
 
-# Uncomment once you wire in the real on-device model (see the TODO in
-# src/grammar_decoder.py). Pick whichever matches your LM Studio / local
-# runtime setup -- llama-cpp-python is the common choice for a quantized
-# GGUF model running fully offline on a laptop.
+# The dialogue reaches the model over LM Studio's HTTP API (src/model_client.py),
+# so it needs no extra package. PP2 moves to an in-process runtime:
 # llama-cpp-python>=0.2
+
+# Only for the token-masking trace (python -m evidence.trace_token_masking);
+# tests/test_token_mask.py skips its torch tests without torch. Versions used on 18 Oct:
+# torch==2.7.1 transformers==4.53.2 gguf==0.19.0 accelerate==1.15.0
+
+# Only for the reading-level check (python -m evidence.readability_check). Version used on 20 Oct:
+# textstat==0.7.13

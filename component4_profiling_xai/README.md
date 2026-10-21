@@ -2,6 +2,7 @@
 
 **Owner:** IT23135116
 **Status:** Function 1 complete — Component 3 session records → per-child emotional pattern (K-Means) + 2-week trend.
+Function 2 integrated in the dashboard — daily C1/C2 risk features → Normal / Unusual day (One-Class SVM), on **synthetic** data only ([details](#function-2--behavioral-anomaly-detection)).
 
 ## What it does
 
@@ -232,9 +233,142 @@ The automated tests verify the specified mock behavior, validation cases and
 dataset consistency; they do not establish classification accuracy, clinical
 validity, generalization to real children, or complete real-time integration.
 
----
+## Function 2 — Behavioral Anomaly Detection
 
-Function 2 (behavioral anomaly detection, One-Class SVM) lives in
-`src/behavioral_anomaly.py` and is exposed through
-`component4.detect_behavioral_anomaly()`. `component4.generate_report()` is still
-the placeholder parent-facing summary.
+Flags days on which a child's Component 1 (screen) and Component 2 (language)
+risk events look unusual compared with normal days. **Synthetic data only**:
+the model was trained and evaluated on `data/behavioral_daily.csv` (40 generated
+children × 90 days, `src/behavioral_synthetic.py`). Nothing here establishes
+real-world detection accuracy.
+
+| | |
+|---|---|
+| Model (production) | Step 3 One-Class SVM, `nu=0.01`, `gamma=0.001` (RBF), notebook `notebooks/Function_2_Behavioral_Anomaly_Detection.ipynb` |
+| Input | 27 daily features (`FEATURE_SET_A` in `src/behavioral_anomaly.py`): screen, language, combined counts, `is_weekend`; no 14-day baselines |
+| Preprocessing | median imputer → `StandardScaler`, inside the saved pipeline, fitted on normal training days |
+| Score / threshold | `anomaly_score = -score_samples(X)`; a day is **Unusual** when score > `-12.5158` (97 % quantile of normal training days) |
+| Artifacts | `models/behavioral_anomaly_pipeline.pkl`, `models/behavioral_anomaly_metadata.json` (scikit-learn 1.6.1) |
+| Synthetic test result | precision 0.627, recall 0.604, F1 0.615 (one-time Step 3 evaluation) |
+
+The Step 4A model-improvement notebook (`notebooks/Function_2_Model_Improvement.ipynb`)
+is **experimental**. Its detectors are not saved as artifacts and the dashboard
+never loads them; a test checks that the production files still match the
+hashes Step 4A protected.
+
+Known limits (Step 4A review): detections are driven mainly by rare categories
+(grooming, self-harm, urgent, night violence); multi-day bullying runs and
+volume spikes are often missed; very quiet days can score close to the
+threshold. A **Normal** day is therefore not proof that a child is safe.
+
+### In code
+
+```python
+from src.behavioral_anomaly import predict_anomalies
+flags = predict_anomalies(daily)        # child_id, date, anomaly_score, is_flagged
+
+from src.urgent_alerts import urgent_alerts
+alerts = urgent_alerts(daily)           # child_id, date, is_urgent, reasons
+```
+
+`validate_artifacts()` checks that a pipeline and its metadata belong together
+(steps, fitted column order, feature list, threshold). `explain_day()` lists a
+day's observed values furthest from an average normal training day, in the
+pipeline's own standardised units. It describes the input, not the model's
+reasoning: the One-Class SVM combines all 27 features non-linearly.
+
+### Urgent alerts are separate
+
+`src/urgent_alerts.py` flags a child-day with any urgent, grooming or self-harm
+language flag, or self-harm imagery on screen (the Step 4A rule, unchanged). It
+never reads anomaly scores or labels, and the model never reads its output.
+Grooming and self-harm counts are also model inputs, so urgent days are often
+Unusual too; the dashboard shows the two side by side and never merges them.
+
+### Dashboard
+
+`streamlit run ui/app.py` from the repository root, then open **Behavioral
+Anomaly** in the sidebar (Emotional Pattern stays the default page). The page
+heading is **Behavioral Anomaly Detection**. These are synthetic demo predictions,
+not findings about real children; the data source is documented below. The page
+shows, for the selected child:
+
+- a child selector and latest prediction with an accessible icon and text (Flagged / Not flagged);
+- the number of flagged days in the latest 30 calendar days, ending on the selected child's latest recorded date;
+- one daily behavioral anomaly history chart showing saved decisions, with no raw scores or threshold line;
+- the top 3 observed feature deviations for a selected flagged day;
+- urgent rule-based alerts in their own card.
+
+The date-range filter, detailed daily history and weekly summary tables, technical
+model expander and CSV-upload expander are absent from this page. Raw model scores
+and threshold values are not displayed. Model calculations remain unchanged:
+`anomaly_score = -pipeline.score_samples(X)` and `flagged = anomaly_score > threshold`.
+The saved threshold is **-12.515804087687126**, the **97th percentile** of normal
+training-day scores; the pipeline and metadata remain the source of truth. A
+score equal to the threshold is not flagged. The chart displays these existing
+binary decisions rather than changing or rescaling the model score.
+
+Data source: the page always uses the bundled `data/behavioral_daily.csv` (40
+synthetic children, C001–C040, over 90 days). No real child is involved, and these
+predictions are not findings about real children. These IDs are not the Function 1
+demo children with the same names. Components 1 and 2 have no database storage
+yet (`db/comp1.py` and `db/comp2.py` are placeholders), so this page does not read
+live behavioral events or import data into the database. Missing feature values
+are imputed by the saved pipeline and marked on the latest prediction if present.
+Synthetic labels and other extra columns are dropped before inference.
+
+The CSV-loading service functions (`ui.services.load_daily_csv` and
+`behavioral_daily_source(uploaded_csv=...)`) remain available for programmatic
+use and tests. They accept `child_id`, `date` as YYYY-MM-DD and the 27 model
+features (`screen_self_harm_imagery_incidents` is optional). There is no CSV
+upload control on the Function 2 page, and stale upload session state is ignored.
+Function 1's independent data-source controls are unchanged.
+
+### Interpretation and evaluation limitations
+
+The amber diamond with an exclamation mark means **Flagged**; the grey circle
+with a dash means **Not flagged**. Shape, text and accessible descriptions convey
+the status independently of color. **Not flagged is not proof that a child is safe.**
+The flagged-day count covers recorded days in the latest 30-calendar-day window,
+not the last 30 rows or the current wall-clock month. History and urgent alerts
+cover the selected child's complete available record.
+
+The top deviations compare observed features with typical normal training values,
+in standardized units, with the child's previous 14-day median for context. They
+are descriptive observations, not exact XAI feature attribution or causes of the
+prediction. The SVM combines the 27 features nonlinearly. Urgent rules remain a
+separate output, independent of anomaly scores, and the outputs are never merged.
+
+The Step 3 precision/recall/F1 above come from its original synthetic test split
+and target definition. They do not establish real-world, clinical or safety
+accuracy, and should not be equated with the separate Step 4 behavioral-only
+held-out comparison. Step 4 refitted the existing configuration on different
+training rows; it did not evaluate the untouched saved Step 3 model directly.
+The experimental approach increased recall and F2 but also false alerts, with
+weak bullying and volume-spike detection. It remains experimental and is not
+loaded by the dashboard. The fresh synthetic holdout is now consumed and must
+not be used for future tuning. See the
+[Step 4 report](outputs/step4a_improvement/REPORT.md) for the protocol, results
+and limitations. Synthetic-only, same-generator evaluation does not establish
+generalization to real children or new activity distributions.
+
+The UI loads `src/` as a package under a unique name (`c4_component4_src`),
+because `behavioral_anomaly.py` uses relative imports. `src` itself is never
+imported, so it cannot clash with other components' `src` packages. Set
+`C4_F2_ARTIFACT_DIR` to load the model files from another folder. If they are
+missing, unreadable, from another scikit-learn version, or not the Step 3
+model, the page shows only an error card.
+
+### Function 2 tests
+
+From the repository root:
+
+```bash
+python -B -m pytest -p no:cacheprovider component4_profiling_xai/tests/test_behavioral_anomaly.py component4_profiling_xai/tests/test_urgent_alerts.py tests/test_ui_f2_services.py tests/test_ui_pages.py tests/test_ui_theme.py -q
+```
+
+They cover artifact validation, explanation maths, the urgent rule, model
+loading failures, CSV validation, agreement with the model and the saved Step 3
+test counts, label independence, the weekly summary, the separation of urgent
+alerts and the experimental model, and page rendering with and without the
+model. The full UI and Component 4 suite (`python -m pytest tests component4_profiling_xai/tests`)
+passed with **244 tests** after the dashboard integration (172 before it).

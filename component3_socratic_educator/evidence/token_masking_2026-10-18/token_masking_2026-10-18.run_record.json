@@ -1,0 +1,53 @@
+{
+  "run": "token_masking_2026-10-18",
+  "started": "2026-10-18T22:14:07",
+  "purpose": "show finite-automaton token masking on the INTERCEPT grammar",
+  "model_file": "C:\\Users\\User\\.lmstudio\\models\\lmstudio-community\\gemma-3-1B-it-QAT-GGUF\\gemma-3-1B-it-QAT-Q4_0.gguf",
+  "model_bytes": 720425472,
+  "model_sha256": "b25d35b00fe699ef52bf399fa579f2c56664897c013aeba2686965fdb6265f0f",
+  "runtime": {
+    "python": "3.13.1",
+    "torch": "2.7.1+cpu",
+    "transformers": "4.53.2",
+    "gguf": "0.19.0",
+    "accelerate": "1.15.0",
+    "device": "cpu",
+    "machine": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel"
+  },
+  "prompt": "You are a calm Socratic educator for child digital safety, speaking to a child aged 11 or older. Something on the child's screen was just stopped. Do not describe, name or hint at what it was, and do not mention alerts, messages or warnings. Write one short opening sentence, then one short, gentle, open question (under 15 words) inviting the child to share what they were doing or thinking.",
+  "chat_format": "<bos><start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model",
+  "prompt_tokens": 98,
+  "generation": {
+    "do_sample": false,
+    "max_new_tokens": 60,
+    "eos_token_id": [
+      1,
+      106
+    ]
+  },
+  "top_k_recorded": 5,
+  "tokenizer": "trl-internal-testing/tiny-Gemma3ForConditionalGeneration",
+  "gguf_vocabulary_size": 262144,
+  "tokenizer_vs_gguf_vocabulary_mismatches": 0,
+  "model_score_rows": 262144,
+  "end_token_ids": [
+    1,
+    106
+  ],
+  "load_seconds": 144.14,
+  "lines": {
+    "unmasked": {
+      "text": "Okay, let’s talk about what you were doing on your screen just now.",
+      "delivery_violation": "grammar",
+      "seconds": 15.37
+    },
+    "masked": {
+      "text": "I noticed something on your screen just now. Would you like to tell me a little about what you were doing?",
+      "delivery_violation": null,
+      "seconds": 29.01
+    }
+  },
+  "steps": 26,
+  "steps_first_choice_blocked": 8
+}

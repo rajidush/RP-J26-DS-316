@@ -5,10 +5,10 @@
 
 | Component | Owner | Status | Folder |
 |---|---|---|---|
-| 1 — Screen Monitoring | IT23377844 | `component1_screen_monitoring/` |
-| 2 — Hate-Speech Detection | IT23209152 | `component2_hate_speech_detection/` |
-| 3 — Socratic Educator | IT23155466 | `component3_socratic_educator/` |
-| 4 — Behavioral Profiling / XAI | IT23135116 | `component4_profiling_xai/` |
+| 1 - Screen Monitoring | IT23377844 | `component1_screen_monitoring/` |
+| 2 - Hate-Speech Detection | IT23209152 | `component2_hate_speech_detection/` |
+| 3 - Socratic Educator | IT23155466 | `component3_socratic_educator/` |
+| 4 - Behavioral Profiling / XAI | IT23135116 | `component4_profiling_xai/` |
 
 
 
@@ -80,8 +80,6 @@ streamlit run ui/app.py      # run from the repo root so .streamlit/config.toml 
   trained KMeans model, for the children in the database (run
   `scripts/import_comp3_sessions.py` first). If no stored session has a
   `child_id`, the page falls back to a clearly labelled demo dataset (C001-C005).
-- **Behavioral Anomaly** (Function 2): runs the trained One-Class SVM on one
-  behavioral record.
 - **Child Profile**: not built yet ("Coming soon" card).
 - **Data & Admin**: Dashboard, Sessions (filters + details), Escalations,
   Add record (form or JSON, for testing).
@@ -89,13 +87,11 @@ streamlit run ui/app.py      # run from the repo root so .streamlit/config.toml 
 All data and model logic is in `ui/services.py`; colours, CSS and charts in
 `ui/theme.py`. Tests: `pytest tests -v`.
 
-Both pages use only the trained models, committed in
+The Emotional Pattern page uses the trained artifacts committed in
 `component4_profiling_xai/models/` (about 15 KB), with `scikit-learn==1.6.1`:
 
 - Function 1: `emotional_pattern_kmeans.pkl`, `emotional_pattern_scaler.pkl`,
   `emotional_pattern_metadata.json` (or point `C4_F1_ARTIFACT_DIR` at another folder).
-- Function 2: `behavioral_anomaly_ocsvm_variation.pkl`, `behavioral_scaler_variation.pkl`,
-  `behavioral_features_variation.pkl`.
 
 There is no fallback. If a model's files are missing or cannot be loaded
 (including a scikit-learn version mismatch), its page shows a red error card
@@ -132,7 +128,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_git_identity.ps1
 ## How each component should be built
 
 1. Work against your own `mock_inputs/` and the shared schema in
-   `docs/interface-contracts/` — you should never need another
+   `docs/interface-contracts/` - you should never need another
    component's real code to develop or test your own.
 2. Every output your component produces must validate against its
    schema. If you need a new field, add it to the schema first and log
@@ -143,7 +139,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_git_identity.ps1
 
 ## Branching
 
-- `main` — protected, always working
+- `main` - protected, always working
 - Feature branches per person: `c3/fsm-controller`, `c1/frame-capture`,
   `c2/classifier-v1`, `c4/report-format`, etc.
 - Small PRs, one teammate reviews before merge

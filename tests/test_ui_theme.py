@@ -88,3 +88,44 @@ def test_timeline_hover_pluralises_sessions():
                                           "sessions": 1}])
     defensive = next(t for t in fig.data if t.name == "Defensive")
     assert defensive.customdata[0][1] == "1 session"
+
+
+# --- Function 2 ------------------------------------------------------------------------
+
+def _anomaly_days():
+    import pandas as pd
+    return pd.DataFrame({"date": pd.date_range("2026-07-01", periods=4).date,
+                         "anomaly_score": [-13.0, -12.0, -12.9, -11.0],
+                         "unusual": [False, True, False, True]})
+
+
+def test_anomaly_figure_shows_decisions_without_scores_or_thresholds():
+    fig = theme.anomaly_history_figure(_anomaly_days())
+    assert not fig.layout.shapes
+    assert list(fig.layout.yaxis.ticktext) == ["Not flagged", "Flagged"]
+    assert all("score" not in t.hovertemplate for t in fig.data)
+    assert not fig.layout.annotations                        # no "threshold" text
+    by_name = {t.name: t for t in fig.data if t.name}
+    assert set(by_name) == {"Flagged", "Not flagged"}
+    assert list(by_name["Flagged"].y) == [1, 1]
+    assert list(by_name["Not flagged"].y) == [0, 0]
+    assert not any(t.showlegend for t in fig.data)            # no Normal/Unusual legend
+    # Status is not colour-only: shapes and sizes differ, and the hover names it.
+    assert by_name["Flagged"].marker.symbol != by_name["Not flagged"].marker.symbol
+    assert "Flagged" in by_name["Flagged"].hovertemplate
+
+
+def test_anomaly_figure_without_flagged_days():
+    fig = theme.anomaly_history_figure(_anomaly_days().assign(unusual=False))
+    flagged = next(t for t in fig.data if t.name == "Flagged")
+    assert list(flagged.y) == [None]
+
+
+def test_flag_styles_are_not_colour_only_and_not_safe_green():
+    flagged, not_flagged = theme.FLAG_STYLES[True], theme.FLAG_STYLES[False]
+    assert flagged.shape != not_flagged.shape
+    assert theme.flag_icon_svg(True) != theme.flag_icon_svg(False)
+    assert not_flagged.color != theme.COLORS["green"]
+    assert "not proof that the child is safe" in not_flagged.description
+    for style in (flagged, not_flagged):
+        assert "Normal" not in style.description and "Unusual" not in style.description

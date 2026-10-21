@@ -1,0 +1,44 @@
+{
+  "selected": "activity_svm",
+  "objective": "mean_forward_fold_F2",
+  "folds": [
+    [
+      35,
+      36,
+      49
+    ],
+    [
+      49,
+      50,
+      63
+    ],
+    [
+      63,
+      64,
+      73
+    ]
+  ],
+  "candidates": [
+    {
+      "detector": "activity_svm",
+      "quantile": 0.95,
+      "threshold": -4.9226041149520245
+    },
+    {
+      "detector": "activity_iforest",
+      "quantile": 0.9,
+      "threshold": 0.517399768093719
+    },
+    {
+      "detector": "legacy_svm",
+      "quantile": 0.97,
+      "threshold": -14.69091337002336
+    },
+    {
+      "detector": "statistical_change",
+      "quantile": 0.9,
+      "threshold": 2.456114586972767
+    }
+  ],
+  "heldout_seed": 20261020
+}
