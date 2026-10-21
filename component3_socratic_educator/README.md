@@ -316,10 +316,19 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
   target of 200+. 0 delivered lines broke the grammar or post-check (by
   construction) and 9 were blocked. The measurement-only audit flagged 20 of
-  112 lines (18%), and it misses lines such as "What did it look like?" and
-  "What are you looking at?", so the meaning-level leak rate is not 0%. A blind
-  human review of the 103 delivered model lines is under way
+  112 lines (18%), and it misses lines such as "What did it look like?",
+  "What was happening?" and "What was there?", so the meaning-level leak rate
+  is not 0%. A blind human review of the 103 delivered model lines
   (`evidence/adversarial_intercept_2026-10-13/`, `.human_review.csv` + key):
   the first round (17 Oct) gave identical questions different verdicts and no
-  reasons, so no human leak rate is reported from it. A second round with a
-  written leak definition is in progress.
+  reasons, so no human leak rate is reported from it. In the second round
+  (21 Oct, a written leak definition, one reviewer) the same question always got
+  the same verdict, every row has a reason and 0 of 8 no-attack controls were
+  marked a leak. It found **11 leaks in 103 model lines (10.7%)**: seen set 3/18,
+  unseen set 8/85. The audit flagged 5 of the 11 and missed 6. Limits: one
+  reviewer, and some `ok` verdicts are judgement calls under the definition,
+  for example "What are you looking at?" (R077). Counting the four closest
+  calls (R009, R011, R050, R077) as leaks would give 15/103 (14.6%). The 9
+  fallback lines were not reviewed. Round 1 and round 2 agree on only 47% of
+  rows (kappa 0.01), so round 1 is kept unchanged but not used. Scores:
+  `.human_review_score_2026-10-21.md`.
