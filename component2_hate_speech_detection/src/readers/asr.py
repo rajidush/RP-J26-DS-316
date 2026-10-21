@@ -11,10 +11,17 @@ Japanese on a quiet desktop, which then scored as real speech). Guards:
     per-segment no_speech_prob and avg_logprob floors
 
 The model loads on first use, so a silent machine never pays for it.
+
+faster-whisper runs on ctranslate2, which imports torch and transformers
+whenever they are installed, only for model converters C2 never uses (both
+imports are optional there). They are installed on a development laptop to
+export the ONNX models, so the voice path silently pulled them into the
+running app. `_whisper_model_class` hides them for that one import.
 """
 from __future__ import annotations
 
 import os
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -27,6 +34,23 @@ AVG_LOGPROB_MIN = -1.0
 SAMPLE_RATE = 16000
 MODEL_SIZE = os.environ.get("C2_ASR_MODEL", "tiny")
 ASR_THREADS = int(os.environ.get("C2_ASR_THREADS", "2"))
+
+
+_CONVERTER_ONLY = ("torch", "transformers")
+
+
+def _whisper_model_class():
+    """Import faster-whisper without the converter-only libraries, then restore the import system."""
+    hidden = [name for name in _CONVERTER_ONLY if name not in sys.modules]
+    for name in hidden:
+        sys.modules[name] = None  # `import name` now raises ImportError, which ctranslate2 tolerates
+    try:
+        from faster_whisper import WhisperModel
+    finally:
+        for name in hidden:
+            if name in sys.modules and sys.modules[name] is None:
+                del sys.modules[name]
+    return WhisperModel
 
 
 @dataclass
@@ -53,8 +77,7 @@ class AsrEngine:
 
     def _ensure_model(self):
         if self._model is None:
-            from faster_whisper import WhisperModel
-
+            WhisperModel = _whisper_model_class()
             # local_files_only: never contact the model hub at runtime (proposal NFR4).
             # Measured: without it, loading checked huggingface.co for updates over HTTPS.
             self._model = WhisperModel(self.model_size, device="cpu", compute_type="int8",

@@ -19,8 +19,8 @@ plotly>=5.20
 # llama-cpp-python>=0.2
 
 # Component 4 (see component4_profiling_xai/requirements.txt). scikit-learn
-# must match the version both trained models (Function 1 K-Means, Function 2
-# One-Class SVM) were pickled with; the UI refuses to load them otherwise:
+# must match the version the Function 1 K-Means artifacts were pickled with;
+# the UI refuses to load them otherwise:
 scikit-learn==1.6.1
 joblib>=1.2.0
 numpy>=1.19.5

@@ -7,7 +7,8 @@ Responsibilities
 * Return a RawFrame containing a PIL Image and associated metadata.
 * Optionally save the frame to disk (used by the CLI entry-point below).
 * Run a continuous capture loop, dispatching each frame to an on_frame callback.
-* Provide make_detector_callback() — loads jaranohaal/vit-base-violence-detection
+* (Legacy) make_detector_callback() — the PRETRAINED baseline, kept for comparison only;
+  the pipeline uses detector.ViolenceDetector. Loads jaranohaal/vit-base-violence-detection
   once (not per frame) and returns a callback that classifies every frame and
   prints flagged / category / confidence to the console.
 

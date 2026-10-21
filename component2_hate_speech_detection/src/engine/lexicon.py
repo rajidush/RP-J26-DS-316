@@ -11,8 +11,20 @@ threshold: the hit is recorded as evidence and the text is re-read in Stage
 2, but a cue never alerts on its own. Grooming secrecy uses it, because
 grooming is a conversation-level pattern rather than one message.
 
+A combination rule relabels a hit: a sexual request that comes with any
+grooming tactic or cue ("send me pics and don't tell your parents") is
+grooming, not sexual harassment.
+
 Every hit names the phrase or family that fired, so a parent or reviewer can
 read the exact rule behind a detection.
+
+`has_word` tells language from OCR garbage by the shape of its words, not a
+dictionary: a dictionary has no slurs or slang, and "youre a fag" must still
+reach the models. A word-like token has letters only, consistent capitals
+("fag", "FAG", "Fag", not "RKonsern"), a vowel, and no run of consonants
+longer than English allows ("OLMPCCHW" has seven). A text with no word-like
+token ("A-A∨±S-") gives the models nothing to read, so the scorer does not
+ask them. Limits live in `packs/policy/decision.json` (`model_needs_words`).
 """
 from __future__ import annotations
 
@@ -80,10 +92,15 @@ class Lexicon:
             )
             for f in pack["families"]
         )
+        self._combinations = tuple((c["category"], frozenset(c["over"])) for c in pack.get("combinations", ()))
         bands = pack["bands"]
         self._high_band = bands["high"]
         self._mid_band = bands["mid"]
         self._cue_score = float(bands["cue"])
+        rule = (policy or default_policy()).decision.get("model_needs_words", {})
+        self._word = re.compile(rf"[A-Za-z]{{{int(rule.get('min_letters', 2))},}}")
+        self._too_many_consonants = re.compile(
+            rf"[b-df-hj-np-tv-xz]{{{int(rule.get('max_consonant_run', 5)) + 1},}}", re.IGNORECASE)
         self._gaming_score = float(bands["gaming"])
         self._neutral_score = float(bands["neutral"])
         self._empty_score = float(bands["empty"])
@@ -101,6 +118,14 @@ class Lexicon:
         singled = _RUNS.sub(lambda m: m.group(1), blob)
         despace = lambda s: _SPACED.sub(lambda m: re.sub(r"\s+", "", m.group(0)), s)  # noqa: E731
         return (blob, doubled, singled, despace(blob), despace(singled))
+
+    def _word_like(self, token: str) -> bool:
+        cased = token.islower() or token.isupper() or token.istitle()
+        return cased and bool(re.search(r"[aeiouy]", token, re.IGNORECASE)) and not self._too_many_consonants.search(token)
+
+    def has_word(self, text: str) -> bool:
+        """At least one word-shaped token: language, as opposed to OCR garbage."""
+        return any(self._word_like(t) for t in self._word.findall(text or ""))
 
     def in_context(self, name: str, text: str) -> bool:
         pattern = self._contexts.get(name)
@@ -120,6 +145,15 @@ class Lexicon:
             if any(marker in high for marker in self._literal_categories.get(category, ())):
                 return category
         return "bullying"
+
+    def _combined(self, hit: LexiconHit, families: List[Family]) -> LexiconHit:
+        """Apply the pack's combination rules: the stronger reading names the category."""
+        for category, over in self._combinations:
+            fired = tuple(f.id for f in families if f.category == category)
+            if hit.category in over and fired:
+                extra = tuple(i for i in fired if i not in hit.hits)
+                return LexiconHit(hit.score, category, hit.hits + extra, hit.gaming)
+        return hit
 
     def score(self, text: str) -> LexiconHit:
         blob = self.normalize(text)
@@ -144,14 +178,14 @@ class Lexicon:
             band = self._high_band
             score = round(min(band["cap"], band["base"] + band["step"] * (len(hits) - 1)), 4)
             category = self._category_for_literals(high) if high else by_band["high"][0].category
-            return LexiconHit(score, category, tuple(hits), gaming)
+            return self._combined(LexiconHit(score, category, tuple(hits), gaming), families)
 
         if mid or by_band["mid"]:
             hits = mid + [f.id for f in by_band["mid"]]
             band = self._mid_band
             score = round(min(band["cap"], band["base"] + band["step"] * len(hits)), 4)
             category = by_band["mid"][0].category if by_band["mid"] and not mid else "bullying"
-            return LexiconHit(score, category, tuple(hits), gaming)
+            return self._combined(LexiconHit(score, category, tuple(hits), gaming), families)
 
         if by_band["cue"]:
             return LexiconHit(self._cue_score, by_band["cue"][0].category,

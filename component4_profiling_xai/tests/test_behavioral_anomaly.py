@@ -1,297 +1,248 @@
-"""
-Function 2 (Behavioral Anomaly Detection) tests.
-Run with: pytest component4_profiling_xai/tests/test_behavioral_anomaly.py -v
-
-Test records are derived from the saved scaler's training statistics
-(mean_ / scale_), so they sit on the real data's scale without hard-coding
-feature names or values. Nothing here fits or refits any artifact.
-"""
-import math
+import json
 import sys
 from pathlib import Path
 
-import joblib
 import numpy as np
 import pandas as pd
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from component4_profiling_xai.src import behavioral_anomaly  # noqa: E402
-from component4_profiling_xai.src.behavioral_anomaly import (  # noqa: E402
-    FEATURES_PATH,
-    MODEL_PATH,
-    SCALER_PATH,
-    load_artifacts,
-    predict_behavioral_anomaly,
-    preprocess_behavioral_input,
-    validate_behavioral_input,
-)
+from src import behavioral_anomaly as BA
+from src.behavioral_dataset import DATASET_BASELINE_COLUMNS, MODEL_FEATURES
 
-RESULT_KEYS = ["status", "anomaly_flag", "decision_score", "anomaly_score"]
+DATA = Path(__file__).resolve().parents[1] / "data" / "behavioral_daily.csv"
 
 
-@pytest.fixture(scope="module")
-def artifacts():
-    return load_artifacts()
+def make_daily(n=300, seed=0, features=BA.FEATURE_SET_B):
+    """Normal-looking random rows with every model feature plus keys and labels."""
+    rng = np.random.default_rng(seed)
+    df = pd.DataFrame(rng.poisson(1.0, size=(n, len(features))).astype(float), columns=features)
+    df["is_weekend"] = rng.random(n) < 2 / 7
+    df.insert(0, "child_id", [f"C{i % 5:03d}" for i in range(n)])
+    df.insert(1, "date", pd.date_range("2026-07-01", periods=n, freq="D").astype(str))
+    df["is_anomaly"] = 0
+    df["anomaly_type"] = "none"
+    df["episode_id"] = np.nan
+    return df
 
 
-@pytest.fixture(scope="module")
-def feature_names():
-    # Read straight from the .pkl so tests check against the stored order.
-    return list(joblib.load(FEATURES_PATH))
+# ------------------------------------------------------------------ feature sets
+
+def test_feature_sets_come_from_project_definitions():
+    assert BA.FEATURE_SET_B == MODEL_FEATURES
+    assert len(BA.FEATURE_SET_B) == 45
+    assert len(BA.FEATURE_SET_A) == 27
+    assert set(BA.BASELINE_FEATURES) == set(DATASET_BASELINE_COLUMNS) - {"baseline_ready"}
+    assert set(BA.FEATURE_SET_A).isdisjoint(BA.BASELINE_FEATURES)
+    # order of Set A follows Set B
+    assert BA.FEATURE_SET_A == [f for f in BA.FEATURE_SET_B if f in BA.FEATURE_SET_A]
 
 
-@pytest.fixture
-def normal_record(artifacts, feature_names):
-    """Every feature at its training mean."""
-    _, scaler, _ = artifacts
-    return {name: float(m) for name, m in zip(feature_names, scaler.mean_)}
+def test_no_label_or_metadata_column_is_a_feature():
+    for feats in BA.FEATURE_SETS.values():
+        assert set(feats).isdisjoint(BA.NON_FEATURE_COLUMNS)
 
 
-@pytest.fixture
-def unusual_record(artifacts, feature_names):
-    """Every feature 4 training standard deviations above its mean."""
-    _, scaler, _ = artifacts
-    return {
-        name: float(m + 4 * s)
-        for name, m, s in zip(feature_names, scaler.mean_, scaler.scale_)
-    }
+@pytest.mark.skipif(not DATA.is_file(), reason="dataset not present")
+def test_feature_sets_exist_in_dataset():
+    cols = pd.read_csv(DATA, nrows=1).columns
+    assert set(BA.FEATURE_SET_B) <= set(cols)
 
 
-# --- artifacts ---------------------------------------------------------------
-
-def test_artifacts_describe_13_features_in_the_same_order(artifacts, feature_names):
-    model, scaler, loaded_names = artifacts
-    assert len(feature_names) == 13
-    assert loaded_names == feature_names
-    assert scaler.n_features_in_ == 13
-    assert list(scaler.feature_names_in_) == feature_names
-    assert model.n_features_in_ == 13
-
-
-def test_artifact_paths_are_the_notebook_variation_files():
-    # Step 21 of the training notebook saves these exact file names.
-    assert MODEL_PATH.name == "behavioral_anomaly_ocsvm_variation.pkl"
-    assert SCALER_PATH.name == "behavioral_scaler_variation.pkl"
-    assert FEATURES_PATH.name == "behavioral_features_variation.pkl"
-    for path in (MODEL_PATH, SCALER_PATH, FEATURES_PATH):
-        assert path.is_absolute() and path.is_file()
+def test_feature_matrix_casts_to_float_and_rejects_labels():
+    df = make_daily(10)
+    X = BA.feature_matrix(df, BA.FEATURE_SET_A)
+    assert list(X.columns) == BA.FEATURE_SET_A
+    assert (X.dtypes == float).all()
+    with pytest.raises(ValueError, match="cannot be model input"):
+        BA.feature_matrix(df, ["is_anomaly"])
+    with pytest.raises(ValueError, match="missing feature"):
+        BA.feature_matrix(df.drop(columns="is_weekend"), BA.FEATURE_SET_A)
 
 
-def test_feature_list_matches_training_notebook(feature_names):
-    assert feature_names == [
-        "Daily_Usage_Hours",
-        "Sleep_Hours",
-        "Academic_Performance",
-        "Social_Interactions",
-        "Exercise_Hours",
-        "Screen_Time_Before_Bed",
-        "Phone_Checks_Per_Day",
-        "Apps_Used_Daily",
-        "Time_on_Social_Media",
-        "Time_on_Gaming",
-        "Time_on_Education",
-        "Family_Communication",
-        "Weekend_Usage_Hours",
-    ]
+def test_check_features_finds_constant_duplicate_and_correlated():
+    df = make_daily(200)
+    df["language_typed_flags"] = 0.0                                   # constant
+    df["copy_of_flags"] = df["language_flags"]                         # exact duplicate
+    df["almost_flags"] = df["language_flags"] + np.random.default_rng(1).normal(0, 0.01, len(df))
+    feats = ["language_flags", "language_typed_flags", "copy_of_flags", "almost_flags", "screen_incidents"]
+    rep = BA.check_features(df, feats)
+    assert rep["constant"] == ["language_typed_flags"]
+    assert rep["duplicates"] == [("language_flags", "copy_of_flags")]
+    pairs = {frozenset(p) for p in rep["high_corr"][["feature_1", "feature_2"]].itertuples(index=False)}
+    assert frozenset({"language_flags", "almost_flags"}) in pairs
+    assert BA.clean_feature_list(df, feats) == ["language_flags", "almost_flags", "screen_incidents"]
 
 
-def test_model_has_tuned_notebook_hyperparameters(artifacts):
-    model, _, _ = artifacts
-    params = model.get_params()
-    assert (params["kernel"], params["nu"], params["gamma"]) == ("rbf", 0.02, 0.05)
+# ------------------------------------------------------------------ models and thresholds
+
+@pytest.mark.parametrize("algorithm", list(BA.ALGORITHMS))
+def test_pipeline_scores_outliers_higher_and_handles_nan(algorithm):
+    train = make_daily(300)
+    X = BA.feature_matrix(train, BA.FEATURE_SET_B)
+    pipe = BA.build_pipeline(algorithm, {"nu": 0.05} if algorithm == "one_class_svm" else {}).fit(X)
+
+    probe = make_daily(2, seed=5)
+    counts = [f for f in BA.FEATURE_SET_A if f != "is_weekend"]
+    probe.loc[1, counts] = 40.0                                        # extreme day
+    probe.loc[0, BA.BASELINE_FEATURES] = np.nan                        # warm-up day
+    scores = BA.anomaly_scores(pipe, BA.feature_matrix(probe, BA.FEATURE_SET_B))
+    assert np.isfinite(scores).all()
+    assert scores[1] > scores[0]
 
 
-def test_missing_artifact_raises_clear_error(tmp_path):
-    with pytest.raises(FileNotFoundError, match="missing.pkl"):
-        behavioral_anomaly._load_artifact(tmp_path / "missing.pkl")
+def test_build_pipeline_is_reproducible_and_validates_name():
+    X = BA.feature_matrix(make_daily(200), BA.FEATURE_SET_A)
+    a = BA.anomaly_scores(BA.build_pipeline("isolation_forest", seed=7).fit(X), X)
+    b = BA.anomaly_scores(BA.build_pipeline("isolation_forest", seed=7).fit(X), X)
+    assert np.array_equal(a, b)
+    with pytest.raises(ValueError, match="unknown algorithm"):
+        BA.build_pipeline("kmeans")
 
 
-# --- A. valid input ----------------------------------------------------------
-
-def test_valid_input_returns_one_row_in_training_order(normal_record, feature_names):
-    df = validate_behavioral_input(normal_record)
-    assert isinstance(df, pd.DataFrame)
-    assert df.shape == (1, 13)
-    assert list(df.columns) == feature_names
-
-
-def test_valid_input_preserves_values(normal_record, feature_names):
-    df = validate_behavioral_input(normal_record)
-    assert df.iloc[0].tolist() == [normal_record[name] for name in feature_names]
-
-
-def test_numpy_and_int_values_are_accepted(normal_record, feature_names):
-    record = dict(normal_record)
-    record[feature_names[0]] = np.float32(4.5)
-    record[feature_names[1]] = np.int64(7)
-    record[feature_names[2]] = 70
-    df = validate_behavioral_input(record)
-    assert df.iloc[0, 0:3].tolist() == [4.5, 7.0, 70.0]
-
-
-def test_non_dict_input_raises_type_error(feature_names):
-    with pytest.raises(TypeError):
-        validate_behavioral_input([1.0] * len(feature_names))
-
-
-# --- B. missing feature ------------------------------------------------------
-
-def test_missing_feature_raises_and_names_it(normal_record, feature_names):
-    missing = feature_names[3]
-    record = {k: v for k, v in normal_record.items() if k != missing}
-    with pytest.raises(ValueError, match=missing):
-        validate_behavioral_input(record)
-
-
-def test_all_missing_features_are_reported(normal_record, feature_names):
-    dropped = [feature_names[0], feature_names[-1]]
-    record = {k: v for k, v in normal_record.items() if k not in dropped}
-    with pytest.raises(ValueError) as exc_info:
-        validate_behavioral_input(record)
-    for name in dropped:
-        assert name in str(exc_info.value)
-
-
-# --- C-F. invalid values -----------------------------------------------------
-
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        pytest.param("5", id="numeric-string"),
-        pytest.param("high", id="string"),
-        pytest.param(None, id="none"),
-        pytest.param([5.0], id="list"),
-        pytest.param(1 + 2j, id="complex"),
-        pytest.param(True, id="bool-true"),
-        pytest.param(False, id="bool-false"),
-        pytest.param(np.bool_(True), id="numpy-bool"),
-        pytest.param(float("nan"), id="nan"),
-        pytest.param(np.nan, id="numpy-nan"),
-        pytest.param(float("inf"), id="pos-inf"),
-        pytest.param(float("-inf"), id="neg-inf"),
-        pytest.param(-np.inf, id="numpy-neg-inf"),
-    ],
-)
-def test_invalid_value_raises_value_error(normal_record, feature_names, bad_value):
-    target = feature_names[5]
-    record = {**normal_record, target: bad_value}
-    with pytest.raises(ValueError, match=target):
-        validate_behavioral_input(record)
-
-
-def test_invalid_value_also_rejected_by_prediction(normal_record, feature_names):
-    record = {**normal_record, feature_names[0]: float("nan")}
+def test_threshold_and_evaluate():
+    train_scores = np.arange(100, dtype=float)
+    assert BA.threshold_from_quantile(train_scores, 0.9) == pytest.approx(89.1)
     with pytest.raises(ValueError):
-        predict_behavioral_anomaly(record)
+        BA.threshold_from_quantile(train_scores, 1.0)
+
+    m = BA.evaluate([0, 0, 1, 1], [0.1, 0.9, 0.8, 0.2], threshold=0.5)
+    assert (m["tp"], m["fp"], m["fn"], m["tn"]) == (1, 1, 1, 1)
+    assert m["precision"] == m["recall"] == m["f1"] == 0.5
+    # nothing flagged: no division error
+    assert BA.evaluate([0, 1], [0.0, 0.0], threshold=1.0)["precision"] == 0.0
 
 
-# --- G. extra keys -----------------------------------------------------------
-
-def test_extra_keys_are_ignored(normal_record, feature_names):
-    record = {**normal_record, "Addiction_Level": 9.0, "unrelated": "text"}
-    df = validate_behavioral_input(record)
-    assert list(df.columns) == feature_names
-    assert predict_behavioral_anomaly(record) == predict_behavioral_anomaly(normal_record)
-
-
-# --- H. preprocessing --------------------------------------------------------
-
-def test_preprocessing_returns_finite_1x13_array(normal_record):
-    scaled = preprocess_behavioral_input(normal_record)
-    assert isinstance(scaled, np.ndarray)
-    assert scaled.shape == (1, 13)
-    assert np.isfinite(scaled).all()
+def test_tune_threshold_picks_best_f1_and_prefers_higher_quantile_on_ties():
+    train_scores = np.linspace(0, 1, 101)
+    val_scores = np.array([0.1, 0.2, 0.3, 0.97, 0.99])
+    y_val = np.array([0, 0, 0, 1, 1])
+    best, table = BA.tune_threshold(train_scores, val_scores, y_val, [0.5, 0.9, 0.95])
+    assert len(table) == 3
+    assert best["f1"] == 1.0
+    assert best["quantile"] == 0.95                                    # all three tie at F1 = 1
 
 
-def test_preprocessing_uses_saved_scaler(normal_record):
-    # A record at the training mean scales to ~0 for every feature.
-    scaled = preprocess_behavioral_input(normal_record)
-    np.testing.assert_allclose(scaled, np.zeros((1, 13)), atol=1e-9)
+# ------------------------------------------------------------------ artifacts
+
+def test_save_load_and_predict_roundtrip(tmp_path):
+    train = make_daily(200)
+    feats = BA.FEATURE_SET_A
+    pipe = BA.build_pipeline("one_class_svm", {"nu": 0.05}).fit(BA.feature_matrix(train, feats))
+    thr = BA.threshold_from_quantile(BA.anomaly_scores(pipe, BA.feature_matrix(train, feats)), 0.95)
+    BA.save_artifacts(pipe, {"algorithm": "one_class_svm", "features": feats, "threshold": thr}, tmp_path)
+
+    loaded, meta = BA.load_artifacts(tmp_path)
+    assert meta["features"] == feats
+    json.loads((tmp_path / BA.METADATA_FILE).read_text())
+
+    new = make_daily(20, seed=3)
+    out = BA.predict_anomalies(new, tmp_path)
+    assert list(out.columns) == ["child_id", "date", "anomaly_score", "is_flagged"]
+    expected = BA.anomaly_scores(pipe, BA.feature_matrix(new, feats))
+    assert np.allclose(out["anomaly_score"], expected)
+    assert (out["is_flagged"] == (expected > thr)).all()
 
 
-# --- I/J. prediction ---------------------------------------------------------
-
-def test_normal_record_is_predicted_normal(normal_record):
-    result = predict_behavioral_anomaly(normal_record)
-    assert list(result) == RESULT_KEYS
-    assert result["status"] == "Normal"
-    assert result["anomaly_flag"] == 0
-    assert result["decision_score"] > 0
+def test_save_artifacts_requires_core_metadata(tmp_path):
+    pipe = BA.build_pipeline("isolation_forest")
+    with pytest.raises(ValueError, match="threshold"):
+        BA.save_artifacts(pipe, {"algorithm": "x", "features": []}, tmp_path)
 
 
-def test_unusual_record_is_predicted_anomaly(unusual_record):
-    result = predict_behavioral_anomaly(unusual_record)
-    assert list(result) == RESULT_KEYS
-    assert result["status"] == "Anomaly"
-    assert result["anomaly_flag"] == 1
-    assert result["decision_score"] < 0
+@pytest.mark.skipif(not (BA.ARTIFACT_DIR / BA.PIPELINE_FILE).is_file(), reason="model not trained yet")
+def test_saved_model_loads_and_scores_dataset():
+    pipe, meta = BA.load_artifacts()
+    assert meta["features"] in BA.FEATURE_SETS.values()
+    assert {"threshold", "threshold_quantile", "algorithm", "params", "sklearn_version"} <= meta.keys()
+    if DATA.is_file():
+        df = pd.read_csv(DATA)
+        out = BA.predict_anomalies(df[df.split == "test"])
+        assert len(out) == 680 and out["anomaly_score"].notna().all()
 
 
-@pytest.mark.parametrize("record_fixture", ["normal_record", "unusual_record"])
-def test_status_matches_sklearn_prediction(request, artifacts, record_fixture):
-    model, _, _ = artifacts
-    record = request.getfixturevalue(record_fixture)
-    raw = int(model.predict(preprocess_behavioral_input(record))[0])
-    result = predict_behavioral_anomaly(record)
+# ------------------------------------------------------------------ dashboard helpers (Step 5B)
 
-    assert raw in (1, -1)
-    expected = {1: ("Normal", 0), -1: ("Anomaly", 1)}[raw]
-    assert (result["status"], result["anomaly_flag"]) == expected
+needs_saved_model = pytest.mark.skipif(not (BA.ARTIFACT_DIR / BA.PIPELINE_FILE).is_file(),
+                                       reason="model not trained yet")
 
 
-# --- K. scores ---------------------------------------------------------------
-
-@pytest.mark.parametrize("record_fixture", ["normal_record", "unusual_record"])
-def test_scores_are_finite_python_floats(request, record_fixture):
-    result = predict_behavioral_anomaly(request.getfixturevalue(record_fixture))
-    for key in ("decision_score", "anomaly_score"):
-        assert type(result[key]) is float
-        assert math.isfinite(result[key])
-    assert result["anomaly_score"] == -result["decision_score"]
+@needs_saved_model
+def test_validate_artifacts_accepts_the_saved_model():
+    pipe, meta = BA.load_artifacts()
+    BA.validate_artifacts(pipe, meta, expected_features=BA.FEATURE_SET_A)
 
 
-def test_more_unusual_record_has_higher_anomaly_score(normal_record, unusual_record):
-    normal = predict_behavioral_anomaly(normal_record)
-    unusual = predict_behavioral_anomaly(unusual_record)
-    assert unusual["anomaly_score"] > normal["anomaly_score"]
+@needs_saved_model
+@pytest.mark.parametrize("change, message", [
+    (lambda m: m.update(features=m["features"][::-1]), "different columns"),
+    (lambda m: m.update(features=m["features"][:-1]), "different columns"),
+    (lambda m: m.update(features=m["features"] + ["extra"]), "different columns"),
+    (lambda m: m.update(n_features=30), "n_features"),
+    (lambda m: m.update(threshold=float("nan")), "finite"),
+    (lambda m: m.update(threshold="-12.5"), "finite"),
+    (lambda m: m.update(threshold=True), "finite"),
+    (lambda m: m.pop("threshold"), "finite"),
+    (lambda m: m.update(pipeline_steps=["scaler", "model"]), "steps"),
+])
+def test_validate_artifacts_rejects_mismatched_metadata(change, message):
+    pipe, meta = BA.load_artifacts()
+    change(meta)
+    with pytest.raises(ValueError, match=message):
+        BA.validate_artifacts(pipe, meta)
 
 
-@pytest.mark.parametrize(
-    "pattern",
-    [
-        # The three synthetic anomaly patterns from the training notebook
-        # (values beyond its 95th / 5th percentile thresholds).
-        pytest.param({"Daily_Usage_Hours": 10.0, "Sleep_Hours": 3.5,
-                      "Phone_Checks_Per_Day": 148}, id="high_usage_low_sleep"),
-        pytest.param({"Screen_Time_Before_Bed": 2.3, "Time_on_Social_Media": 4.7,
-                      "Sleep_Hours": 3.5}, id="night_social_low_sleep"),
-        pytest.param({"Weekend_Usage_Hours": 12.0, "Time_on_Gaming": 3.7,
-                      "Daily_Usage_Hours": 10.0}, id="weekend_gaming_high_usage"),
-    ],
-)
-def test_notebook_anomaly_pattern_raises_anomaly_score(normal_record, pattern):
-    # Only a relative check: with every other feature at its mean, the SVM
-    # may still place the record inside the boundary (notebook recall ~0.8).
-    baseline = predict_behavioral_anomaly(normal_record)["anomaly_score"]
-    patterned = predict_behavioral_anomaly({**normal_record, **pattern})["anomaly_score"]
-    assert patterned > baseline
+@needs_saved_model
+def test_validate_artifacts_checks_the_expected_feature_set():
+    pipe, meta = BA.load_artifacts()
+    with pytest.raises(ValueError, match="expected feature set"):
+        BA.validate_artifacts(pipe, meta, expected_features=BA.FEATURE_SET_B)
 
 
-# --- no fitting --------------------------------------------------------------
+@needs_saved_model
+def test_explain_day_uses_the_pipelines_own_scaling():
+    pipe, meta = BA.load_artifacts()
+    row = BA.feature_matrix(make_daily(1, seed=9), meta["features"])
+    row.loc[row.index[0], "language_grooming_flags"] = 3.0
+    table = BA.explain_day(pipe, row, top_n=5)
 
-def test_prediction_does_not_change_fitted_artifacts(artifacts, normal_record, unusual_record):
-    model, scaler, _ = artifacts
-    model_attrs = ("support_vectors_", "dual_coef_", "intercept_", "offset_")
-    scaler_attrs = ("mean_", "var_", "scale_", "n_samples_seen_")
-    before = {a: np.copy(getattr(model, a)) for a in model_attrs}
-    before.update({a: np.copy(getattr(scaler, a)) for a in scaler_attrs})
+    assert len(table) == 5
+    assert list(table.columns) == ["feature", "observed", "typical", "z", "direction"]
+    assert set(table["feature"]) <= set(meta["features"])
+    assert table["z"].abs().is_monotonic_decreasing
+    expected = dict(zip(meta["features"], pipe[:-1].transform(row)[0]))
+    for f, z in zip(table["feature"], table["z"]):
+        assert z == pytest.approx(expected[f])
+    scaler = pipe.named_steps["scaler"]
+    i = meta["features"].index("language_grooming_flags")
+    top = table.iloc[0]
+    assert top["feature"] == "language_grooming_flags"
+    assert top["typical"] == pytest.approx(scaler.mean_[i])
+    assert top["direction"] == "higher than typical"
 
-    predict_behavioral_anomaly(normal_record)
-    predict_behavioral_anomaly(unusual_record)
 
-    for attr in model_attrs:
-        assert np.array_equal(before[attr], getattr(model, attr)), attr
-    for attr in scaler_attrs:
-        assert np.array_equal(before[attr], getattr(scaler, attr)), attr
+@needs_saved_model
+def test_explain_day_takes_one_row():
+    pipe, meta = BA.load_artifacts()
+    with pytest.raises(ValueError, match="exactly one row"):
+        BA.explain_day(pipe, BA.feature_matrix(make_daily(2), meta["features"]))
+
+
+FREEZE_MANIFEST = (Path(__file__).resolve().parents[1] / "data" / "step4a_heldout_seed20261020"
+                   / "freeze_manifest.json")
+
+
+@needs_saved_model
+@pytest.mark.skipif(not FREEZE_MANIFEST.is_file(), reason="Step 4A freeze manifest not present")
+def test_production_model_is_the_step3_model():
+    # The dashboard must run the Step 3 artifacts that Step 4A protected, not a replacement.
+    import hashlib
+
+    protected = json.loads(FREEZE_MANIFEST.read_text())["protected"]
+    for name in (BA.PIPELINE_FILE, BA.METADATA_FILE):
+        digest = next(h for k, h in protected.items() if k.replace("\\", "/").endswith(f"models/{name}"))
+        assert hashlib.sha256((BA.ARTIFACT_DIR / name).read_bytes()).hexdigest() == digest, name
+    _, meta = BA.load_artifacts()
+    assert (meta["algorithm"], meta["feature_set"], meta["n_features"]) == ("one_class_svm", "A_daily", 27)
+    assert meta["features"] == BA.FEATURE_SET_A

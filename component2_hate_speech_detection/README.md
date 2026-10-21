@@ -3,7 +3,7 @@
 **Project:** J26-DS-316 — Fully On-Device AI for Detecting Harmful Content and Guiding Children's Digital Safety  
 **Owner:** Liyanage D. S. (IT23209152)  
 **Proposal:** `IT23209152.pdf` (Hate Speech Analyzer)  
-**Status (18 Oct 2026):** roadmap steps 0–8 and 10 done; the meme score is evidence only until it passes its calibration gate. Step 9 (results tables) is partly done.
+**Status (18 Oct 2026):** roadmap steps 0–10 done; the meme score is evidence only until it passes its calibration gate. Step 9's results tables are in `evaluation/results/step9.md` and `resources.md`; an independently written child-context test set is still to come.
 
 ---
 
@@ -73,7 +73,7 @@ Invariants with named tests:
 |---|---|---|
 | 1 Capture | Frames and audio held in memory only; the raw frame is closed after each check | `src/capture/`, `src/agent/runtime.py` |
 | 2 Read | Screen: a tiny thumbnail diff decides if anything changed; only changed areas are OCR'd. Voice: utterances cut by VAD, then transcribed. Pictures: found on changed frames and scored once each | `src/readers/` |
-| 3 Screen | Keyword layer (hash-verified policy pack) + two text models with the corroboration rule; framing check; gaming cap | `src/engine/lexicon.py`, `text_scorer.py`, `framing.py` |
+| 3 Screen | Keyword layer (hash-verified policy pack) + two text models with the corroboration rule; framing check; gaming cap. Text with no real word (OCR garbage) gets the keyword layer only | `src/engine/lexicon.py`, `text_scorer.py`, `framing.py` |
 | 4 Gate | Below 0.35 the check stops (keeps average CPU low) | `src/engine/analyzer.py` |
 | 5 Confirm and combine | Long text re-read in windows; fusion under I-1 and I-2 | `src/engine/fusion.py` |
 | 6 Decide by age | Persona threshold and rung; verdict with evidence, explanation and child-safe summary | `src/engine/decide.py`, `verdict.py` |
@@ -137,7 +137,7 @@ verdict = analyze("nobody likes you", age=10)             # the full Verdict: ru
 | 6 | Evidence / explanation record + child-safe summary | FR7, FR8 | Done |
 | 7 | Screen-text (OCR) and speech (ASR) readers into the same scorer | SO3, FR1 | Done |
 | 8 | Image / meme path, calibrated before it can change decisions | SO3, FR5 | Done, **evidence only**: failed the calibration gate on the test set (p = 0.008) |
-| 9 | Child-context test set, baselines, ablations, resource / network checks | RQ1–RQ3 | Partly: dev (67) and held-out (40) text sets, meme and screen evaluations, ONNX parity. To do: baseline and ablation tables, resource table, child-context set |
+| 9 | Child-context test set, baselines, ablations, resource / network checks | RQ1–RQ3 | Done: baselines and ablations on the child-context sets (general 107, self-harm 73, grooming 108) and two public sets (`evaluation/step9.py`); resources (`evaluation/resources.py`). To do: an independently written child-context set |
 | 10 | Real C2 path in `integration/` | Shared | Done (`--source component2 --text`) |
 
 ---
@@ -148,12 +148,21 @@ On the reference laptop (Intel i7-1355U, CPU only). Result files are in `evaluat
 
 | What | Result |
 |---|---|
-| Typed message, keyword layer + both text models | 19 ms median, 24 ms p95 (107 cases); 755 MB loaded |
-| On-screen chat text (3 chat styles, 107 cases) | 94–95 % same decision as typed text; 0 false alerts on 54 benign messages |
-| Image checked in the app (OCR + text models + meme model) | 0.42 s median, 0.81 s p95; peak 1,508 MB (budget 2 GB) |
+| Typed message, full engine (288 child-context texts) | 37 ms median, 162 ms p95; 138 ms median when the grooming model is asked |
+| On-screen chat text (5 chat styles, 107 cases) | 97.5–100 % same decision as typed text (94–97 % before the chat-header fix); benign alerts on screen equal typed ones |
+| Chat screenshot | 1.05 s for a whole-frame read, 0.24 s after one new message, 11 ms when nothing changed |
+| Meme image checked in the app (OCR + text models + meme model) | 0.32 s median, 0.79 s p95 |
+| Spoken sentence (about 3 s of speech) | 0.35–0.38 s; the speech model loads once in 0.56 s |
+| Peak memory, every C2 model loaded (text, OCR, meme, speech) | 1,847 MB (budget about 2 GB); PyTorch never loaded |
 | Meme model, test (dev_seen, 500 memes) | 0.751 AUROC (logistic-regression baseline 0.675); 0.733 with OCR captions |
 | Memes inside a full screenshot | 0.713 AUROC with the picture finder vs 0.565 scoring the whole screen |
-| Network during inference | 0 connections from the engine (shown live in the app) |
+| Network during inference | 0 connections from the engine after every phase (also shown live in the app) |
+
+Step 9 in one line each (age 12; full tables in `evaluation/results/step9.md`):
+
+- **Against simple filters, on children's messages:** general harm caught 29 / 53 (best single filter 20), self-harm 34 / 40 (≤ 6), grooming 33 / 60 (≤ 24), children reporting abuse alerted 0 / 12.
+- **On adult public data** (Davidson, Berkeley samples): about the best single model (F1 0.946 vs 0.942; 0.819 vs 0.837). C2's gains are child-specific.
+- **Each rule switched off:** without corroboration, public false alerts rise 31 → 60 and 134 → 173 (on the child sets it costs 4 catches and saves none); without framing, 2 / 12 reporting messages alert; without the gaming cap, a gaming line alerts; without the specialists, self-harm falls to 6 / 40 and grooming to 24 / 60.
 
 Details: `meme_model/README.md` (model choice, calibration, ONNX, screen memes) and `tools/export_onnx.py` (text-model INT8 decision gate).
 
@@ -174,7 +183,7 @@ component2_hate_speech_detection/
 │   └── app/                 C2 Analyst desktop app (pywebview + tray)
 ├── meme_model/              meme classifier: embed, heads, train, calibrate (see its README)
 ├── annotation/              meme labels and the human-validation tools (codebook, datasheet)
-├── evaluation/              dev and held-out text sets, screen meme evaluation, results/
+├── evaluation/              text test sets, step 9 tables (step9.py, resources.py), screen evaluations, results/
 ├── tools/                   ONNX export + parity gates, policy manifest builder
 ├── mock_inputs/             schema-shaped fixture for the mock path
 └── tests/                   pytest suite (offline; models faked where needed)
@@ -238,7 +247,8 @@ Primary metrics: recall on harmful content, false alerts on benign and on **repo
 
 - **The meme score never changes a decision yet.** It failed its calibration gate on the test set (p = 0.008); it is shown as evidence only.
 - **Screen memes are measured on built screens**, not real captures; a meme with a white backdrop on a white page can be cut short.
-- **On-screen text loses a little.** The sender's name and time merge into the message, so 3 bullying messages caught as typed text are missed at ages 12–15; OCR misreads stretched letters ("kiiiill").
-- **Short OCR fragments can raise false alerts** (one meme was flagged for a misread cut-off word).
+- **On-screen text loses a little to OCR.** Chat headers (name + time) are now left out of the scored text, but OCR still misreads stretched or starred letters ("kiiiill" → "kifll", "k\*y\*s" → "kxyts"), so those are missed on screen. A sender's name shown without a time stays in the message: it cannot be told apart from a short message.
+- **One known text false alert:** "my brother keeps annoying me i hate it" is flagged (L3) at every age, typed or on screen.
+- **On memes, text alone separates hateful from benign only weakly** (age 9: 80 / 246 hateful vs 51 / 254 benign alerted on the test split): the dataset pairs the same captions with harmless images on purpose. OCR garbage with no word-shaped token ("OLMPCCHW", "RKonsern") is no longer given to the models; on the test split that changed one alert, a hateful meme caught only through the garbage string "RKonsern".
 - **Test sets are small:** 107 hand-written messages and 500 memes; meme labels still need a human check; no child-context benchmark yet.
 - **Fusion can never lower a score (I-2)**, so the meme model cannot cancel a text false alarm on a benign meme; that is the design's safety trade-off.

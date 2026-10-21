@@ -1,4 +1,4 @@
-"""Export the text heads (and the self-harm specialist) to ONNX, quantise where safe, and prove it (GS-010).
+"""Export the text heads (and the two specialists) to ONNX, quantise where safe, and prove it (GS-010).
 
     python -m component2_hate_speech_detection.tools.export_onnx
 
@@ -16,10 +16,23 @@ gate text at ages 9, 12 and 15. Measured on 10 Oct 2026 (132 texts x 3 ages):
     MatMul-only + per-channel         dynabench  4 head flips -> 6 engine changes  (rejected)
                                       toxic-bert 7 head flips -> 0 engine changes  (kept)
 
-So toxic-bert ships INT8 and Dynabench ships fp32 ONNX. The self-harm
-specialist (sentinet/suicidality, `engine/self_harm.py`) goes through the same
-export and the same gate; its gate texts add the self-harm set. The result is
-written to `evaluation/results/onnx_parity.json`.
+So toxic-bert ships INT8 and Dynabench ships fp32 ONNX.
+
+A second, gentler INT8 is tried for a model whose MatMul INT8 fails: only the
+embedding table (the Gather op) is quantised. That table is most of a small
+model's weights (DeBERTa-v3's 128k-token vocabulary is ~190 MB of its 270 MB),
+and a lookup's rounding error is far smaller than a matrix product's. It must
+pass the same gate. The first variant that passes is kept as model.int8.onnx.
+Measured on 18 Oct 2026 (313 texts x 3 ages): embedding-only INT8 changed 0
+decisions for Dynabench, the self-harm and the grooming models (MatMul INT8:
+9, 3 and 6), so all four now ship some INT8 and peak memory fell to 1,854 MB
+with every C2 model loaded.
+
+The self-harm
+specialist (sentinet/suicidality, `engine/self_harm.py`) and the grooming
+specialist (an NLI model read on text + hypothesis pairs, `engine/grooming.py`)
+go through the same export and the same gate; the gate texts add their test
+sets. The result is written to `evaluation/results/onnx_parity.json`.
 """
 from __future__ import annotations
 
@@ -35,20 +48,28 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 from component2_hate_speech_detection.evaluation.dev_set import all_cases as dev_cases
+from component2_hate_speech_detection.evaluation.grooming_set import dev_cases as grooming_dev
+from component2_hate_speech_detection.evaluation.grooming_set import heldout_cases as grooming_heldout
 from component2_hate_speech_detection.evaluation.heldout_set import all_cases as heldout_cases
 from component2_hate_speech_detection.evaluation.self_harm_set import dev_cases as self_harm_dev
 from component2_hate_speech_detection.evaluation.self_harm_set import heldout_cases as self_harm_heldout
 from component2_hate_speech_detection.src.engine.analyzer import Analyzer
-from component2_hate_speech_detection.src.engine.heads import DEFAULT_HEADS, TextHead, hate_score_from_labels
+from component2_hate_speech_detection.src.engine.heads import (DEFAULT_HEADS, TextHead, ZeroShotHead,
+                                                                hate_score_from_labels, normalize_label)
 from component2_hate_speech_detection.src.engine.onnx_backend import OnnxBackend, onnx_model_dir
 from component2_hate_speech_detection.src.engine.policy import default_policy
 from component2_hate_speech_detection.src.engine.text_scorer import TextScorer
 
 RESULTS = Path(__file__).resolve().parents[1] / "evaluation" / "results" / "onnx_parity.json"
-INT8_SETTINGS = dict(op_types_to_quantize=["MatMul"], per_channel=True)
+INT8_VARIANTS = {
+    "matmul": dict(op_types_to_quantize=["MatMul"], per_channel=True),
+    "embedding": dict(op_types_to_quantize=["Gather"]),
+}
 GATE_AGES = (9, 12, 15)
 SELF_HARM = default_policy().decision["self_harm_model"]["model"]
-MODELS = (*DEFAULT_HEADS, SELF_HARM)
+GROOMING = default_policy().decision["grooming_model"]["model"]
+HYPOTHESES = default_policy().decision["grooming_model"]["hypotheses"]
+MODELS = (*DEFAULT_HEADS, SELF_HARM, GROOMING)
 
 PARITY_TEXTS = [
     "you should kys", "nobody likes you go back to your country", "they breed like vermin",
@@ -67,7 +88,8 @@ PARITY_TEXTS = [
 
 def gate_texts() -> list[str]:
     return (PARITY_TEXTS + [c.text for c in dev_cases()] + [c.text for c in heldout_cases()]
-            + [c.text for c in self_harm_dev() + self_harm_heldout()])
+            + [c.text for c in self_harm_dev() + self_harm_heldout()]
+            + [c.text for c in grooming_dev() + grooming_heldout()])
 
 
 def export_fp32(model_id: str, opset: int = 17) -> Path:
@@ -80,7 +102,8 @@ def export_fp32(model_id: str, opset: int = 17) -> Path:
     out.mkdir(parents=True)
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
+    # fp32 explicitly: some checkpoints (the grooming NLI model) are stored fp16.
+    model = AutoModelForSequenceClassification.from_pretrained(model_id, dtype=torch.float32).eval()
     tokenizer.save_pretrained(out)      # tokenizer.json (fast tokenizer)
     model.config.save_pretrained(out)   # id2label + problem_type decide softmax vs sigmoid
     # transformers 5 leaves default label names (LABEL_0, LABEL_1) out of config.json;
@@ -106,24 +129,25 @@ def export_fp32(model_id: str, opset: int = 17) -> Path:
     return out
 
 
-def quantize_int8(model_id: str) -> Path:
+def quantize_int8(model_id: str, variant: str) -> Path:
     from onnxruntime.quantization import QuantType, quantize_dynamic
 
     root = onnx_model_dir(model_id)
     target = root / "model.int8.onnx"
-    quantize_dynamic(str(root / "model.onnx"), str(target), weight_type=QuantType.QInt8, **INT8_SETTINGS)
+    quantize_dynamic(str(root / "model.onnx"), str(target), weight_type=QuantType.QInt8, **INT8_VARIANTS[variant])
     return target
 
 
 def _head(model_id: str, quantized: bool) -> TextHead:
-    head = TextHead(model_id)
+    head = ZeroShotHead(model_id, HYPOTHESES) if model_id == GROOMING else TextHead(model_id)
     head._backend = OnnxBackend(model_id, quantized=quantized)
     return head
 
 
 def _decisions(int8_heads: set[str], texts: list[str]) -> list[tuple]:
     scorer = TextScorer(heads=[_head(m, m in int8_heads) for m in DEFAULT_HEADS],
-                        self_harm_head=_head(SELF_HARM, SELF_HARM in int8_heads))
+                        self_harm_head=_head(SELF_HARM, SELF_HARM in int8_heads),
+                        grooming_head=_head(GROOMING, GROOMING in int8_heads))
     analyzer = Analyzer(scorer=scorer)
     return [(analyzer.analyze_text(t, age).rung, analyzer.analyze_text(t, age).top_category)
             for t in texts for age in GATE_AGES]
@@ -139,8 +163,18 @@ def _changes(ref: list[tuple], got: list[tuple], texts: list[str]) -> list[dict]
 def fp32_matches_torch(model_id: str, texts: list[str]) -> float:
     from component2_hate_speech_detection.src.engine.heads import TorchBackend
 
-    torch_scores = [hate_score_from_labels(r) for r in TorchBackend(model_id)(texts)]
-    onnx_scores = [hate_score_from_labels(r) for r in OnnxBackend(model_id, quantized=False)(texts)]
+    if model_id == GROOMING:  # NLI: every text against every hypothesis, compared on entailment
+        firsts = [t for t in texts for _ in HYPOTHESES]
+        seconds = [h for _ in texts for h in HYPOTHESES.values()]
+
+        def score(rows):
+            return [next(float(x["score"]) for x in r if normalize_label(x["label"]) == "entailment") for r in rows]
+
+        torch_scores = score(TorchBackend(model_id)(firsts, seconds))
+        onnx_scores = score(OnnxBackend(model_id, quantized=False)(firsts, seconds))
+    else:
+        torch_scores = [hate_score_from_labels(r) for r in TorchBackend(model_id)(texts)]
+        onnx_scores = [hate_score_from_labels(r) for r in OnnxBackend(model_id, quantized=False)(texts)]
     return max(abs(a - b) for a, b in zip(torch_scores, onnx_scores))
 
 
@@ -150,7 +184,7 @@ def main() -> None:
     args = parser.parse_args()
     texts = gate_texts()
     report: dict = {"date": time.strftime("%Y-%m-%d"), "gate_texts": len(texts), "gate_ages": list(GATE_AGES),
-                    "int8_settings": INT8_SETTINGS, "heads": {}}
+                    "int8_variants": INT8_VARIANTS, "heads": {}}
 
     for model_id in MODELS:
         if not args.skip_export:
@@ -159,24 +193,26 @@ def main() -> None:
         diff = fp32_matches_torch(model_id, texts)
         if diff > 1e-4:
             raise SystemExit(f"{model_id}: fp32 ONNX differs from torch by {diff:.6f}; export is wrong")
-        quantize_int8(model_id)
         report["heads"][model_id] = {"fp32_vs_torch_max_diff": round(diff, 6)}
 
-    # Gate each model's INT8 on its own, holding the others at fp32.
+    # Gate each model's INT8 variants on their own, holding the others at fp32.
     reference = _decisions(set(), texts)
-    keep: set[str] = set()
+    keep: dict[str, str] = {}
     for model_id in MODELS:
-        changes = _changes(reference, _decisions({model_id}, texts), texts)
-        passed = not changes
-        report["heads"][model_id].update({"int8_engine_changes": len(changes), "int8_kept": passed,
-                                          "examples": changes[:6]})
-        if passed:
-            keep.add(model_id)
+        tried = {}
+        for variant in INT8_VARIANTS:
+            quantize_int8(model_id, variant)
+            changes = _changes(reference, _decisions({model_id}, texts), texts)
+            tried[variant] = {"engine_changes": len(changes), "examples": changes[:6]}
+            if not changes:
+                keep[model_id] = variant
+                break
         else:
             (onnx_model_dir(model_id) / "model.int8.onnx").unlink()
+        report["heads"][model_id].update({"int8_tried": tried, "int8_kept": keep.get(model_id, "")})
 
-    combined = _changes(reference, _decisions(keep, texts), texts)
-    report["shipped"] = {m: ("int8" if m in keep else "fp32") for m in MODELS}
+    combined = _changes(reference, _decisions(set(keep), texts), texts)
+    report["shipped"] = {m: (f"int8 ({keep[m]})" if m in keep else "fp32") for m in MODELS}
     report["shipped_engine_changes_vs_fp32"] = len(combined)
     report["size_mb"] = {
         m: {f.name: round(f.stat().st_size / 2**20, 1) for f in onnx_model_dir(m).glob("*.onnx")}

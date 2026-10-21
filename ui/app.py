@@ -34,14 +34,8 @@ PAGES_DIR = Path(__file__).resolve().parent / "pages"
 # (file, title, icon, key) -- key also names the sidebar link's container.
 MAIN_PAGES = [
     ("emotional_pattern.py", "Emotional Pattern", ":material/bar_chart:", "emotional-pattern"),
-    ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitor_heart:", "behavioral-anomaly"),
+    ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitoring:", "behavioral-anomaly"),
     ("child_profile.py", "Child Profile", ":material/person:", "child-profile"),
-]
-ADMIN_PAGES = [
-    ("dashboard.py", "Dashboard", ":material/space_dashboard:", "dashboard"),
-    ("sessions.py", "Sessions", ":material/table_rows:", "sessions"),
-    ("escalations.py", "Escalations", ":material/priority_high:", "escalations"),
-    ("add_record.py", "Add record", ":material/add_circle:", "add-record"),
 ]
 
 
@@ -52,26 +46,19 @@ def make_pages(specs, default_first=False):
 
 
 main = make_pages(MAIN_PAGES, default_first=True)
-admin = make_pages(ADMIN_PAGES)
 
 # Built-in navigation is hidden; the sidebar is drawn below so the brand sits
-# above the links and the admin section can be styled smaller.
-current = st.navigation([p for p, _ in main + admin], position="hidden")
+# above the links.
+current = st.navigation([p for p, _ in main], position="hidden")
 
 theme.sidebar_brand()
 for page, key in main:
     with st.sidebar.container(key=f"nav-{key}"):
         st.page_link(page)
-theme.sidebar_section("Data & Admin")
-for page, key in admin:
-    with st.sidebar.container(key=f"navsm-{key}"):
-        st.page_link(page)
 theme.sidebar_model_status("Function 1 model", services.function1_status()["available"])
-st.sidebar.html(f'<p class="c4-note" style="margin:.6rem .6rem 0">Database: '
-                f'{database_url.split("://")[0]}</p>')
+theme.sidebar_model_status("Function 2 model", services.function2_status()["available"])
 
-active_key = next(k for p, k in main + admin if p.url_path == current.url_path)
-prefix = "nav" if any(k == active_key for _, k in main) else "navsm"
-theme.active_nav_css(f"{prefix}-{active_key}")
+active_key = next(k for p, k in main if p.url_path == current.url_path)
+theme.active_nav_css(f"nav-{active_key}")
 
 current.run()

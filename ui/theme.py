@@ -53,12 +53,6 @@ UNKNOWN_STYLE = PatternStyle("Unknown", "#8A97B1", "#EEF1F6", COLORS["navy"], "n
 NOT_ENOUGH_DATA_STYLE = PatternStyle("Not enough data yet", "#9AA6BD", "#F0F3F8", "#3D4A66",
                                      "neutral")
 
-# Status badges for Function 2 reuse the same visual language.
-ANOMALY_STYLES = {
-    "Normal": PatternStyle("Normal", COLORS["green"], "#E5F4E4", "#1F5A1E", "smile"),
-    "Anomaly": PatternStyle("Anomaly", COLORS["red"], "#FDE3E5", "#6E0F17", "frown"),
-}
-
 # Chart colours for the Component 3 enums, matching the pattern colours.
 EMOTION_COLORS = {"calm": COLORS["green"], "unclear": COLORS["blue_pattern"],
                   "defensive": COLORS["red"], "distressed": COLORS["amber"]}
@@ -162,6 +156,12 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
 .c4-badge-label {{ font-size: 2.3rem; font-weight: 800; line-height: 1.1; }}
 .c4-badge-sub {{ font-size: .95rem; opacity: .85; margin-top: .25rem; }}
 
+.c4-flag {{ display: flex; align-items: center; gap: 1rem; padding: .4rem 0; }}
+.c4-flag img {{ width: 56px; height: 56px; flex: none; }}
+.c4-flag-date {{ font-size: 1.6rem; font-weight: 800; color: {COLORS["navy"]}; line-height: 1.1; }}
+.c4-flag-score {{ font-size: .95rem; color: {COLORS["muted"]}; margin-top: .2rem; }}
+.c4-sr-only {{ position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }}
 .c4-note {{ color: {COLORS["muted"]}; font-size: .85rem; margin: .4rem 0 0; }}
 .c4-tag {{
     display: inline-block; font-size: .78rem; font-weight: 600; padding: .15rem .6rem;
@@ -364,3 +364,80 @@ def bar_figure(counts, colors, height=300):
 
 
 PLOTLY_CONFIG = {"displayModeBar": False}
+
+
+# --- Function 2: behavioral anomaly ----------------------------------------------------
+
+@dataclass(frozen=True)
+class FlagStyle:
+    name: str          # short accessible name (hover, alt text)
+    color: str
+    shape: str         # Plotly marker symbol; also differs from the other style
+    description: str   # full accessible description (screen readers, tooltip)
+
+
+# Status is shown with an icon, not a word. Flagged and not-flagged differ in
+# shape and symbol as well as colour, so colour is never the only cue.
+# Not-flagged is neutral grey, not green: it is not "safe".
+FLAG_STYLES = {
+    True: FlagStyle("Flagged", COLORS["amber"], "diamond",
+                    "Flagged: the model found an unusual pattern on this day"),
+    False: FlagStyle("Not flagged", "#8A97B1", "circle",
+                     "Not flagged: the model found no unusual pattern on this day. "
+                     "This is not proof that the child is safe"),
+}
+
+
+def flag_icon_svg(flagged, size=56):
+    """Amber diamond with "!" (flagged) or grey circle with a dash (not flagged)."""
+    style = FLAG_STYLES[bool(flagged)]
+    if flagged:
+        shape = '<path d="M28 3 L53 28 L28 53 L3 28 Z"/>'
+        glyph = '<path d="M28 16 V32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'                 '<circle cx="28" cy="40" r="3" fill="#fff"/>'
+    else:
+        shape = '<circle cx="28" cy="28" r="24"/>'
+        glyph = '<path d="M18 28 H38" stroke="#fff" stroke-width="5" stroke-linecap="round"/>'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
+            f'viewBox="0 0 56 56" fill="{style.color}">{shape}{glyph}</svg>')
+
+
+def flag_status(flagged, date):
+    """Latest-day indicator: icon, date and accessible status. The status is in the icon's
+    alt text / aria-label / tooltip, never only in its colour."""
+    style = FLAG_STYLES[bool(flagged)]
+    label = f"{date}: {style.description}"
+    st.html(
+        f'<div class="c4-flag" role="img" aria-label="{escape(label)}" title="{escape(label)}">'
+        f'{svg_img(flag_icon_svg(flagged), alt=label)}'
+        f'<div><div class="c4-flag-date">{escape(str(date))}</div>'
+        f'<div>{escape(style.name)}</div></div></div>'
+    )
+
+
+def screen_reader_text(text):
+    """Text for screen readers only (visually hidden)."""
+    st.html(f'<p class="c4-sr-only">{escape(text)}</p>')
+
+
+def anomaly_history_figure(daily):
+    """Display saved daily decisions without exposing raw model scores.
+
+    Uses the existing unusual flags unchanged. Urgent rules remain separate.
+    """
+    fig = go.Figure()
+    for flagged in (False, True):
+        mine = daily[daily["unusual"] == flagged]
+        style = FLAG_STYLES[flagged]
+        fig.add_trace(go.Scatter(
+            x=mine["date"] if len(mine) else [None],
+            y=[int(flagged)] * len(mine) if len(mine) else [None],
+            mode="markers", name=style.name, showlegend=False,
+            marker=dict(color=style.color, symbol=style.shape, size=13 if flagged else 7,
+                        line=dict(color="#fff", width=1)),
+            hovertemplate=f"<b>{style.name}</b><br>%{{x|%Y-%m-%d}}<extra></extra>"))
+    axis = dict(showgrid=True, gridcolor=COLORS["grid"], griddash="dash", zeroline=False,
+                linecolor="#C9D3E3", showline=True)
+    fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d")
+    fig.update_yaxes(**axis, tickvals=[0, 1], ticktext=["Not flagged", "Flagged"],
+                     range=[-0.3, 1.3], fixedrange=True)
+    return _base_layout(fig, height=300)

@@ -21,6 +21,7 @@ thumbnail for change detection, and the caller releases the frame.
 """
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
@@ -39,6 +40,28 @@ FULL_READ_FRACTION = 0.40  # above this share of changed tiles, read the whole f
 MAX_BLOCK_CHARS = 600
 BLOCK_GAP = 0.35         # max gap (in line heights) between lines of one block
 BLOCK_OVERLAP = 0.5      # OCR boxes of touching lines may overlap by up to this
+
+# Chat apps show who sent a message and when: a header line above it
+# ("Dilan  Today at 4:12 PM", "Dilan Perera 9:41 AM") or a time inside the
+# bubble ("... 16:12"). Read as part of the message they change its score both
+# ways: a leading name reads as abuse aimed at someone ("Dilan you're
+# worthless" 1.00), a leading time dilutes it ("Today at 4:12 PM you're
+# worthless" 0.61, L0 at age 12). So the reader leaves them out of the text it
+# scores, and keeps them in the block's box, which is what gets blurred.
+_TIME = r"(?:[01]?\d|2[0-3])[:.][0-5]\d(?:\s*[ap]\.?\s*m\.?)?"
+_DAY = r"(?:today|yesterday|mon|tue|wed|thu|fri|sat|sun)[a-z]*|\d{1,2}[/.-]\d{1,2}(?:[/.-]\d{2,4})?"
+_STAMP = rf"(?:(?:{_DAY})\s*,?\s*(?:at\s+)?)?{_TIME}"
+STAMP_ONLY = re.compile(rf"^{_STAMP}$", re.IGNORECASE)
+NAME_AND_STAMP = re.compile(rf"^(?P<name>.{{1,40}}?)\s+{_STAMP}$", re.IGNORECASE)
+TRAILING_TIME = re.compile(rf"^(?P<text>.*?(?P<last>\S+))\s+{_TIME}\s*[✓✔√]*$", re.IGNORECASE)
+# A message can end in a time too ("i'll be outside at 4:30"). A header's name
+# never contains everyday words, and a time after these words is part of a sentence.
+PLAIN_WORDS = frozenset(
+    "i im i'm ill i'll id i'd ive i've you u ur your youre you're me my we us our he she they them it its the a an "
+    "to at by on in for from of and or but so if see meet come go get be is are was am will can cant can't dont "
+    "don't not no yes ok okay lol after before till until around about this that what when where why how just "
+    "tonight tomorrow later now".split())
+TIME_PREPOSITIONS = frozenset("at by around till until before after from to about for since past".split())
 
 
 @dataclass
@@ -116,6 +139,47 @@ def _overlaps(a: Sequence[float], b: Sequence[float]) -> bool:
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
 
+def _looks_like_name(text: str) -> bool:
+    words = [w.strip(".,:;!?()[]\"'").lower() for w in text.split()]
+    words = [w for w in words if w]
+    return 0 < len(words) <= 3 and all(len(w) == 1 or w not in PLAIN_WORDS for w in words)
+
+
+def _same_row(a: Sequence[float], b: Sequence[float]) -> bool:
+    overlap = min(a[3], b[3]) - max(a[1], b[1])
+    return overlap > 0.5 * min(a[3] - a[1], b[3] - b[1])
+
+
+def message_text(block: List[Region]) -> str:
+    """The block's text without the chat app's sender / time header or bubble time."""
+    header = set()
+    top_row = {j for j, other in enumerate(block) if _same_row(other["box"], block[0]["box"])}
+    # A name is dropped only from a header: the block's top row, with message text below it.
+    has_body = len(top_row) < len(block)
+    for i, line in enumerate(block):
+        text = line["text"].strip()
+        if STAMP_ONLY.match(text):
+            header.add(i)
+            if i in top_row and has_body:
+                # The sender's name, read by OCR as its own piece to the left of the time.
+                header |= {j for j in top_row if j != i and block[j]["box"][2] <= line["box"][0] + 0.01
+                           and _looks_like_name(block[j]["text"])}
+        elif i in top_row and has_body:
+            m = NAME_AND_STAMP.match(text)
+            if m and _looks_like_name(m.group("name")):
+                header.add(i)
+    parts = []
+    for i, line in enumerate(block):
+        if i in header:
+            continue
+        text = line["text"].strip()
+        m = TRAILING_TIME.match(text)
+        if m and len(m.group("text").split()) >= 2 and m.group("last").lower() not in TIME_PREPOSITIONS:
+            text = m.group("text")
+        parts.append(text)
+    return " ".join(parts)
+
+
 def group_blocks(regions: List[Region]) -> List[TextSpan]:
     """Group OCR lines into blocks: same column and almost touching -> one block.
 
@@ -125,6 +189,10 @@ def group_blocks(regions: List[Region]) -> List[TextSpan]:
     boxes of a chat window: lines within one message (author header + text,
     wrapped lines) sit -0.14h to +0.07h apart; separate messages 0.67h to
     0.93h apart. So lines merge only within [-0.5h, 0.35h).
+
+    The header stays in the block (it marks where a message starts, and its
+    box is blurred with the message) but not in the scored text: see
+    `message_text`. A block that is only a header gives no span.
     """
     lines = sorted(regions, key=lambda r: (r["box"][1], r["box"][0]))
     blocks: List[List[Region]] = []
@@ -145,9 +213,12 @@ def group_blocks(regions: List[Region]) -> List[TextSpan]:
             blocks.append([line])
     spans = []
     for block in blocks:
+        text = message_text(block)
+        if not text:
+            continue
         box = [round(min(r["box"][0] for r in block), 4), round(min(r["box"][1] for r in block), 4),
                round(max(r["box"][2] for r in block), 4), round(max(r["box"][3] for r in block), 4)]
-        spans.append(TextSpan(" ".join(r["text"] for r in block), "ocr", box))
+        spans.append(TextSpan(text, "ocr", box))
     return spans
 
 

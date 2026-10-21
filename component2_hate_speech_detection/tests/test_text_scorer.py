@@ -65,4 +65,4 @@ def test_framing_never_discounts_self_harm_intent(lexicon_scorer):
 
 def test_framing_never_discounts_grooming_coercion(lexicon_scorer):
     d = lexicon_scorer.score("don't tell your parents about this, i'm scared you'll get in trouble")
-    assert d.category == "sexual_harassment" and not d.discounted
+    assert d.category == "grooming" and not d.discounted

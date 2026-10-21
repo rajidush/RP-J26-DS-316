@@ -23,9 +23,8 @@ component4_profiling_xai/models/*
 !component4_profiling_xai/models/emotional_pattern_kmeans.pkl
 !component4_profiling_xai/models/emotional_pattern_scaler.pkl
 !component4_profiling_xai/models/emotional_pattern_metadata.json
-!component4_profiling_xai/models/behavioral_anomaly_ocsvm_variation.pkl
-!component4_profiling_xai/models/behavioral_scaler_variation.pkl
-!component4_profiling_xai/models/behavioral_features_variation.pkl
+!component4_profiling_xai/models/behavioral_anomaly_pipeline.pkl
+!component4_profiling_xai/models/behavioral_anomaly_metadata.json
 
 # OS
 .DS_Store

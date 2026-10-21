@@ -1,0 +1,556 @@
+{
+  "disclaimer": "Synthetic data. Event shapes follow the Component 1 incident sample and the Component 2 Verdict.to_record() sample; all rates, mixes and anomaly patterns are assumptions. Not real children, not an accuracy sample, not a real-world distribution.",
+  "generator_version": "1.0.0",
+  "seed": 42,
+  "period": {
+    "start": "2026-07-01",
+    "end": "2026-09-28",
+    "days": 90,
+    "timezone": "Asia/Colombo"
+  },
+  "coverage": {
+    "c1": [
+      "2026-07-01",
+      "2026-09-28"
+    ],
+    "c2": [
+      "2026-07-01",
+      "2026-09-28"
+    ]
+  },
+  "children": 40,
+  "personas": {
+    "P1_PROTECT": 14,
+    "P2_GUIDE": 14,
+    "P3_RESPECT": 12
+  },
+  "rows": 3600,
+  "baseline_ready_rows": 3320,
+  "splits": {
+    "train": {
+      "days": [
+        1,
+        56
+      ],
+      "dates": [
+        "2026-07-01",
+        "2026-08-25"
+      ],
+      "rows": 2240,
+      "anomaly_days": 66
+    },
+    "validation": {
+      "days": [
+        57,
+        73
+      ],
+      "dates": [
+        "2026-08-26",
+        "2026-09-11"
+      ],
+      "rows": 680,
+      "anomaly_days": 49
+    },
+    "test": {
+      "days": [
+        74,
+        90
+      ],
+      "dates": [
+        "2026-09-12",
+        "2026-09-28"
+      ],
+      "rows": 680,
+      "anomaly_days": 53
+    }
+  },
+  "anomaly_rate": 0.0467,
+  "anomaly_days_by_type": {
+    "bullying_run": 50,
+    "grooming_burst": 49,
+    "late_night_violence": 32,
+    "self_harm_day": 24,
+    "volume_spike": 13
+  },
+  "episodes": 78,
+  "episodes_by_type": {
+    "bullying_run": 14,
+    "grooming_burst": 13,
+    "late_night_violence": 19,
+    "self_harm_day": 18,
+    "volume_spike": 14
+  },
+  "unobserved_episode_days": 8,
+  "normal_days_with_urgent_flag": 0.0184,
+  "events": {
+    "c1_incidents": 1789,
+    "c2_records": 4359
+  },
+  "c2_policy_version": "1.3.0",
+  "label_rule": "A day is an anomaly when at least one injected event of an episode became a record on that local date. Episode days with no surviving injected record are labelled 0 and listed in behavioral_episodes.csv.",
+  "feature_catalog": [
+    {
+      "builder_name": "child_id",
+      "dataset_name": "child_id",
+      "source_fields": "record child_id / device_map / explicit",
+      "derivation": "key"
+    },
+    {
+      "builder_name": "date",
+      "dataset_name": "date",
+      "source_fields": "C1 started_at, C2 ts",
+      "derivation": "key: Asia/Colombo local date"
+    },
+    {
+      "builder_name": "child_id_source",
+      "dataset_name": "child_id_source",
+      "source_fields": "-",
+      "derivation": "how child_id was resolved"
+    },
+    {
+      "builder_name": "demo_only",
+      "dataset_name": "demo_only",
+      "source_fields": "-",
+      "derivation": "child_id is the demo placeholder"
+    },
+    {
+      "builder_name": "c1_observed",
+      "dataset_name": "screen_monitor_observed",
+      "source_fields": "coverage",
+      "derivation": "day inside C1 coverage"
+    },
+    {
+      "builder_name": "c1_incidents",
+      "dataset_name": "screen_incidents",
+      "source_fields": "incident_id | session_id + duration_visible_ms",
+      "derivation": "count of incidents"
+    },
+    {
+      "builder_name": "c1_uncertain_groups",
+      "dataset_name": "screen_uncertain_groups",
+      "source_fields": "TriggerPayload session_id",
+      "derivation": "payload sessions that cannot be split into incidents"
+    },
+    {
+      "builder_name": "c1_frames_flagged",
+      "dataset_name": "screen_flagged_frames",
+      "source_fields": "frames_flagged | payload count",
+      "derivation": "sum"
+    },
+    {
+      "builder_name": "c1_total_duration_s",
+      "dataset_name": "screen_flagged_seconds",
+      "source_fields": "duration_s | ended_at - started_at | duration_visible_ms",
+      "derivation": "sum"
+    },
+    {
+      "builder_name": "c1_max_conf",
+      "dataset_name": "screen_max_confidence",
+      "source_fields": "max_confidence | confidence_score",
+      "derivation": "max"
+    },
+    {
+      "builder_name": "c1_mean_conf",
+      "dataset_name": "screen_mean_confidence",
+      "source_fields": "mean_confidence | confidence_score",
+      "derivation": "mean of incident means"
+    },
+    {
+      "builder_name": "c1_night_incidents",
+      "dataset_name": "screen_night_incidents",
+      "source_fields": "started_at",
+      "derivation": "count at 22:00-06:00 local"
+    },
+    {
+      "builder_name": "c1_violence",
+      "dataset_name": "screen_violence_incidents",
+      "source_fields": "category | risk_category = violence",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_explicit_visual",
+      "dataset_name": "screen_explicit_visual_incidents",
+      "source_fields": "category = explicit_visual",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_self_harm_imagery",
+      "dataset_name": "screen_self_harm_imagery_incidents",
+      "source_fields": "category = self_harm_imagery",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_unknown_flagged",
+      "dataset_name": "screen_unknown_flagged_incidents",
+      "source_fields": "category = unknown_flagged",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_blocks",
+      "dataset_name": "screen_blocked_incidents",
+      "source_fields": "action = block",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_blurs",
+      "dataset_name": "screen_blurred_incidents",
+      "source_fields": "action = blur",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c1_escalated",
+      "dataset_name": "screen_escalated_incidents",
+      "source_fields": "escalated",
+      "derivation": "count of true"
+    },
+    {
+      "builder_name": "c1_dismissed",
+      "dataset_name": "screen_dismissed_incidents",
+      "source_fields": "dismissed_by_child",
+      "derivation": "count of true"
+    },
+    {
+      "builder_name": "c2_observed",
+      "dataset_name": "language_monitor_observed",
+      "source_fields": "coverage",
+      "derivation": "day inside C2 coverage"
+    },
+    {
+      "builder_name": "c2_records",
+      "dataset_name": "language_alert_records",
+      "source_fields": "id",
+      "derivation": "count of records, incl. abstained"
+    },
+    {
+      "builder_name": "c2_flags",
+      "dataset_name": "language_flags",
+      "source_fields": "rung != L0 and not abstained",
+      "derivation": "count of flags"
+    },
+    {
+      "builder_name": "c2_threat",
+      "dataset_name": "language_threat_flags",
+      "source_fields": "top_category = threat",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_hate_identity",
+      "dataset_name": "language_hate_identity_flags",
+      "source_fields": "top_category = hate_identity",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_bullying",
+      "dataset_name": "language_bullying_flags",
+      "source_fields": "top_category = bullying",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_sexual_harassment",
+      "dataset_name": "language_sexual_harassment_flags",
+      "source_fields": "top_category = sexual_harassment",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_self_harm",
+      "dataset_name": "language_self_harm_flags",
+      "source_fields": "top_category = self_harm",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_grooming",
+      "dataset_name": "language_grooming_flags",
+      "source_fields": "top_category = grooming",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_profanity",
+      "dataset_name": "language_profanity_flags",
+      "source_fields": "top_category = profanity",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_urgent",
+      "dataset_name": "language_urgent_flags",
+      "source_fields": "urgent",
+      "derivation": "count of true"
+    },
+    {
+      "builder_name": "c2_l4_plus",
+      "dataset_name": "language_block_rung_flags",
+      "source_fields": "rung in L4, L5",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_blocks",
+      "dataset_name": "language_blocked_flags",
+      "source_fields": "recommended_action = block",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_max_p",
+      "dataset_name": "language_max_risk",
+      "source_fields": "p",
+      "derivation": "max"
+    },
+    {
+      "builder_name": "c2_mean_p",
+      "dataset_name": "language_mean_risk",
+      "source_fields": "p",
+      "derivation": "mean"
+    },
+    {
+      "builder_name": "c2_night_flags",
+      "dataset_name": "language_night_flags",
+      "source_fields": "ts",
+      "derivation": "count at 22:00-06:00 local"
+    },
+    {
+      "builder_name": "c2_screen",
+      "dataset_name": "language_screen_text_flags",
+      "source_fields": "source = screen",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_audio",
+      "dataset_name": "language_audio_flags",
+      "source_fields": "source = audio",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_typed",
+      "dataset_name": "language_typed_flags",
+      "source_fields": "source = typed",
+      "derivation": "count"
+    },
+    {
+      "builder_name": "c2_distinct_apps",
+      "dataset_name": "language_distinct_apps",
+      "source_fields": "app.exe",
+      "derivation": "distinct count"
+    },
+    {
+      "builder_name": "c2_distinct_app_categories",
+      "dataset_name": "language_distinct_app_categories",
+      "source_fields": "app.category",
+      "derivation": "distinct count"
+    },
+    {
+      "builder_name": "total_events",
+      "dataset_name": "total_risk_events",
+      "source_fields": "C1 incidents + C2 flags",
+      "derivation": "sum"
+    },
+    {
+      "builder_name": "night_events",
+      "dataset_name": "night_risk_events",
+      "source_fields": "C1 night incidents + C2 night flags",
+      "derivation": "sum"
+    },
+    {
+      "builder_name": "is_weekend",
+      "dataset_name": "is_weekend",
+      "source_fields": "date",
+      "derivation": "Saturday or Sunday"
+    },
+    {
+      "builder_name": "baseline_ready",
+      "dataset_name": "baseline_ready",
+      "source_fields": "date",
+      "derivation": ">= 7 earlier days"
+    },
+    {
+      "builder_name": "total_events_mean14",
+      "dataset_name": "total_risk_events_prev14d_mean",
+      "source_fields": "total_events",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "total_events_z14",
+      "dataset_name": "total_risk_events_prev14d_z",
+      "source_fields": "total_events",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c2_flags_mean14",
+      "dataset_name": "language_flags_prev14d_mean",
+      "source_fields": "c2_flags",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c2_flags_z14",
+      "dataset_name": "language_flags_prev14d_z",
+      "source_fields": "c2_flags",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c1_incidents_mean14",
+      "dataset_name": "screen_incidents_prev14d_mean",
+      "source_fields": "c1_incidents",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c1_incidents_z14",
+      "dataset_name": "screen_incidents_prev14d_z",
+      "source_fields": "c1_incidents",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "night_events_mean14",
+      "dataset_name": "night_risk_events_prev14d_mean",
+      "source_fields": "night_events",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "night_events_z14",
+      "dataset_name": "night_risk_events_prev14d_z",
+      "source_fields": "night_events",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c2_urgent_mean14",
+      "dataset_name": "language_urgent_flags_prev14d_mean",
+      "source_fields": "c2_urgent",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c2_urgent_z14",
+      "dataset_name": "language_urgent_flags_prev14d_z",
+      "source_fields": "c2_urgent",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c2_bullying_mean14",
+      "dataset_name": "language_bullying_flags_prev14d_mean",
+      "source_fields": "c2_bullying",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c2_bullying_z14",
+      "dataset_name": "language_bullying_flags_prev14d_z",
+      "source_fields": "c2_bullying",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c2_grooming_mean14",
+      "dataset_name": "language_grooming_flags_prev14d_mean",
+      "source_fields": "c2_grooming",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c2_grooming_z14",
+      "dataset_name": "language_grooming_flags_prev14d_z",
+      "source_fields": "c2_grooming",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c2_self_harm_mean14",
+      "dataset_name": "language_self_harm_flags_prev14d_mean",
+      "source_fields": "c2_self_harm",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c2_self_harm_z14",
+      "dataset_name": "language_self_harm_flags_prev14d_z",
+      "source_fields": "c2_self_harm",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    },
+    {
+      "builder_name": "c1_blocks_mean14",
+      "dataset_name": "screen_blocked_incidents_prev14d_mean",
+      "source_fields": "c1_blocks",
+      "derivation": "mean of the previous 14 days"
+    },
+    {
+      "builder_name": "c1_blocks_z14",
+      "dataset_name": "screen_blocked_incidents_prev14d_z",
+      "source_fields": "c1_blocks",
+      "derivation": "(x - prev mean) / (prev std + 0.5)"
+    }
+  ],
+  "columns": {
+    "model_features": [
+      "screen_incidents",
+      "screen_flagged_frames",
+      "screen_flagged_seconds",
+      "screen_max_confidence",
+      "screen_mean_confidence",
+      "screen_night_incidents",
+      "screen_blocked_incidents",
+      "screen_escalated_incidents",
+      "screen_dismissed_incidents",
+      "language_flags",
+      "language_threat_flags",
+      "language_hate_identity_flags",
+      "language_bullying_flags",
+      "language_self_harm_flags",
+      "language_grooming_flags",
+      "language_profanity_flags",
+      "language_urgent_flags",
+      "language_block_rung_flags",
+      "language_max_risk",
+      "language_mean_risk",
+      "language_night_flags",
+      "language_audio_flags",
+      "language_distinct_apps",
+      "language_distinct_app_categories",
+      "total_risk_events",
+      "night_risk_events",
+      "is_weekend",
+      "total_risk_events_prev14d_mean",
+      "total_risk_events_prev14d_z",
+      "language_flags_prev14d_mean",
+      "language_flags_prev14d_z",
+      "screen_incidents_prev14d_mean",
+      "screen_incidents_prev14d_z",
+      "night_risk_events_prev14d_mean",
+      "night_risk_events_prev14d_z",
+      "language_urgent_flags_prev14d_mean",
+      "language_urgent_flags_prev14d_z",
+      "language_bullying_flags_prev14d_mean",
+      "language_bullying_flags_prev14d_z",
+      "language_grooming_flags_prev14d_mean",
+      "language_grooming_flags_prev14d_z",
+      "language_self_harm_flags_prev14d_mean",
+      "language_self_harm_flags_prev14d_z",
+      "screen_blocked_incidents_prev14d_mean",
+      "screen_blocked_incidents_prev14d_z"
+    ],
+    "labels": [
+      "is_anomaly",
+      "anomaly_type",
+      "episode_id"
+    ],
+    "meta": [
+      "child_id",
+      "date",
+      "day_index",
+      "split",
+      "persona",
+      "child_id_source",
+      "demo_only",
+      "baseline_ready"
+    ]
+  },
+  "assumptions": {
+    "c1_block_at_max_confidence": 0.8,
+    "c1_escalate_rate_on_blocks": 0.4,
+    "c1_dismiss_rate_on_blurs": 0.35,
+    "normal_c2_mix": {
+      "profanity": 0.32,
+      "bullying": 0.32,
+      "threat": 0.18,
+      "hate_identity": 0.15,
+      "grooming": 0.015,
+      "self_harm": 0.015
+    },
+    "abstain_rate": 0.01,
+    "c1_categories": "violence only (the only live C1 model)"
+  },
+  "sha256": {
+    "daily": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+    "episodes": "c472f2b2114850152732ce147abcff5ab86737953f86d2f434260baa0122306d",
+    "c1": "38e11d79df25c62582f6aed91067412a07e88ec1535be3581aaf2115c13e0438",
+    "c2": "cd06438d2f7a99324b1a35792859129ce1162602176a572bf657c0aece2283e4"
+  }
+}

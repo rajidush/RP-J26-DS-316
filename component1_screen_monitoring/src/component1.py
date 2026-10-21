@@ -171,6 +171,9 @@ def run_monitoring_loop(
     capture_fn: Callable[[], Any] | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
     strategy: str = REGION_STRATEGY,
+    on_result: Callable[[Any, Any, dict | None], None] | None = None,
+    should_stop: Callable[[], bool] = lambda: False,
+    frame_gate: Callable[[], bool] | None = None,
 ) -> dict:
     """
     Sample the screen every *interval* seconds and emit a payload per flagged frame.
@@ -188,28 +191,41 @@ def run_monitoring_loop(
     on_payload : called with each validated payload (default: log it)
     capture_fn, sleep_fn : injectable for tests
     strategy : region strategy (default: config.REGION_STRATEGY)
+    on_result : optional ``on_result(frame, detection, payload_or_None)`` called for
+        EVERY frame, after on_payload — used by Function 2 (overlay) to count safe
+        frames and blur the frame locally. The downstream payload never contains
+        the image.
+    should_stop : polled every iteration; return True to end the loop (e.g. GUI closed)
+    frame_gate : optional; called before each capture — False skips the iteration
+        entirely (no capture, no classification; counted in "skipped"). Used by
+        Function 2's "pause" fallback while an un-excludable overlay is visible.
 
     Returns
     -------
     dict
-        ``{"frames": n, "payloads": n, "errors": n}``
+        ``{"frames": n, "payloads": n, "errors": n, "skipped": n}``
     """
     capture_fn = capture_fn or _default_capture
     on_payload = on_payload or (lambda p: log.info("payload %s", json.dumps(p)))
     tracker = IncidentTracker()
-    stats = {"frames": 0, "payloads": 0, "errors": 0}
+    stats = {"frames": 0, "payloads": 0, "errors": 0, "skipped": 0}
     prev = None                                   # small grayscale copy of the last frame
 
     log.info("monitoring started — interval=%ss, max_iterations=%s, threshold=%s, strategy=%s",
              interval, max_iterations, getattr(detector, "threshold", "?"), strategy)
     try:
-        while max_iterations is None or stats["frames"] < max_iterations:
+        while (max_iterations is None or stats["frames"] < max_iterations) and not should_stop():
             t0 = time.monotonic()
+            if frame_gate is not None and not frame_gate():
+                stats["skipped"] += 1
+                sleep_fn(interval)
+                continue
             try:
                 frame = capture_fn()                  # replaces the previous frame
                 detection = detector.predict_regions(frame.image, prev, strategy)
                 prev = motion_reference(frame.image)
                 incident = tracker.update(frame, detection.flagged)
+                payload = None
                 if incident:
                     payload = build_payload(frame, detection, *incident)
                     on_payload(payload)
@@ -218,6 +234,8 @@ def run_monitoring_loop(
                     log.debug("frame %s not flagged (p_violent=%.4f in %s, %d crops, %.0f ms)",
                               frame.frame_reference, detection.confidence, detection.region,
                               detection.n_crops, detection.inference_ms)
+                if on_result is not None:
+                    on_result(frame, detection, payload)
             except Exception:
                 stats["errors"] += 1
                 log.exception("frame %d failed", stats["frames"] + 1)
@@ -230,5 +248,5 @@ def run_monitoring_loop(
         log.info("interrupted by user")
 
     log.info("monitoring stopped — %(frames)d frames, %(payloads)d payloads, "
-             "%(errors)d errors", stats)
+             "%(errors)d errors, %(skipped)d skipped", stats)
     return stats
