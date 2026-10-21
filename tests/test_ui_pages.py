@@ -101,7 +101,7 @@ def visible_main_text(at):
 def test_emotional_pattern_is_still_the_default_page(temp_db):
     at = run_page()
     main = html_of(at, at.main)
-    assert "Emotional Pattern (Function 1)" in main
+    assert "Emotional Pattern" in main
     assert "Behavioral Anomaly Detection" not in main
 
 
@@ -194,10 +194,19 @@ def test_function2_failure_leaves_function1_page_working(child_with_sessions, tm
     assert "Function 2 model" in sidebar and "not loaded" in sidebar
 
 
-@pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile",
-                                  "dashboard", "sessions", "escalations", "add_record"])
+@pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile"])
 def test_every_page_renders(temp_db, page):
     run_page(page)
+
+
+def test_sidebar_has_no_data_and_admin_section(temp_db):
+    at = run_page()
+    sidebar = html_of(at, at.sidebar)
+    assert "Data &amp; Admin" not in sidebar and "Data & Admin" not in sidebar
+    links = [str(p.proto) for p in at.get("page_link")]
+    for title in ("Dashboard", "Sessions", "Escalations", "Add record"):
+        assert not any(f'label: "{title}"' in link for link in links)
+    assert any('label: "Emotional Pattern"' in link for link in links)
 
 
 def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_db):
