@@ -123,10 +123,10 @@ pytest tests -v -m live_model   # only the live-model checks
 
 ## Input / Output contract
 
-- Input: `TriggerPayload` — see `docs/interface-contracts/comp1_to_comp3.schema.json` and `comp2_to_comp3.schema.json`
-- Output: `EvaluateOutput` — see `docs/interface-contracts/comp3_to_comp4.schema.json`
+- Input: `TriggerPayload` - see `docs/interface-contracts/comp1_to_comp3.schema.json` and `comp2_to_comp3.schema.json`
+- Output: `EvaluateOutput` - see `docs/interface-contracts/comp3_to_comp4.schema.json`
 
-Both are validated against the shared JSON Schemas at runtime (`schemas.py`) —
+Both are validated against the shared JSON Schemas at runtime (`schemas.py`) -
 if a teammate changes a contract without updating the schema file, this
 component will fail loudly instead of silently accepting bad data.
 
@@ -250,7 +250,7 @@ It takes reply types from the test split through the key, never from the editabl
 - the most repeated closing sentence and its count, as a check for template collapse;
 - latency (reported separately).
 
-JSON validity, controller-grammar compliance and controller correctness are reported as *not measured — adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.
+JSON validity, controller-grammar compliance and controller correctness are reported as *not measured - adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.
 
 **Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
 
