@@ -30,3 +30,4 @@ htmlcov/
 
 # Runtime-generated screenshots (change every run)
 mock_inputs/screenshot.png
+dist/
