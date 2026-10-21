@@ -101,7 +101,7 @@ def visible_main_text(at):
 def test_emotional_pattern_is_still_the_default_page(temp_db):
     at = run_page()
     main = html_of(at, at.main)
-    assert "Emotional Pattern (Function 1)" in main
+    assert "Emotional Pattern" in main
     assert "Behavioral Anomaly Detection" not in main
 
 

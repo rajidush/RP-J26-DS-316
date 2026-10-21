@@ -68,8 +68,6 @@ for page, key in admin:
         st.page_link(page)
 theme.sidebar_model_status("Function 1 model", services.function1_status()["available"])
 theme.sidebar_model_status("Function 2 model", services.function2_status()["available"])
-st.sidebar.html(f'<p class="c4-note" style="margin:.6rem .6rem 0">Database: '
-                f'{database_url.split("://")[0]}</p>')
 
 active_key = next(k for p, k in main + admin if p.url_path == current.url_path)
 prefix = "nav" if any(k == active_key for _, k in main) else "navsm"
