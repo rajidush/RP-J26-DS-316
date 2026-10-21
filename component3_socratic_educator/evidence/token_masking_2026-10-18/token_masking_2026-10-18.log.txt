@@ -1,0 +1,31 @@
+Model: C:\Users\User\.lmstudio\models\lmstudio-community\gemma-3-1B-it-QAT-GGUF\gemma-3-1B-it-QAT-Q4_0.gguf
+Unmasked: 'Okay, let’s talk about what you were doing on your screen just now.'  -> controller grammar/post-check: grammar
+Masked:   'I noticed something on your screen just now. Would you like to tell me a little about what you were doing?'  -> controller grammar/post-check: pass
+Steps where the model's first choice was blocked: 8 of 26
+
+step  0  BLOCKED model's first choice "Okay"                 p=0.743  -> chose "I"                    allowed      8 tokens, removed p=0.984
+step  1  BLOCKED model's first choice " understand"          p=0.751  -> chose " notice"              allowed      7 tokens, removed p=0.841
+step  2  BLOCKED model's first choice " you"                 p=0.557  -> chose "d"                    allowed      2 tokens, removed p=1.000
+step  3  BLOCKED model's first choice " you"                 p=0.761  -> chose " something"           allowed      9 tokens, removed p=0.969
+step  4  kept    model's first choice " on"                  p=0.424  -> chose " on"                  allowed      4 tokens, removed p=0.576
+step  5  kept    model's first choice " your"                p=0.999  -> chose " your"                allowed      6 tokens, removed p=0.001
+step  6  kept    model's first choice " screen"              p=0.959  -> chose " screen"              allowed      7 tokens, removed p=0.041
+step  7  BLOCKED model's first choice ","                    p=0.380  -> chose " just"                allowed      6 tokens, removed p=0.899
+step  8  kept    model's first choice " now"                 p=0.833  -> chose " now"                 allowed      5 tokens, removed p=0.167
+step  9  BLOCKED model's first choice " –"                   p=0.666  -> chose "."                    allowed      2 tokens, removed p=0.944
+step 10  BLOCKED model's first choice "\n\n"                 p=0.195  -> chose " "                    allowed  30849 tokens, removed p=0.257
+step 11  BLOCKED model's first choice "\n\n"                 p=0.998  -> chose "Would"                allowed  18095 tokens, removed p=1.000
+step 12  kept    model's first choice " you"                 p=1.000  -> chose " you"                 allowed 139646 tokens, removed p=0.000
+step 13  kept    model's first choice " like"                p=0.979  -> chose " like"                allowed 139648 tokens, removed p=0.000
+step 14  kept    model's first choice " to"                  p=1.000  -> chose " to"                  allowed 139648 tokens, removed p=0.000
+step 15  kept    model's first choice " tell"                p=0.952  -> chose " tell"                allowed 139648 tokens, removed p=0.000
+step 16  kept    model's first choice " me"                  p=1.000  -> chose " me"                  allowed 139648 tokens, removed p=0.000
+step 17  kept    model's first choice " a"                   p=0.489  -> chose " a"                   allowed 139648 tokens, removed p=0.000
+step 18  kept    model's first choice " little"              p=0.850  -> chose " little"              allowed 139648 tokens, removed p=0.000
+step 19  kept    model's first choice " about"               p=0.922  -> chose " about"               allowed 139648 tokens, removed p=0.000
+step 20  kept    model's first choice " what"                p=0.886  -> chose " what"                allowed 139648 tokens, removed p=0.000
+step 21  kept    model's first choice " you"                 p=0.986  -> chose " you"                 allowed 139648 tokens, removed p=0.004
+step 22  kept    model's first choice " were"                p=0.991  -> chose " were"                allowed 139648 tokens, removed p=0.008
+step 23  kept    model's first choice " doing"               p=0.749  -> chose " doing"               allowed 139648 tokens, removed p=0.000
+step 24  kept    model's first choice "?"                    p=0.835  -> chose "?"                    allowed 139648 tokens, removed p=0.000
+step 25  kept    model's first choice (special)              p=0.997  -> chose "(end of generation)"  allowed      2 tokens, removed p=0.003

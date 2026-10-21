@@ -1,7 +1,7 @@
-# Component 3 — Socratic Educator
+# Component 3 - Socratic Educator
 
 **Owner:** IT23155466
-**Status:** PP1 scope (2 functions) implemented and tested; real SLM wiring is a post-PP1 stretch goal (see TODO in `src/grammar_decoder.py`)
+**Status:** PP1 scope (2 functions) implemented and tested. INTERCEPT's opening question is written by the live on-device SLM (gemma-3-1B, served by LM Studio) under constrained decoding; INQUIRE, EVALUATE and CONTRACT use template lines and rules. The fine-tuned INQUIRE adapter is a shadow candidate only (not sent to the child).
 
 ## What this component does
 
@@ -16,6 +16,42 @@ privacy-safe record to Component 4.
 |---|---|---|
 | Function 1: FSM Controller | `src/fsm_controller.py` | Run a full session and show the state trace in `SessionTranscript` |
 | Function 2: Grammar-Constrained Decoding | `src/grammar_decoder.py` | Run `python -m evidence.run_adversarial_intercept` and show both scores: post-check violations (0% by construction) and the audit rate (`src/intercept_audit.py`) |
+| Token masking, step by step | `src/token_mask.py` | Run `python -m evidence.trace_token_masking`: Component 3's own finite automaton masks the vocabulary before every token (see below) |
+
+The PP1 demo page runs both functions in one view, with the adapter's lines shown beside the template lines as a shadow:
+`streamlit run component3_socratic_educator/src/demo_dashboard.py`. Without LM Studio it still runs: INTERCEPT shows its fallback line.
+
+## Function 2: how the constraint works
+
+`GrammarConstrainedGenerator._intercept` sends the INTERCEPT prompt with a strict JSON schema
+(`INTERCEPT_SCHEMA`): the opener must be one of two fixed safe openers, and the question must be
+one plain sentence, `[A-Z][A-Za-z ,']{5,98}?`. LM Studio's llama.cpp engine compiles the schema
+into a grammar and, before each token is sampled, masks every token that could not continue a
+valid reply (ADR 0004). The finished line then passes the same grammar again and a post-check
+(forbidden words, alert language, risk-category names, description invites). Any failure, or an
+unreachable model, gives a pre-checked fallback line. 6 Oct (unconstrained) vs 11 Oct
+(constrained), 16 samples each: grammar match 0/16 → 16/16, alert leaks 4/16 → 0/16.
+
+The grammar guarantees structure, not meaning: a well-formed question can still be leading or
+blaming (see the adversarial limitation below).
+
+**Token masking in Component 3's own code** (`src/token_mask.py`, `tests/test_token_mask.py`):
+`InterceptAutomaton` is a finite automaton over characters that accepts exactly the INTERCEPT
+line grammar (the tests check it against the controller grammar's regex on 3,000 random lines).
+`TokenMask` turns an automaton state into the set of vocabulary tokens that keep it alive
+(end-of-generation only once the line is complete), and `MaskingLogitsProcessor` sets every other
+token's score to −∞ in transformers. `python -m evidence.trace_token_masking` runs it on the
+inference baseline's own weights (the QAT Q4_0 GGUF, on CPU) and records, for every token, the
+model's top choices, which were blocked, and the probability removed. This is a demonstration
+beside the child-facing path, which still uses LM Studio's constraint.
+
+Recorded run (`evidence/token_masking_2026-10-18/`, CPU): unmasked, the model wrote "Okay, let’s
+talk about what you were doing on your screen just now." (fails the grammar); masked, the same
+model on the same prompt wrote "I noticed something on your screen just now. Would you like to
+tell me a little about what you were doing?" (passes). The mask blocked the model's first choice
+at 8 of 26 steps; at step 0 it removed 98.4% of the probability ("Okay"). Loading took 144 s and
+the masked line 29 s; an earlier trial the same evening took 80 minutes to load (cause not
+established), so show the recorded trace rather than depend on a live run.
 
 ## Function 1: FSM Controller (`src/fsm_controller.py`)
 
@@ -57,6 +93,8 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
+  It matches keywords, not a safer plan: "Next time I will do exactly the same thing."
+  gives True and "I will tell my mum." gives False (see the limitations below).
 
 **CONTRACT rule:** `escalation_flag` is set when `risk_level` is in
 `ESCALATION_RISK_LEVELS` (`{"high"}`) **or** `emotional_state` is in
@@ -85,10 +123,10 @@ pytest tests -v -m live_model   # only the live-model checks
 
 ## Input / Output contract
 
-- Input: `TriggerPayload` — see `docs/interface-contracts/comp1_to_comp3.schema.json` and `comp2_to_comp3.schema.json`
-- Output: `EvaluateOutput` — see `docs/interface-contracts/comp3_to_comp4.schema.json`
+- Input: `TriggerPayload` - see `docs/interface-contracts/comp1_to_comp3.schema.json` and `comp2_to_comp3.schema.json`
+- Output: `EvaluateOutput` - see `docs/interface-contracts/comp3_to_comp4.schema.json`
 
-Both are validated against the shared JSON Schemas at runtime (`schemas.py`) —
+Both are validated against the shared JSON Schemas at runtime (`schemas.py`) -
 if a teammate changes a contract without updating the schema file, this
 component will fail loudly instead of silently accepting bad data.
 
@@ -98,6 +136,7 @@ component will fail loudly instead of silently accepting bad data.
 cd component3_socratic_educator
 pip install -r requirements.txt
 python -m src.demo   # interactive: type child responses at the prompt
+streamlit run src/demo_dashboard.py   # the PP1 demo page
 ```
 
 ## Run the tests
@@ -211,7 +250,7 @@ It takes reply types from the test split through the key, never from the editabl
 - the most repeated closing sentence and its count, as a check for template collapse;
 - latency (reported separately).
 
-JSON validity, controller-grammar compliance and controller correctness are reported as *not measured — adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.
+JSON validity, controller-grammar compliance and controller correctness are reported as *not measured - adapted model not wired into the FSM*. The sample is 10 held-out scenarios and 50 prompts per arm. This is a pilot, not a significance test.
 
 **Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
 
@@ -255,25 +294,32 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   after-review online run); the INTERCEPT prompt was left unchanged so the 13 Oct
   adversarial evidence stays valid.
 
-- Since 5 Oct, INTERCEPT asks the live model (LM Studio) with **no constraint
-  applied yet**: its output is returned as-is, without `validate()`. Samples in
-  `evidence/intercept_samples_2026-10-06/` show 0/16 match the INTERCEPT
-  grammar (none named the flagged category). Constraining it is the 6 Oct task.
-  If LM Studio is unreachable or times out (30 s), INTERCEPT falls back to the
-  template pool.
-
-- `grammar_decoder.py` generates from a small validated candidate pool,
-  not yet the real on-device SLM — the *grammar enforcement* is real and
-  tested, the *generation* behind it is the next step.
+- Constrained decoding depends on LM Studio's `response_format` (ADR 0004), and
+  LM Studio cannot ship in the product. PP2 moves to `llama-cpp-python` in-process,
+  re-expresses the grammar in GBNF, and reruns the grammar, adversarial and latency
+  evidence. If LM Studio is unreachable or times out (30 s), INTERCEPT falls back
+  to a template line, so a session always completes.
+- Only INTERCEPT is model-written. INQUIRE picks template lines by reply type,
+  and EVALUATE and CONTRACT are rules. The fine-tuned INQUIRE adapter is shown on
+  the demo page as a shadow and never sent to the child: it mentions a trusted
+  adult in 43 of 50 responses and repeats one closing question 16 times, so it
+  is retrained in PP2 before any integration.
+- `self_regulation_shown` is a keyword match (see EVALUATE rules), so it can be
+  wrong in both directions. Not changed before PP1: Component 4 clusters on it
+  (`selfreg_rate`), and changing it would change the dataset Component 4 holds.
 - EVALUATE is rule-based (phrase lists + detector confidence), not a trained
-  classifier. Its 85.2% held-out agreement is measured on LLM-simulated children
+  classifier. Its 84.7% held-out agreement is measured on LLM-simulated children
   against the profile they were *generated* with, not on real children or
   human-annotated labels. Weakest case: withdrawn children who voice sadness are
   labelled `distressed` (65% agreement for `unclear`).
 - Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
   3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
-  target of 200+. The measurement-only audit flagged 20 of 112 delivered
-  lines (18%). That is not yet a bound either way: the flags are unreviewed
-  and some are arguable ("...when it stopped?"), and the audit missed lines
-  such as "What did it look like?" and "What are you looking at?"
-  (`evidence/adversarial_intercept_2026-10-13/`, `.review.md`, owner review pending).
+  target of 200+. 0 delivered lines broke the grammar or post-check (by
+  construction) and 9 were blocked. The measurement-only audit flagged 20 of
+  112 lines (18%), and it misses lines such as "What did it look like?" and
+  "What are you looking at?", so the meaning-level leak rate is not 0%. A blind
+  human review of the 103 delivered model lines is under way
+  (`evidence/adversarial_intercept_2026-10-13/`, `.human_review.csv` + key):
+  the first round (17 Oct) gave identical questions different verdicts and no
+  reasons, so no human leak rate is reported from it. A second round with a
+  written leak definition is in progress.

@@ -42,6 +42,32 @@ SOURCES = {
     "component2": ("Component 2: text detection", "component2_hate_speech_detection", "text_message",
                    ["hate_speech", "cyberbullying", "grooming_language", "self_harm_language"]),
 }
+# What each upstream score means, and the lowest score that detector ever sends (read on 20 Oct from main:
+# component1 config.THRESHOLD; component2 packs/policy/decision.json v1.3.0). Component 3 reads only the number.
+SCORE_MEANING = {
+    "component1": "Component 1's score is the vision model's probability that the frame is violent. "
+                  "It sends a trigger from 0.50.",
+    "component2": "Component 2's score is the fused probability of its top category. It sends a trigger only above "
+                  "the child's age threshold: 0.55 (ages 8-10), 0.65 (11-13), 0.75 (14-15). Self-harm and "
+                  "grooming use 0.50 at every age.",
+}
+CRITICAL_C2 = {"self_harm_language", "grooming_language"}
+
+
+def risk_rule(conf):
+    """(risk_level, rule) Component 3 gives a trigger score: the cut-offs in FSMController._evaluate."""
+    if conf >= 0.85:
+        return "high", "≥ 0.85 → high"
+    if conf >= 0.5:
+        return "moderate", "≥ 0.50 → moderate"
+    return "low", "< 0.50 → low"
+
+
+def lowest_sent(src, category):
+    """The lowest confidence this detector sends Component 3 for this category (youngest age band for C2)."""
+    return 0.5 if src == "component1" or category in CRITICAL_C2 else 0.55
+
+
 CHILDREN = {
     "reflective": ["I was just watching videos", "I guess I should close it and tell my mum next time"],
     "defensive": ["It wasn't me", "whatever", "no big deal", "It was nothing, my friend sent it"],
@@ -151,7 +177,7 @@ def explain(run):
     phrases = "; ".join(f"{k}: {', '.join(repr(p) for p in v)}" for k, v in verdict.hits.items()) or "no phrase fired"
     selfreg = [m.group(0) for rep in replies for m in [_SELF_REGULATION_PATTERN.search(rep.lower())] if m]
     why = r.dialogue_summary.split("escalated: ")[-1] if r.escalation_flag else "not escalated"
-    rule = "≥ 0.85 → high" if conf >= 0.85 else "≥ 0.50 → moderate" if conf >= 0.5 else "< 0.50 → low"
+    rule = risk_rule(conf)[1]
     return [("risk_level", f"confidence {conf:.2f} {rule}"),
             ("emotional_state", f"{r.emotional_state.value} because {phrases}"),
             ("self_regulation_shown", f"{r.self_regulation_shown}" + (f" because {selfreg}" if selfreg else "")),
@@ -193,7 +219,18 @@ def trigger_form(key):
                        index=cats.index(fixture.risk_category.value), key=f"{key}_cat_{src}", disabled=locked)
     conf = st.slider("confidence_score", 0.0, 1.0, float(fixture.confidence_score), 0.01, key=f"{key}_conf_{src}",
                      disabled=locked)
-    if not locked and st.button("Start session", type="primary", key=f"{key}_start"):
+    level, rule = risk_rule(conf)
+    st.caption(f"Component 3 reads this as **{level}** ({rule}). "
+               + ("High escalates to a parent whatever the child says. "
+                  if level == "high" else
+                  "Only a distressed child is escalated at this level. ")
+               + SCORE_MEANING[src])
+    unsent = None
+    if not locked and conf < lowest_sent(src, cat):
+        unsent = (f"{label} would not send this. Its lowest trigger for {cat} is {lowest_sent(src, cat):.2f}, "
+                  "so Component 3 is never woken and no dialogue starts. Raise the confidence to start one.")
+        st.warning(unsent)
+    if not locked and st.button("Start session", type="primary", key=f"{key}_start", disabled=unsent is not None):
         t = TriggerPayload.new(component, content_type, RiskCategory(cat), conf)
         t.validate()
         s.trigger, s.replies, s.memo = t, [], {}
@@ -201,6 +238,7 @@ def trigger_form(key):
     if locked:
         st.caption("Trigger payload, validated against its inbound schema ✓")
         st.json(s.trigger.to_dict(), expanded=False)
+    return unsent
 
 
 def reply_controls(run, key):
@@ -430,9 +468,10 @@ def page():
 
     with cin:
         st.subheader("① Input")
-        trigger_form("c")
+        unsent = trigger_form("c")
     if s.trigger is None:
-        cproc.info("Choose a trigger and start a session.")
+        cproc.info("Nothing was sent, so Component 3 is not running. Raise the confidence to the detector's "
+                   "lowest trigger." if unsent else "Choose a trigger and start a session.")
         cout.info("The record appears when the dialogue ends.")
         return adapter_evidence()
 
