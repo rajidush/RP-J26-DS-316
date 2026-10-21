@@ -15,7 +15,9 @@ Two modes
 
 A frame that is not flagged produces NO payload: the schema describes a
 risk trigger and has no "safe" category. Raw frames are never written to
-disk or included in a payload.
+disk or included in a payload. ``context_metadata.model_version`` names the
+checkpoint that made the decision (e.g. "violence-vit-screen-ft-v2"); the
+schema allows extra context_metadata keys, so Component 3 is unaffected.
 """
 from __future__ import annotations
 
@@ -29,10 +31,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 try:
-    from .config import CAPTURE_INTERVAL_S, REGION_STRATEGY, SCHEMA_PATH  # imported as package
+    from .config import CAPTURE_INTERVAL_S, MODEL_VERSION, REGION_STRATEGY, SCHEMA_PATH  # as package
     from .regions import motion_reference
 except ImportError:
-    from config import CAPTURE_INTERVAL_S, REGION_STRATEGY, SCHEMA_PATH   # run as script from src/
+    from config import CAPTURE_INTERVAL_S, MODEL_VERSION, REGION_STRATEGY, SCHEMA_PATH   # from src/
     from regions import motion_reference
 
 log = logging.getLogger(__name__)
@@ -90,10 +92,14 @@ def build_payload(
     detection: Any,
     session_id: str | None = None,
     duration_visible_ms: int = 0,
+    model_version: str | None = None,
 ) -> dict | None:
     """
     Build a schema-valid TriggerPayload from a ``capture.RawFrame`` and a
     ``detector.Detection``. Returns ``None`` if the frame is not flagged.
+
+    *model_version* defaults to config.MODEL_VERSION; callers that hold a
+    detector pass ``detector.model_version`` so --model-dir is reported correctly.
     """
     if not detection.flagged:
         return None
@@ -105,7 +111,8 @@ def build_payload(
         "content_type": CONTENT_TYPE,
         "risk_category": _RISK_CATEGORY.get(detection.category, "unknown_flagged"),
         "confidence_score": float(detection.confidence),
-        "context_metadata": {"duration_visible_ms": int(duration_visible_ms)},
+        "context_metadata": {"duration_visible_ms": int(duration_visible_ms),
+                             "model_version": model_version or MODEL_VERSION},
     }
     return validate_payload(payload)
 
@@ -160,7 +167,7 @@ def capture_and_classify(
     log.info("frame %s → %s (p_violent=%.4f in %s, %d crops, %.0f ms)", frame.frame_reference,
              detection.category, detection.confidence, detection.region, detection.n_crops,
              detection.inference_ms)
-    return build_payload(frame, detection)
+    return build_payload(frame, detection, model_version=getattr(detector, "model_version", None))
 
 
 def run_monitoring_loop(
@@ -211,7 +218,8 @@ def run_monitoring_loop(
                 prev = motion_reference(frame.image)
                 incident = tracker.update(frame, detection.flagged)
                 if incident:
-                    payload = build_payload(frame, detection, *incident)
+                    payload = build_payload(frame, detection, *incident,
+                                            model_version=getattr(detector, "model_version", None))
                     on_payload(payload)
                     stats["payloads"] += 1
                 else:

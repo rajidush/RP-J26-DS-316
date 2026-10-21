@@ -14,15 +14,19 @@ every image under data/screens/:
 "tiles+motion" needs a previous frame; for single images it is identical to
 "tiles", so "tiles" is what is evaluated (reported as tiles / tiles+motion).
 
-Every model directory in CANDIDATE_MODEL_DIRS that exists is evaluated (or
-pass --model-dir, repeatable).
+Evaluates config.MODEL_DIR — the deployed model (V2, violence-vit-screen-ft-v2) —
+unless --model-dir is given (repeatable, e.g. to compare P / V1 / V2). The model(s)
+are printed before anything else runs.
 
 Writes <stem>.json, <stem>.md (slide table), <stem>_predictions.csv (one row per
 image × model × strategy) and <stem>_examples.png (8 misclassified examples;
 violent ones blurred). Where, by default (never the results/ root):
 
-    no --model-dir (config.MODEL_DIR)  results/03_screen_eval_pretrained/screen_eval[_clean].*
-    --model-dir given (comparing)      results/05_model_comparison/runs/<model>_t<thr>_<full|clean>.*
+    results/05_model_comparison/runs/<model>_t<thr>_<full|clean>.*
+    (<model> = folder name(s) joined by "+"; with or without --model-dir)
+
+(results/03_screen_eval_pretrained/ holds the 14 Oct V1 run and is not written to
+by default.)
 
 --out-dir / --run-name override this. Existing files are never overwritten
 unless --overwrite is given (the experiment folders hold reported results).
@@ -53,8 +57,8 @@ from PIL import Image, ImageDraw, ImageFilter, ImageOps
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from component1_screen_monitoring.src.config import (COMPONENT_ROOT, MODEL_DIR, RESULTS_DIR,
-                                                    RESULTS_MODEL_COMPARISON, RESULTS_SCREEN_EVAL,
-                                                    SCREENS_DIR, SPLITS_CSV, THRESHOLD)
+                                                    RESULTS_MODEL_COMPARISON, SCREENS_DIR, SPLITS_CSV,
+                                                    THRESHOLD)
 
 STRATEGIES = ("full", "tiles")
 SOURCES = ("scraped", "composite", "recorded")
@@ -63,9 +67,6 @@ COMPARISON_RUNS_DIR = RESULTS_MODEL_COMPARISON / "runs"
 OUTPUT_SUFFIXES = (".json", ".md", "_predictions.csv", "_examples.png")
 SUBSETS = ("all", "clean")
 CLEAN_RLVS_SPLITS = {"val", "test"}
-
-#: Evaluated if present: the base checkpoint in HF format (if converted) and the fine-tuned one.
-CANDIDATE_MODEL_DIRS = [COMPONENT_ROOT / "models" / "violence-vit-pretrained-hf", MODEL_DIR]
 
 #: (source, sub-folder relative to data/screens, label)
 LAYOUT = [
@@ -276,11 +277,14 @@ def save_examples(examples: list[dict], path: Path, cols: int = 4, tile=(400, 25
     sheet.save(path)
 
 
-def default_output(model_dirs: list[Path] | None, threshold: float, subset: str) -> tuple[Path, str]:
+def resolve_model_dirs(model_dirs: list[Path] | None) -> list[Path]:
+    """--model-dir values, or the deployed model (config.MODEL_DIR) when none are given."""
+    return [Path(d) for d in model_dirs] if model_dirs else [MODEL_DIR]
+
+
+def default_output(model_dirs: list[Path], threshold: float, subset: str) -> tuple[Path, str]:
     """(folder, file stem) for a run when --out-dir / --run-name are not given."""
     tag = "full" if subset == "all" else subset
-    if not model_dirs:                                     # config.MODEL_DIR: experiment 03
-        return RESULTS_SCREEN_EVAL, "screen_eval" if subset == "all" else f"screen_eval_{subset}"
     names = "+".join(Path(d).name for d in model_dirs)
     return COMPARISON_RUNS_DIR, f"{names}_t{threshold:.2f}_{tag}"
 
@@ -292,28 +296,28 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=None,
                     help="evaluate a random (seeded) subset of N images — quick check only")
     ap.add_argument("--model-dir", type=Path, action="append", default=None,
-                    help="model directory to evaluate (repeatable; default: every existing "
-                         "directory in CANDIDATE_MODEL_DIRS)")
+                    help="model directory to evaluate (repeatable; default: config.MODEL_DIR, "
+                         f"the deployed model — {MODEL_DIR.name})")
     ap.add_argument("--subset", choices=SUBSETS, default="all",
-                    help="'clean' = only composites with RLVS val/test frames + scraped pages "
-                         "(writes screen_eval_clean.*)")
+                    help="'clean' = only composites with RLVS val/test frames + scraped pages")
     ap.add_argument("--out-dir", type=Path, default=None,
-                    help="folder for the output files (default: 03_screen_eval_pretrained/ without "
-                         "--model-dir, 05_model_comparison/runs/ with it)")
+                    help="folder for the output files (default: results/05_model_comparison/runs/)")
     ap.add_argument("--run-name", default=None,
-                    help="output file stem (default: screen_eval[_clean], or <model>_t<thr>_<full|clean>)")
+                    help="output file stem (default: <model>_t<thr>_<full|clean>)")
     ap.add_argument("--overwrite", action="store_true", help="replace existing output files")
     args = ap.parse_args()
-    out_dir, stem = default_output(args.model_dir, args.threshold, args.subset)
+    model_dirs = resolve_model_dirs(args.model_dir)
+    for d in model_dirs:
+        role = " (config.MODEL_DIR — the deployed model)" if d.resolve() == MODEL_DIR.resolve() else ""
+        print(f"Evaluating model: {d.name}{role}\n  {d}", flush=True)
+    out_dir, stem = default_output(model_dirs, args.threshold, args.subset)
     out_dir, stem = args.out_dir or out_dir, args.run_name or stem
     if out_dir.resolve() == RESULTS_DIR.resolve():
         sys.exit("Write runs into an experiment folder, not the results/ root (see results/README.md).")
     existing = [out_dir / f"{stem}{s}" for s in OUTPUT_SUFFIXES if (out_dir / f"{stem}{s}").exists()]
     if existing and not args.overwrite:
         sys.exit(f"{existing[0]} already exists — pass --overwrite, or choose --out-dir / --run-name.")
-    model_dirs = args.model_dir or [d for d in CANDIDATE_MODEL_DIRS if (d / "config.json").exists()]
-    if not model_dirs:
-        sys.exit("No model directory found — see the component README.")
+    print(f"  threshold {args.threshold} · subset {args.subset} · output {out_dir / stem}.*", flush=True)
     missing = [d for d in model_dirs if not (Path(d) / "config.json").exists()]
     if missing:
         sys.exit(f"Not a Hugging Face model directory (no config.json): {missing}")

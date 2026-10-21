@@ -70,8 +70,9 @@ def test_threshold_controls_flag(tiny_model_dir, thr, expected):
 
 
 def test_missing_model_dir_gives_clear_error(tmp_path):
-    with pytest.raises(FileNotFoundError, match="No model found"):
-        ViolenceDetector(tmp_path / "nope")
+    with pytest.raises(FileNotFoundError, match="No model found") as e:
+        ViolenceDetector(tmp_path / "violence-vit-screen-ft-v2")
+    assert "Google Drive: pp1_component1/checkpoints/violence-vit-screen-ft-v2" in str(e.value)
 
 
 def test_bad_threshold_rejected(tiny_model_dir):

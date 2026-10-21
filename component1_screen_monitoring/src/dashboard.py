@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from component1_screen_monitoring.src.capture import RawFrame, capture_frame
 from component1_screen_monitoring.src.component1 import IncidentTracker, build_payload
-from component1_screen_monitoring.src.config import CAPTURE_INTERVAL_S, REGION_STRATEGY, THRESHOLD
+from component1_screen_monitoring.src.config import CAPTURE_INTERVAL_S, DEFAULT_MODE, MODES, THRESHOLD
 from component1_screen_monitoring.src.dashboard_state import (
     MAX_READINGS,
     ReadingHistory,
@@ -42,6 +42,13 @@ st.set_page_config(page_title="Component 1 — Screen Monitoring", page_icon="�
 # ---------------------------------------------------------------------------
 # Resources + session state
 # ---------------------------------------------------------------------------
+
+#: Region-strategy dropdown: the two modes first, then the other strategies.
+_MODE_HELP = {"default": "whole screen", "strict": "whole screen + tiles"}
+STRATEGY_OPTIONS = {f"{m} — {_MODE_HELP.get(m, s)} ({s})": s for m, s in MODES.items()}
+STRATEGY_OPTIONS.update({f"custom — {s}": s for s in STRATEGIES if s not in MODES.values()})
+DEFAULT_OPTION = next(k for k in STRATEGY_OPTIONS if k.startswith(f"{DEFAULT_MODE} —"))
+
 
 @st.cache_resource(show_spinner="Loading fine-tuned violence detector …")
 def load_detector() -> ViolenceDetector:
@@ -68,7 +75,11 @@ ss.setdefault("thumbnail", None)
 ss.setdefault("prev", None)          # small grayscale copy of the previous frame (motion)
 ss.setdefault("error", None)
 
-detector = load_detector()
+try:
+    detector = load_detector()
+except FileNotFoundError as exc:
+    st.error(str(exc))
+    st.stop()
 
 
 # ---------------------------------------------------------------------------
@@ -86,9 +97,10 @@ with st.sidebar:
     interval = st.number_input("Capture interval (s)", min_value=0.5, max_value=30.0,
                                value=float(CAPTURE_INTERVAL_S), step=0.5)
     threshold = st.slider("Threshold — flag when p(violent) ≥", 0.0, 1.0, float(THRESHOLD), 0.01)
-    strategy = st.selectbox("Region strategy", STRATEGIES, index=STRATEGIES.index(REGION_STRATEGY),
-                            help="Which crops of each frame are classified: full frame only, "
-                                 "+ 2×2 tiles and centre, + the moving region, or both.")
+    strategy = STRATEGY_OPTIONS[st.selectbox(
+        "Region strategy", list(STRATEGY_OPTIONS), index=list(STRATEGY_OPTIONS).index(DEFAULT_OPTION),
+        help="default = whole screen only (fewer false alarms); strict = whole screen + 2×2 tiles "
+             "+ centre (catches smaller videos, more false alarms). custom = other region strategies.")]
     monitors = list_monitors()
     if monitors:
         monitor_index = monitors[st.selectbox("Monitor", list(monitors))]
@@ -97,7 +109,7 @@ with st.sidebar:
         monitor_index = 1
 
 
-    st.caption(f"Model on **{detector.device}** · keeps the last {MAX_READINGS} readings · "
+    st.caption(f"Model **{detector.model_version}** on **{detector.device}** · keeps the last {MAX_READINGS} readings · "
                "frames are never written to disk")
 
 detector.threshold = threshold          # one shared detector; slider sets its threshold
@@ -189,7 +201,7 @@ with test_tab:
         image = Image.open(upload)                      # in memory only
         detection = detector.predict(image)
         payload = build_payload(RawFrame(image=image, frame_reference=f"upload_{upload.name}"),
-                                detection)
+                                detection, model_version=detector.model_version)
 
         img_col, info_col = st.columns([3, 2])
         with img_col:

@@ -24,6 +24,23 @@ before it is emitted, so Component 3 needs no changes.
 | `risk_category` | `"violence"` |
 | `confidence_score` | detector's P(violent), 0–1 |
 | `context_metadata.duration_visible_ms` | time since the incident's first flagged frame |
+| `context_metadata.model_version` | checkpoint that made the decision, e.g. `"violence-vit-screen-ft-v2"` (extra `context_metadata` keys are allowed by the schema) |
+
+## Model
+
+Component 1 uses **`violence-vit-screen-ft-v2`**: the pretrained
+`jaranohaal/vit-base-violence-detection` ViT fine-tuned on screen-style images
+(RLVS frames pasted into real web pages, plus tiles) with 40 % RLVS frames mixed in
+to keep its video skill. Against the previously deployed setup — V1
+(`violence-vit-screen-ft-v1`, fine-tuned on full-frame RLVS only) with tiles — V2 on the
+whole screen has higher recall on both screen test sets (0.548 vs 0.361 on the full set),
+a false-alarm rate within 2×, RLVS test accuracy 0.993 and ~5× lower latency; V2 with
+tiles is the strict mode. See the comparison of all three models (P = true pretrained,
+V1, V2) in
+[`results/05_model_comparison/model_comparison.md`](results/05_model_comparison/model_comparison.md).
+For comparisons, V1 is `config.RLVS_FT_V1_MODEL_DIR` and the true pretrained model is
+`config.PRETRAINED_MODEL_DIR` (`models/violence-vit-pretrained-hf`, created locally by
+`python src/convert_pretrained.py`); select either with `--model-dir`.
 
 ## Setup
 
@@ -33,12 +50,17 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-The fine-tuned checkpoint (~330 MB) is **not in git**. Unzip
-`violence-vit-screen-ft-v1.zip` so that `config.json` sits directly in:
+The fine-tuned checkpoint (~330 MB) is **not in git**. Download the folder
+`pp1_component1/checkpoints/violence-vit-screen-ft-v2/` from Google Drive so
+that `config.json` sits directly in:
 
 ```
-component1_screen_monitoring/models/violence-vit-screen-ft-v1/
+component1_screen_monitoring/models/violence-vit-screen-ft-v2/
 ```
+
+If it is missing, `run_monitor.py`, the dashboard and `detector.py` stop with a
+message saying exactly this. (For comparisons, `violence-vit-screen-ft-v1` comes
+from the same Drive folder, `checkpoints/violence-vit-screen-ft-v1/`.)
 
 It needs `transformers<5` (saved with 4.57). On macOS, the terminal running
 the monitor needs **Screen Recording** permission (System Settings → Privacy &
@@ -62,9 +84,30 @@ python src/run_monitor.py --live
 python src/run_monitor.py --live --max-iterations 5 -v
 ```
 
-Options: `--interval SECONDS` (live sampling period), `--max-iterations N`,
-`--threshold P` (flag when P(violent) ≥ P), `--strategy {full,tiles,motion,tiles+motion}`
-(which crops are classified — see below), `-v` (debug logging).
+### Default vs strict mode
+
+Same model, same threshold (0.5); the mode decides which parts of the screen are
+classified. Numbers are the screen test set at 0.5 (`results/05_model_comparison/`):
+
+| Mode | Strategy | Recall | False alarms | Time per frame (M1) |
+|---|---|---|---|---|
+| `default` | `full` — whole screen only | 0.548 | 9.3 % of safe screens | ~51 ms |
+| `strict` | `tiles` — whole screen + 2×2 tiles + centre crop | 0.880 | 18.9 % of safe screens | ~228 ms |
+
+```bash
+python src/run_monitor.py --live                    # default mode
+python src/run_monitor.py --live --mode strict      # strict mode: catches smaller videos, more false alarms
+python src/run_monitor.py --once --model-dir models/violence-vit-screen-ft-v1   # V1 (previous model), for comparison
+python src/run_monitor.py --once --model-dir models/violence-vit-pretrained-hf  # P (true pretrained), for comparison
+```
+
+In the dashboard, pick **default — whole screen** or **strict — whole screen + tiles**
+in the *Region strategy* dropdown.
+
+Options: `--mode {default,strict}`, `--model-dir DIR`, `--interval SECONDS` (live
+sampling period), `--max-iterations N`, `--threshold P` (flag when P(violent) ≥ P),
+`--strategy {full,tiles,motion,tiles+motion}` (advanced: any region strategy,
+overrides `--mode` — see below), `-v` (debug logging).
 
 ## Region-based inference
 
@@ -76,10 +119,10 @@ So each frame is classified as a **batch of crops in one forward pass**
 
 | Strategy | Crops |
 |---|---|
-| `full` | whole frame (old behaviour) |
-| `tiles` | whole frame + 2×2 overlapping grid (60% × 60% each) + centre crop |
+| `full` (default mode) | whole frame |
+| `tiles` (strict mode) | whole frame + 2×2 overlapping grid (60% × 60% each) + centre crop |
 | `motion` | whole frame + the largest region that changed since the previous frame (padded 10%) |
-| `tiles+motion` (default) | both |
+| `tiles+motion` | both |
 
 p(violent) is the **maximum over the crops**; the winning region's name and box
 are reported (and drawn on the dashboard thumbnail). The payload schema is
@@ -142,9 +185,12 @@ All tunables live in [`src/config.py`](src/config.py) and are used everywhere
 | Setting | Default | Meaning |
 |---|---|---|
 | `THRESHOLD` | `0.5` | flag a frame when P(violent) ≥ this |
-| `REGION_STRATEGY` | `tiles+motion` | which crops of each frame are classified |
+| `MODES` / `DEFAULT_MODE` | `{"default": "full", "strict": "tiles"}` / `default` | detection modes (see above) |
+| `REGION_STRATEGY` | `full` (= `MODES[DEFAULT_MODE]`) | which crops of each frame are classified |
 | `CAPTURE_INTERVAL_S` | `2.0` | seconds between samples in the live loop |
-| `MODEL_DIR` | `models/violence-vit-screen-ft-v1` | fine-tuned checkpoint |
+| `MODEL_DIR` | `models/violence-vit-screen-ft-v2` | fine-tuned checkpoint (screen fine-tune) |
+| `PRETRAINED_MODEL_DIR` | `models/violence-vit-pretrained-hf` | true pretrained model (P), for `--model-dir` comparisons |
+| `RLVS_FT_V1_MODEL_DIR` | `models/violence-vit-screen-ft-v1` | RLVS fine-tune V1 (previous model), for `--model-dir` comparisons |
 | `SCHEMA_PATH` | `docs/interface-contracts/comp1_to_comp3.schema.json` | contract payloads are validated against |
 | `RESULTS_DIR` (+ `RESULTS_*`) | `results/` | one folder per experiment — see [`results/README.md`](results/README.md) |
 

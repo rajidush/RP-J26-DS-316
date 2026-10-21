@@ -187,17 +187,31 @@ def test_clean_markdown_says_subset(fake_screens):
 # Output locations: one experiment folder per mode, never the results/ root
 # ---------------------------------------------------------------------------
 
-def test_default_output_per_mode():
-    from component1_screen_monitoring.src.config import (RESULTS_DIR, RESULTS_MODEL_COMPARISON,
-                                                        RESULTS_SCREEN_EVAL)
-    from component1_screen_monitoring.src.eval_screens import default_output
-    assert default_output(None, 0.5, "all") == (RESULTS_SCREEN_EVAL, "screen_eval")
-    assert default_output(None, 0.5, "clean") == (RESULTS_SCREEN_EVAL, "screen_eval_clean")
+def test_default_model_is_the_deployed_one():
+    from component1_screen_monitoring.src.config import MODEL_DIR
+    from component1_screen_monitoring.src.eval_screens import resolve_model_dirs
+    assert resolve_model_dirs(None) == [MODEL_DIR] and MODEL_DIR.name == "violence-vit-screen-ft-v2"
+    assert resolve_model_dirs([Path("m/a"), Path("m/b")]) == [Path("m/a"), Path("m/b")]
+
+
+def test_default_output_names_the_model():
+    from component1_screen_monitoring.src.config import MODEL_DIR, RESULTS_DIR, RESULTS_MODEL_COMPARISON
+    from component1_screen_monitoring.src.eval_screens import default_output, resolve_model_dirs
+    d, stem = default_output(resolve_model_dirs(None), 0.5, "all")
+    assert d == RESULTS_MODEL_COMPARISON / "runs" and stem == f"{MODEL_DIR.name}_t0.50_full"
     d, stem = default_output([Path("models/violence-vit-screen-ft-v2")], 0.25, "clean")
-    assert d == RESULTS_MODEL_COMPARISON / "runs" and stem == "violence-vit-screen-ft-v2_t0.25_clean"
+    assert stem == "violence-vit-screen-ft-v2_t0.25_clean"
     d, stem = default_output([Path("m/a"), Path("m/b")], 0.5, "all")
-    assert stem == "a+b_t0.50_full"
-    assert RESULTS_DIR not in {default_output(None, 0.5, "all")[0], d}
+    assert stem == "a+b_t0.50_full" and d != RESULTS_DIR
+
+
+def test_main_prints_model_first(monkeypatch, capsys, tmp_path):
+    from component1_screen_monitoring.src import eval_screens
+    monkeypatch.setattr(sys, "argv", ["eval_screens.py", "--root", str(tmp_path), "--out-dir", str(tmp_path / "o")])
+    with pytest.raises(SystemExit, match="No images"):          # stops before loading any model
+        eval_screens.main()
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "Evaluating model: violence-vit-screen-ft-v2 (config.MODEL_DIR — the deployed model)"
 
 
 def test_results_paths_point_into_experiment_folders():

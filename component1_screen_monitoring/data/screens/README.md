@@ -141,9 +141,10 @@ splits can be **grouped by page** later (no page appears in both).
    `composites.csv`.
 4. `python src/record_screens.py --label violence|safe --interval 1 --max N`
    — optional real recordings (the only tool that writes screen frames to disk).
-5. `python src/eval_screens.py` → `results/03_screen_eval_pretrained/screen_eval.{json,md}`,
-   `_predictions.csv` and `_examples.png` (with `--model-dir`: `results/05_model_comparison/runs/`;
-   existing files are only replaced with `--overwrite`).
+5. `python src/eval_screens.py` — evaluates the deployed model (`config.MODEL_DIR`) or
+   `--model-dir DIR` → `results/05_model_comparison/runs/<model>_t<thr>_<full|clean>.{json,md}`,
+   `_predictions.csv` and `_examples.png` (existing files are only replaced with `--overwrite`;
+   the original V1 run is in `results/03_screen_eval_pretrained/`).
 
 All commands from `component1_screen_monitoring/`.
 

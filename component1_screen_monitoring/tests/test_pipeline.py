@@ -63,7 +63,7 @@ def test_flagged_payload_matches_schema():
         "content_type": "image",
         "risk_category": "violence",
         "confidence_score": 0.93,
-        "context_metadata": {"duration_visible_ms": 4000},
+        "context_metadata": {"duration_visible_ms": 4000, "model_version": "violence-vit-screen-ft-v2"},
     }
 
 
@@ -225,3 +225,66 @@ def test_loop_passes_small_previous_frame_and_strategy():
     assert prevs[0] is None                    # first frame has no previous frame
     assert all(p.mode == "L" and p.width <= 160 for p in prevs[1:])   # downscaled copy only
     assert {s for _, s in det.region_calls} == {"tiles"}
+
+
+# ---------------------------------------------------------------------------
+# model_version in the payload, detection modes
+# ---------------------------------------------------------------------------
+
+def test_payload_reports_default_model_version():
+    from component1_screen_monitoring.src.config import MODEL_DIR, MODEL_VERSION
+    assert MODEL_VERSION == MODEL_DIR.name == "violence-vit-screen-ft-v2"
+    payload = build_payload(_frame(), _detection(0.9))
+    assert payload["context_metadata"]["model_version"] == "violence-vit-screen-ft-v2"
+
+
+def test_payload_reports_the_detectors_model():
+    det = FakeDetector([0.9])
+    det.model_version = "violence-vit-screen-ft-v1"           # e.g. run_monitor --model-dir <ft-v1>
+    payload = capture_and_classify(det, capture_fn=_frame)
+    _independent_validator().validate(payload)
+    assert payload["context_metadata"]["model_version"] == "violence-vit-screen-ft-v1"
+    payloads = []
+    det = FakeDetector([0.9]); det.model_version = "custom-model"
+    run_monitoring_loop(det, max_iterations=1, on_payload=payloads.append, capture_fn=_frame,
+                        sleep_fn=lambda s: None)
+    assert payloads[0]["context_metadata"]["model_version"] == "custom-model"
+
+
+def test_modes_default_is_whole_screen():
+    from component1_screen_monitoring.src import config
+    assert config.MODES == {"default": "full", "strict": "tiles"}
+    assert config.DEFAULT_MODE == "default" and config.REGION_STRATEGY == "full"
+    assert config.THRESHOLD == 0.5
+    assert config.PRETRAINED_MODEL_DIR.name == "violence-vit-pretrained-hf"
+    assert config.RLVS_FT_V1_MODEL_DIR.name == "violence-vit-screen-ft-v1"
+
+
+@pytest.mark.parametrize("argv, strategy", [([], "full"), (["--mode", "strict"], "tiles"),
+                                            (["--mode", "strict", "--strategy", "motion"], "motion")])
+def test_run_monitor_mode_selects_strategy(monkeypatch, capsys, argv, strategy):
+    from component1_screen_monitoring.src import detector as det_mod, run_monitor
+    seen = {}
+
+    class Det:
+        device, model_version = "cpu", "fake"
+        def __init__(self, model_dir, threshold):
+            seen["model_dir"] = model_dir
+
+    monkeypatch.setattr(det_mod, "ViolenceDetector", Det)
+    monkeypatch.setattr(run_monitor, "capture_and_classify",
+                        lambda d, strategy: seen.update(strategy=strategy))
+    monkeypatch.setattr(sys, "argv", ["run_monitor.py", "--once", *argv])
+    run_monitor.main()
+    assert seen["strategy"] == strategy
+    from component1_screen_monitoring.src.config import MODEL_DIR
+    assert seen["model_dir"] == MODEL_DIR
+
+
+def test_run_monitor_missing_model_exits_with_download_hint(monkeypatch, tmp_path):
+    from component1_screen_monitoring.src import run_monitor
+    monkeypatch.setattr(sys, "argv", ["run_monitor.py", "--once", "--model-dir", str(tmp_path / "violence-vit-screen-ft-v2")])
+    with pytest.raises(SystemExit) as e:
+        run_monitor.main()
+    msg = str(e.value)
+    assert "config.json is missing" in msg and "pp1_component1/checkpoints/violence-vit-screen-ft-v2" in msg

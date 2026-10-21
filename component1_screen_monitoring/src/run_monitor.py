@@ -8,9 +8,16 @@ Modes
     python component1_screen_monitoring/src/run_monitor.py --live [--interval 2] [--max-iterations N]
     python component1_screen_monitoring/src/run_monitor.py --benchmark 20
 
-Common options: --threshold (default: config.THRESHOLD), --strategy (region
-strategy, default: config.REGION_STRATEGY), -v (show DEBUG logs, including
-every not-flagged frame).
+Common options:
+    --mode default|strict   default = whole screen only ("full"); strict = whole
+                            screen + 2×2 tiles + centre ("tiles") — more recall,
+                            more false alarms (see config.MODES). Default: default.
+    --model-dir DIR         checkpoint (default: config.MODEL_DIR, ft-v2); for comparison
+                            models/violence-vit-screen-ft-v1 (V1, config.RLVS_FT_V1_MODEL_DIR)
+                            or models/violence-vit-pretrained-hf (P, config.PRETRAINED_MODEL_DIR)
+    --strategy S            advanced: any region strategy, overrides --mode
+    --threshold T           default: config.THRESHOLD
+    -v                      DEBUG logs, including every not-flagged frame
 
 --benchmark N captures N live frames once, then times every region strategy
 on those same frames and saves results/03_screen_eval_pretrained/latency_regions.json.
@@ -42,7 +49,9 @@ from component1_screen_monitoring.src.component1 import (
 from component1_screen_monitoring.src.config import (
     CAPTURE_INTERVAL_S,
     COMPONENT_ROOT,
-    REGION_STRATEGY,
+    DEFAULT_MODE,
+    MODEL_DIR,
+    MODES,
     RESULTS_SCREEN_EVAL,
     THRESHOLD,
 )
@@ -129,8 +138,13 @@ def main() -> None:
                     help="stop --live after N frames (default: run until Ctrl+C)")
     ap.add_argument("--threshold", type=float, default=THRESHOLD,
                     help=f"flag when P(violent) >= this (default: {THRESHOLD})")
-    ap.add_argument("--strategy", choices=STRATEGIES, default=REGION_STRATEGY,
-                    help=f"region strategy (default: {REGION_STRATEGY})")
+    ap.add_argument("--mode", choices=list(MODES), default=DEFAULT_MODE,
+                    help="default = whole screen only; strict = whole screen + tiles "
+                         f"(default: {DEFAULT_MODE}; {', '.join(f'{m}={s}' for m, s in MODES.items())})")
+    ap.add_argument("--strategy", choices=STRATEGIES, default=None,
+                    help="advanced: region strategy, overrides --mode")
+    ap.add_argument("--model-dir", type=Path, default=MODEL_DIR,
+                    help=f"checkpoint folder (default: {MODEL_DIR.relative_to(COMPONENT_ROOT)})")
     ap.add_argument("-v", "--verbose", action="store_true", help="DEBUG logging")
     args = ap.parse_args()
 
@@ -149,8 +163,14 @@ def main() -> None:
 
     from component1_screen_monitoring.src.detector import ViolenceDetector
 
-    detector = ViolenceDetector(threshold=args.threshold)
-    logging.getLogger(__name__).info("model loaded on %s", detector.device)
+    strategy = args.strategy or MODES[args.mode]
+    try:
+        detector = ViolenceDetector(args.model_dir, threshold=args.threshold)
+    except FileNotFoundError as exc:
+        sys.exit(f"ERROR: {exc}")
+    logging.getLogger(__name__).info(
+        "model %s loaded on %s — mode %s (strategy %s), threshold %s", detector.model_version,
+        detector.device, args.mode if args.strategy is None else "custom", strategy, args.threshold)
 
     if args.benchmark:
         print(f"Capturing {args.benchmark} frames, then timing each strategy …", flush=True)
@@ -159,14 +179,14 @@ def main() -> None:
         LATENCY_REGIONS_JSON.write_text(json.dumps(results, indent=2))
         print(f"Saved → {LATENCY_REGIONS_JSON.relative_to(COMPONENT_ROOT.parent)}")
     elif args.once:
-        payload = capture_and_classify(detector, strategy=args.strategy)
+        payload = capture_and_classify(detector, strategy=strategy)
         if payload is None:
             print("No payload — frame not flagged.")
         else:
             _print_payload(payload)
     else:
         run_monitoring_loop(detector, interval=args.interval, max_iterations=args.max_iterations,
-                            on_payload=_print_payload, strategy=args.strategy)
+                            on_payload=_print_payload, strategy=strategy)
 
 
 if __name__ == "__main__":
