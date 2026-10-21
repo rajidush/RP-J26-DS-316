@@ -181,3 +181,30 @@ def test_clean_markdown_says_subset(fake_screens):
     md = to_markdown({"model_dir": "m", "threshold": 0.5, "device": "cpu", "subset": "clean",
                       "evaluated_at": "now", "counts": {}, "metrics": metrics})
     assert "Subset: clean" in md
+
+
+# ---------------------------------------------------------------------------
+# Output locations: one experiment folder per mode, never the results/ root
+# ---------------------------------------------------------------------------
+
+def test_default_output_per_mode():
+    from component1_screen_monitoring.src.config import (RESULTS_DIR, RESULTS_MODEL_COMPARISON,
+                                                        RESULTS_SCREEN_EVAL)
+    from component1_screen_monitoring.src.eval_screens import default_output
+    assert default_output(None, 0.5, "all") == (RESULTS_SCREEN_EVAL, "screen_eval")
+    assert default_output(None, 0.5, "clean") == (RESULTS_SCREEN_EVAL, "screen_eval_clean")
+    d, stem = default_output([Path("models/violence-vit-screen-ft-v2")], 0.25, "clean")
+    assert d == RESULTS_MODEL_COMPARISON / "runs" and stem == "violence-vit-screen-ft-v2_t0.25_clean"
+    d, stem = default_output([Path("m/a"), Path("m/b")], 0.5, "all")
+    assert stem == "a+b_t0.50_full"
+    assert RESULTS_DIR not in {default_output(None, 0.5, "all")[0], d}
+
+
+def test_results_paths_point_into_experiment_folders():
+    from component1_screen_monitoring.src import config
+    assert config.SPLITS_CSV == config.RESULTS_DIR / "01_rlvs_finetune" / "splits.csv"
+    assert config.SPLITS_CSV.exists()
+    for name in ("RESULTS_WEEK1_BASELINE", "RESULTS_RLVS_FINETUNE", "RESULTS_PARAM_SWEEP",
+                 "RESULTS_SCREEN_EVAL", "RESULTS_SCREEN_FINETUNE", "RESULTS_MODEL_COMPARISON",
+                 "RESULTS_FUNCTION2"):
+        assert getattr(config, name).parent == config.RESULTS_DIR

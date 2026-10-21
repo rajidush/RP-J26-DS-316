@@ -17,22 +17,26 @@ every image under data/screens/:
 Every model directory in CANDIDATE_MODEL_DIRS that exists is evaluated (or
 pass --model-dir, repeatable).
 
-Writes results/screen_eval.json, results/screen_eval.md (slide table),
-results/screen_eval_predictions.csv (one row per image × model × strategy) and
-results/screen_eval_examples.png (8 misclassified examples; violent ones blurred).
+Writes <stem>.json, <stem>.md (slide table), <stem>_predictions.csv (one row per
+image × model × strategy) and <stem>_examples.png (8 misclassified examples;
+violent ones blurred). Where, by default (never the results/ root):
+
+    no --model-dir (config.MODEL_DIR)  results/03_screen_eval_pretrained/screen_eval[_clean].*
+    --model-dir given (comparing)      results/05_model_comparison/runs/<model>_t<thr>_<full|clean>.*
+
+--out-dir / --run-name override this. Existing files are never overwritten
+unless --overwrite is given (the experiment folders hold reported results).
 
 --subset clean evaluates only the composites whose RLVS frame is from the val or
-test split of results/splits.csv (frames the checkpoint never trained on), plus
-all plain scraped pages; recorded screens are left out (no RLVS provenance).
-Outputs then go to results/screen_eval_clean.{json,md}, _predictions.csv and
-_examples.png, so the full-set results are not overwritten.
+test split of results/01_rlvs_finetune/splits.csv (frames the checkpoint never
+trained on), plus all plain scraped pages; recorded screens are left out (no
+RLVS provenance).
 
 Usage
 -----
-    python component1_screen_monitoring/src/eval_screens.py
-    python component1_screen_monitoring/src/eval_screens.py --limit 50     # quick check
+    python component1_screen_monitoring/src/eval_screens.py --limit 50 --out-dir /tmp/quick   # quick check
     python component1_screen_monitoring/src/eval_screens.py --subset clean \
-        --model-dir component1_screen_monitoring/models/violence-vit-screen-ft-v2   # compare models
+        --model-dir component1_screen_monitoring/models/violence-vit-screen-ft-v2   # → 05_model_comparison/runs/
 """
 from __future__ import annotations
 
@@ -48,13 +52,15 @@ from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from component1_screen_monitoring.src.config import COMPONENT_ROOT, MODEL_DIR, SCREENS_DIR, THRESHOLD
+from component1_screen_monitoring.src.config import (COMPONENT_ROOT, MODEL_DIR, RESULTS_DIR,
+                                                    RESULTS_MODEL_COMPARISON, RESULTS_SCREEN_EVAL,
+                                                    SCREENS_DIR, SPLITS_CSV, THRESHOLD)
 
 STRATEGIES = ("full", "tiles")
 SOURCES = ("scraped", "composite", "recorded")
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
-RESULTS_DIR = COMPONENT_ROOT / "results"
-SPLITS_CSV = RESULTS_DIR / "splits.csv"          # RLVS train/val/test split used to train the checkpoint
+COMPARISON_RUNS_DIR = RESULTS_MODEL_COMPARISON / "runs"
+OUTPUT_SUFFIXES = (".json", ".md", "_predictions.csv", "_examples.png")
 SUBSETS = ("all", "clean")
 CLEAN_RLVS_SPLITS = {"val", "test"}
 
@@ -270,6 +276,15 @@ def save_examples(examples: list[dict], path: Path, cols: int = 4, tile=(400, 25
     sheet.save(path)
 
 
+def default_output(model_dirs: list[Path] | None, threshold: float, subset: str) -> tuple[Path, str]:
+    """(folder, file stem) for a run when --out-dir / --run-name are not given."""
+    tag = "full" if subset == "all" else subset
+    if not model_dirs:                                     # config.MODEL_DIR: experiment 03
+        return RESULTS_SCREEN_EVAL, "screen_eval" if subset == "all" else f"screen_eval_{subset}"
+    names = "+".join(Path(d).name for d in model_dirs)
+    return COMPARISON_RUNS_DIR, f"{names}_t{threshold:.2f}_{tag}"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--root", type=Path, default=SCREENS_DIR)
@@ -282,7 +297,20 @@ def main() -> None:
     ap.add_argument("--subset", choices=SUBSETS, default="all",
                     help="'clean' = only composites with RLVS val/test frames + scraped pages "
                          "(writes screen_eval_clean.*)")
+    ap.add_argument("--out-dir", type=Path, default=None,
+                    help="folder for the output files (default: 03_screen_eval_pretrained/ without "
+                         "--model-dir, 05_model_comparison/runs/ with it)")
+    ap.add_argument("--run-name", default=None,
+                    help="output file stem (default: screen_eval[_clean], or <model>_t<thr>_<full|clean>)")
+    ap.add_argument("--overwrite", action="store_true", help="replace existing output files")
     args = ap.parse_args()
+    out_dir, stem = default_output(args.model_dir, args.threshold, args.subset)
+    out_dir, stem = args.out_dir or out_dir, args.run_name or stem
+    if out_dir.resolve() == RESULTS_DIR.resolve():
+        sys.exit("Write runs into an experiment folder, not the results/ root (see results/README.md).")
+    existing = [out_dir / f"{stem}{s}" for s in OUTPUT_SUFFIXES if (out_dir / f"{stem}{s}").exists()]
+    if existing and not args.overwrite:
+        sys.exit(f"{existing[0]} already exists — pass --overwrite, or choose --out-dir / --run-name.")
     model_dirs = args.model_dir or [d for d in CANDIDATE_MODEL_DIRS if (d / "config.json").exists()]
     if not model_dirs:
         sys.exit("No model directory found — see the component README.")
@@ -316,12 +344,11 @@ def main() -> None:
         "threshold": args.threshold, "limit": args.limit, "subset": args.subset,
         "counts": counts, "models": models,
     }
-    stem = "screen_eval" if args.subset == "all" else f"screen_eval_{args.subset}"
-    RESULTS_DIR.mkdir(exist_ok=True)
-    (RESULTS_DIR / f"{stem}.json").write_text(json.dumps(report, indent=2))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"{stem}.json").write_text(json.dumps(report, indent=2))
     md = report_markdown(report)
-    (RESULTS_DIR / f"{stem}.md").write_text(md)
-    with open(RESULTS_DIR / f"{stem}_predictions.csv", "w", newline="") as f:
+    (out_dir / f"{stem}.md").write_text(md)
+    with open(out_dir / f"{stem}_predictions.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(all_rows[0]))
         w.writeheader()
         for r in all_rows:
@@ -329,9 +356,9 @@ def main() -> None:
                  if Path(r["file"]).is_relative_to(args.root) else r["file"]}
             w.writerow(r)
     examples = pick_examples([r for r in all_rows if r["model"] == models[-1]["model_dir"]])
-    save_examples(examples, RESULTS_DIR / f"{stem}_examples.png")
+    save_examples(examples, out_dir / f"{stem}_examples.png")
     print(md)
-    print(f"Saved → results/{stem}.json, {stem}.md, {stem}_predictions.csv, "
+    print(f"Saved → {out_dir}/{stem}.json, {stem}.md, {stem}_predictions.csv, "
           f"{stem}_examples.png ({len(examples)} examples)")
 
 

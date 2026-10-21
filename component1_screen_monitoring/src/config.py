@@ -27,5 +27,18 @@ MODEL_DIR: Path = COMPONENT_ROOT / "models" / "violence-vit-screen-ft-v1"
 #: Screen-style dataset (scraped pages, composites, recordings) — see data/screens/README.md.
 SCREENS_DIR: Path = COMPONENT_ROOT / "data" / "screens"
 
+#: Experiment results, one folder per experiment — see results/README.md.
+RESULTS_DIR: Path = COMPONENT_ROOT / "results"
+RESULTS_WEEK1_BASELINE: Path = RESULTS_DIR / "00_week1_baseline"
+RESULTS_RLVS_FINETUNE: Path = RESULTS_DIR / "01_rlvs_finetune"
+RESULTS_PARAM_SWEEP: Path = RESULTS_DIR / "02_param_sweep"
+RESULTS_SCREEN_EVAL: Path = RESULTS_DIR / "03_screen_eval_pretrained"
+RESULTS_SCREEN_FINETUNE: Path = RESULTS_DIR / "04_screen_finetune"
+RESULTS_MODEL_COMPARISON: Path = RESULTS_DIR / "05_model_comparison"
+RESULTS_FUNCTION2: Path = RESULTS_DIR / "function2"
+
+#: RLVS train/val/test split the checkpoints were trained with (notebook section 2).
+SPLITS_CSV: Path = RESULTS_RLVS_FINETUNE / "splits.csv"
+
 #: Shared contract every emitted payload is validated against.
 SCHEMA_PATH: Path = REPO_ROOT / "docs" / "interface-contracts" / "comp1_to_comp3.schema.json"

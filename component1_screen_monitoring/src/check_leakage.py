@@ -16,7 +16,7 @@ Checks (any failure → exit code 1):
   4. Train/val  no page, website or video group in both train and val
 Also reports which RLVS split the existing TEST composites' frames come from.
 
-Writes results/screen_train_leakage.json.
+Writes results/04_screen_finetune/screen_train_leakage.json.
 
 Usage
 -----
@@ -32,13 +32,13 @@ from collections import Counter
 from pathlib import Path
 
 try:
-    from .config import COMPONENT_ROOT, SCREENS_DIR
+    from .config import COMPONENT_ROOT, RESULTS_SCREEN_FINETUNE, SCREENS_DIR
     from .dataset_checks import domain_overlap, read_url_list, url_overlap
 except ImportError:
-    from config import COMPONENT_ROOT, SCREENS_DIR
+    from config import COMPONENT_ROOT, RESULTS_SCREEN_FINETUNE, SCREENS_DIR
     from dataset_checks import domain_overlap, read_url_list, url_overlap
 
-REPORT = COMPONENT_ROOT / "results" / "screen_train_leakage.json"
+REPORT = RESULTS_SCREEN_FINETUNE / "screen_train_leakage.json"
 
 
 def _rows(path: Path) -> list[dict]:
@@ -124,7 +124,7 @@ def run(screens: Path = SCREENS_DIR) -> dict:
 
 def main() -> int:
     result = run()
-    REPORT.parent.mkdir(exist_ok=True)
+    REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(result, indent=2))
     width = max(map(len, result["checks"]))
     for name, c in result["checks"].items():

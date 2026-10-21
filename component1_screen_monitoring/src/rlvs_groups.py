@@ -2,7 +2,7 @@
 rlvs_groups.py — Approximate RLVS "source video" groups, and frames near the TEST set.
 
 RLVS frames here (~/Desktop/new_violence/<class>/<n>.jpg, listed in
-results/splits.csv) carry NO video id: files are numbered per class in shuffled
+results/01_rlvs_finetune/splits.csv) carry NO video id: files are numbered per class in shuffled
 order and the frame-level split put frames of one video in train/val/test.
 So videos are approximated by grouping near-identical frames:
 
@@ -42,12 +42,11 @@ import numpy as np
 from PIL import Image
 
 try:
-    from .config import COMPONENT_ROOT, SCREENS_DIR
+    from .config import COMPONENT_ROOT, SCREENS_DIR, SPLITS_CSV
 except ImportError:
-    from config import COMPONENT_ROOT, SCREENS_DIR
+    from config import COMPONENT_ROOT, SCREENS_DIR, SPLITS_CSV
 
 RLVS_ROOT = Path.home() / "Desktop" / "new_violence"
-SPLITS_CSV = COMPONENT_ROOT / "results" / "splits.csv"
 TEST_FRAMES_ROOT = COMPONENT_ROOT / "data" / "raw"          # frames used by the TEST composites
 OUT_CSV = SCREENS_DIR / "rlvs_frames.csv"
 CACHE = SCREENS_DIR / ".cache"

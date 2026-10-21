@@ -86,7 +86,7 @@ are reported (and drawn on the dashboard thumbnail). The payload schema is
 unchanged. Motion only needs a 160-px grayscale copy of the previous frame,
 which is all that is kept in memory.
 
-Benchmark every strategy on live frames → `results/latency_regions.json`:
+Benchmark every strategy on live frames → `results/03_screen_eval_pretrained/latency_regions.json`:
 
 ```bash
 python src/run_monitor.py --benchmark 20
@@ -146,13 +146,18 @@ All tunables live in [`src/config.py`](src/config.py) and are used everywhere
 | `CAPTURE_INTERVAL_S` | `2.0` | seconds between samples in the live loop |
 | `MODEL_DIR` | `models/violence-vit-screen-ft-v1` | fine-tuned checkpoint |
 | `SCHEMA_PATH` | `docs/interface-contracts/comp1_to_comp3.schema.json` | contract payloads are validated against |
+| `RESULTS_DIR` (+ `RESULTS_*`) | `results/` | one folder per experiment — see [`results/README.md`](results/README.md) |
 
 ## Other tools
 
 ```bash
 python src/detector.py path/to/image.png    # classify one image file
-python src/detector.py --benchmark 20       # capture + inference latency → see results/latency.json
+python src/detector.py --benchmark 20       # capture + inference latency → see results/01_rlvs_finetune/latency.json
 ```
+
+## Results
+
+Every experiment has its own folder under [`results/`](results/) (00 Week 1 baseline → 05 model comparison, plus `function2/`); [`results/README.md`](results/README.md) lists what each one contains and its headline result. Scripts write into these folders, never into the `results/` root.
 
 ## Tests
 

@@ -13,7 +13,7 @@ strategy, default: config.REGION_STRATEGY), -v (show DEBUG logs, including
 every not-flagged frame).
 
 --benchmark N captures N live frames once, then times every region strategy
-on those same frames and saves results/latency_regions.json.
+on those same frames and saves results/03_screen_eval_pretrained/latency_regions.json.
 
 Every printed payload has been validated against comp1_to_comp3.schema.json.
 Stop --live with Ctrl+C.
@@ -43,11 +43,12 @@ from component1_screen_monitoring.src.config import (
     CAPTURE_INTERVAL_S,
     COMPONENT_ROOT,
     REGION_STRATEGY,
+    RESULTS_SCREEN_EVAL,
     THRESHOLD,
 )
 from component1_screen_monitoring.src.regions import STRATEGIES, motion_reference
 
-LATENCY_REGIONS_JSON = COMPONENT_ROOT / "results" / "latency_regions.json"
+LATENCY_REGIONS_JSON = RESULTS_SCREEN_EVAL / "latency_regions.json"
 #: Gap between benchmark captures — short, but long enough for video to move.
 BENCHMARK_GAP_S = 0.5
 
@@ -120,7 +121,8 @@ def main() -> None:
     mode.add_argument("--once", action="store_true", help="capture + classify one real frame")
     mode.add_argument("--live", action="store_true", help="continuous capture loop")
     mode.add_argument("--benchmark", type=int, metavar="N",
-                      help="time every region strategy on N live frames → results/latency_regions.json")
+                      help="time every region strategy on N live frames → "
+                           "results/03_screen_eval_pretrained/latency_regions.json")
     ap.add_argument("--interval", type=float, default=CAPTURE_INTERVAL_S,
                     help=f"seconds between samples in --live (default: {CAPTURE_INTERVAL_S})")
     ap.add_argument("--max-iterations", type=int, default=None,
@@ -153,6 +155,7 @@ def main() -> None:
     if args.benchmark:
         print(f"Capturing {args.benchmark} frames, then timing each strategy …", flush=True)
         results = benchmark_strategies(detector, args.benchmark)
+        LATENCY_REGIONS_JSON.parent.mkdir(parents=True, exist_ok=True)
         LATENCY_REGIONS_JSON.write_text(json.dumps(results, indent=2))
         print(f"Saved → {LATENCY_REGIONS_JSON.relative_to(COMPONENT_ROOT.parent)}")
     elif args.once:

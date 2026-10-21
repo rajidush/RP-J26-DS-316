@@ -1,0 +1,4 @@
+model,accuracy,precision,recall,f1
+baseline (pretrained),0.9964,0.9989,0.9943,0.9966
+"section 7 fine-tune (u2, lr 3e-5, 5 ep)",0.991,0.9988,0.984,0.9914
+best of sweep: head_only,0.9952,0.9989,0.992,0.9954

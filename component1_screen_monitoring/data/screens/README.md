@@ -14,7 +14,7 @@ dataset with the commands below.
 ## Train vs test
 
 There are two strictly separate sets. **The TEST set is frozen**: it is not
-modified, rebuilt or reused for training, and `results/screen_eval.*` stays
+modified, rebuilt or reused for training, and `results/03_screen_eval_pretrained/screen_eval.*` stays
 comparable.
 
 | | TEST (evaluation) | TRAIN (fine-tuning) |
@@ -24,10 +24,10 @@ comparable.
 | Composites | `composite/<class>/` → `composites.csv` | `train_composites/composites/<class>/` |
 | Tile crops | — (cut at eval time) | `train_composites/tiles/<class>/` |
 | Index | `composites.csv` | `screen_train.csv` (with the train/val split) |
-| RLVS frames | `data/raw/` (300 frames) | RLVS **train** split only (`results/splits.csv`), never near a test frame |
+| RLVS frames | `data/raw/` (300 frames) | RLVS **train** split only (`results/01_rlvs_finetune/splits.csv`), never near a test frame |
 
 `python src/check_leakage.py` verifies the two share nothing (exit code 1
-otherwise; report in `results/screen_train_leakage.json`):
+otherwise; report in `results/04_screen_finetune/screen_train_leakage.json`):
 
 - **URLs** — no shared URL and no shared website (registrable domain, so
   `docs.x.com` vs `x.com` counts as shared), in the lists and in what was
@@ -44,7 +44,7 @@ otherwise; report in `results/screen_train_leakage.json`):
 ### RLVS video groups (approximate)
 
 The RLVS frames used here carry **no video id** (files are numbered per class
-in shuffled order, and `results/splits.csv` was a frame-level split).
+in shuffled order, and `results/01_rlvs_finetune/splits.csv` was a frame-level split).
 `src/rlvs_groups.py` approximates source videos by linking same-class frames
 whose ViT CLS features (cosine ≥ 0.97) or 24×24 grayscale thumbnails
 (cosine ≥ 0.85) are near-identical; `video_group` = connected component →
@@ -141,8 +141,9 @@ splits can be **grouped by page** later (no page appears in both).
    `composites.csv`.
 4. `python src/record_screens.py --label violence|safe --interval 1 --max N`
    — optional real recordings (the only tool that writes screen frames to disk).
-5. `python src/eval_screens.py` → `results/screen_eval.{json,md}` and
-   `results/screen_eval_predictions.csv`.
+5. `python src/eval_screens.py` → `results/03_screen_eval_pretrained/screen_eval.{json,md}`,
+   `_predictions.csv` and `_examples.png` (with `--model-dir`: `results/05_model_comparison/runs/`;
+   existing files are only replaced with `--overwrite`).
 
 All commands from `component1_screen_monitoring/`.
 
