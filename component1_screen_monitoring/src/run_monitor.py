@@ -14,17 +14,28 @@ Function 2 — add --respond to show the blur/block overlay
     python component1_screen_monitoring/src/run_monitor.py --live --respond          # auto: rules in config.py
     python component1_screen_monitoring/src/run_monitor.py --live --respond blur     # always blur
     python component1_screen_monitoring/src/run_monitor.py --live --respond block    # always block
+    python component1_screen_monitoring/src/run_monitor.py --live --mode strict --respond
 
 With --respond the overlay runs on the main thread and the capture/detection
 loop (or the mock script) in a worker thread. Dismiss with the button or Esc;
-stop with Ctrl+C. End-to-end latency is appended to results/e2e_latency.json.
+stop with Ctrl+C. End-to-end latency is appended to
+results/function2/e2e_latency.json. --max-iterations N also limits the mock
+script to its first N steps.
 
-Common options: --threshold (default: config.THRESHOLD), --strategy (region
-strategy, default: config.REGION_STRATEGY), -v (show DEBUG logs, including
-every not-flagged frame).
+Common options:
+    --mode default|strict   default = whole screen only ("full"); strict = whole
+                            screen + 2×2 tiles + centre ("tiles") — more recall,
+                            more false alarms (see config.MODES). Default: default.
+    --model-dir DIR         checkpoint (default: config.MODEL_DIR, ft-v2); for comparison
+                            models/violence-vit-screen-ft-v1 (V1, config.RLVS_FT_V1_MODEL_DIR)
+                            or models/violence-vit-pretrained-hf (P, config.PRETRAINED_MODEL_DIR)
+    --strategy S            advanced: any region strategy, overrides --mode
+    --threshold T           default: config.THRESHOLD
+    --respond [auto|blur|block]   Function 2 overlay (with --live or --mock)
+    -v                      DEBUG logs, including every not-flagged frame
 
 --benchmark N captures N live frames once, then times every region strategy
-on those same frames and saves results/latency_regions.json.
+on those same frames and saves results/03_screen_eval_pretrained/latency_regions.json.
 
 Every printed payload has been validated against comp1_to_comp3.schema.json.
 Stop --live with Ctrl+C.
@@ -55,12 +66,15 @@ from component1_screen_monitoring.src.component1 import (
 from component1_screen_monitoring.src.config import (
     CAPTURE_INTERVAL_S,
     COMPONENT_ROOT,
-    REGION_STRATEGY,
+    DEFAULT_MODE,
+    MODEL_DIR,
+    MODES,
+    RESULTS_SCREEN_EVAL,
     THRESHOLD,
 )
 from component1_screen_monitoring.src.regions import STRATEGIES, motion_reference
 
-LATENCY_REGIONS_JSON = COMPONENT_ROOT / "results" / "latency_regions.json"
+LATENCY_REGIONS_JSON = RESULTS_SCREEN_EVAL / "latency_regions.json"
 #: Gap between benchmark captures — short, but long enough for video to move.
 BENCHMARK_GAP_S = 0.5
 
@@ -156,7 +170,7 @@ def run_with_overlay(args, detector=None) -> None:
     """Function 2: overlay on the main thread, live loop / mock script in a worker."""
     from component1_screen_monitoring.src.overlay import ResponseOverlay
     from component1_screen_monitoring.src.capture import capture_frame
-    from component1_screen_monitoring.src.response import (CaptureGate, E2ELatencyLog,
+    from component1_screen_monitoring.src.response import (MOCK_SCRIPT, CaptureGate, E2ELatencyLog,
                                                            ResponseController, play_mock)
     log = logging.getLogger(__name__)
     latency = E2ELatencyLog(source="mock" if args.mock else "live",
@@ -170,7 +184,8 @@ def run_with_overlay(args, detector=None) -> None:
     def worker():
         try:
             if args.mock:
-                play_mock(controller, _mock_frame_fn(), should_stop=stop.is_set)
+                script = MOCK_SCRIPT[:args.max_iterations] if args.max_iterations else MOCK_SCRIPT
+                play_mock(controller, _mock_frame_fn(), script=script, should_stop=stop.is_set)
             else:
                 run_monitoring_loop(detector, interval=args.interval,
                                     max_iterations=args.max_iterations, on_payload=_print_payload,
@@ -211,15 +226,21 @@ def main() -> None:
     mode.add_argument("--once", action="store_true", help="capture + classify one real frame")
     mode.add_argument("--live", action="store_true", help="continuous capture loop")
     mode.add_argument("--benchmark", type=int, metavar="N",
-                      help="time every region strategy on N live frames → results/latency_regions.json")
+                      help="time every region strategy on N live frames → "
+                           "results/03_screen_eval_pretrained/latency_regions.json")
     ap.add_argument("--interval", type=float, default=CAPTURE_INTERVAL_S,
                     help=f"seconds between samples in --live (default: {CAPTURE_INTERVAL_S})")
     ap.add_argument("--max-iterations", type=int, default=None,
                     help="stop --live after N frames (default: run until Ctrl+C)")
     ap.add_argument("--threshold", type=float, default=THRESHOLD,
                     help=f"flag when P(violent) >= this (default: {THRESHOLD})")
-    ap.add_argument("--strategy", choices=STRATEGIES, default=REGION_STRATEGY,
-                    help=f"region strategy (default: {REGION_STRATEGY})")
+    ap.add_argument("--mode", choices=list(MODES), default=DEFAULT_MODE,
+                    help="default = whole screen only; strict = whole screen + tiles "
+                         f"(default: {DEFAULT_MODE}; {', '.join(f'{m}={s}' for m, s in MODES.items())})")
+    ap.add_argument("--strategy", choices=STRATEGIES, default=None,
+                    help="advanced: region strategy, overrides --mode")
+    ap.add_argument("--model-dir", type=Path, default=MODEL_DIR,
+                    help=f"checkpoint folder (default: {MODEL_DIR.relative_to(COMPONENT_ROOT)})")
     ap.add_argument("--respond", nargs="?", const="auto", choices=("auto", "blur", "block"),
                     default=None,
                     help="Function 2: show the blur/block overlay (with --live or --mock). "
@@ -229,6 +250,8 @@ def main() -> None:
     args = ap.parse_args()
     if args.respond and not (args.live or args.mock):
         ap.error("--respond works with --live or --mock")
+    custom_strategy = args.strategy is not None
+    args.strategy = args.strategy or MODES[args.mode]     # one strategy for every path below
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -248,8 +271,13 @@ def main() -> None:
 
     from component1_screen_monitoring.src.detector import ViolenceDetector
 
-    detector = ViolenceDetector(threshold=args.threshold)
-    logging.getLogger(__name__).info("model loaded on %s", detector.device)
+    try:
+        detector = ViolenceDetector(args.model_dir, threshold=args.threshold)
+    except FileNotFoundError as exc:
+        sys.exit(f"ERROR: {exc}")
+    logging.getLogger(__name__).info(
+        "model %s loaded on %s — mode %s (strategy %s), threshold %s", detector.model_version,
+        detector.device, "custom" if custom_strategy else args.mode, args.strategy, args.threshold)
     if args.respond:
         # Warm-up: the first MPS/CUDA inference is ~1 s slower; keep it out of the e2e latency log.
         from PIL import Image
@@ -258,6 +286,7 @@ def main() -> None:
     if args.benchmark:
         print(f"Capturing {args.benchmark} frames, then timing each strategy …", flush=True)
         results = benchmark_strategies(detector, args.benchmark)
+        LATENCY_REGIONS_JSON.parent.mkdir(parents=True, exist_ok=True)
         LATENCY_REGIONS_JSON.write_text(json.dumps(results, indent=2))
         print(f"Saved → {LATENCY_REGIONS_JSON.relative_to(COMPONENT_ROOT.parent)}")
     elif args.once:

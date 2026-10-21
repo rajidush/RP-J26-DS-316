@@ -143,7 +143,9 @@ def process_frame(
     detection = detector.predict_regions(frame.image, prev, strategy)
 
     incident = tracker.update(frame, detection.flagged)
-    payload = build_payload(frame, detection, *incident) if incident else None
+    payload = (build_payload(frame, detection, *incident,
+                             model_version=getattr(detector, "model_version", None))
+               if incident else None)
 
     reading = Reading(
         timestamp=frame.timestamp,

@@ -1,0 +1,125 @@
+{
+  "evaluated_at": "2026-10-21T03:17:02+00:00",
+  "threshold": 0.25,
+  "limit": null,
+  "subset": "all",
+  "counts": {
+    "scraped": 104,
+    "composite": 416,
+    "recorded": 0
+  },
+  "models": [
+    {
+      "model_dir": "component1_screen_monitoring/models/violence-vit-screen-ft-v2",
+      "device": "mps",
+      "metrics": {
+        "full": {
+          "scraped": {
+            "n": 104,
+            "positives": 0,
+            "negatives": 104,
+            "accuracy": 0.9423,
+            "precision": 0.0,
+            "recall": null,
+            "f1": null,
+            "false_positive_rate": 0.0577,
+            "confusion": {
+              "tp": 0,
+              "fp": 6,
+              "tn": 98,
+              "fn": 0
+            },
+            "mean_inference_ms": 54.1
+          },
+          "composite": {
+            "n": 416,
+            "positives": 208,
+            "negatives": 208,
+            "accuracy": 0.7356,
+            "precision": 0.75,
+            "recall": 0.7067,
+            "f1": 0.7277,
+            "false_positive_rate": 0.2356,
+            "confusion": {
+              "tp": 147,
+              "fp": 49,
+              "tn": 159,
+              "fn": 61
+            },
+            "mean_inference_ms": 53.0
+          },
+          "overall": {
+            "n": 520,
+            "positives": 208,
+            "negatives": 312,
+            "accuracy": 0.7769,
+            "precision": 0.7277,
+            "recall": 0.7067,
+            "f1": 0.7171,
+            "false_positive_rate": 0.1763,
+            "confusion": {
+              "tp": 147,
+              "fp": 55,
+              "tn": 257,
+              "fn": 61
+            },
+            "mean_inference_ms": 53.2
+          }
+        },
+        "tiles": {
+          "scraped": {
+            "n": 104,
+            "positives": 0,
+            "negatives": 104,
+            "accuracy": 0.8269,
+            "precision": 0.0,
+            "recall": null,
+            "f1": null,
+            "false_positive_rate": 0.1731,
+            "confusion": {
+              "tp": 0,
+              "fp": 18,
+              "tn": 86,
+              "fn": 0
+            },
+            "mean_inference_ms": 190.7
+          },
+          "composite": {
+            "n": 416,
+            "positives": 208,
+            "negatives": 208,
+            "accuracy": 0.7837,
+            "precision": 0.7138,
+            "recall": 0.9471,
+            "f1": 0.814,
+            "false_positive_rate": 0.3798,
+            "confusion": {
+              "tp": 197,
+              "fp": 79,
+              "tn": 129,
+              "fn": 11
+            },
+            "mean_inference_ms": 192.2
+          },
+          "overall": {
+            "n": 520,
+            "positives": 208,
+            "negatives": 312,
+            "accuracy": 0.7923,
+            "precision": 0.6701,
+            "recall": 0.9471,
+            "f1": 0.7849,
+            "false_positive_rate": 0.3109,
+            "confusion": {
+              "tp": 197,
+              "fp": 97,
+              "tn": 215,
+              "fn": 11
+            },
+            "mean_inference_ms": 191.9
+          }
+        }
+      }
+    }
+  ]
+}

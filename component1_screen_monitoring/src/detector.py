@@ -1,14 +1,14 @@
 """
 detector.py — Violence detector for Component 1 (Screen Monitoring).
 
-Loads the fine-tuned ViT checkpoint produced by
-notebooks/week2_finetune_violence.ipynb and classifies a single frame
-(PIL image) as "violent" or "safe".
+Loads a fine-tuned ViT checkpoint (default: config.MODEL_DIR, the screen
+fine-tune violence-vit-screen-ft-v2 from notebooks/finetune_violence.ipynb
+section 15) and classifies a single frame (PIL image) as "violent" or "safe".
 
-The checkpoint is NOT in git (≈330 MB). Download violence-vit-screen-ft-v1.zip
-from the GitHub Release / Drive and unzip it to:
+Checkpoints are NOT in git (≈330 MB). Download the folder from Google Drive
+(pp1_component1/checkpoints/violence-vit-screen-ft-v2/) so that config.json sits in:
 
-    component1_screen_monitoring/models/violence-vit-screen-ft-v1/
+    component1_screen_monitoring/models/violence-vit-screen-ft-v2/
 
 Requires transformers<5 (the checkpoint was saved with 4.57).
 
@@ -31,10 +31,10 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .config import MODEL_DIR, REGION_STRATEGY, THRESHOLD   # imported as package
+    from .config import MODEL_DIR, MODEL_DOWNLOAD_HINT, REGION_STRATEGY, THRESHOLD, model_version
     from .regions import region_boxes
 except ImportError:
-    from config import MODEL_DIR, REGION_STRATEGY, THRESHOLD    # run as script from src/
+    from config import MODEL_DIR, MODEL_DOWNLOAD_HINT, REGION_STRATEGY, THRESHOLD, model_version
     from regions import region_boxes
 
 DEFAULT_MODEL_DIR = MODEL_DIR
@@ -80,13 +80,15 @@ class ViolenceDetector:
         model_dir = Path(model_dir)
         if not (model_dir / "config.json").exists():
             raise FileNotFoundError(
-                f"No model found at {model_dir}. Download violence-vit-screen-ft-v1.zip "
-                "and unzip it there (see the docstring at the top of detector.py)."
+                f"No model found at {model_dir} (config.json is missing). Download the "
+                f"'{model_dir.name}' folder from {MODEL_DOWNLOAD_HINT.format(name=model_dir.name)}/ "
+                f"(config.json, model.safetensors, preprocessor_config.json) into {model_dir}/."
             )
         if not 0.0 <= threshold <= 1.0:
             raise ValueError("threshold must be between 0 and 1")
 
         self.threshold = threshold
+        self.model_version = model_version(model_dir)     # reported in payloads
         self.device = _pick_device(device)
         self.processor = ViTImageProcessor.from_pretrained(model_dir)
         self.model = ViTForImageClassification.from_pretrained(model_dir).to(self.device).eval()

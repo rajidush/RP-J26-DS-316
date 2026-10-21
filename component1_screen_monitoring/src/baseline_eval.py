@@ -37,7 +37,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 ROOT        = Path(__file__).resolve().parents[1]
 VAL_DIR     = ROOT / "data" / "val"
-RESULTS_DIR = ROOT / "results"
+RESULTS_DIR = ROOT / "results" / "00_week1_baseline"
 OUT_JSON    = RESULTS_DIR / "baseline_accuracy.json"
 
 CHECKPOINT  = "jaranohaal/vit-base-violence-detection"

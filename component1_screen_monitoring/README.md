@@ -25,6 +25,23 @@ before it is emitted, so Component 3 needs no changes.
 | `risk_category` | `"violence"` |
 | `confidence_score` | detector's P(violent), 0–1 |
 | `context_metadata.duration_visible_ms` | time since the incident's first flagged frame |
+| `context_metadata.model_version` | checkpoint that made the decision, e.g. `"violence-vit-screen-ft-v2"` (extra `context_metadata` keys are allowed by the schema) |
+
+## Model
+
+Component 1 uses **`violence-vit-screen-ft-v2`**: the pretrained
+`jaranohaal/vit-base-violence-detection` ViT fine-tuned on screen-style images
+(RLVS frames pasted into real web pages, plus tiles) with 40 % RLVS frames mixed in
+to keep its video skill. Against the previously deployed setup — V1
+(`violence-vit-screen-ft-v1`, fine-tuned on full-frame RLVS only) with tiles — V2 on the
+whole screen has higher recall on both screen test sets (0.548 vs 0.361 on the full set),
+a false-alarm rate within 2×, RLVS test accuracy 0.993 and ~5× lower latency; V2 with
+tiles is the strict mode. See the comparison of all three models (P = true pretrained,
+V1, V2) in
+[`results/05_model_comparison/model_comparison.md`](results/05_model_comparison/model_comparison.md).
+For comparisons, V1 is `config.RLVS_FT_V1_MODEL_DIR` and the true pretrained model is
+`config.PRETRAINED_MODEL_DIR` (`models/violence-vit-pretrained-hf`, created locally by
+`python src/convert_pretrained.py`); select either with `--model-dir`.
 
 ## Setup
 
@@ -33,12 +50,17 @@ Works on macOS, Windows and Linux with Python 3.10+; the same
 [Running on macOS](#running-on-macos) / [Running on Windows](#running-on-windows)
 for venv activation and OS notes.
 
-The fine-tuned checkpoint (~330 MB) is **not in git**. Unzip
-`violence-vit-screen-ft-v1.zip` so that `config.json` sits directly in:
+The fine-tuned checkpoint (~330 MB) is **not in git**. Download the folder
+`pp1_component1/checkpoints/violence-vit-screen-ft-v2/` from Google Drive so
+that `config.json` sits directly in:
 
 ```
-component1_screen_monitoring/models/violence-vit-screen-ft-v1/
+component1_screen_monitoring/models/violence-vit-screen-ft-v2/
 ```
+
+If it is missing, `run_monitor.py`, the dashboard and `detector.py` stop with a
+message saying exactly this. (For comparisons, `violence-vit-screen-ft-v1` comes
+from the same Drive folder, `checkpoints/violence-vit-screen-ft-v1/`.)
 
 It needs `transformers<5` (saved with 4.57).
 
@@ -107,9 +129,30 @@ python src/run_monitor.py --live
 python src/run_monitor.py --live --max-iterations 5 -v
 ```
 
-Options: `--interval SECONDS` (live sampling period), `--max-iterations N`,
-`--threshold P` (flag when P(violent) ≥ P), `--strategy {full,tiles,motion,tiles+motion}`
-(which crops are classified — see below), `-v` (debug logging).
+### Default vs strict mode
+
+Same model, same threshold (0.5); the mode decides which parts of the screen are
+classified. Numbers are the screen test set at 0.5 (`results/05_model_comparison/`):
+
+| Mode | Strategy | Recall | False alarms | Time per frame (M1) |
+|---|---|---|---|---|
+| `default` | `full` — whole screen only | 0.548 | 9.3 % of safe screens | ~51 ms |
+| `strict` | `tiles` — whole screen + 2×2 tiles + centre crop | 0.880 | 18.9 % of safe screens | ~228 ms |
+
+```bash
+python src/run_monitor.py --live                    # default mode
+python src/run_monitor.py --live --mode strict      # strict mode: catches smaller videos, more false alarms
+python src/run_monitor.py --once --model-dir models/violence-vit-screen-ft-v1   # V1 (previous model), for comparison
+python src/run_monitor.py --once --model-dir models/violence-vit-pretrained-hf  # P (true pretrained), for comparison
+```
+
+In the dashboard, pick **default — whole screen** or **strict — whole screen + tiles**
+in the *Region strategy* dropdown.
+
+Options: `--mode {default,strict}`, `--model-dir DIR`, `--interval SECONDS` (live
+sampling period), `--max-iterations N`, `--threshold P` (flag when P(violent) ≥ P),
+`--strategy {full,tiles,motion,tiles+motion}` (advanced: any region strategy,
+overrides `--mode` — see below), `-v` (debug logging).
 
 ## Region-based inference
 
@@ -121,17 +164,17 @@ So each frame is classified as a **batch of crops in one forward pass**
 
 | Strategy | Crops |
 |---|---|
-| `full` | whole frame (old behaviour) |
-| `tiles` | whole frame + 2×2 overlapping grid (60% × 60% each) + centre crop |
+| `full` (default mode) | whole frame |
+| `tiles` (strict mode) | whole frame + 2×2 overlapping grid (60% × 60% each) + centre crop |
 | `motion` | whole frame + the largest region that changed since the previous frame (padded 10%) |
-| `tiles+motion` (default) | both |
+| `tiles+motion` | both |
 
 p(violent) is the **maximum over the crops**; the winning region's name and box
 are reported (and drawn on the dashboard thumbnail). The payload schema is
 unchanged. Motion only needs a 160-px grayscale copy of the previous frame,
 which is all that is kept in memory.
 
-Benchmark every strategy on live frames → `results/latency_regions.json`:
+Benchmark every strategy on live frames → `results/03_screen_eval_pretrained/latency_regions.json`:
 
 ```bash
 python src/run_monitor.py --benchmark 20
@@ -198,7 +241,18 @@ python src/run_monitor.py --live --respond            # same as --respond auto
 # Live, forced mode (demo / strict setting)
 python src/run_monitor.py --live --respond blur
 python src/run_monitor.py --live --respond block
+
+# Combine with the detection mode / model (see "Default vs strict mode")
+python src/run_monitor.py --live --mode strict --respond
+python src/run_monitor.py --live --model-dir models/violence-vit-screen-ft-v1 --respond
+
+# Short mock demo: only the first 3 steps of the script
+python src/run_monitor.py --mock --respond auto --max-iterations 3
 ```
+
+`--respond` (what the overlay does) is independent of `--mode` / `--model-dir`
+(what is detected): the overlay path uses the same model and region strategy as
+plain `--live`.
 
 **Decision rules** (`src/response_policy.py`, thresholds in `config.py`); every
 payload is validated against the schema first — invalid payloads are logged and ignored:
@@ -250,7 +304,7 @@ stops everything.
 
 **End-to-end latency.** For every overlay appearance (incident start or
 escalation) the run appends frame captured → payload emitted → overlay visible
-to `results/e2e_latency.json` and prints a one-line summary on exit. The model
+to `results/function2/e2e_latency.json` and prints a one-line summary on exit. The model
 is warmed up first so the first measurement is not a cold-start outlier.
 
 > **macOS:** the app you run this from (Terminal, iTerm or VS Code) needs
@@ -266,24 +320,32 @@ All tunables live in [`src/config.py`](src/config.py) and are used everywhere
 | Setting | Default | Meaning |
 |---|---|---|
 | `THRESHOLD` | `0.5` | flag a frame when P(violent) ≥ this |
-| `REGION_STRATEGY` | `tiles+motion` | which crops of each frame are classified |
+| `MODES` / `DEFAULT_MODE` | `{"default": "full", "strict": "tiles"}` / `default` | detection modes (see above) |
+| `REGION_STRATEGY` | `full` (= `MODES[DEFAULT_MODE]`) | which crops of each frame are classified |
 | `CAPTURE_INTERVAL_S` | `2.0` | seconds between samples in the live loop |
-| `MODEL_DIR` | `models/violence-vit-screen-ft-v1` | fine-tuned checkpoint |
+| `MODEL_DIR` | `models/violence-vit-screen-ft-v2` | fine-tuned checkpoint (screen fine-tune) |
+| `PRETRAINED_MODEL_DIR` | `models/violence-vit-pretrained-hf` | true pretrained model (P), for `--model-dir` comparisons |
+| `RLVS_FT_V1_MODEL_DIR` | `models/violence-vit-screen-ft-v1` | RLVS fine-tune V1 (previous model), for `--model-dir` comparisons |
 | `SCHEMA_PATH` | `docs/interface-contracts/comp1_to_comp3.schema.json` | contract payloads are validated against |
+| `RESULTS_DIR` (+ `RESULTS_*`) | `results/` | one folder per experiment — see [`results/README.md`](results/README.md) |
 | `BLOCK_CATEGORIES` | `explicit_visual`, `self_harm_imagery` | always blocked |
 | `BLOCK_THRESHOLD` | `0.85` | violence ≥ this → block (below → blur); also overrides a dismissal |
 | `MIN_HOLD_S` | `5.0` | overlay stays up at least this long after the last flagged payload |
 | `CLEAR_FRAMES` | `2` | consecutive safe frames needed before hiding |
 | `DISMISS_GRACE_S` | `10.0` | after Dismiss, the same incident does not re-show for this long |
-| `E2E_LATENCY_JSON` | `results/e2e_latency.json` | end-to-end latency log |
+| `E2E_LATENCY_JSON` | `results/function2/e2e_latency.json` | end-to-end latency log |
 | `CAPTURE_EXCLUSION_FALLBACK` | `"pause"` | what to do when the overlay can't be excluded from capture (`"pause"` or `"off"`) |
 
 ## Other tools
 
 ```bash
 python src/detector.py path/to/image.png    # classify one image file
-python src/detector.py --benchmark 20       # capture + inference latency → see results/latency.json
+python src/detector.py --benchmark 20       # capture + inference latency → see results/01_rlvs_finetune/latency.json
 ```
+
+## Results
+
+Every experiment has its own folder under [`results/`](results/) (00 Week 1 baseline → 05 model comparison, plus `function2/`); [`results/README.md`](results/README.md) lists what each one contains and its headline result. Scripts write into these folders, never into the `results/` root.
 
 ## Tests
 

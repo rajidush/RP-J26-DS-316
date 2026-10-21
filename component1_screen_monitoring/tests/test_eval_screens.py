@@ -120,3 +120,105 @@ def test_save_examples_blurs_violent_images(fake_screens, tmp_path):
     grid = Image.open(out).convert("L")
     row = [grid.getpixel((x, 120)) for x in range(185, 216)]
     assert max(row) - min(row) < 250 and any(30 < v < 225 for v in row)   # edge smeared
+
+
+# ---------------------------------------------------------------------------
+# --subset clean: only composites whose RLVS frame is from the val/test split
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def screens_with_provenance(fake_screens):
+    """composites.csv + an RLVS splits.csv for the 4 fake composites."""
+    import csv
+    with open(fake_screens / "composites.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["filename", "class", "background", "source_frame"])
+        w.writerow(["violence/site-0_0.png", "violence", "site-0_0.png", "raw/violence/1.jpg"])          # train
+        w.writerow(["violence/site-1_0.png", "violence", "site-1_0.png", "raw/violence/2.jpg"])          # test
+        w.writerow(["non_violence/site-0_0.png", "non_violence", "site-0_0.png", "raw/non_violence/1.jpg"])  # val
+        w.writerow(["non_violence/site-1_0.png", "non_violence", "site-1_0.png", "raw/non_violence/2.jpg"])  # train
+    splits = fake_screens / "splits.csv"
+    splits.write_text("path,label,split\nviolence /1.jpg,1,train\nviolence /2.jpg,1,test\n"
+                      "non_violence /1.jpg,0,val\nnon_violence /2.jpg,0,train\n")
+    return fake_screens, splits
+
+
+def test_subset_all_is_unchanged(screens_with_provenance):
+    from component1_screen_monitoring.src.eval_screens import filter_subset
+    root, splits = screens_with_provenance
+    items = collect_dataset(root)
+    assert filter_subset(items, "all", root, splits) == items
+
+
+def test_subset_clean_keeps_val_test_composites_and_pages(screens_with_provenance):
+    from component1_screen_monitoring.src.eval_screens import filter_subset
+    root, splits = screens_with_provenance
+    clean = filter_subset(collect_dataset(root), "clean", root, splits)
+    kept = {(i["source"], Path(i["path"]).relative_to(root).as_posix()) for i in clean}
+    assert kept == {("scraped", f"scraped_pages/site-{i}_0.png") for i in range(3)} | {
+        ("composite", "composite/violence/site-1_0.png"),        # RLVS test frame
+        ("composite", "composite/non_violence/site-0_0.png"),    # RLVS val frame
+    }                                                            # train-split frames and recorded/ dropped
+
+
+def test_subset_clean_fails_on_unknown_composite(screens_with_provenance):
+    from component1_screen_monitoring.src.eval_screens import filter_subset
+    root, splits = screens_with_provenance
+    Image.new("RGB", (64, 40), RED).save(root / "composite" / "violence" / "unlogged_0.png")
+    with pytest.raises(ValueError, match="not in composites.csv"):
+        filter_subset(collect_dataset(root), "clean", root, splits)
+
+
+def test_subset_unknown_name(screens_with_provenance):
+    from component1_screen_monitoring.src.eval_screens import filter_subset
+    root, splits = screens_with_provenance
+    with pytest.raises(ValueError, match="unknown subset"):
+        filter_subset(collect_dataset(root), "dirty", root, splits)
+
+
+def test_clean_markdown_says_subset(fake_screens):
+    metrics, _ = evaluate(ColorDetector(), collect_dataset(fake_screens))
+    md = to_markdown({"model_dir": "m", "threshold": 0.5, "device": "cpu", "subset": "clean",
+                      "evaluated_at": "now", "counts": {}, "metrics": metrics})
+    assert "Subset: clean" in md
+
+
+# ---------------------------------------------------------------------------
+# Output locations: one experiment folder per mode, never the results/ root
+# ---------------------------------------------------------------------------
+
+def test_default_model_is_the_deployed_one():
+    from component1_screen_monitoring.src.config import MODEL_DIR
+    from component1_screen_monitoring.src.eval_screens import resolve_model_dirs
+    assert resolve_model_dirs(None) == [MODEL_DIR] and MODEL_DIR.name == "violence-vit-screen-ft-v2"
+    assert resolve_model_dirs([Path("m/a"), Path("m/b")]) == [Path("m/a"), Path("m/b")]
+
+
+def test_default_output_names_the_model():
+    from component1_screen_monitoring.src.config import MODEL_DIR, RESULTS_DIR, RESULTS_MODEL_COMPARISON
+    from component1_screen_monitoring.src.eval_screens import default_output, resolve_model_dirs
+    d, stem = default_output(resolve_model_dirs(None), 0.5, "all")
+    assert d == RESULTS_MODEL_COMPARISON / "runs" and stem == f"{MODEL_DIR.name}_t0.50_full"
+    d, stem = default_output([Path("models/violence-vit-screen-ft-v2")], 0.25, "clean")
+    assert stem == "violence-vit-screen-ft-v2_t0.25_clean"
+    d, stem = default_output([Path("m/a"), Path("m/b")], 0.5, "all")
+    assert stem == "a+b_t0.50_full" and d != RESULTS_DIR
+
+
+def test_main_prints_model_first(monkeypatch, capsys, tmp_path):
+    from component1_screen_monitoring.src import eval_screens
+    monkeypatch.setattr(sys, "argv", ["eval_screens.py", "--root", str(tmp_path), "--out-dir", str(tmp_path / "o")])
+    with pytest.raises(SystemExit, match="No images"):          # stops before loading any model
+        eval_screens.main()
+    out = capsys.readouterr().out.splitlines()
+    assert out[0] == "Evaluating model: violence-vit-screen-ft-v2 (config.MODEL_DIR — the deployed model)"
+
+
+def test_results_paths_point_into_experiment_folders():
+    from component1_screen_monitoring.src import config
+    assert config.SPLITS_CSV == config.RESULTS_DIR / "01_rlvs_finetune" / "splits.csv"
+    assert config.SPLITS_CSV.exists()
+    for name in ("RESULTS_WEEK1_BASELINE", "RESULTS_RLVS_FINETUNE", "RESULTS_PARAM_SWEEP",
+                 "RESULTS_SCREEN_EVAL", "RESULTS_SCREEN_FINETUNE", "RESULTS_MODEL_COMPARISON",
+                 "RESULTS_FUNCTION2"):
+        assert getattr(config, name).parent == config.RESULTS_DIR

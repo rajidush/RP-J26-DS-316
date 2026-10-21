@@ -1,0 +1,101 @@
+{
+  "created": "2026-10-20T17:12:14",
+  "base_model": "jaranohaal/vit-base-violence-detection",
+  "started_from": "pretrained (not an earlier fine-tune)",
+  "base_violent_output_index": 1,
+  "labels": {
+    "0": "safe",
+    "1": "violent"
+  },
+  "run": {
+    "name": "u4_lr3e-5",
+    "unfreeze": 4,
+    "lr": 3e-05,
+    "epochs": 3,
+    "trainable_params": 28354562,
+    "minutes": 5.5
+  },
+  "data": {
+    "zip": "screen_train_v1.zip",
+    "manifest": {
+      "created": "2026-10-20T11:19:16+00:00",
+      "images": 7259,
+      "composites": 1500,
+      "tiles": 5759,
+      "rows_by_split_label": {
+        "train/0": 4077,
+        "train/1": 2104,
+        "val/0": 697,
+        "val/1": 381
+      }
+    },
+    "screen_train": 6181,
+    "screen_val": 1078,
+    "rlvs_train_pool": 4023,
+    "rlvs_val": 1661,
+    "rlvs_share": 0.4,
+    "epoch_size": 10302,
+    "class_weights": [
+      0.8295025825500488,
+      1.2587194442749023
+    ],
+    "seed": 42
+  },
+  "hyperparameters": {
+    "batch_size": 16,
+    "weight_decay": 0.01,
+    "scheduler": "cosine",
+    "fp16": true,
+    "loss": "weighted cross-entropy"
+  },
+  "val_metrics_at_0.5": {
+    "screen_accuracy": 0.862708719851577,
+    "screen_precision": 0.8949152542372881,
+    "screen_recall": 0.6929133858267716,
+    "screen_f1": 0.7810650887573964,
+    "screen_composites_accuracy": 0.7321428571428571,
+    "screen_composites_precision": 0.90625,
+    "screen_composites_recall": 0.5178571428571429,
+    "screen_composites_f1": 0.6590909090909091,
+    "screen_tiles_accuracy": 0.8969555035128806,
+    "screen_tiles_precision": 0.8917748917748918,
+    "screen_tiles_recall": 0.7657992565055762,
+    "screen_tiles_f1": 0.824,
+    "rlvs_val_accuracy": 0.9921733895243829,
+    "rlvs_val_precision": 0.9954075774971297,
+    "rlvs_val_recall": 0.9897260273972602,
+    "rlvs_val_f1": 0.9925586720091586,
+    "screen_missed": 117,
+    "screen_false_alarms": 31
+  },
+  "thresholds": {
+    "recall>=0.9": {
+      "threshold": 0.05,
+      "screen_precision": 0.6304347826086957,
+      "screen_recall": 0.9133858267716536,
+      "screen_f1": 0.7459807073954984,
+      "rlvs_val_accuracy": 0.9927754364840458
+    },
+    "max F1": {
+      "threshold": 0.25,
+      "screen_precision": 0.841225626740947,
+      "screen_recall": 0.7926509186351706,
+      "screen_f1": 0.8162162162162162,
+      "rlvs_val_accuracy": 0.99157134256472
+    },
+    "default": {
+      "threshold": 0.5,
+      "screen_precision": 0.8949152542372881,
+      "screen_recall": 0.6929133858267716,
+      "screen_f1": 0.7810650887573964,
+      "rlvs_val_accuracy": 0.9921733895243829
+    }
+  },
+  "screen_test_set_used": false,
+  "gpu": "Tesla T4",
+  "versions": {
+    "torch": "2.11.0+cu130",
+    "transformers": "4.57.6",
+    "accelerate": "1.15.0"
+  }
+}
