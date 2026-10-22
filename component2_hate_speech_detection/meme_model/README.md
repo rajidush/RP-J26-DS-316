@@ -261,6 +261,38 @@ video). The next check is real page captures, such as C1's scraped pages with
 memes pasted in. A meme on a white page with a white backdrop has no visible
 edge, so the finder can cut it short.
 
+## Head v2: trained on what C2 reads (2026-10-22, Thunder L40)
+
+v1 was trained on the dataset's typed captions, which C2 never sees. v2 trains
+the same head, with v1's settings and seeds, on three views of every meme:
+the clean caption, C2's own OCR caption, and the meme cut out of a built
+screenshot by the finder (24,000 training rows). The v1 recipe is retrained
+alongside as the controlled baseline. The success rule was fixed before the
+run (`train_views.py`): v2 must beat it on the OCR and screen views and lose
+at most 0.01 on clean.
+
+| Test view (500 memes, 5-seed ensemble, 95 % CI) | Shipped v1 | v1 recipe, retrained | v2, three views |
+|---|---|---|---|
+| Clean caption | 0.752 | 0.762 (0.723–0.802) | 0.753 (0.712–0.795) |
+| C2's OCR caption | 0.735 | 0.746 (0.703–0.789) | 0.744 (0.699–0.787) |
+| Cut from a screenshot | 0.718 | 0.731 (0.689–0.778) | 0.736 (0.695–0.783) |
+
+- **Verdict: fail.** OCR −0.002, screen +0.006, clean −0.009, all well
+  inside the confidence intervals. The shipped v1 head stays.
+- A likely reason: CLIP is frozen, so words the OCR drops or garbles are lost
+  before the head sees them; a head alone cannot learn them back. Adapting
+  CLIP's last layers on these views (e.g. LoRA) is the next test.
+- The retrained v1 recipe, as a 5-seed ensemble, beats the single shipped
+  head by about +0.01 on every view and matches the earlier T4 re-run (0.761),
+  so the recipe reproduces on new hardware.
+- Screen-view numbers differ slightly from the section above (0.718 vs 0.713)
+  because these pages use four layouts and one page per meme, and the head
+  runs in fp32 rather than the shipped INT8 ONNX.
+
+Evidence: [`TRAINING_CARD.md`](../evaluation/results/meme_v2/TRAINING_CARD.md)
+(techniques, code commit, machine, packages, data fingerprints) and the logs
+beside it. How to run it: [`thunder/README.md`](thunder/README.md).
+
 ## Run
 
 ```bash

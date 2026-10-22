@@ -1,0 +1,291 @@
+views: 9000 memes to do (0 already done), 12 workers
+[32m[INFO] 2026-10-22 10:04:47,135 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,135 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,135 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,135 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,136 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,137 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,137 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,138 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,142 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,152 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,152 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,154 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:47,256 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,256 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,257 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,257 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,257 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,258 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:47,263 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,531 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,606 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,618 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,670 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,678 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,681 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,706 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,743 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:48,745 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,745 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,762 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,765 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,813 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,823 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:48,824 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,824 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,886 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,889 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,892 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,908 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,939 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,942 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,944 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:48,945 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,946 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,949 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,959 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:48,963 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,007 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,008 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:49,010 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,010 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[33m[WARNING] 2026-10-22 10:04:49,011 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,011 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,012 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:49,033 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,033 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,034 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[33m[WARNING] 2026-10-22 10:04:49,036 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,036 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/det/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,040 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,043 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,052 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,055 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,087 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,087 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,090 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,090 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,104 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,107 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,107 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,118 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,122 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,122 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,153 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,156 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,295 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,296 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,386 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,387 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,778 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:49,779 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,837 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:49,988 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:49,991 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,085 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:50,232 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:50,309 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,311 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,453 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,455 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,558 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:50,561 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,561 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,615 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:50,616 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,681 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:50,684 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:50,781 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:50,781 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:50,782 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,782 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,816 [RapidOCR] download_file.py:82: Download size: 1.74MB[0m
+[32m[INFO] 2026-10-22 10:04:50,883 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,886 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:50,986 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,036 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,038 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,113 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:51,115 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,115 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,119 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,121 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,224 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,233 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,237 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,458 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,462 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,471 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,474 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,531 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,533 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_det_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,533 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:51,538 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,538 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,561 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,728 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:51,730 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,730 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,752 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,757 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:51,758 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,758 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,889 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:51,948 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:51,968 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,016 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,036 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,069 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:52,074 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,074 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,098 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:52,103 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,103 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,223 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:52,228 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,228 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,335 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,339 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,725 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,728 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,969 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:52,972 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:52,974 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:52,974 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,078 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:53,232 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[33m[WARNING] 2026-10-22 10:04:53,237 [RapidOCR] download_file.py:63: File exists but is invalid, redownloading: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,237 [RapidOCR] download_file.py:68: Initiating download: https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.10.0/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,239 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,242 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,256 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:53,256 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:53,349 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,352 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,594 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,596 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,816 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:53,818 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,289 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:54,353 [RapidOCR] download_file.py:82: Download size: 4.28MB[0m
+[32m[INFO] 2026-10-22 10:04:54,629 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,632 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,682 [RapidOCR] download_file.py:95: Successfully saved to: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,684 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,729 [RapidOCR] base.py:23: Using engine_name: onnxruntime[0m
+[32m[INFO] 2026-10-22 10:04:54,734 [RapidOCR] download_file.py:60: File exists and is valid: /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+[32m[INFO] 2026-10-22 10:04:54,734 [RapidOCR] main.py:63: Using /home/ubuntu/RP-J26-DS-316/.venv/lib/python3.14/site-packages/rapidocr/models/PP-OCRv6_rec_tiny.onnx[0m
+  250/9000  7.7 memes/s  ~19 min left
+  500/9000  8.9 memes/s  ~16 min left
+  750/9000  9.1 memes/s  ~15 min left
+  1000/9000  9.2 memes/s  ~14 min left
+  1250/9000  9.0 memes/s  ~14 min left
+  1500/9000  9.1 memes/s  ~14 min left
+  1750/9000  9.2 memes/s  ~13 min left
+  2000/9000  9.3 memes/s  ~13 min left
+  2250/9000  9.4 memes/s  ~12 min left
+[33m[WARNING] 2026-10-22 10:08:56,132 [RapidOCR] main.py:164: The text detection result is empty[0m
+  2500/9000  9.5 memes/s  ~11 min left
+  2750/9000  9.5 memes/s  ~11 min left
+  3000/9000  9.6 memes/s  ~10 min left
+  3250/9000  9.6 memes/s  ~10 min left
+  3500/9000  9.6 memes/s  ~10 min left
+  3750/9000  9.6 memes/s  ~9 min left
+[33m[WARNING] 2026-10-22 10:11:19,662 [RapidOCR] main.py:164: The text detection result is empty[0m
+[33m[WARNING] 2026-10-22 10:11:35,281 [RapidOCR] main.py:164: The text detection result is empty[0m
+  4000/9000  9.7 memes/s  ~9 min left
+  4250/9000  9.7 memes/s  ~8 min left
+[33m[WARNING] 2026-10-22 10:12:23,071 [RapidOCR] main.py:164: The text detection result is empty[0m
+  4500/9000  9.7 memes/s  ~8 min left
+  4750/9000  9.8 memes/s  ~7 min left
+  5000/9000  9.8 memes/s  ~7 min left
+  5250/9000  9.8 memes/s  ~6 min left
+  5500/9000  9.8 memes/s  ~6 min left
+  5750/9000  9.8 memes/s  ~6 min left
+  6000/9000  9.8 memes/s  ~5 min left
+  6250/9000  9.8 memes/s  ~5 min left
+  6500/9000  9.8 memes/s  ~4 min left
+  6750/9000  9.8 memes/s  ~4 min left
+  7000/9000  9.8 memes/s  ~3 min left
+  7250/9000  9.8 memes/s  ~3 min left
+  7500/9000  9.8 memes/s  ~3 min left
+  7750/9000  9.8 memes/s  ~2 min left
+  8000/9000  9.8 memes/s  ~2 min left
+  8250/9000  9.8 memes/s  ~1 min left
+  8500/9000  9.8 memes/s  ~1 min left
+  8750/9000  9.8 memes/s  ~0 min left
+  9000/9000  9.8 memes/s  ~0 min left
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 26801.53it/s]
+  embedded 64/9000  21.9 memes/s
+  embedded 1344/9000  28.2 memes/s
+  embedded 2624/9000  28.4 memes/s
+  embedded 3904/9000  29.0 memes/s
+  embedded 5184/9000  29.5 memes/s
+  embedded 6464/9000  30.2 memes/s
+  embedded 7744/9000  30.7 memes/s
+  embedded 9000/9000  31.2 memes/s
+{
+  "started": "2026-10-22 10:04:45",
+  "workers": 12,
+  "limit": null,
+  "views": {
+    "seconds": 919.9,
+    "memes": 9000
+  },
+  "view_stats": {
+    "train": {
+      "memes": 8000,
+      "finder_found": 0.9832,
+      "ocr_caption_empty": 0.0025,
+      "screen_caption_empty": 0.0089,
+      "layouts": {
+        "feed-light": 1941,
+        "feed-dark": 1959,
+        "chat-dark": 2029,
+        "article": 2071
+      }
+    },
+    "val": {
+      "memes": 500,
+      "finder_found": 0.984,
+      "ocr_caption_empty": 0.0,
+      "screen_caption_empty": 0.004,
+      "layouts": {
+        "feed-light": 116,
+        "feed-dark": 104,
+        "chat-dark": 141,
+        "article": 139
+      }
+    },
+    "test": {
+      "memes": 500,
+      "finder_found": 0.972,
+      "ocr_caption_empty": 0.002,
+      "screen_caption_empty": 0.026,
+      "layouts": {
+        "feed-light": 117,
+        "feed-dark": 127,
+        "chat-dark": 137,
+        "article": 119
+      }
+    }
+  },
+  "embedding": {
+    "device": "cuda",
+    "gpu": "NVIDIA L40",
+    "seconds": 288.7,
+    "dim": 512,
+    "check_vs_v1_features": {
+      "memes": 9000,
+      "image_mean_cosine": 0.999996,
+      "text_mean_cosine": 1.0
+    }
+  }
+}
