@@ -1,0 +1,58 @@
+{
+  "started": "2026-10-22 10:04:45",
+  "workers": 12,
+  "limit": null,
+  "views": {
+    "seconds": 919.9,
+    "memes": 9000
+  },
+  "view_stats": {
+    "train": {
+      "memes": 8000,
+      "finder_found": 0.9832,
+      "ocr_caption_empty": 0.0025,
+      "screen_caption_empty": 0.0089,
+      "layouts": {
+        "feed-light": 1941,
+        "feed-dark": 1959,
+        "chat-dark": 2029,
+        "article": 2071
+      }
+    },
+    "val": {
+      "memes": 500,
+      "finder_found": 0.984,
+      "ocr_caption_empty": 0.0,
+      "screen_caption_empty": 0.004,
+      "layouts": {
+        "feed-light": 116,
+        "feed-dark": 104,
+        "chat-dark": 141,
+        "article": 139
+      }
+    },
+    "test": {
+      "memes": 500,
+      "finder_found": 0.972,
+      "ocr_caption_empty": 0.002,
+      "screen_caption_empty": 0.026,
+      "layouts": {
+        "feed-light": 117,
+        "feed-dark": 127,
+        "chat-dark": 137,
+        "article": 119
+      }
+    }
+  },
+  "embedding": {
+    "device": "cuda",
+    "gpu": "NVIDIA L40",
+    "seconds": 288.7,
+    "dim": 512,
+    "check_vs_v1_features": {
+      "memes": 9000,
+      "image_mean_cosine": 0.999996,
+      "text_mean_cosine": 1.0
+    }
+  }
+}

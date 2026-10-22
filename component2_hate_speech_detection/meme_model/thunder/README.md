@@ -4,80 +4,97 @@ Retrains C2's meme head on what C2 actually reads: the dataset caption, C2's own
 caption, and the meme cut out of a built screenshot. It compares v2 with the v1 recipe on
 every view and records the evidence. Protocol and success rule: `meme_model/train_views.py`.
 
-| Step | Where | Time (estimate) |
+**Result of the 2026-10-22 run:** see [`evaluation/results/meme_v2/TRAINING_CARD.md`](../../evaluation/results/meme_v2/TRAINING_CARD.md).
+
+| Step | Where | Time (measured 2026-10-22) |
 |---|---|---|
-| Pack the upload | laptop | ~5 min |
-| Upload the tar | laptop → instance | depends on your upload speed (~3 GB) |
-| Views: OCR + screenshots | instance CPUs | ~15–30 min with 8–16 vCPUs |
-| CLIP embeddings | instance GPU | ~5 min |
-| Train v1 recipe + v2, 5 seeds each | instance GPU | ~10 min |
-| Download results | instance → laptop | seconds (~150 MB) |
+| Pack the small upload | laptop | ~1 min |
+| Upload ~60 MB | laptop → instance | ~2 min on a phone hotspot |
+| Kaggle download of the images | instance | ~1 min |
+| Views: OCR + screenshots | 12 vCPUs | 15 min |
+| CLIP embeddings | L40 GPU | 5 min |
+| Train v1 recipe + v2, 5 seeds each | L40 GPU | 4 min |
+| Download results (~100 MB) | instance → laptop | ~2 min on a phone hotspot |
+
+Cost: about $1 (L40 1×, 12 vCPU / 96 GB, 100 GB disk, $1.03/hr).
 
 ## 1. On the laptop: pack the upload
 
 ```bash
-python -m component2_hate_speech_detection.meme_model.thunder.pack_upload
+python -m component2_hate_speech_detection.meme_model.thunder.pack_upload --kaggle
 ```
 
-This writes `component2_hate_speech_detection/data/upload/meme_v2_upload.tar` and prints its SHA-256.
+This writes `component2_hate_speech_detection/data/upload/meme_v2_small.tar` and `meme_v2_small.tar.sha256`.
+The images stay out: the instance downloads the same Kaggle copy (`parthplc/facebook-hateful-meme-dataset`),
+and the tar carries every image's SHA-256 so the instance proves they match.
+Without `--kaggle`, the images go in too (`meme_v2_upload.tar`, ~3.3 GB); then skip the Kaggle part and
+unpack it into `component2_hate_speech_detection` before running `run_meme_v2.sh`.
 
-## 2. Create the instance
+## 2. Install the Thunder CLI and create the instance
 
-In the Thunder console, or with the CLI (`pip install tnr`, then `tnr login`):
+- The `tnr` package on PyPI is retired. Install CLI v2 from
+  [github.com/Thunder-Compute/thunder-cli/releases](https://github.com/Thunder-Compute/thunder-cli/releases)
+  (on Windows: `tnr_<version>_windows_amd64.zip`, check it against `checksums.txt`, put `tnr.exe` on PATH).
+- `tnr login` opens the browser.
+- In the console: any GPU, **8 or more vCPUs** (the OCR runs on CPU, one process per core), ~100 GB disk.
+  `tnr status` should then list the instance as running.
 
-- any GPU (T4, A10 or A100);
-- 8 or more vCPUs, because the OCR runs on CPU, one process per core;
-- about 100 GB disk.
-
-## 3. Upload and connect
+## 3. Upload, connect, run
 
 ```bash
-tnr scp component2_hate_speech_detection/data/upload/meme_v2_upload.tar 0:~/
+tnr scp component2_hate_speech_detection/data/upload/meme_v2_small.tar component2_hate_speech_detection/data/upload/meme_v2_small.tar.sha256 component2_hate_speech_detection/meme_model/thunder/thunder_go.sh 0:/home/ubuntu/
 ```
 
 ```bash
 tnr connect 0
 ```
 
-`0` is the instance ID from `tnr status`. If your CLI version uses different syntax, check `tnr --help`.
-
-## 4. On the instance: run everything
+On the instance:
 
 ```bash
-sha256sum ~/meme_v2_upload.tar
-git clone -b c2/finetune-pp1 https://github.com/rajidush/RP-J26-DS-316.git
-cd RP-J26-DS-316
-tar -xf ~/meme_v2_upload.tar -C component2_hate_speech_detection
-bash component2_hate_speech_detection/meme_model/thunder/run_meme_v2.sh
+sudo apt-get update -qq && sudo apt-get install -y -qq tmux
+tmux new -s meme
 ```
 
-The SHA-256 from `sha256sum` must match the one printed on the laptop.
+Paste the `~/.kaggle/access_token` line that Kaggle shows under Settings → API, then:
 
-If the connection may drop, run the last line inside `tmux` (`tmux new -s meme`; reattach with `tmux attach -t meme`).
+```bash
+bash ~/thunder_go.sh
+```
+
+It checks the upload, downloads the images, deletes the token, clones the branch, checks every image's
+SHA-256 and runs `run_meme_v2.sh`. If the connection drops: `tnr connect 0`, then `tmux attach -t meme`.
 A stopped run resumes the OCR where it left off.
 
-## 5. Download the results and stop the instance
+## 4. Download the results and delete the instance
 
 ```bash
-tnr scp 0:~/meme_v2_results.tgz .
+tnr scp 0:/home/ubuntu/meme_v2_results.tgz component2_hate_speech_detection/data/upload/
 ```
 
-Stop the instance in the console (or with `tnr stop 0`) so it stops billing.
-
-On the laptop, unpack the archive at the repo root:
+Delete the instance in the console (or `tnr delete 0`) so it stops billing. On the laptop, unpack at the repo root:
 
 ```bash
-tar -xzf meme_v2_results.tgz
+tar -xzf component2_hate_speech_detection/data/upload/meme_v2_results.tgz
 ```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Connection timed out during banner exchange` | the network blocks SSH on non-standard ports (Thunder uses a high port such as 31922; port 22 still works) | use another network, e.g. a phone hotspot; once the run is going inside tmux you can switch back |
+| `WARNING: UNPROTECTED PRIVATE KEY FILE` (Windows) | the key in `%USERPROFILE%\.thunder\keys\` inherited an `OWNER RIGHTS` entry | `icacls <key> /inheritance:r /grant:r "$env:USERDOMAIN\$($env:USERNAME):(R)"` |
+| `tmux: command not found` | the Base template has no tmux | the `apt-get` line in step 3 |
+| `No Kaggle token` | the token file is missing | paste Kaggle's `access_token` line, rerun `thunder_go.sh` |
 
 ## What comes back
 
 | File | What it is | Committed? |
 |---|---|---|
-| `evaluation/results/meme_v2/TRAINING_CARD.md` | one-page summary: model, data, settings, machine, results, success rule | yes |
+| `evaluation/results/meme_v2/TRAINING_CARD.md` | one-page summary: model, data, settings, techniques, machine, results, success rule | yes |
 | `evaluation/results/meme_v2/meme_v2_views.json` | every number, per seed, with epoch-by-epoch histories | yes |
 | `evaluation/results/meme_v2/env.json`, `pip_freeze.txt`, `nvidia_smi.txt` | code commit, GPU, packages, data SHA-256s | yes |
-| `evaluation/results/meme_v2/views.log`, `train.log` | full console output of the run | yes |
+| `evaluation/results/meme_v2/views.log`, `train.log`, `views_stats.json` | full console output, OCR and picture-finder statistics | yes |
 | `models/meme/meme_clip-b32_align_v2views.pt` | the trained v2 head | no (git-ignored) |
 | `data/views/`, `data/embeddings/clip-b32-views.npz`, `data/predictions/meme_v2_views.csv` | captions, features, predictions | no (git-ignored) |
 

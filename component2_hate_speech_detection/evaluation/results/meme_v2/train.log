@@ -1,0 +1,24 @@
+memes per split {'train': 8000, 'val': 500, 'test': 500}  device cuda
+
+v1_recipe: train rows 8000, val rows 500
+  seed 316: val 0.8217  test clean 0.7525  ocr 0.7390  screen 0.7256  epoch 9  22.1s
+  seed 317: val 0.8252  test clean 0.7635  ocr 0.7465  screen 0.7333  epoch 10  19.9s
+  seed 318: val 0.8204  test clean 0.7611  ocr 0.7457  screen 0.7318  epoch 10  20.7s
+  seed 319: val 0.8232  test clean 0.7510  ocr 0.7351  screen 0.7173  epoch 9  18.9s
+  seed 320: val 0.8237  test clean 0.7553  ocr 0.7401  screen 0.7266  epoch 9  18.8s
+
+v2_views: train rows 24000, val rows 1500
+  seed 316: val 0.8044  test clean 0.7450  ocr 0.7390  screen 0.7341  epoch 3  30.4s
+  seed 317: val 0.8088  test clean 0.7458  ocr 0.7397  screen 0.7253  epoch 3  30.5s
+  seed 318: val 0.8043  test clean 0.7417  ocr 0.7354  screen 0.7286  epoch 3  29.0s
+  seed 319: val 0.8154  test clean 0.7422  ocr 0.7304  screen 0.7205  epoch 3  29.1s
+  seed 320: val 0.8067  test clean 0.7673  ocr 0.7553  screen 0.7473  epoch 4  34.5s
+
+Test AUROC (dev_seen, 500 memes), ensemble of seeds [95% CI]:
+  view      shipped v1              v1 recipe               v2 views
+  clean         0.7522 0.7620 [0.723, 0.8022] 0.7528 [0.7117, 0.7946]
+  ocr           0.7349 0.7459 [0.7034, 0.7893] 0.7437 [0.6993, 0.7869]
+  screen        0.7184 0.7306 [0.6887, 0.7779] 0.7363 [0.6951, 0.7827]
+
+Success rule: {'ocr_gain': -0.0022, 'screen_gain': 0.0057, 'clean_change': -0.0092, 'pass': False}
+wrote /home/ubuntu/RP-J26-DS-316/component2_hate_speech_detection/evaluation/results/meme_v2/meme_v2_views.json

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Meme head v2 on a Thunder Compute GPU instance: views -> CLIP embeddings -> train v1 recipe + v2 -> evidence.
 #
+# thunder_go.sh sets up the images, code and upload and then runs this (see thunder/README.md). By hand:
 #   git clone -b c2/finetune-pp1 https://github.com/rajidush/RP-J26-DS-316.git
 #   cd RP-J26-DS-316
 #   tar -xf ~/meme_v2_upload.tar -C component2_hate_speech_detection
