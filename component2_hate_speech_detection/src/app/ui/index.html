@@ -110,6 +110,10 @@
         <input id="file" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp,.wav" hidden></div>
       <div id="result"></div>
     </section>
+    <section id="heardsec" hidden>
+      <h2>Heard (demo mode)</h2>
+      <div id="heard"></div>
+    </section>
     <section>
       <h2>Pipeline</h2>
       <div class="grid2" id="pipeline"></div>
@@ -185,6 +189,13 @@ async function refresh() {
       ["Text cache hit rate", `${Math.round(100 * s.cache.hit_rate)}%`], ["Model calls", s.model_calls],
       ["OCR p50", ms(t.ocr_ms)], ["Whisper p50", ms(t.asr_ms)], ["Paused (locked)", c.paused_locked]];
     $("pipeline").innerHTML = rows.map(([k, v]) => `<span>${k}</span><span>${esc(v)}</span>`).join("");
+
+    const heard = await pywebview.api.heard();
+    if (heard) {
+      $("heardsec").hidden = false;
+      $("heard").innerHTML = heard.length ? heard.map(h => `<div class="meta">${new Date(h.ts * 1000).toLocaleTimeString()} · ${esc(RUNG[h.rung])} · ${esc(CAT[h.category] || h.category)} · ${h.p.toFixed(2)}</div><div>${esc(h.text)}</div>`).join("")
+        : '<div class="meta">Listening… nothing spoken yet.</div>';
+    }
 
     const fresh = await pywebview.api.feed(lastSeq);
     if (fresh.length) {

@@ -88,6 +88,16 @@ def test_spoken_abuse_is_flagged_from_an_utterance(lexicon_scorer):
     assert v.alerts and v.source == "audio" and agent.stats.counts["transcribed"] == 1
 
 
+def test_transcripts_are_kept_only_in_demo_mode(lexicon_scorer):
+    speech = np.ones(SAMPLE_RATE, dtype=np.float32) * 0.1
+    agent = make_agent(lexicon_scorer)
+    agent.process_utterance(speech)
+    assert not agent.heard
+    demo = make_agent(lexicon_scorer, show_transcripts=True)
+    demo.process_utterance(speech)
+    assert [h["text"] for h in demo.heard] == ["you should kys"] and demo.heard[0]["rung"] != "L0"
+
+
 def test_audio_backlog_drops_instead_of_growing_memory(lexicon_scorer):
     agent = make_agent(lexicon_scorer)
     rng = np.random.default_rng(1)
