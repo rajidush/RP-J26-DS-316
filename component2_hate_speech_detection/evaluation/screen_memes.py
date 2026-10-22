@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 from pathlib import Path
 from typing import List, Tuple
@@ -41,8 +42,23 @@ from ..src.readers.pictures import MIN_SIDE, find_pictures, text_inside
 from ..src.readers.screen import ScreenReader
 
 RESULTS = Path(__file__).resolve().parent / "results"
-FONT = "C:/Windows/Fonts/segoeui.ttf"
-BOLD = "C:/Windows/Fonts/segoeuib.ttf"
+
+
+def _font_file(*candidates: str) -> str:
+    for path in candidates:
+        if path and Path(path).exists():
+            return path
+    try:  # matplotlib ships DejaVu Sans, so a bare Linux GPU box still has a font
+        import matplotlib
+
+        return str(Path(matplotlib.get_data_path()) / "fonts" / "ttf" / Path(candidates[-1]).name)
+    except Exception:
+        return candidates[-1]
+
+
+# Segoe UI on Windows (the reported screen numbers used it); DejaVu Sans elsewhere.
+FONT = _font_file(os.environ.get("C2_FONT", ""), "C:/Windows/Fonts/segoeui.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+BOLD = _font_file(os.environ.get("C2_FONT_BOLD", ""), "C:/Windows/Fonts/segoeuib.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
 LAYOUTS = ("feed-light", "feed-dark", "chat-dark", "gallery", "article", "text-chat")
 WORDS = ("the of and to in is you that it he was for on are as with his they at be this from have or by one "
          "had not but what all were when we there can an your which their said if do will each about how up "
