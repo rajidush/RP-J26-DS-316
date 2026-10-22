@@ -8,12 +8,16 @@
 #   bash component2_hate_speech_detection/meme_model/thunder/run_meme_v2.sh
 #
 # Everything it prints is also saved under evaluation/results/meme_v2/ as evidence.
+# ENCODER=clip-l14 runs the same protocol on CLIP ViT-L/14 (results in evaluation/results/meme_v2_clip_l14/).
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 C2=component2_hate_speech_detection
-EV="$C2/evaluation/results/meme_v2"
+ENCODER="${ENCODER:-clip-b32}"
+TAG=""; [ "$ENCODER" = "clip-b32" ] || TAG="_${ENCODER//-/_}"
+EV="$C2/evaluation/results/meme_v2$TAG"
 mkdir -p "$EV"
 export PYTHONUNBUFFERED=1
+echo "Encoder: $ENCODER -> $EV"
 
 echo "== 1/6 Python 3.14 environment (matches the laptop)"
 export PATH="$HOME/.local/bin:$PATH"
@@ -39,14 +43,15 @@ echo "images: $(ls "$C2/data/hateful_memes/img" | wc -l)"
 echo "== 3/6 Evidence: code version, machine, packages, data fingerprints"
 python -m $C2.meme_model.evidence env --out "$EV"
 
-echo "== 4/6 Views: OCR + screenshots on all $(nproc) cores, then CLIP embeddings"
-python -m $C2.meme_model.views --workers "${WORKERS:-$(nproc)}" 2>&1 | tee "$EV/views.log"
+echo "== 4/6 Views: OCR + screenshots on all $(nproc) cores (or crops rebuilt from uploaded captions), then CLIP embeddings"
+python -m $C2.meme_model.views --workers "${WORKERS:-$(nproc)}" --encoder "$ENCODER" 2>&1 | tee "$EV/views.log"
 
 echo "== 5/6 Train the v1 recipe and v2, 5 seeds each; compare on every view"
-python -m $C2.meme_model.train_views 2>&1 | tee "$EV/train.log"
+python -m $C2.meme_model.train_views --encoder "$ENCODER" 2>&1 | tee "$EV/train.log"
 
 echo "== 6/6 Training card + one archive to download"
-python -m $C2.meme_model.evidence card --out "$EV"
-tar -czf "$HOME/meme_v2_results.tgz" "$EV" "$C2/models/meme/meme_clip-b32_align_v2views.pt" "$C2/data/predictions/meme_v2_views.csv" \
-  "$C2/data/views/captions.jsonl" "$C2/data/views/views_stats.json" "$C2/data/embeddings/clip-b32-views.npz"
-echo "Done. Download ~/meme_v2_results.tgz ($(du -h "$HOME/meme_v2_results.tgz" | cut -f1))"
+python -m $C2.meme_model.evidence card --out "$EV" --encoder "$ENCODER"
+OUT="$HOME/meme_v2${TAG}_results.tgz"
+tar -czf "$OUT" "$EV" "$C2/models/meme/meme_${ENCODER}_align_v2views.pt" "$C2/data/predictions/meme_v2_views$TAG.csv" \
+  "$C2/data/views/captions.jsonl" "$C2/data/views/views_stats$TAG.json" "$C2/data/embeddings/$ENCODER-views.npz"
+echo "Done. Download $OUT ($(du -h "$OUT" | cut -f1))"

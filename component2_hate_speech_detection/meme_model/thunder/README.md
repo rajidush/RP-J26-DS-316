@@ -66,6 +66,20 @@ It checks the upload, downloads the images, deletes the token, clones the branch
 SHA-256 and runs `run_meme_v2.sh`. If the connection drops: `tnr connect 0`, then `tmux attach -t meme`.
 A stopped run resumes the OCR where it left off.
 
+### The same protocol on CLIP ViT-L/14
+
+L/14 (the encoder behind Hate-CLIPper's published 0.82) runs as an upper bound: too heavy for
+the laptop, but it shows what the laptop budget costs. Pack with the captions from the B/32 run,
+so the instance skips OCR and L/14 sees exactly the same views:
+
+```bash
+python -m component2_hate_speech_detection.meme_model.thunder.pack_upload --kaggle --reuse-views
+```
+
+Upload as in step 3, then on the instance run `ENCODER=clip-l14 bash ~/thunder_go.sh`. The model
+(~1.7 GB) downloads on the instance. Results go to `evaluation/results/meme_v2_clip_l14/` and the
+archive is `~/meme_v2_clip_l14_results.tgz`.
+
 ## 4. Download the results and delete the instance
 
 ```bash

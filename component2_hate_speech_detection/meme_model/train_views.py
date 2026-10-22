@@ -1,6 +1,11 @@
 """Meme head v2: train on the three views, and compare it with the v1 recipe on every view.
 
     python -m component2_hate_speech_detection.meme_model.train_views
+    python -m component2_hate_speech_detection.meme_model.train_views --encoder clip-l14
+
+--encoder picks the frozen CLIP whose view features (meme_model/views.py) are used; the head,
+settings, seeds, protocol and rule below stay the same. Non-B/32 runs write to
+evaluation/results/meme_v2_<encoder>/ and have no shipped head to score.
 
 Fixed before any result was seen (protocol written 19 Oct 2026, run 22 Oct):
 - v1 recipe: the shipped head's settings, trained on clean captions only (as v1 was).
@@ -32,20 +37,24 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
-from .embed import EMBED_DIR
+from .embed import ENCODERS
 from .heads import FusionHead, count_parameters
 from .train import (MODEL_DIR, PREDICTION_DIR, RESULTS_DIR, SEEDS, best_threshold, bootstrap_auroc, fit_temperature,
                     mean_sd, predict_logits, resolve_device, sigmoid, summarise, train_one)
+from .views import tag, views_npz
 
 VIEWS = ("clean", "ocr", "screen")
 V1_SETTINGS = dict(fusion="align", proj_dim=1024, pre_layers=3, hidden=1024, dropout=0.4, lr=1e-4, weight_decay=1e-4,
                    grad_clip=0.1, batch_size=64, epochs=20, patience=5, class_weight=False, rgcl=0.0, knn=0)
 RECIPES = {"v1_recipe": ("clean",), "v2_views": VIEWS}
-OUT_DIR = RESULTS_DIR / "meme_v2"
-SHIPPED = MODEL_DIR / "meme_clip-b32_align.pt"
+SHIPPED = MODEL_DIR / "meme_clip-b32_align.pt"  # a B/32 head: scored only on B/32 features
 
 
-def load_views(path: Path = EMBED_DIR / "clip-b32-views.npz") -> dict:
+def out_dir(encoder: str) -> Path:
+    return RESULTS_DIR / f"meme_v2{tag(encoder)}"
+
+
+def load_views(path: Path) -> dict:
     z = np.load(path)
     data = {}
     for split in ("train", "val", "test"):
@@ -125,18 +134,19 @@ def main(argv: Optional[list[str]] = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--seeds", type=int, default=len(SEEDS))
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--encoder", default="clip-b32", choices=sorted(ENCODERS))
     args = parser.parse_args(argv)
     for k, v in V1_SETTINGS.items():
         setattr(args, k, v)
 
     started = time.perf_counter()
-    data = load_views()
+    data = load_views(views_npz(args.encoder))
     device = resolve_device(args.device)
     sizes = {s: int(len(data[s]["y"])) for s in data}
-    print(f"memes per split {sizes}  device {device}", flush=True)
+    print(f"{args.encoder}: memes per split {sizes}  device {device}", flush=True)
 
     results = {name: run_recipe(name, data, args) for name in RECIPES}
-    shipped = shipped_v1(data)
+    shipped = shipped_v1(data) if args.encoder == "clip-b32" else None
 
     v1, v2 = results["v1_recipe"]["report"], results["v2_views"]["report"]
     auc = lambda rep, v: rep[v]["ensemble"]["auroc"]
@@ -146,12 +156,14 @@ def main(argv: Optional[list[str]] = None) -> None:
 
     best = max(results["v2_views"]["runs"], key=lambda r: r["val_auroc"])  # chosen on validation, never on test
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    torch.save({"config": best["model"].config, "encoder": "clip-b32", "trained_on": list(VIEWS), "seed": best["seed"],
+    torch.save({"config": best["model"].config, "encoder": args.encoder, "trained_on": list(VIEWS), "seed": best["seed"],
                 "temperature": best["temperature"], "val_threshold": best["val_threshold"],
-                "state_dict": best["model"].state_dict()}, MODEL_DIR / "meme_clip-b32_align_v2views.pt")
+                "state_dict": best["model"].state_dict()}, MODEL_DIR / f"meme_{args.encoder}_align_v2views.pt")
 
     report = {
-        "run": "meme_v2_views", "date": time.strftime("%Y-%m-%d"), "encoder": "openai/clip-vit-base-patch32 (frozen)",
+        "run": f"meme_v2_views{tag(args.encoder)}", "date": time.strftime("%Y-%m-%d"),
+        "encoder": f"{ENCODERS[args.encoder]} (frozen)", "encoder_key": args.encoder,
+        "feature_dim": int(data["train"]["clean"][0].shape[1]),
         "settings": V1_SETTINGS, "seeds": list(SEEDS[: args.seeds]),
         "trainable_parameters": count_parameters(best["model"]),
         "hardware": torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu",
@@ -163,11 +175,12 @@ def main(argv: Optional[list[str]] = None) -> None:
         "shipped_v1_head": {k: v for k, v in shipped.items() if k != "probs"} if shipped else None,
         "success_rule": rule, "chosen_v2_seed": best["seed"], "seconds": round(time.perf_counter() - started, 1),
     }
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "meme_v2_views.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    out = out_dir(args.encoder)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "meme_v2_views.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
     PREDICTION_DIR.mkdir(parents=True, exist_ok=True)
-    with open(PREDICTION_DIR / "meme_v2_views.csv", "w", encoding="utf-8", newline="") as f:
+    with open(PREDICTION_DIR / f"meme_v2_views{tag(args.encoder)}.csv", "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["id", "label", "found", "view", "p_v1_recipe", "p_v2_views", "p_shipped_v1"])
         for v in VIEWS:
@@ -185,7 +198,7 @@ def main(argv: Optional[list[str]] = None) -> None:
         c = lambda rep: f"{rep[v]['ensemble']['auroc']:.4f} {rep[v]['ensemble']['auroc_ci95']}"
         print(f"  {v:8} {s:>11} {c(v1):>22} {c(v2):>22}")
     print(f"\nSuccess rule: {rule}")
-    print(f"wrote {OUT_DIR / 'meme_v2_views.json'}")
+    print(f"wrote {out / 'meme_v2_views.json'}")
 
 
 if __name__ == "__main__":

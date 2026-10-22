@@ -1,9 +1,10 @@
 """Pack what the Thunder run needs into one tar (run on the laptop).
 
     python -m component2_hate_speech_detection.meme_model.thunder.pack_upload --kaggle
+    python -m component2_hate_speech_detection.meme_model.thunder.pack_upload --kaggle --reuse-views
     python -m component2_hate_speech_detection.meme_model.thunder.pack_upload
 
-With --kaggle (used for the 2026-10-22 run) the images stay out: the instance downloads
+With --kaggle (used for the 2026-10-22 runs) the images stay out: the instance downloads
 the same Kaggle copy itself, and the tar carries every image's SHA-256 so thunder_go.sh
 can prove they match byte for byte. Writes data/upload/meme_v2_small.tar (~60 MB).
 Without it, the images go in too: data/upload/meme_v2_upload.tar (~3.3 GB).
@@ -43,11 +44,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--kaggle", action="store_true",
                         help="leave the images out (the instance downloads them from Kaggle); add their SHA-256s")
+    parser.add_argument("--reuse-views", action="store_true",
+                        help="add data/views/captions.jsonl from an earlier run: the instance skips OCR and only "
+                             "rebuilds the screen crops, so a new encoder sees exactly the same views")
     args = parser.parse_args()
 
     manifests = [MANIFEST_DIR / f"{split}.jsonl" for split in SPLITS]
     images = [IMAGE_ROOT / r["img"] for m in manifests if m.exists() for r in read_manifest(m)]
     files = manifests + [COMPONENT_ROOT / "models" / "meme" / "meme_clip-b32_align.pt", DATA_DIR / "embeddings" / "clip-b32.npz"]
+    if args.reuse_views:
+        files.append(DATA_DIR / "views" / "captions.jsonl")
     missing = [str(f) for f in files + images if not f.exists()]
     if missing:
         raise SystemExit(f"{len(missing)} files missing, e.g. {missing[:3]}")
