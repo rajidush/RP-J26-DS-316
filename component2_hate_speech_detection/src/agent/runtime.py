@@ -51,6 +51,9 @@ class AgentConfig:
     battery_interval_s: float = 6.0
     alert_cooldown_s: float = 300.0
     low_priority: bool = True
+    # Demo only: keep the last few speech transcripts (safe ones too) in memory for
+    # the panel. Off by default, so nothing a child hears is kept; never saved.
+    show_transcripts: bool = False
 
 
 class Rolling:
@@ -113,6 +116,7 @@ class Agent:
         self.on_alert = on_alert
         self.stats = AgentStats()
         self.alerts: Deque[dict] = deque(maxlen=200)
+        self.heard: Deque[dict] = deque(maxlen=20)  # only with config.show_transcripts
         self.warm = False
         self.state = "stopped"
         self._recent: Dict[str, float] = {}
@@ -253,6 +257,9 @@ class Agent:
                           read_ms={"asr_ms": read.transcript.asr_ms})
         verdict = self.analyzer.analyze(obs, self.config.age)
         self.stats.timings["audio_verdict_ms"].add((time.perf_counter() - t) * 1000)
+        if self.config.show_transcripts:
+            self.heard.appendleft({"ts": time.time(), "text": read.transcript.text, "rung": verdict.rung,
+                                   "category": verdict.top_category, "p": round(verdict.p, 2)})
         self._handle(verdict)
         return verdict
 

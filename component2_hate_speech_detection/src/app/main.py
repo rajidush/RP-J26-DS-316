@@ -1,6 +1,6 @@
 """C2 Analyst desktop app: a window and a tray icon around the agent.
 
-    python -m component2_hate_speech_detection.src.app.main [--age 10] [--no-audio] [--paused]
+    python -m component2_hate_speech_detection.src.app.main [--age 10] [--no-audio] [--paused] [--show-transcripts]
 
 The window is a native Windows window (pywebview on Edge WebView2). The page is
 passed as an HTML string rather than a file path, so pywebview starts no local
@@ -125,6 +125,12 @@ class Api:
         with self._lock:
             return [v for v in self._feed if v["seq"] > after]
 
+    def heard(self) -> Optional[List[dict]]:
+        """Last speech transcripts, safe ones too; None unless started with --show-transcripts."""
+        if not self._agent.config.show_transcripts:
+            return None
+        return list(self._agent.heard)
+
     def start(self) -> str:
         self._agent.start()
         return self._agent.state
@@ -177,12 +183,13 @@ def tray_icon_image(alert: bool = False) -> Image.Image:
     return img
 
 
-def run(age: int = 10, audio: bool = True, start_paused: bool = False, agent: Optional[Agent] = None) -> None:
+def run(age: int = 10, audio: bool = True, start_paused: bool = False, agent: Optional[Agent] = None,
+        show_transcripts: bool = False) -> None:
     import pystray
     import webview
 
     agent = agent or Agent(
-        config=AgentConfig(age=age, audio=audio),
+        config=AgentConfig(age=age, audio=audio, show_transcripts=show_transcripts),
         screen_source=default_screen_source(),
         audio_source=LoopbackAudioSource() if audio else None,
     )
@@ -238,8 +245,10 @@ def main() -> None:
     parser.add_argument("--age", type=int, default=10, help="child's age, 8-15 (sets the persona)")
     parser.add_argument("--no-audio", action="store_true", help="monitor the screen only")
     parser.add_argument("--paused", action="store_true", help="open without starting protection")
+    parser.add_argument("--show-transcripts", action="store_true",
+                        help="demo only: show the last 20 speech transcripts, safe ones too (memory only, never saved)")
     args = parser.parse_args()
-    run(age=args.age, audio=not args.no_audio, start_paused=args.paused)
+    run(age=args.age, audio=not args.no_audio, start_paused=args.paused, show_transcripts=args.show_transcripts)
 
 
 if __name__ == "__main__":
