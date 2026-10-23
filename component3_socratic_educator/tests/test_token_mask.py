@@ -10,12 +10,16 @@ import random
 
 import pytest
 
-from component3_socratic_educator.src.grammar_decoder import _GRAMMAR, INTERCEPT_OPENERS
+from component3_socratic_educator.src.grammar_decoder import (
+    _GRAMMAR, INTERCEPT_OPENERS, SCREEN_INTERCEPT_OPENERS)
 from component3_socratic_educator.src.token_mask import (
     InterceptAutomaton, MaskingLogitsProcessor, TokenMask, piece_text)
 
 A = InterceptAutomaton()
-OPENER_1, OPENER_2 = INTERCEPT_OPENERS
+# Token-mask evidence uses the original screen openers; text openers are also
+# in INTERCEPT_OPENERS for the shared grammar enum.
+OPENER_1, OPENER_2 = SCREEN_INTERCEPT_OPENERS
+assert OPENER_1 in INTERCEPT_OPENERS and OPENER_2 in INTERCEPT_OPENERS
 
 
 def accepts(text: str) -> bool:

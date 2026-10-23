@@ -1,0 +1,131 @@
+{
+  "title": "PP1 mid-level 4-component integration proof",
+  "generated_at": "2026-10-22T17:17:01.490784+00:00",
+  "mode": "offline + C2 lexicon-only (no live model / no head weights)",
+  "components": {
+    "C1": "component1_screen_monitoring (mock capture)",
+    "C2": "component2_hate_speech_detection (mock + lexicon)",
+    "C3": "component3_socratic_educator (FSM offline)",
+    "C4": "component4_profiling_xai (parent report)"
+  },
+  "contracts": [
+    "docs/interface-contracts/comp1_to_comp3.schema.json",
+    "docs/interface-contracts/comp2_to_comp3.schema.json",
+    "docs/interface-contracts/comp3_to_comp4.schema.json"
+  ],
+  "checklist": {
+    "C1_mock_triggers_C3": true,
+    "C2_mock_triggers_C3": true,
+    "C2_lexicon_real_engine": true,
+    "C2_intercept_not_screen_worded": true,
+    "C3_schema_valid_records": true,
+    "C4_parent_report": true,
+    "shared_schemas": true
+  },
+  "paths": [
+    {
+      "path": "A_c1_mock",
+      "ok": true,
+      "source": "component1",
+      "trigger": {
+        "session_id": "1404db11-1ed0-4be2-9fdd-35eaf2c1f795",
+        "source_component": "component1_screen_monitoring",
+        "risk_category": "explicit_visual",
+        "content_type": "image",
+        "confidence_score": 0.88
+      },
+      "c3": {
+        "session_id": "1404db11-1ed0-4be2-9fdd-35eaf2c1f795",
+        "risk_level": "high",
+        "dialogue_turns": 4,
+        "states": [
+          "INTERCEPT",
+          "INQUIRE",
+          "INQUIRE",
+          "INQUIRE",
+          "EVALUATE",
+          "CONTRACT"
+        ],
+        "intercept_source": "fallback",
+        "intercept_text": "I noticed something on your screen just now. Can you tell me what you were thinking?",
+        "modality_ok": true,
+        "schema_valid": true
+      },
+      "c4": {
+        "child_id": "device-child-01",
+        "report_has_parent_summary": true,
+        "emotional_pattern": {
+          "child_id": "device-child-01",
+          "sessions": 1,
+          "cluster": 1,
+          "pattern": "Calm / reflective"
+        },
+        "report_preview": [
+          "=== Parent-Facing Summary ===",
+          "Session:          1404db11-1ed0-4be2-9fdd-35eaf2c1f795",
+          "Risk level:       high",
+          "Emotional state:  calm"
+        ]
+      }
+    },
+    {
+      "path": "B_c2_mock",
+      "ok": true,
+      "source": "component2",
+      "trigger": {
+        "session_id": "b1c33ce8-7c70-4bf6-b0f6-8dc140f30247",
+        "source_component": "component2_hate_speech_detection",
+        "risk_category": "cyberbullying",
+        "content_type": "text_message",
+        "confidence_score": 0.71
+      },
+      "c3": {
+        "session_id": "b1c33ce8-7c70-4bf6-b0f6-8dc140f30247",
+        "risk_level": "moderate",
+        "dialogue_turns": 4,
+        "states": [
+          "INTERCEPT",
+          "INQUIRE",
+          "INQUIRE",
+          "INQUIRE",
+          "EVALUATE",
+          "CONTRACT"
+        ],
+        "intercept_source": "fallback",
+        "intercept_text": "I noticed something in a message just now. Can you tell me what you were thinking?",
+        "modality_ok": true,
+        "schema_valid": true
+      },
+      "c4": {
+        "child_id": "device-child-01",
+        "report_has_parent_summary": true,
+        "emotional_pattern": {
+          "child_id": "device-child-01",
+          "sessions": 1,
+          "cluster": 1,
+          "pattern": "Calm / reflective"
+        },
+        "report_preview": [
+          "=== Parent-Facing Summary ===",
+          "Session:          b1c33ce8-7c70-4bf6-b0f6-8dc140f30247",
+          "Risk level:       moderate",
+          "Emotional state:  calm"
+        ]
+      }
+    },
+    {
+      "path": "C_c2_lexicon",
+      "ok": true,
+      "harmful_text_triggers_c3": true,
+      "clean_text_passes": true,
+      "session": {
+        "session_id": "f4f96a8d-9d55-4503-8198-31d0048b5612",
+        "risk_category": "cyberbullying",
+        "schema_valid": true,
+        "report_ok": true
+      }
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

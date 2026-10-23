@@ -58,7 +58,7 @@ def simulate_screen_capture(mock_file: str = "sample_trigger.json") -> dict:
     # fresh session id + timestamp each run, so integration demos don't collide
     payload["session_id"] = str(uuid.uuid4())
     payload["timestamp"] = datetime.now(timezone.utc).isoformat()
-    return payload
+    return validate_payload(payload)
 
 
 # ---------------------------------------------------------------------------

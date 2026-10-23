@@ -71,8 +71,13 @@ def test_the_default_child_id_comes_from_device_configuration():
 def test_a_record_that_breaks_the_schema_never_reaches_component4():
     with pytest.raises(jsonschema.ValidationError):
         to_emotional_pattern_row(_record(dialogue_turns=0))
+    # date-time format is only enforced when rfc3339-validator is installed;
+    # an out-of-enum risk_level always fails the shared schema.
+    record = _record()
+    real_to_dict = record.to_dict
+    record.to_dict = lambda: {**real_to_dict(), "risk_level": "not-a-valid-level"}
     with pytest.raises(jsonschema.ValidationError):
-        to_emotional_pattern_row(_record(timestamp="yesterday"))
+        to_emotional_pattern_row(record)
 
 
 @pytest.mark.parametrize("child_id", ["", "   ", None])

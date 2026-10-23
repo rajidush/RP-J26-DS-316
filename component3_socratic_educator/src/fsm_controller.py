@@ -121,8 +121,10 @@ class FSMController:
         return "Thanks for talking this through with me."
 
     def opening_question(self, trigger: TriggerPayload) -> str:
-        """Intercept state: open the conversation without naming the flagged content."""
-        return self.generator.generate("INTERCEPT", trigger.risk_category)
+        """Intercept state: open without naming flagged content; wording matches C1 vs C2 modality."""
+        return self.generator.generate(
+            "INTERCEPT", trigger.risk_category, content_type=trigger.content_type
+        )
     
     def inquire_loop(self, trigger: TriggerPayload, respond, transcript: SessionTranscript) -> list[str]:
         """Inquire state: follow up until completeness or max attempts."""

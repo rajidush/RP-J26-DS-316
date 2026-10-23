@@ -108,3 +108,38 @@ def test_real_component2_detection_starts_a_session(lexicon_only_c2):
 
 def test_real_component2_lets_ordinary_chat_through(lexicon_only_c2):
     assert build_trigger_from("component2", text="want to play minecraft after school?", age=10) is None
+
+
+def test_pp1_prove_runner_covers_both_upstream_sources():
+    """Mid-level proof: C1 and C2 mocks both reach a schema-valid C3 record and C4 report."""
+    from integration.prove_integration import build_proof
+
+    proof = build_proof()
+    by_path = {p["path"]: p for p in proof["paths"]}
+
+    for name in ("A_c1_mock", "B_c2_mock"):
+        assert by_path[name]["ok"] is True
+        assert by_path[name]["c3"]["schema_valid"] is True
+        assert by_path[name]["c4"]["report_has_parent_summary"] is True
+
+    assert proof["checklist"]["C1_mock_triggers_C3"] is True
+    assert proof["checklist"]["C2_mock_triggers_C3"] is True
+    assert proof["checklist"]["C4_parent_report"] is True
+    assert proof["checklist"]["C2_intercept_not_screen_worded"] is True
+    assert proof["passed"] is True
+
+
+def test_c2_text_trigger_does_not_say_screen_in_intercept():
+    """Root handoff: cyberbullying (text) must not open with C1 screen wording."""
+    log = _run("component2")
+    intercept = log["turns"][0]["system_text"].lower()
+    assert log["trigger"]["content_type"] == "text_message"
+    assert "screen" not in intercept
+    assert "message" in intercept or "read or heard" in intercept
+
+
+def test_c1_image_trigger_keeps_screen_wording():
+    log = _run("component1")
+    intercept = log["turns"][0]["system_text"].lower()
+    assert log["trigger"]["content_type"] == "image"
+    assert "screen" in intercept or "saw" in intercept
