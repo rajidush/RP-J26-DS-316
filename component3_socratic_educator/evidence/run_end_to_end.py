@@ -15,7 +15,7 @@ run_emotional_pattern() for this device's child.
 Run from the repo root with an interpreter that has pandas and joblib:
     python component3_socratic_educator/evidence/run_end_to_end.py --mode offline
 
-Writes, in the run folder evidence/end_to_end_<date>_<mode>[_<tag>]/, a .jsonl (one row
+Writes, in the run folder evidence/system/end_to_end_<date>_<mode>[_<tag>]/, a .jsonl (one row
 per session), a .summary.json and a readable .log.txt; never overwrites a
 recorded run.
 """
@@ -38,7 +38,7 @@ from component3_socratic_educator.src.schemas import _validate_against_schema   
 from integration.comp3_to_comp4 import DEVICE_CHILD_ID                                     # noqa: E402
 from integration.end_to_end_pipeline import build_trigger_from, offline_model, run_session  # noqa: E402
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "system"   # new runs go in their topic folder (evidence/README.md)
 C4_MODELS = ROOT / "component4_profiling_xai" / "models"
 SOURCES = ("component1", "component2")
 # A reply under 4 words is not "complete", so INQUIRE asks again (up to 3 times).

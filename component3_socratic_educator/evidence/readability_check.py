@@ -26,7 +26,7 @@ the hardest lines. US grade + 5 is roughly the age.
 Run from component3_socratic_educator/:
     python -m evidence.readability_check [--tag x]
 
-Writes, in evidence/readability_<date>[_<tag>]/, a .jsonl (one row per line),
+Writes, in evidence/system/readability_<date>[_<tag>]/, a .jsonl (one row per line),
 a .summary.json and a .md; never overwrites.
 """
 import argparse
@@ -45,8 +45,8 @@ import textstat
 from src.grammar_decoder import INQUIRE_LINES, INTERCEPT_OPENERS, GrammarConstrainedGenerator
 
 EV = Path(__file__).resolve().parent
-ADVERSARIAL = EV / "adversarial_intercept_2026-10-13" / "adversarial_intercept_2026-10-13.jsonl"
-END_TO_END = [EV / f"end_to_end_2026-10-14_{mode}_after-review" / f"end_to_end_2026-10-14_{mode}_after-review.jsonl"
+ADVERSARIAL = EV / "intercept" / "adversarial_intercept_2026-10-13" / "adversarial_intercept_2026-10-13.jsonl"
+END_TO_END = [EV / "system" / f"end_to_end_2026-10-14_{mode}_after-review" / f"end_to_end_2026-10-14_{mode}_after-review.jsonl"
               for mode in ("online", "offline")]
 DALE_CHALL_EASY = 4.9   # Dale-Chall: 4.9 or lower is easily read by an average 4th-grade pupil
 
@@ -138,7 +138,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     name = f"readability_{datetime.now():%Y-%m-%d}" + (f"_{args.tag}" if args.tag else "")
-    out_dir = EV / name
+    out_dir = EV / "system" / name
     if out_dir.exists():
         print(f"{name} already exists; pass a new --tag", file=sys.stderr)
         return 1
@@ -170,7 +170,7 @@ def main(argv=None) -> int:
         p = s["passage"]
         print(f"{set_name}: FK {p['flesch_kincaid_grade']:.1f}, Spache {p['spache_grade']:.1f}, "
               f"Dale-Chall {p['dale_chall_score']:.1f} ({s['lines']} lines)")
-    print(f"wrote evidence/{name}/")
+    print(f"wrote evidence/system/{name}/")
     return 0
 
 

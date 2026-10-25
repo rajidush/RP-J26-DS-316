@@ -6,7 +6,7 @@ Capture INTERCEPT samples from the live model, as evidence for the plan's
 Needs LM Studio running on localhost:1234. Run from component3_socratic_educator/:
     python -m evidence.capture_intercept_samples --runs 2
 
-Writes, in the run folder evidence/intercept_samples_constrained_<date>/, a
+Writes, in the run folder evidence/intercept/intercept_samples_constrained_<date>/, a
 .jsonl (one row per sample) plus a .settings.json, and prints a before/after
 table. The 6 Oct "before" file is only read, never rewritten; both sides are scored with today's grammar and
 post-check, so they are measured with the same yardstick.
@@ -23,7 +23,7 @@ from src.grammar_decoder import (_ALERT_WORDS, _CATEGORY_WORDS, _FORBIDDEN_SUBST
                                  INTERCEPT_PROMPT, INTERCEPT_SCHEMA, GrammarConstrainedGenerator, _has_word)
 from src.schemas import RiskCategory
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "intercept"   # new runs go in their topic folder (evidence/README.md)
 BEFORE = OUT_DIR / "intercept_samples_2026-10-06" / "intercept_samples_2026-10-06.jsonl"
 
 

@@ -10,16 +10,16 @@ Everything is pure (no Streamlit, no network) except `live_lines`, which takes t
 model call as an argument so tests can pass a fake.
 
 Evidence read from disk (never rewritten):
-    evidence/inquire_dataset_2026-10-10/test.jsonl         held-out prompts (never trained on)
-    evidence/inquire_comparison_2026-10-10/raw_outputs_*   "as evaluated": Colab, fp32, greedy
-    evidence/inquire_served_<date>/raw_outputs_*           "as served": the GGUFs in LM Studio (optional)
+    evidence/inquire/inquire_dataset_2026-10-10/test.jsonl         held-out prompts (never trained on)
+    evidence/inquire/inquire_comparison_2026-10-10/raw_outputs_*   "as evaluated": Colab, fp32, greedy
+    evidence/inquire/inquire_served_<date>/raw_outputs_*           "as served": the GGUFs in LM Studio (optional)
 """
 import json
 import re
 from collections import Counter
 from pathlib import Path
 
-EVIDENCE = Path(__file__).resolve().parents[1] / "evidence"
+EVIDENCE = Path(__file__).resolve().parents[1] / "evidence" / "inquire"
 TEST_FILE = EVIDENCE / "inquire_dataset_2026-10-10" / "test.jsonl"
 EVALUATED_DIR = EVIDENCE / "inquire_comparison_2026-10-10"
 
@@ -113,7 +113,7 @@ def load_outputs(path):
 
 
 def served_dir(root=EVIDENCE):
-    """Newest evidence/inquire_served_<date>/ that holds both files, or None."""
+    """Newest evidence/inquire/inquire_served_<date>/ that holds both files, or None."""
     found = sorted(p for p in Path(root).glob("inquire_served_*")
                    if (p / "raw_outputs_control.jsonl").exists() and (p / "raw_outputs_adapted.jsonl").exists())
     return found[-1] if found else None

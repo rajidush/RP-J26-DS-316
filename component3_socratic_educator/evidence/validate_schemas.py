@@ -18,7 +18,7 @@ predate the INTERCEPT schema (unconstrained) and are listed as not applicable.
 Run from component3_socratic_educator/ (online needs LM Studio):
     python -m evidence.validate_schemas [--mode offline|online] [--tag x]
 
-Writes, in the run folder evidence/schema_validation_<date>[_<tag>]/, a .jsonl
+Writes, in the run folder evidence/system/schema_validation_<date>[_<tag>]/, a .jsonl
 (one row per checked item), a .summary.json and a .log.txt; never overwrites.
 """
 import argparse
@@ -77,7 +77,7 @@ def check_recorded(checks):
         checks.append((rel, TRIGGER, Path(rel).name,
                        schema_audit.trigger_error(json.loads((REPO / rel).read_text(encoding="utf-8")))))
 
-    for path in sorted(EV.glob("end_to_end_*/*.jsonl")):
+    for path in sorted(EV.glob("system/end_to_end_*/*.jsonl")):
         src = f"{path.parent.name}/{path.name}"
         for row in _rows(path):
             sid = f"{row['source']}/{row['scripted_child']}"
@@ -91,21 +91,21 @@ def check_recorded(checks):
                     checks.append((src, INQUIRE_LINE, f"{sid}#{j}",
                                    schema_audit.delivered_inquire_error(t["system_text"])))
 
-    for path in sorted(EV.glob("adversarial_intercept_*/*.jsonl")):
+    for path in sorted(EV.glob("intercept/adversarial_intercept_*/*.jsonl")):
         src = f"{path.parent.name}/{path.name}"
         for row in _rows(path):
             sid = f"{row['attack_id']}/{row['risk_category']}"
             checks.append((src, REPLY, sid, schema_audit.intercept_outcome(row["source"], row["reason"])))
             checks.append((src, INTERCEPT_LINE, sid, schema_audit.delivered_intercept_error(row["delivered"])))
 
-    for path in sorted(EV.glob("intercept_samples_constrained_*/*.jsonl")):
+    for path in sorted(EV.glob("intercept/intercept_samples_constrained_*/*.jsonl")):
         src = f"{path.parent.name}/{path.name}"
         for row in _rows(path):
             sid = f"{row['risk_category']}#{row['run']}"
             checks.append((src, REPLY, sid, schema_audit.intercept_outcome(row["source"], row["fallback_reason"])))
             checks.append((src, INTERCEPT_LINE, sid, schema_audit.delivered_intercept_error(row["text"])))
 
-    for path in sorted(EV.glob("latency_*/*.jsonl")):
+    for path in sorted(EV.glob("system/latency_*/*.jsonl")):
         src = f"{path.parent.name}/{path.name}"
         for i, row in enumerate(_rows(path)):
             w = row["waits"][0]
@@ -176,7 +176,7 @@ def main():
     args = ap.parse_args()
 
     run_name = f"schema_validation_{datetime.now():%Y-%m-%d}{'_' + args.tag if args.tag else ''}"
-    out = EV / run_name / f"{run_name}.jsonl"
+    out = EV / "system" / run_name / f"{run_name}.jsonl"
     outputs = [out, out.with_suffix(".summary.json"), out.with_suffix(".log.txt")]
     if any(p.exists() for p in outputs):
         sys.exit(f"{run_name} is already recorded: pass --tag. Nothing was overwritten.")

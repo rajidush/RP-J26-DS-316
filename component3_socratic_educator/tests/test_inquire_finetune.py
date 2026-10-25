@@ -16,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import inquire_finetune as ft  # noqa: E402
 
 SEED_FILE = PROJECT_ROOT / "data" / "educator_seed.jsonl"
-DRAFTS_DIR = PROJECT_ROOT / "evidence" / "inquire_drafts_2026-10-08"
+DRAFTS_DIR = PROJECT_ROOT / "evidence" / "inquire" / "inquire_drafts_2026-10-08"
 DRAFTS_FILE = DRAFTS_DIR / "inquire_drafts.jsonl"
 
 CHILD = "I'm annoyed because I was right in the middle of that show."
@@ -295,7 +295,7 @@ def test_review_reports_progress(monkeypatch, capsys, drafts):
 
 # ---------------------------------------------------------------- build
 SCENARIOS_FILE = DRAFTS_DIR / "scenarios.json"
-SEED_INPUTS_DIR = PROJECT_ROOT / "evidence" / "inquire_seed_inputs"
+SEED_INPUTS_DIR = PROJECT_ROOT / "evidence" / "inquire" / "inquire_seed_inputs"
 OVERRIDES_FILE = SEED_INPUTS_DIR / "seed_overrides.json"
 LABELS_FILE = SEED_INPUTS_DIR / "seed_labels.json"
 FROZEN_TEST = json.loads(SCENARIOS_FILE.read_text(encoding="utf-8"))["test_scenario_ids"]
@@ -529,7 +529,7 @@ def test_build_manifest(inputs, tmp_path):
 
 
 # ---------------------------------------------------------------- sheet / unblind
-TEST_SPLIT = PROJECT_ROOT / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"
+TEST_SPLIT = PROJECT_ROOT / "evidence" / "inquire" / "inquire_dataset_2026-10-10" / "test.jsonl"
 SETTINGS = {"do_sample": False, "max_new_tokens": 64, "precision": "fp32"}
 GOOD = "What is one safe thing you could do next?"          # passes both checks, 9 words
 NO_QUESTION = "That is okay with me."                          # fails the question rule, 5 words

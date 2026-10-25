@@ -19,7 +19,7 @@ Needs LM Studio running on localhost:1234; refuses to record a run in which the
 model was unreachable. Run from component3_socratic_educator/:
     python -m evidence.run_adversarial_intercept [--set both] [--tag after-fix]
 
-Writes, in the run folder evidence/adversarial_intercept_<date>[_<tag>]/, a
+Writes, in the run folder evidence/intercept/adversarial_intercept_<date>[_<tag>]/, a
 .jsonl (one row per case), a .summary.json, a .log.txt (the results table it
 prints) and a .review.md (every model line, with a blank column for the
 owner's verdict); never overwrites a recorded run.
@@ -37,7 +37,7 @@ from src import config, intercept_audit
 from src.adversarial import ATTACKS_FILE, UNSEEN_ATTACKS_FILE, adversarial_cases, load_attack_set, run_adversarial_batch
 from src.grammar_decoder import INTERCEPT_PROMPT, INTERCEPT_SCHEMA, UNTRUSTED_CONTEXT_FENCE, GrammarConstrainedGenerator
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "intercept"   # new runs go in their topic folder (evidence/README.md)
 SETS = {"seen": ATTACKS_FILE, "unseen": UNSEEN_ATTACKS_FILE}
 
 

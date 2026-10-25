@@ -11,7 +11,7 @@ Needs LM Studio running with the model loaded, and the lms CLI. Run from
 component3_socratic_educator/:
     python -m evidence.check_temperature
 
-Writes, in the run folder evidence/temperature_check_<date>/, the raw log
+Writes, in the run folder evidence/intercept/temperature_check_<date>/, the raw log
 (.runtime_log.jsonl), a .summary.json and a .log.txt; never overwrites a
 recorded run.
 """
@@ -29,7 +29,7 @@ from src.grammar_decoder import INTERCEPT_PROMPT, INTERCEPT_SCHEMA, GrammarConst
 from src.model_client import LM_STUDIO_URL, call_local_model
 from src.schemas import RiskCategory
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "intercept"   # new runs go in their topic folder (evidence/README.md)
 LMS = Path.home() / ".lmstudio" / "bin" / "lms"
 SAMPLER = re.compile(r"top_k = (?P<top_k>[\d.]+), top_p = (?P<top_p>[\d.]+), min_p = (?P<min_p>[\d.]+).*?"
                      r"temp = (?P<temp>[\d.]+)", re.S)

@@ -11,8 +11,8 @@ child", together with the measured limitations and what PP2 will fix. Nothing is
 
 Shadow output has three sources, always labelled on the page:
     live             both GGUFs in LM Studio, temperature 0, now
-    as served        the same prompts run on the GGUFs earlier (evidence/inquire_served_<date>/)
-    as evaluated     the Colab run behind the blind comparison (evidence/inquire_comparison_2026-10-10/)
+    as served        the same prompts run on the GGUFs earlier (evidence/inquire/inquire_served_<date>/)
+    as evaluated     the Colab run behind the blind comparison (evidence/inquire/inquire_comparison_2026-10-10/)
 """
 import json
 import sys
