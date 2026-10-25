@@ -21,7 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import inquire_finetune as ft  # noqa: E402
 import inquire_training as tr  # noqa: E402
 
-DATASET_DIR = PROJECT_ROOT / "evidence" / "inquire_dataset_2026-10-10"
+DATASET_DIR = PROJECT_ROOT / "evidence" / "inquire" / "inquire_dataset_2026-10-10"
 NOTEBOOK = PROJECT_ROOT / "notebooks" / "train_inquire_lora_colab.ipynb"
 
 

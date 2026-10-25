@@ -87,7 +87,7 @@ Implication: treat **distressed** as a severity judgement written into the codeb
 
 **Comparison arms.** Run every arm on the same frozen held-out child IDs:
 
-1. Current phrase rules. On simulated data they reached 315/372 = 84.7% agreement, with 75/76 distressed caught. They also labelled 13 calm and 18 unclear sessions as distressed ([results](C:/Users/User/Downloads/child-safety-system/child-safety-system/component3_socratic_educator/evidence/emotion_rules_eval_2026-10-14/after-all-fixes_heldout.txt)).
+1. Current phrase rules. On simulated data they reached 315/372 = 84.7% agreement, with 75/76 distressed caught. They also labelled 13 calm and 18 unclear sessions as distressed ([results](C:/Users/User/Downloads/child-safety-system/child-safety-system/component3_socratic_educator/evidence/evaluate/emotion_rules_eval_2026-10-14/after-all-fixes_heldout.txt)).
 2. **Off-the-shelf:** SamLowe GoEmotions ONNX, mapped to Ekman groups with the paper's mapping. It can supply axis A only. Distress and stance still need rules or a prompt, so report what each component contributes.
 3. The on-device Gemma, prompted with the codebook definitions (zero- or few-shot).
 4. **Fine-tuned small classifier:**

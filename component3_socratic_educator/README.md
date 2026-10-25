@@ -45,7 +45,7 @@ inference baseline's own weights (the QAT Q4_0 GGUF, on CPU) and records, for ev
 model's top choices, which were blocked, and the probability removed. This is a demonstration
 beside the child-facing path, which still uses LM Studio's constraint.
 
-Recorded run (`evidence/token_masking_2026-10-18/`, CPU): unmasked, the model wrote "Okay, let’s
+Recorded run (`evidence/intercept/token_masking_2026-10-18/`, CPU): unmasked, the model wrote "Okay, let’s
 talk about what you were doing on your screen just now." (fails the grammar); masked, the same
 model on the same prompt wrote "I noticed something on your screen just now. Would you like to
 tell me a little about what you were doing?" (passes). The mask blocked the model's first choice
@@ -85,7 +85,7 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   fired, so every label can be explained. On the simulated dataset it agrees with the
   intended child profile in 89.0% of development sessions (C001-C020, used to write the
   rules) and **84.7% of held-out sessions** (C021-C040), after the 14 Oct fixes (before:
-  89.8% / 85.2%; `evidence/emotion_rules_eval_2026-10-14/`). The drop is two held-out
+  89.8% / 85.2%; `evidence/evaluate/emotion_rules_eval_2026-10-14/`). The drop is two held-out
   calm children now scored unclear, from the new uncertainty phrases, and two dev
   unclear children now scored distressed, because a refusal ends INQUIRE earlier and
   they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
@@ -145,6 +145,10 @@ streamlit run src/demo_dashboard.py   # the PP1 demo page
 pytest component3_socratic_educator/tests -v
 ```
 
+## Recorded evidence
+
+Every recorded run is a dated folder under `evidence/`, grouped as `intercept/`, `inquire/`, `evaluate/`, `system/` and `research/`. [`evidence/README.md`](evidence/README.md) lists every run, what it shows, and which script writes to which group.
+
 ## Generating the Component 4 dataset
 
 `generate_educator_dataset.py` simulates child sessions, runs them through the
@@ -198,10 +202,10 @@ python generate_educator_dataset.py --backend lmstudio --stub-generator --start-
 
 ```bash
 python inquire_finetune.py sheet --outputs raw_outputs_control.jsonl raw_outputs_adapted.jsonl
-#   -> evidence/inquire_comparison_<date>/scoring_sheet.csv + key.json (don't open the key)
+#   -> evidence/inquire/inquire_comparison_<date>/scoring_sheet.csv + key.json (don't open the key)
 # score every rubric cell 0 or 1 in scoring_sheet.csv, then:
-python inquire_finetune.py unblind --sheet evidence/inquire_comparison_<date>/scoring_sheet.csv \
-    --key evidence/inquire_comparison_<date>/key.json --outputs raw_outputs_control.jsonl raw_outputs_adapted.jsonl
+python inquire_finetune.py unblind --sheet evidence/inquire/inquire_comparison_<date>/scoring_sheet.csv \
+    --key evidence/inquire/inquire_comparison_<date>/key.json --outputs raw_outputs_control.jsonl raw_outputs_adapted.jsonl
 #   -> summary.json + summary.md next to the sheet
 ```
 
@@ -256,7 +260,7 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 ## Known current limitations (say this openly at PP1, don't hide it)
 
-- Latency (13 Oct, `evidence/latency_2026-10-13_before-fix/`, `_after-fix/`): the
+- Latency (13 Oct, `evidence/system/latency_2026-10-13_before-fix/`, `_after-fix/`): the
   bottleneck was the connection, not the model. `localhost` tried IPv6 `::1`
   first, which LM Studio refuses, costing 2.03 s per call; the client now uses
   `127.0.0.1`. After the fix the child waits a median 0.67 s (p95 0.73 s, max
@@ -265,10 +269,10 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   Measured on one laptop (RTX 3050 6 GB GPU) with the model already loaded; a
   cold start, the CPU-only engine or a model-written INQUIRE (after PP1) are
   not measured.
-- Temperature (13 Oct, `evidence/temperature_check_2026-10-13/`): llama.cpp's
+- Temperature (13 Oct, `evidence/intercept/temperature_check_2026-10-13/`): llama.cpp's
   log shows it samples INTERCEPT at the 1.0 we send; with none sent, the
   server default is 0.8, so the runs before 12 Oct were at 0.8.
-- Schema validation (15 Oct, `evidence/schema_validation_2026-10-15_after-review/`,
+- Schema validation (15 Oct, `evidence/system/schema_validation_2026-10-15_after-review/`,
   `python -m evidence.validate_schemas`): every recorded output plus a fresh
   sweep of today's FSM (8 categories x 4 scripted children x 3 confidences,
   offline). 761/763 trigger, record and delivered-line checks pass. The 2
@@ -284,7 +288,7 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   by today's code. Not measured: an online sweep (LM Studio was off) and
   Component 4's input row (it has no contract schema). Next: an online sweep
   with LM Studio running.
-- Dialogue fixes (14 Oct, `evidence/end_to_end_2026-10-14_online_after-review/`
+- Dialogue fixes (14 Oct, `evidence/system/end_to_end_2026-10-14_online_after-review/`
   vs `end_to_end_2026-10-12_online/`; the untagged 14 Oct runs predate the review
   fixes and their summary still says INQUIRE does not adapt): INQUIRE no longer asks a distressed child
   "Is there another way you could've reacted?", stops after a short reply that
@@ -319,7 +323,7 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   112 lines (18%), and it misses lines such as "What did it look like?",
   "What was happening?" and "What was there?", so the meaning-level leak rate
   is not 0%. A blind human review of the 103 delivered model lines
-  (`evidence/adversarial_intercept_2026-10-13/`, `.human_review.csv` + key):
+  (`evidence/intercept/adversarial_intercept_2026-10-13/`, `.human_review.csv` + key):
   the first round (17 Oct) gave identical questions different verdicts and no
   reasons, so no human leak rate is reported from it. In the second round
   (21 Oct, a written leak definition, one reviewer) the same question always got

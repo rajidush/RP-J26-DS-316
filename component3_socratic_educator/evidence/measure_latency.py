@@ -15,7 +15,7 @@ Needs LM Studio running with the model loaded; refuses to record a run in which
 the model was unreachable. Run from component3_socratic_educator/:
     python -m evidence.measure_latency [--sessions-per-category 5] [--tag after-fix]
 
-Writes, in the run folder evidence/latency_<date>[_<tag>]/, a .jsonl (one row
+Writes, in the run folder evidence/system/latency_<date>[_<tag>]/, a .jsonl (one row
 per session), a .summary.json and a .log.txt; never overwrites a recorded run.
 """
 import argparse
@@ -35,7 +35,7 @@ from src.fsm_controller import FSMController
 from src.grammar_decoder import INTERCEPT_PROMPT, INTERCEPT_SCHEMA, GrammarConstrainedGenerator
 from src.schemas import RiskCategory, TriggerPayload
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "system"   # new runs go in their topic folder (evidence/README.md)
 TARGET_SECONDS = 3.0
 LMS = Path.home() / ".lmstudio" / "bin" / "lms"
 # A reply under 4 words is not "complete", so INQUIRE asks again (up to 3 times).

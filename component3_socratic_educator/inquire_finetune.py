@@ -44,11 +44,11 @@ from draft_inquire_dataset import REPLY_TYPES, RISK_CATEGORIES, load_jsonl, pars
 from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS
 
 HERE = Path(__file__).resolve().parent
-DRAFTS_DIR = HERE / "evidence" / "inquire_drafts_2026-10-08"
+DRAFTS_DIR = HERE / "evidence" / "inquire" / "inquire_drafts_2026-10-08"
 DRAFTS_FILE = DRAFTS_DIR / "inquire_drafts.jsonl"
 SCENARIOS_FILE = DRAFTS_DIR / "scenarios.json"
 SEED_FILE = HERE / "data" / "educator_seed.jsonl"
-SEED_INPUTS_DIR = HERE / "evidence" / "inquire_seed_inputs"
+SEED_INPUTS_DIR = HERE / "evidence" / "inquire" / "inquire_seed_inputs"
 
 # The controller grammar's hard backstop, shared rather than copied (ADR 0003).
 FORBIDDEN_SUBSTRINGS = _FORBIDDEN_SUBSTRINGS
@@ -756,21 +756,21 @@ def build_parser():
     build.add_argument("--scenarios", default=str(SCENARIOS_FILE), help="holds the frozen test scenario IDs")
     build.add_argument("--overrides", default=str(SEED_INPUTS_DIR / "seed_overrides.json"))
     build.add_argument("--labels", default=str(SEED_INPUTS_DIR / "seed_labels.json"))
-    build.add_argument("--out", default=str(HERE / "evidence" / f"inquire_dataset_{date.today().isoformat()}"))
+    build.add_argument("--out", default=str(HERE / "evidence" / "inquire" / f"inquire_dataset_{date.today().isoformat()}"))
     build.set_defaults(func=cmd_build)
 
     sheet = sub.add_parser("sheet", help="shuffled blind scoring sheet + hidden key from both arms' raw outputs")
-    sheet.add_argument("--test", default=str(HERE / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"))
+    sheet.add_argument("--test", default=str(HERE / "evidence" / "inquire" / "inquire_dataset_2026-10-10" / "test.jsonl"))
     sheet.add_argument("--outputs", nargs=2, required=True, metavar="RAW_OUTPUTS_JSONL",
                        help="one raw-output file per arm (control and adapted), in any order")
     sheet.add_argument("--seed", type=int, default=SHEET_SEED)
-    sheet.add_argument("--out", default=str(HERE / "evidence" / f"inquire_comparison_{date.today().isoformat()}"))
+    sheet.add_argument("--out", default=str(HERE / "evidence" / "inquire" / f"inquire_comparison_{date.today().isoformat()}"))
     sheet.set_defaults(func=cmd_sheet)
 
     unblind = sub.add_parser("unblind", help="join a fully scored sheet with the key; write summary.json/.md")
     unblind.add_argument("--sheet", required=True)
     unblind.add_argument("--key", required=True)
-    unblind.add_argument("--test", default=str(HERE / "evidence" / "inquire_dataset_2026-10-10" / "test.jsonl"))
+    unblind.add_argument("--test", default=str(HERE / "evidence" / "inquire" / "inquire_dataset_2026-10-10" / "test.jsonl"))
     unblind.add_argument("--outputs", nargs=2, required=True, metavar="RAW_OUTPUTS_JSONL")
     unblind.add_argument("--out", help="default: the sheet's folder")
     unblind.set_defaults(func=cmd_unblind)

@@ -16,7 +16,7 @@ flowchart LR
     R -- "session record" --> S["Component 4<br/>generate_report<br/>parent summary"]
 ```
 
-**What is real and what is not yet** (as of the 12 Oct end-to-end run, `evidence/end_to_end_2026-10-12_*/`)
+**What is real and what is not yet** (as of the 12 Oct end-to-end run, `evidence/system/end_to_end_2026-10-12_*/`)
 
 | Part | Status |
 |---|---|

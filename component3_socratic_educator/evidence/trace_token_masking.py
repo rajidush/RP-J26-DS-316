@@ -28,7 +28,7 @@ Needs `pip install gguf` (transformers reads GGUF through it). Run from
 component3_socratic_educator/:
     python -m evidence.trace_token_masking [--model PATH]
 
-Writes, in evidence/token_masking_<date>/, a .trace.json (every step), a
+Writes, in evidence/intercept/token_masking_<date>/, a .trace.json (every step), a
 .summary.md (readable table), a .run_record.json and a .log.txt; never
 overwrites a recorded run.
 """
@@ -47,7 +47,7 @@ from pathlib import Path
 from src.grammar_decoder import INTERCEPT_PROMPT, delivery_violation
 from src.token_mask import MaskingLogitsProcessor, TokenMask, piece_text
 
-OUT_DIR = Path(__file__).resolve().parent
+OUT_DIR = Path(__file__).resolve().parent / "intercept"   # new runs go in their topic folder (evidence/README.md)
 DEFAULT_MODEL = (Path.home() / ".lmstudio" / "models" / "lmstudio-community" / "gemma-3-1B-it-QAT-GGUF"
                  / "gemma-3-1B-it-QAT-Q4_0.gguf")
 # Any cached repo with the Gemma 3 tokenizer will do; this one is already on the machine.

@@ -1,14 +1,14 @@
 """
 "As served" INQUIRE outputs: the 50 held-out test prompts run through the two f16 GGUFs in LM Studio.
 
-The Oct 10 comparison (evidence/inquire_comparison_2026-10-10/) came from Colab (fp32, transformers). This
+The Oct 10 comparison (evidence/inquire/inquire_comparison_2026-10-10/) came from Colab (fp32, transformers). This
 records the same prompts on the files the demo actually serves, so the two sets can be compared and the demo's
 replay mode can show either. Same prompts, one user message each, temperature 0, same token limit, no repair.
 
 Needs LM Studio running with both models available. Run from component3_socratic_educator/:
     python -m evidence.capture_inquire_served [--base gemma3-1b-it-base] [--adapted gemma3-1b-inquire-adapted]
 
-Writes evidence/inquire_served_<date>/ : raw_outputs_control.jsonl, raw_outputs_adapted.jsonl (same fields as the
+Writes evidence/inquire/inquire_served_<date>/ : raw_outputs_control.jsonl, raw_outputs_adapted.jsonl (same fields as the
 Colab files) and run_record.json. Never overwrites a recorded run; preserved baseline outputs stay untouched.
 """
 import argparse
@@ -65,7 +65,7 @@ def main(argv=None):
     ap.add_argument("--adapted", default="gemma3-1b-inquire-adapted")
     args = ap.parse_args(argv)
 
-    out_dir = ROOT / "evidence" / f"inquire_served_{datetime.now().strftime('%Y-%m-%d')}"
+    out_dir = ROOT / "evidence" / "inquire" / f"inquire_served_{datetime.now().strftime('%Y-%m-%d')}"
     if out_dir.exists():
         raise SystemExit(f"{out_dir} already exists; recorded runs are never overwritten.")
 
@@ -96,8 +96,8 @@ def main(argv=None):
         "runtime": {"server": LM_STUDIO_URL, "lm_studio": lm_studio_version(), "python": sys.version.split()[0],
                     "machine": platform.platform(), "gguf_precision": "f16", "gpu": "not recorded"},
         "models": files,
-        "conversion_record": "see evidence/gguf_conversion_<date>/conversion_record.json (not read by this script)",
-        "comparable_to": "evidence/inquire_comparison_2026-10-10/ (Colab, fp32, greedy, max_new_tokens 128)",
+        "conversion_record": "see evidence/inquire/gguf_conversion_<date>/conversion_record.json (not read by this script)",
+        "comparable_to": "evidence/inquire/inquire_comparison_2026-10-10/ (Colab, fp32, greedy, max_new_tokens 128)",
     }
     (out_dir / "run_record.json").write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
     for arm, rows in arms.items():
