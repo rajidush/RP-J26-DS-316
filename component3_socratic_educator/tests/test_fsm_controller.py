@@ -197,3 +197,34 @@ def test_a_refusal_with_distress_ends_inquire_and_still_escalates():
         "leave me alone, I'm so scared"]
     assert result.emotional_state.value == "distressed" and result.escalation_flag is True
     assert "parent" in transcript.turns[-1].system_text
+
+
+class FakeAssessor:
+    """Returns a fixed assessment and remembers the turns it was given."""
+
+    def __init__(self, state, plan):
+        from component3_socratic_educator.src.assessor import SessionAssessment
+        self.result = SessionAssessment(replies=[], emotional_state=state, constructed_plan=plan)
+        self.seen = None
+
+    def assess(self, turns):
+        self.seen = [t.child_response for t in turns if t.child_response is not None]
+        return self.result
+
+
+def test_evaluate_takes_the_emotional_state_and_plan_from_the_injected_assessor():
+    from component3_socratic_educator.src.schemas import EmotionalState
+    assessor = FakeAssessor(EmotionalState.DISTRESSED, plan=True)
+    result, transcript = FSMController(assessor=assessor).run(
+        make_trigger(confidence=0.6), respond=lambda _: "I clicked a link by accident")
+    assert assessor.seen == [t.child_response for t in transcript.turns if t.child_response is not None]
+    assert result.emotional_state.value == "distressed" and result.self_regulation_shown is True
+    assert result.escalation_flag is True and "parent" in transcript.turns[-1].system_text
+
+
+def test_the_assessor_not_the_phrase_rules_decides_escalation():
+    from component3_socratic_educator.src.schemas import EmotionalState
+    result, _ = FSMController(assessor=FakeAssessor(EmotionalState.CALM, plan=False)).run(
+        make_trigger(confidence=0.6), respond=lambda _: "I'm so scared and alone and it hurts")
+    assert result.emotional_state.value == "calm" and result.escalation_flag is False
+    assert result.self_regulation_shown is False

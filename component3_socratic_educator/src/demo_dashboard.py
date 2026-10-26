@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from component3_socratic_educator.src import config, emotion_rules                           # noqa: E402
-from component3_socratic_educator.src.fsm_controller import _SELF_REGULATION_PATTERN, FSMController  # noqa: E402
+from component3_socratic_educator.src.fsm_controller import FSMController                    # noqa: E402
 from component3_socratic_educator.src.model_client import LM_STUDIO_URL, call_local_model     # noqa: E402
 from component3_socratic_educator.src import shadow                                          # noqa: E402
 from component3_socratic_educator.src.schemas import RiskCategory, TriggerPayload             # noqa: E402
@@ -175,7 +175,7 @@ def explain(run):
     replies = ss().replies[:len([t for t in run["turns"] if t["reply"] is not None])]
     verdict = emotion_rules.classify(replies)
     phrases = "; ".join(f"{k}: {', '.join(repr(p) for p in v)}" for k, v in verdict.hits.items()) or "no phrase fired"
-    selfreg = [m.group(0) for rep in replies for m in [_SELF_REGULATION_PATTERN.search(rep.lower())] if m]
+    selfreg = [m.group(0) for rep in replies for m in [emotion_rules.SELF_REGULATION.search(rep.lower())] if m]
     why = r.dialogue_summary.split("escalated: ")[-1] if r.escalation_flag else "not escalated"
     rule = risk_rule(conf)[1]
     return [("risk_level", f"confidence {conf:.2f} {rule}"),

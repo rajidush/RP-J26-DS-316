@@ -79,6 +79,11 @@ WITHDRAWN = _rx(
 )
 _SIGNALS = {"reflective": REFLECTIVE, "distress": DISTRESS, "defensive": DEFENSIVE, "withdrawn": WITHDRAWN}
 
+# The PP1 self-regulation keywords behind `self_regulation_shown` (moved here
+# from the controller on 26 Oct, unchanged). Whole words: "i could" must not
+# fire inside "i couldn't".
+SELF_REGULATION = re.compile(r"\b(instead|next time|should have|i could)\b")
+
 
 @dataclass
 class EmotionVerdict:
@@ -120,12 +125,18 @@ def classify_reply(reply: str) -> str:
     return OTHER
 
 
+def signal_hits(text: str) -> dict[str, list[str]]:
+    """Phrases each signal fires on in `text`, for every signal (empty when none fired)."""
+    text = (text or "").lower()
+    return {name: [m.group(0) for m in rx.finditer(text)] for name, rx in _SIGNALS.items()}
+
+
 def classify(replies: list[str]) -> EmotionVerdict:
     text = " ".join(r for r in replies if r).lower()
     if not text.strip():
         return EmotionVerdict(EmotionalState.UNCLEAR)
 
-    hits = {name: [m.group(0) for m in rx.finditer(text)] for name, rx in _SIGNALS.items()}
+    hits = signal_hits(text)
     n = {k: len(v) for k, v in hits.items()}
 
     # A child who names a feeling AND plans a safer next step is regulating:

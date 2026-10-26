@@ -9,17 +9,14 @@ transitions and the structured record it produces at the end.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Callable, Optional
 
 from . import config, emotion_rules
+from .assessor import RulesAssessor, SessionAssessor
 from .grammar_decoder import GrammarConstrainedGenerator
 from .schemas import EvaluateOutput, RiskLevel, TriggerPayload
-
-
-_SELF_REGULATION_PATTERN = re.compile(r"\b(instead|next time|should have|i could)\b")
 
 
 class DialogueState(Enum):
@@ -59,8 +56,11 @@ class FSMController:
     for Component 4.
     """
 
-    def __init__(self, generator: Optional[GrammarConstrainedGenerator] = None):
+    def __init__(self, generator: Optional[GrammarConstrainedGenerator] = None,
+                 assessor: Optional[SessionAssessor] = None):
         self.generator = generator or GrammarConstrainedGenerator()
+        # EVALUATE's classifier arm (src/assessor.py): the PP1 rules until the comparison picks one.
+        self.assessor = assessor or RulesAssessor()
 
     def run(self, trigger: TriggerPayload, respond: ChildResponder) -> tuple[EvaluateOutput, SessionTranscript]:
         trigger.validate()
@@ -149,28 +149,20 @@ class FSMController:
 
     def _evaluate(self, trigger: TriggerPayload, transcript: SessionTranscript, last_child_text: str) -> EvaluateOutput:
         """
-        Rule-based evaluation so the FSM is fully runnable and testable
-        today: risk from detector confidence, emotional_state from
-        emotion_rules.classify(), self-regulation from keywords. Upgrade
-        path: swap in a trained classifier over the transcript, keeping
-        the EvaluateOutput contract identical.
+        Risk from detector confidence; emotional_state and self-regulation
+        from the injected session assessor (src/assessor.py), so a trained
+        classifier replaces the rules without changing the EvaluateOutput
+        contract.
         """
-        # Whole-word match: "i could" must not fire inside "i couldn't".
-        self_regulation_shown = any(
-            _SELF_REGULATION_PATTERN.search((t.child_response or "").lower())
-            for t in transcript.turns
-        )
+        assessment = self.assessor.assess(transcript.turns)
         risk_level = RiskLevel.HIGH if trigger.confidence_score >= 0.85 else (
             RiskLevel.MODERATE if trigger.confidence_score >= 0.5 else RiskLevel.LOW
         )
-        # Rule-based classifier over every reply the child gave (src/emotion_rules.py).
-        child_replies = [t.child_response for t in transcript.turns if t.child_response is not None]
-        emotional_state = emotion_rules.classify(child_replies).state
         return EvaluateOutput(
             session_id=trigger.session_id,
             risk_level=risk_level,
-            emotional_state=emotional_state,
-            self_regulation_shown=self_regulation_shown,
+            emotional_state=assessment.emotional_state,
+            self_regulation_shown=assessment.constructed_plan,
             escalation_flag=False,  # set properly in CONTRACT state
             dialogue_turns=0,  # filled in by caller
             dialogue_summary=f"{len(transcript.turns)} turns; risk_category={trigger.risk_category.value}",
