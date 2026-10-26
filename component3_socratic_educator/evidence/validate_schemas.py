@@ -8,7 +8,7 @@ Checks every output that crosses a Component 3 contract, with src/schema_audit.p
                               "parse_failure", "no_reply"); the delivered line against
                               the controller grammar and post-check
            INQUIRE lines      against today's INQUIRE grammar, for runs on today's
-                              template lines (14 Oct onwards)
+                              template lines (26 Oct onwards)
     out    records            comp3_to_comp4 (recorded end-to-end runs, sweep)
 
 Recorded evidence is only read. A fresh sweep then runs today's FSM over every
@@ -50,7 +50,7 @@ CHILDREN = {   # the scripted children of the end-to-end runs
     "withdrawn": ["idk", "nothing", "leave me alone", "I don't want to talk"],
 }
 TEXT_CATEGORIES = {"hate_speech", "cyberbullying", "grooming_language", "self_harm_language"}
-CURRENT_INQUIRE_FROM = "2026-10-14"   # INQUIRE's template lines changed that day
+CURRENT_INQUIRE_FROM = "2026-10-26"   # INQUIRE's template lines changed that day (ticket 03; before, 14 Oct)
 # Runs recorded before the post-check's invites_description rule existed: the
 # constrained samples (62389bc) and the first adversarial run, both 11 Oct; the rule
 # came with the after-fix rerun (cf37750). A failure there by that rule is a line
@@ -228,7 +228,9 @@ def main():
                            "component4_row in end-to-end runs": "not measured: Component 4's input row has no "
                                                                 "contract schema (only comp3_to_comp4 does)",
                            "end_to_end_2026-10-12_* INQUIRE lines": "made with the template lines retired on 14 Oct; "
-                                                                    "today's INQUIRE grammar is not theirs"},
+                                                                    "today's INQUIRE grammar is not theirs",
+                           "end_to_end_2026-10-14_* INQUIRE lines": "made with the reply-type lines retired on 26 Oct "
+                                                                    "(ticket 03); today's INQUIRE grammar is not theirs"},
         "settings": {"schemas_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                         for p in sorted(_CONTRACTS_DIR.glob("*.schema.json"))},
                      "sweep": {"categories": [c.value for c in RiskCategory], "children": list(CHILDREN),

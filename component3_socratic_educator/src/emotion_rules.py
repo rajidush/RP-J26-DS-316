@@ -67,15 +67,20 @@ _REFUSAL_PHRASES = (
     r"go away", r"i (need|want) (some )?space",
 )
 REFUSAL = _rx(*_REFUSAL_PHRASES)
+# "I don't know": INQUIRE asks the same Socratic move again in its easier form, and
+# every one is also a WITHDRAWN phrase. The uncertainty phrases were added 14 Oct from
+# the 12 Oct end-to-end bug, not from held-out data: three "I'm not sure" replies had
+# no signal and fell through to calm.
+_DONT_KNOW_PHRASES = (
+    rf"i don{_APOS}t (really )?know(?! (what to do|why|how))", r"idk", rf"i don{_APOS}t (get|understand)",
+    r"not sure", r"dunno", r"no idea",
+)
+DONT_KNOW = _rx(*_DONT_KNOW_PHRASES)
 
 WITHDRAWN = _rx(
-    *_REFUSAL_PHRASES,
-    rf"i don{_APOS}t (really )?know(?! (what to do|why|how))", r"idk", rf"i don{_APOS}t (get|understand)", r"quiet", r"weird",
-    r"nope", r"nothing", r"(some )?space", r"boring",
-    r"a lot", rf"what{_APOS}s that",
-    # Uncertainty (added 14 Oct from the 12 Oct end-to-end bug, not from held-out data):
-    # three "I'm not sure" replies had no signal and fell through to calm.
-    r"not sure", r"dunno", r"no idea", r"i guess(?! i (should|need))",
+    *_REFUSAL_PHRASES, *_DONT_KNOW_PHRASES,
+    r"quiet", r"weird", r"nope", r"nothing", r"(some )?space", r"boring",
+    r"a lot", rf"what{_APOS}s that", r"i guess(?! i (should|need))",
 )
 _SIGNALS = {"reflective": REFLECTIVE, "distress": DISTRESS, "defensive": DEFENSIVE, "withdrawn": WITHDRAWN}
 
@@ -100,29 +105,16 @@ def is_refusal(reply: str) -> bool:
 
 
 def states_something(reply: str) -> bool:
-    """True if one reply already states a feeling, a denial or a safer plan, however
-    short ("I feel sick"): INQUIRE treats it as a complete reply. A withdrawn phrase
-    ("idk") is not enough."""
+    """True if one reply states a feeling, a denial or a safer plan, however short
+    ("I feel sick"). A withdrawn phrase ("idk") is not enough."""
     text = (reply or "").lower()
     return any(_SIGNALS[name].search(text) for name in ("distress", "defensive", "reflective"))
 
 
-# Reply types INQUIRE picks its line by (the glossary's names; keys of
-# grammar_decoder.INQUIRE_LINES).
-STATED_EMOTION, DONT_KNOW, OTHER = "stated_emotion", "dont_know", "other"
-
-
-def classify_reply(reply: str) -> str:
-    """INQUIRE's reply type for the child's latest reply: STATED_EMOTION if a
-    distress phrase fires, DONT_KNOW if a withdrawn phrase does, else OTHER.
-    Refusals end INQUIRE before a line is picked (is_refusal). Off-topic replies
-    are not detected: they get OTHER, whose questions steer back gently."""
-    text = (reply or "").lower()
-    if DISTRESS.search(text):
-        return STATED_EMOTION
-    if WITHDRAWN.search(text):
-        return DONT_KNOW
-    return OTHER
+def is_dont_know(reply: str) -> bool:
+    """An "I don't know" reply: INQUIRE asks the move again in its easier form. One
+    that also states something ("idk, it was so scary") is answered by the next move."""
+    return bool(DONT_KNOW.search((reply or "").lower())) and not states_something(reply)
 
 
 def signal_hits(text: str) -> dict[str, list[str]]:

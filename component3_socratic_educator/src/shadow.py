@@ -2,7 +2,7 @@
 Shadow view of the fine-tuned INQUIRE adapter, for the viva demo.
 
 The adapter is a CANDIDATE, not part of the dialogue: INQUIRE's grammar is still
-exactly INQUIRE_LINES (grammar_decoder.py), and nothing here imports or calls the
+exactly INQUIRE_TEMPLATES (grammar_decoder.py), and nothing here imports or calls the
 FSM controller or the generator. The dashboard shows what the base and adapted
 models would say next to the template line the child actually received.
 

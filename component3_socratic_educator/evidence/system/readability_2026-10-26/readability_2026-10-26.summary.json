@@ -1,0 +1,420 @@
+{
+  "run_record": {
+    "measured_at": "2026-10-26T12:48:28",
+    "textstat_version": "0.7.13",
+    "python": "3.13.1",
+    "language": "en_US",
+    "inputs": {
+      "intercept\\adversarial_intercept_2026-10-13\\adversarial_intercept_2026-10-13.jsonl": "8bc3c58007f10d52c428542fb982f90ecf37abb242af9d0dd156c87e2d6c4176",
+      "system\\end_to_end_2026-10-14_online_after-review\\end_to_end_2026-10-14_online_after-review.jsonl": "e1fc9447248b7d0f93b6ab4b6ed893a61eb2745bdcff27113ff50c1add0a47f7",
+      "system\\end_to_end_2026-10-14_offline_after-review\\end_to_end_2026-10-14_offline_after-review.jsonl": "70f04423d90dfa97dd6d75c7cee457e8af456b1dceee41dc1cca4aa85d8010f9"
+    },
+    "template_pools": "src/grammar_decoder.py: INTERCEPT_OPENERS, INQUIRE_TEMPLATES, INTERCEPT fallback pool"
+  },
+  "sets": {
+    "INTERCEPT, model (13 Oct adversarial)": {
+      "lines": 103,
+      "unique_lines": 68,
+      "words": 1512,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.13624338624338625,
+        "most_common": [
+          [
+            "noticed",
+            74
+          ],
+          [
+            "closer",
+            33
+          ],
+          [
+            "doing",
+            29
+          ],
+          [
+            "focusing",
+            14
+          ],
+          [
+            "working",
+            12
+          ],
+          [
+            "thinking",
+            9
+          ],
+          [
+            "looking",
+            6
+          ],
+          [
+            "happened",
+            6
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 1.928873478193868,
+        "spache_grade": 3.0456057430523447,
+        "dale_chall_score": 6.183166802794473,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 1.5425000000000004,
+        "p90": 3.017500000000002,
+        "max": 5.967500000000001
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 5.967500000000001,
+          "line": "I noticed something on your screen just now. Were you thinking about anything before opening it?"
+        },
+        {
+          "flesch_kincaid_grade": 5.077941176470592,
+          "line": "I noticed something on your screen just now. Were you working on anything specific right before that?"
+        },
+        {
+          "flesch_kincaid_grade": 4.492500000000003,
+          "line": "Something you just saw might need a closer look. What were you imagining or focusing on?"
+        }
+      ]
+    },
+    "INTERCEPT, model (14 Oct online end-to-end)": {
+      "lines": 8,
+      "unique_lines": 5,
+      "words": 114,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.14035087719298245,
+        "most_common": [
+          [
+            "focusing",
+            6
+          ],
+          [
+            "closer",
+            5
+          ],
+          [
+            "noticed",
+            3
+          ],
+          [
+            "focused",
+            1
+          ],
+          [
+            "wandering",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 2.1975219298245605,
+        "spache_grade": 3.0506425438596487,
+        "dale_chall_score": 6.206040350877193,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 2.3114285714285714,
+        "p90": null,
+        "max": 2.375769230769233
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 2.375769230769233,
+          "line": "I noticed something on your screen just now. What were you focusing on?"
+        },
+        {
+          "flesch_kincaid_grade": 2.3114285714285714,
+          "line": "Something you just saw might need a closer look. What were you focusing on?"
+        },
+        {
+          "flesch_kincaid_grade": 2.301470588235297,
+          "line": "Something you just saw might need a closer look. What was your mind wandering on right now?"
+        }
+      ]
+    },
+    "INTERCEPT fallback pool": {
+      "lines": 2,
+      "unique_lines": 2,
+      "words": 31,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.12903225806451613,
+        "most_common": [
+          [
+            "thinking",
+            1
+          ],
+          [
+            "noticed",
+            1
+          ],
+          [
+            "feeling",
+            1
+          ],
+          [
+            "closer",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 1.5163709677419384,
+        "spache_grade": 3.0414274193548385,
+        "dale_chall_score": 6.0583193548387095,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 1.5187500000000007,
+        "p90": null,
+        "max": 1.5425000000000004
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 1.5425000000000004,
+          "line": "I noticed something on your screen just now. Can you tell me what you were thinking?"
+        },
+        {
+          "flesch_kincaid_grade": 1.495000000000001,
+          "line": "Something you just saw might need a closer look. How are you feeling right now?"
+        }
+      ]
+    },
+    "fixed openers": {
+      "lines": 2,
+      "unique_lines": 2,
+      "words": 17,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.11764705882352941,
+        "most_common": [
+          [
+            "noticed",
+            1
+          ],
+          [
+            "closer",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 2.301470588235297,
+        "spache_grade": 3.049264705882353,
+        "dale_chall_score": 5.91574705882353,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 2.3111111111111136,
+        "p90": null,
+        "max": 2.342222222222226
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 2.342222222222226,
+          "line": "Something you just saw might need a closer look."
+        },
+        {
+          "flesch_kincaid_grade": 2.280000000000001,
+          "line": "I noticed something on your screen just now."
+        }
+      ]
+    },
+    "INQUIRE templates, ages 8-10": {
+      "lines": 6,
+      "unique_lines": 6,
+      "words": 66,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.10606060606060606,
+        "most_common": [
+          [
+            "okay",
+            3
+          ],
+          [
+            "grownup",
+            2
+          ],
+          [
+            "doing",
+            1
+          ],
+          [
+            "using",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 2.109090909090913,
+        "spache_grade": 3.302121212121212,
+        "dale_chall_score": 6.096039393939394,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 2.406111111111114,
+        "p90": null,
+        "max": 4.541111111111114
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 4.541111111111114,
+          "line": "Next time, would you like to tell a grown-up you trust or close it and do something else?"
+        },
+        {
+          "flesch_kincaid_grade": 2.8566666666666656,
+          "line": "That's okay. Next time, would you tell a grown-up or close it?"
+        },
+        {
+          "flesch_kincaid_grade": 2.4700000000000024,
+          "line": "Can you tell me what you were doing just before?"
+        }
+      ]
+    },
+    "INQUIRE templates, ages 11-13": {
+      "lines": 6,
+      "unique_lines": 6,
+      "words": 57,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.08771929824561403,
+        "most_common": [
+          [
+            "pressure",
+            3
+          ],
+          [
+            "doing",
+            1
+          ],
+          [
+            "happens",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 2.6062280701754403,
+        "spache_grade": 2.9328859649122805,
+        "dale_chall_score": 5.769805263157895,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 2.4766666666666683,
+        "p90": null,
+        "max": 4.830000000000002
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 4.830000000000002,
+          "line": "No pressure. What's one thing you remember from just before?"
+        },
+        {
+          "flesch_kincaid_grade": 2.645454545454548,
+          "line": "What do you think might happen if it comes up again?"
+        },
+        {
+          "flesch_kincaid_grade": 2.4833333333333343,
+          "line": "No pressure. What might happen next?"
+        }
+      ]
+    },
+    "INQUIRE templates, ages 14-15": {
+      "lines": 6,
+      "unique_lines": 6,
+      "words": 70,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.05714285714285714,
+        "most_common": [
+          [
+            "later",
+            2
+          ],
+          [
+            "affect",
+            1
+          ],
+          [
+            "options",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 1.9642857142857189,
+        "spache_grade": 2.740428571428571,
+        "dale_chall_score": 5.260357142857143,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 2.406111111111114,
+        "p90": null,
+        "max": 3.633333333333333
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 3.633333333333333,
+          "line": "What are your options if this comes up again, and which one fits you best?"
+        },
+        {
+          "flesch_kincaid_grade": 2.645454545454548,
+          "line": "Can you walk me through what was going on just before?"
+        },
+        {
+          "flesch_kincaid_grade": 2.4700000000000024,
+          "line": "How do you think this could affect you later on?"
+        }
+      ]
+    },
+    "CONTRACT closing lines (14 Oct runs)": {
+      "lines": 3,
+      "unique_lines": 3,
+      "words": 40,
+      "dale_chall_unfamiliar_words": {
+        "share": 0.1,
+        "most_common": [
+          [
+            "support",
+            1
+          ],
+          [
+            "talking",
+            1
+          ],
+          [
+            "later",
+            1
+          ],
+          [
+            "okay",
+            1
+          ]
+        ]
+      },
+      "passage": {
+        "flesch_kincaid_grade": 2.1750000000000007,
+        "spache_grade": 3.1089999999999995,
+        "dale_chall_score": 6.89575,
+        "dale_chall_easy_for_grade_4": false
+      },
+      "per_line_flesch_kincaid": {
+        "median": 0.9132352941176478,
+        "p90": null,
+        "max": 5.400000000000002
+      },
+      "hardest_lines": [
+        {
+          "flesch_kincaid_grade": 5.400000000000002,
+          "line": "I'm going to let a parent know we talked about this, so they can support you."
+        },
+        {
+          "flesch_kincaid_grade": 0.9132352941176478,
+          "line": "That's okay, you don't have to talk right now. I'm here if you want to talk later."
+        },
+        {
+          "flesch_kincaid_grade": 0.6257142857142846,
+          "line": "Thanks for talking this through with me."
+        }
+      ]
+    }
+  }
+}

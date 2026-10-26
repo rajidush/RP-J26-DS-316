@@ -14,8 +14,8 @@ from enum import Enum, auto
 from typing import Callable, Optional
 
 from . import config, emotion_rules
-from .assessor import RulesAssessor, SessionAssessor
-from .grammar_decoder import GrammarConstrainedGenerator
+from .assessor import CHANGE_TALK, STANCE, RulesAssessor, SessionAssessor
+from .grammar_decoder import GeneratedLine, GrammarConstrainedGenerator, resolve_age_band
 from .schemas import EvaluateOutput, RiskLevel, TriggerPayload
 
 
@@ -32,6 +32,16 @@ class Turn:
     state: DialogueState
     system_text: str
     child_response: Optional[str] = None
+    move: Optional[str] = None             # INQUIRE's Socratic move (config.SOCRATIC_MOVES)
+    easier: bool = False                   # the move's easier form, asked after "I don't know"
+    age_band: Optional[str] = None         # the band the session's lines were worded for
+    source: Optional[str] = None           # the line's source: "model", "template" or "fallback"
+    fallback_reason: Optional[str] = None  # why the model's line was not used
+
+    @classmethod
+    def of(cls, state: "DialogueState", line: GeneratedLine, child_response: Optional[str], age_band: str,
+           move: Optional[str] = None, easier: bool = False) -> "Turn":
+        return cls(state, line.text, child_response, move, easier, age_band, line.source, line.reason)
 
 
 @dataclass
@@ -57,14 +67,19 @@ class FSMController:
     """
 
     def __init__(self, generator: Optional[GrammarConstrainedGenerator] = None,
-                 assessor: Optional[SessionAssessor] = None):
+                 assessor: Optional[SessionAssessor] = None, age_band: Optional[str] = None):
         self.generator = generator or GrammarConstrainedGenerator()
         # EVALUATE's classifier arm (src/assessor.py): the PP1 rules until the comparison picks one.
         self.assessor = assessor or RulesAssessor()
+        self.age_band = age_band
 
-    def run(self, trigger: TriggerPayload, respond: ChildResponder) -> tuple[EvaluateOutput, SessionTranscript]:
+    def run(self, trigger: TriggerPayload, respond: ChildResponder,
+            age_band: Optional[str] = None) -> tuple[EvaluateOutput, SessionTranscript]:
+        """`age_band` (one of config.AGE_BANDS) overrides the controller's; a missing
+        or invalid band words every line for 8-10 (ADR 0007)."""
         trigger.validate()
         transcript = SessionTranscript(trigger=trigger)
+        band = resolve_age_band(age_band if age_band is not None else self.age_band)
 
         state = DialogueState.INTERCEPT
         last_child_text = ""
@@ -72,21 +87,21 @@ class FSMController:
 
         while state != DialogueState.DONE:
             if state == DialogueState.INTERCEPT:
-                system_text = self.opening_question(trigger)
-                child_text = respond(system_text)
-                transcript.add(Turn(state, system_text, child_text))
+                line = self.generator.generate_with_source("INTERCEPT", trigger.risk_category)
+                child_text = respond(line.text)
+                transcript.add(Turn.of(state, line, child_text, band))
                 last_child_text = child_text
                 # A refusal to the opening line skips INQUIRE: no follow-up questions.
                 state = DialogueState.EVALUATE if emotion_rules.is_refusal(child_text) else DialogueState.INQUIRE
 
             elif state == DialogueState.INQUIRE:
-                responses = self.inquire_loop(trigger, respond, transcript)
+                responses = self.inquire_loop(trigger, respond, transcript, band)
                 last_child_text = responses[-1] if responses else last_child_text
                 state = DialogueState.EVALUATE
 
             elif state == DialogueState.EVALUATE:
                 evaluate_output = self._evaluate(trigger, transcript, last_child_text)
-                transcript.add(Turn(state, "[internal evaluation, no child-facing text]"))
+                transcript.add(Turn(state, "[internal evaluation, no child-facing text]", age_band=band))
                 state = DialogueState.CONTRACT
 
             elif state == DialogueState.CONTRACT:
@@ -94,7 +109,8 @@ class FSMController:
                 evaluate_output.escalation_flag = reason is not None
                 if reason:   # the schema has no reason field (ADR 0005), so the summary says why
                     evaluate_output.dialogue_summary += f"; escalated: {reason}"
-                transcript.add(Turn(state, self._closing_line(evaluate_output, last_child_text)))
+                transcript.add(Turn(state, self._closing_line(evaluate_output, last_child_text), age_band=band,
+                                    source="template"))
                 state = DialogueState.DONE
 
         evaluate_output.dialogue_turns = len([t for t in transcript.turns if t.child_response is not None])
@@ -124,28 +140,35 @@ class FSMController:
         """Intercept state: open the conversation without naming the flagged content."""
         return self.generator.generate("INTERCEPT", trigger.risk_category)
     
-    def inquire_loop(self, trigger: TriggerPayload, respond, transcript: SessionTranscript) -> list[str]:
-        """Inquire state: follow up until completeness or max attempts."""
-        responses = []
-        attempts = 0
-        while attempts < config.MAX_INQUIRE_ATTEMPTS:
-            # The line answers the child's latest reply (14 Oct: it used to ignore it).
-            latest = next((t.child_response for t in reversed(transcript.turns) if t.child_response is not None), "")
-            prompt = self.generator.generate("INQUIRE", trigger.risk_category, attempt=attempts,
-                                             reply_type=emotion_rules.classify_reply(latest))
-            answer = respond(prompt)
-            transcript.add(Turn(DialogueState.INQUIRE, prompt, answer))
+    def inquire_loop(self, trigger: TriggerPayload, respond, transcript: SessionTranscript,
+                     age_band: str = config.DEFAULT_AGE_BAND) -> list[str]:
+        """Inquire state: the Socratic moves in order (clarify, consequences,
+        alternatives), at most MAX_INQUIRE_MOVES questions. A refusal ends INQUIRE
+        at once, and so does change talk (the assessor's stance for a safer step in
+        the child's own words) once the move it answers is done. "I don't know" asks the
+        same move again in its easier form, once, and the repeat counts toward the cap."""
+        responses: list[str] = []
+        moves = iter(config.SOCRATIC_MOVES)
+        move: Optional[str] = next(moves)
+        easier = False
+        while move is not None and len(responses) < config.MAX_INQUIRE_MOVES:
+            line = self.generator.generate_with_source("INQUIRE", trigger.risk_category, move=move,
+                                                       age_band=age_band, easier=easier)
+            answer = respond(line.text)
+            transcript.add(Turn.of(DialogueState.INQUIRE, line, answer, age_band, move, easier))
             responses.append(answer)
-            attempts += 1
-            if emotion_rules.is_refusal(answer) or self._is_complete(answer):
+            if emotion_rules.is_refusal(answer) or self._is_change_talk(transcript):
                 break
+            if emotion_rules.is_dont_know(answer) and not easier:
+                easier = True
+            else:
+                move, easier = next(moves, None), False
         return responses
-    
-    def _is_complete(self, child_text: str) -> bool:
-        """A complete reply: long enough, or it already states a feeling, a denial or
-        a plan (14 Oct: "I feel sick" was asked again for being under 4 words)."""
-        return (len(child_text.split()) >= config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS
-                or emotion_rules.states_something(child_text))
+
+    def _is_change_talk(self, transcript: SessionTranscript) -> bool:
+        """The child's latest reply is change talk, by the injected assessor."""
+        latest = self.assessor.assess(transcript.turns).replies[-1]
+        return latest.labels.get(STANCE) == CHANGE_TALK
 
     def _evaluate(self, trigger: TriggerPayload, transcript: SessionTranscript, last_child_text: str) -> EvaluateOutput:
         """

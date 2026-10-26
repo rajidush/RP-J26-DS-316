@@ -44,17 +44,34 @@ class SessionAssessor(Protocol):
     def assess(self, turns: Sequence[Turn]) -> SessionAssessment: ...
 
 
+# Every arm labels each reply's stance (the codebook's five values, ADR 0006):
+# INQUIRE ends once the child states a safer plan, which is change talk.
+STANCE = "stance"
+CHANGE_TALK = "change_talk"
+STANCES = (CHANGE_TALK, "neutral", "sustain_talk", "discord", "disengaged")
+# Provisional rules-arm stance until ticket 02's codebook rules: the first PP1
+# signal that fired, in this order. The PP1 rules have nothing for discord.
+_STANCE_FROM_SIGNAL = (("reflective", CHANGE_TALK), ("defensive", "sustain_talk"), ("withdrawn", "disengaged"))
+
+
+def _rules_stance(hits: dict[str, list[str]]) -> tuple[str, list[str]]:
+    return next(((stance, hits[signal]) for signal, stance in _STANCE_FROM_SIGNAL if hits[signal]), ("neutral", []))
+
+
 class RulesAssessor:
     """The PP1 phrase rules (src/emotion_rules.py), unchanged. Each reply is
-    labelled by which signals fired in it ("yes"/"no"); the emotional state is
-    still classify() over all replies together, so no session label changes."""
+    labelled by which signals fired in it ("yes"/"no"), plus a stance mapped from
+    them; the emotional state is still classify() over all replies together, so
+    no session label changes."""
 
     def assess(self, turns: Sequence[Turn]) -> SessionAssessment:
         replies = [t.child_response for t in turns if t.child_response is not None]
         per_reply = []
         for reply in replies:
             hits = emotion_rules.signal_hits(reply)
-            per_reply.append(ReplyAssessment(reply, {k: "yes" if v else "no" for k, v in hits.items()}, hits))
+            labels = {k: "yes" if v else "no" for k, v in hits.items()}
+            labels[STANCE], stance_evidence = _rules_stance(hits)
+            per_reply.append(ReplyAssessment(reply, labels, {**hits, STANCE: stance_evidence}))
         return SessionAssessment(
             replies=per_reply,
             emotional_state=emotion_rules.classify(replies).state,

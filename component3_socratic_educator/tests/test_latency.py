@@ -42,7 +42,7 @@ def _controller(clock, model_seconds=0.6):
 
 def test_each_wait_is_the_time_before_a_line_and_excludes_the_childs_reply_time():
     clock = FakeClock()
-    replies = ["idk", "no", "I was just watching videos with my friend"]   # INTERCEPT, then short and complete INQUIRE
+    replies = ["idk", "no", "I was just watching videos with my friend", "ok"]   # INTERCEPT, then the three moves
 
     def child(_line, it=iter(replies)):
         clock.now += 5.0                                             # the child thinking: not system time
@@ -50,9 +50,9 @@ def test_each_wait_is_the_time_before_a_line_and_excludes_the_childs_reply_time(
 
     result = latency.time_session(_controller(clock), _trigger(), child, clock=clock)
 
-    assert [w.state for w in result.waits] == ["INTERCEPT", "INQUIRE", "INQUIRE", "EVALUATE+CONTRACT"]
-    assert [w.seconds for w in result.waits] == pytest.approx([0.6, 0.0, 0.0, 0.0])
-    assert result.record.dialogue_turns == 3
+    assert [w.state for w in result.waits] == ["INTERCEPT", "INQUIRE", "INQUIRE", "INQUIRE", "EVALUATE+CONTRACT"]
+    assert [w.seconds for w in result.waits] == pytest.approx([0.6, 0.0, 0.0, 0.0, 0.0])
+    assert result.record.dialogue_turns == 4
 
 
 def test_the_intercept_model_call_is_timed_separately_from_the_whole_step():

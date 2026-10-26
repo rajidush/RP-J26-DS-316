@@ -64,3 +64,16 @@ def test_every_label_is_reachable():
         ["I feel so scared"], ["idk"],
     )}
     assert outputs == set(E)
+
+
+@pytest.mark.parametrize("reply,expected", [
+    ("idk", True), ("I don't know", True), ("I'm not sure", True), ("dunno", True), ("no idea", True),
+    ("I dont really know", True), ("I don't get it", True),
+    # it also says something, so the next move answers it, not the easier form
+    ("I don't know, it was so scary", False), ("idk it wasn't my fault", False), ("idk, I'll tell my mum", False),
+    # other non-answers and the lookahead's exceptions are not "I don't know"
+    ("I don't know what to do", False), ("nothing", False), ("weird", False), ("ok", False), ("", False),
+])
+def test_dont_know_is_the_reply_type_inquire_repeats_a_move_for(reply, expected):
+    from component3_socratic_educator.src.emotion_rules import is_dont_know
+    assert is_dont_know(reply) is expected

@@ -8,7 +8,9 @@ to src/emotion_rules.py, so the prefactor changes no label.
 import pytest
 
 from component3_socratic_educator.src import emotion_rules
-from component3_socratic_educator.src.assessor import ReplyAssessment, RulesAssessor, SessionAssessment
+from component3_socratic_educator.src.assessor import (
+    STANCE, STANCES, ReplyAssessment, RulesAssessor, SessionAssessment,
+)
 from component3_socratic_educator.src.fsm_controller import DialogueState, Turn
 from component3_socratic_educator.src.schemas import EmotionalState as E
 
@@ -50,6 +52,13 @@ def test_every_label_comes_with_evidence(arm, turns):
         assert r.labels and all(isinstance(k, str) and isinstance(v, str) for k, v in r.labels.items())
         assert set(r.evidence) == set(r.labels)
         assert all(isinstance(e, list) and all(isinstance(x, str) for x in e) for e in r.evidence.values())
+
+
+@pytest.mark.parametrize("arm", ARMS)
+@pytest.mark.parametrize("turns", SESSIONS)
+def test_every_reply_has_a_stance_from_the_codebook(arm, turns):
+    # INQUIRE ends on change talk (ticket 03), so every arm must give a stance.
+    assert all(r.labels[STANCE] in STANCES for r in arm.assess(turns).replies)
 
 
 @pytest.mark.parametrize("arm", ARMS)
@@ -97,3 +106,17 @@ def test_rules_never_give_a_yes_without_evidence(turns):
 ])
 def test_rules_plan_is_the_pp1_self_regulation_keywords(replies, expected):
     assert RulesAssessor().assess(session(*replies)).constructed_plan is expected
+
+
+@pytest.mark.parametrize("reply,stance,evidence", [
+    ("Maybe I should tell someone.", "change_talk", ["maybe i", "tell someone"]),
+    ("It's not my fault.", "sustain_talk", ["not my fault"]),
+    ("leave me alone", "disengaged", ["leave me alone"]),
+    ("I clicked a link by accident", "neutral", []),
+    ("", "neutral", []),
+])
+def test_rules_stance_is_a_provisional_mapping_of_the_pp1_signals(reply, stance, evidence):
+    # Until ticket 02 rewrites the rules to the codebook: a planning phrase is change
+    # talk, then a denial is sustain talk, then a non-answer is disengaged.
+    (result,) = RulesAssessor().assess(session(reply)).replies
+    assert (result.labels[STANCE], result.evidence[STANCE]) == (stance, evidence)

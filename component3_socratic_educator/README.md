@@ -64,7 +64,7 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 |---|---|---|
 | (entry) | `trigger.validate()` against the comp1/comp2 contract | Invalid trigger raises before the child is asked anything |
 | INTERCEPT | One opening question from the generator. Never names the flagged category. | -> INQUIRE after one reply; a refusal ("leave me alone") goes straight to EVALUATE |
-| INQUIRE | Follow-up questions picked by the reply type of the child's latest reply (stated emotion: supportive; "I don't know": low-pressure; other: neutral), a different one each attempt | A complete reply (>= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or a feeling, denial or plan phrase such as "I feel sick"), a refusal, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
+| INQUIRE | The Socratic moves in order (`SOCRATIC_MOVES`): clarify what happened, then consequences, then alternatives. Each line is a pre-checked template for the move and the child's age band (`INQUIRE_TEMPLATES`; 8-10 gets a concrete feeling question and a choice of two safe options, and a missing or invalid band means 8-10). "I don't know" gets the same move once more in its easier form. Since 26 Oct (ticket 03); before, lines were picked by reply type | A refusal (at once), a safer plan in the child's own words (the assessor's change-talk stance, after the move it answers), or `MAX_INQUIRE_MOVES` (3) questions, the easier repeat included |
 | EVALUATE | Builds the typed record (no child-facing text) | Always -> CONTRACT |
 | CONTRACT | Sets `escalation_flag`, says the closing line | Always -> DONE; record is schema-validated and returned |
 
@@ -89,7 +89,13 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   calm children now scored unclear, from the new uncertainty phrases, and two dev
   unclear children now scored distressed, because a refusal ends INQUIRE earlier and
   they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
-  data, and were not tuned after these results. The word-count rule it replaced
+  data, and were not tuned after these results. Rerun on 26 Oct with the same rules
+  after INQUIRE became the three Socratic moves (ticket 03): 93.7% dev and 90.9%
+  held-out (338/372; `evidence/evaluate/emotion_rules_eval_2026-10-26_socratic-moves/`).
+  The rules did not change (the same phrases fire on all 3,534 saved replies and
+  per-child texts); children who no longer stop at a short complete reply give more
+  replies, so the rules have more text to read. It is still agreement with the
+  generator's intent, not accuracy. The word-count rule it replaced
   scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
@@ -107,8 +113,12 @@ don't have to talk right now. I'm here if you want to talk later."*; otherwise
 
 `dialogue_turns` counts turns that have a child reply (INTERCEPT + INQUIRE), so
 it ranges from 1 (a refusal to the opening line) to 4 with the current config. All tunables are in `src/config.py`.
+Every transcript turn records its dialogue state, Socratic move (and whether it was
+the easier form), age band, line source (model, template or fallback) and fallback
+reason. `FSMController(age_band=...)` or `run(..., age_band=...)` sets the band; the
+band is not part of any trigger contract (ADR 0007).
 
-**Tests.** `tests/test_synthetic_dialogues.py` holds 18 scripted dialogues
+**Tests.** `tests/test_synthetic_dialogues.py` holds 19 scripted dialogues
 (normal flow, minimal/silent/defensive children, keyword edge cases, risk
 boundaries), checks each one's outcome, and checks the invariants every session
 must satisfy: state order, no category leak, no repeated question, schema-valid
@@ -303,8 +313,11 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   re-expresses the grammar in GBNF, and reruns the grammar, adversarial and latency
   evidence. If LM Studio is unreachable or times out (30 s), INTERCEPT falls back
   to a template line, so a session always completes.
-- Only INTERCEPT is model-written. INQUIRE picks template lines by reply type,
-  and EVALUATE and CONTRACT are rules. The fine-tuned INQUIRE adapter is shown on
+- Only INTERCEPT is model-written. INQUIRE asks its Socratic moves with template
+  lines per age band (model-written lines are ticket 05), and EVALUATE and
+  CONTRACT are rules. Until ticket 02 rewrites the rules, the plan that ends
+  INQUIRE is the PP1 planning phrases mapped to change talk, so a hedge such as
+  "I think I..." also ends it. An off-topic reply is still not detected. The fine-tuned INQUIRE adapter is shown on
   the demo page as a shadow and never sent to the child: it mentions a trusted
   adult in 43 of 50 responses and repeats one closing question 16 times, so it
   is retrained in PP2 before any integration.
@@ -312,10 +325,11 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   wrong in both directions. Not changed before PP1: Component 4 clusters on it
   (`selfreg_rate`), and changing it would change the dataset Component 4 holds.
 - EVALUATE is rule-based (phrase lists + detector confidence), not a trained
-  classifier. Its 84.7% held-out agreement is measured on LLM-simulated children
+  classifier. Its held-out agreement (84.7% on 14 Oct; 90.9% with the 26 Oct
+  Socratic moves, same rules) is measured on LLM-simulated children
   against the profile they were *generated* with, not on real children or
   human-annotated labels. Weakest case: withdrawn children who voice sadness are
-  labelled `distressed` (65% agreement for `unclear`).
+  labelled `distressed` (65% agreement for `unclear` on 14 Oct, 72% on 26 Oct).
 - Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
   3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
   target of 200+. 0 delivered lines broke the grammar or post-check (by

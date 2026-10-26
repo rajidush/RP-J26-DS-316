@@ -1,6 +1,7 @@
 """
 Function 1 tests. Run with: pytest component3_socratic_educator/tests -v
 """
+import json
 import sys
 from pathlib import Path
 import pytest
@@ -39,8 +40,8 @@ def test_full_session_completes_and_validates():
 def test_inquire_stops_at_max_attempts_even_with_short_answers():
     controller = FSMController()
     trigger = make_trigger()
-    # every child response is a single word -> never "complete" ->
-    # must still terminate via MAX_INQUIRE_ATTEMPTS, not loop forever
+    # every child response is a single word -> must still terminate via
+    # MAX_INQUIRE_MOVES, not loop forever
     result, transcript = controller.run(trigger, respond=lambda _: "no")
     inquire_turns = [t for t in transcript.turns if t.state == DialogueState.INQUIRE]
     assert len(inquire_turns) <= 3
@@ -74,34 +75,27 @@ def test_intercept_is_reproducible():
     trigger = make_trigger()
     assert controller.opening_question(trigger) == controller.opening_question(trigger)
     
-def test_inquire_stops_at_max_attempts_with_short_answers():
+def test_inquire_stops_at_max_moves_with_short_answers():
     controller = FSMController()
     trigger = make_trigger()
     transcript = SessionTranscript(trigger=trigger)
     responses = controller.inquire_loop(trigger, respond=lambda _: "no", transcript=transcript)
-    assert len(responses) == config.MAX_INQUIRE_ATTEMPTS
+    assert len(responses) == config.MAX_INQUIRE_MOVES
 
-def test_inquire_stops_early_on_complete_answer():
-    controller = FSMController()
-    trigger = make_trigger()
-    transcript = SessionTranscript(trigger=trigger)
-    answers = iter(["no", "I was just curious about it"])
-    responses = controller.inquire_loop(trigger, respond=lambda _: next(answers), transcript=transcript)
-    assert len(responses) == 2
-    
+
 def test_inquire_logs_turns_to_transcript():
     controller = FSMController()
     trigger = make_trigger()
     transcript = SessionTranscript(trigger=trigger)
     controller.inquire_loop(trigger, respond=lambda _: "no", transcript=transcript)
-    assert len(transcript.turns) == config.MAX_INQUIRE_ATTEMPTS
+    assert len(transcript.turns) == config.MAX_INQUIRE_MOVES
     
 def test_run_actually_uses_inquire_loop():
     controller = FSMController()
     trigger = make_trigger()
     _, transcript = controller.run(trigger, respond=lambda _: "no")
     inquire_turns = [t for t in transcript.turns if t.state.name == "INQUIRE"]
-    assert len(inquire_turns) == config.MAX_INQUIRE_ATTEMPTS
+    assert len(inquire_turns) == config.MAX_INQUIRE_MOVES
 
 
 # --- 14 Oct fixes -------------------------------------------------------------
@@ -111,12 +105,6 @@ def _inquire_replies(replies):
     it = iter(replies)
     _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
     return [t.child_response for t in transcript.turns if t.state == DialogueState.INQUIRE]
-
-
-@pytest.mark.parametrize("reply", ["I feel sick", "so scared", "not my fault", "I'll tell mum"])
-def test_a_short_reply_that_states_a_feeling_denial_or_plan_is_complete(reply):
-    # 12 Oct run: "I feel sick" (3 words) was asked again; it had already said something.
-    assert _inquire_replies(["hmm", reply, "never asked"]) == [reply]
 
 
 def test_a_short_reply_with_nothing_in_it_is_still_followed_up():
@@ -151,24 +139,6 @@ def test_a_refusing_child_who_is_escalated_still_hears_the_parent_line():
     assert "parent" in transcript.turns[-1].system_text
 
 
-def _inquire_lines(replies):
-    it = iter(replies)
-    _, transcript = FSMController().run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"))
-    return [t.system_text for t in transcript.turns if t.state == DialogueState.INQUIRE]
-
-
-def test_a_child_who_states_a_feeling_gets_a_supportive_line():
-    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
-    assert _inquire_lines(["It was really scary"])[0] in INQUIRE_LINES["stated_emotion"]
-
-
-def test_a_child_who_does_not_know_gets_a_low_pressure_line_not_thanks():
-    from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES
-    lines = _inquire_lines(["idk", "nothing", "I was just watching videos"])
-    assert all(line in INQUIRE_LINES["dont_know"] for line in lines[:2])
-    assert not any(line.startswith("Thanks for telling me") for line in lines[:2])
-
-
 def test_a_distressed_child_is_escalated_even_at_moderate_risk():
     # 12 Oct run: "I can't stop crying about it" at confidence 0.71 was not escalated (ADR 0005).
     it = iter(["It was really scary", "I can't stop crying about it"])
@@ -200,16 +170,19 @@ def test_a_refusal_with_distress_ends_inquire_and_still_escalates():
 
 
 class FakeAssessor:
-    """Returns a fixed assessment and remembers the turns it was given."""
+    """Returns a fixed session result, labels every reply with `stance` (or the
+    stance `stances` maps it to), and remembers the turns it was last given."""
 
-    def __init__(self, state, plan):
-        from component3_socratic_educator.src.assessor import SessionAssessment
-        self.result = SessionAssessment(replies=[], emotional_state=state, constructed_plan=plan)
+    def __init__(self, state, plan, stance="neutral", stances=None):
+        self.state, self.plan, self.stance, self.stances = state, plan, stance, stances or {}
         self.seen = None
 
     def assess(self, turns):
+        from component3_socratic_educator.src.assessor import STANCE, ReplyAssessment, SessionAssessment
         self.seen = [t.child_response for t in turns if t.child_response is not None]
-        return self.result
+        replies = [ReplyAssessment(r, {STANCE: self.stances.get(r, self.stance)}, {STANCE: []})
+                   for r in self.seen]
+        return SessionAssessment(replies=replies, emotional_state=self.state, constructed_plan=self.plan)
 
 
 def test_evaluate_takes_the_emotional_state_and_plan_from_the_injected_assessor():
@@ -228,3 +201,137 @@ def test_the_assessor_not_the_phrase_rules_decides_escalation():
         make_trigger(confidence=0.6), respond=lambda _: "I'm so scared and alone and it hurts")
     assert result.emotional_state.value == "calm" and result.escalation_flag is False
     assert result.self_regulation_shown is False
+
+
+# --- PP2 ticket 03: Socratic moves per age band --------------------------------
+
+import jsonschema  # noqa: E402
+
+from component3_socratic_educator.src.grammar_decoder import INQUIRE_TEMPLATES  # noqa: E402
+from component3_socratic_educator.src.schemas import _CONTRACTS_DIR, EmotionalState  # noqa: E402
+
+COMP3_TO_COMP4 = json.loads((_CONTRACTS_DIR / "comp3_to_comp4.schema.json").read_text(encoding="utf-8"))
+
+
+def _session(replies, assessor=None, **run_kwargs):
+    it = iter(replies)
+    return FSMController(assessor=assessor).run(make_trigger(confidence=0.6), respond=lambda _: next(it, "ok"),
+                                                **run_kwargs)
+
+
+def _inquire(transcript):
+    return [t for t in transcript.turns if t.state == DialogueState.INQUIRE]
+
+
+def _moves(transcript):
+    return [(t.move, t.easier) for t in _inquire(transcript)]
+
+
+ENGAGED = ["hmm", "I was playing a game", "It made me feel bad inside", "ok"]   # no refusal, plan or "don't know"
+
+
+def test_inquire_asks_clarify_then_consequences_then_alternatives():
+    _, transcript = _session(ENGAGED)
+    assert _moves(transcript) == [("clarify", False), ("consequences", False), ("alternatives", False)]
+
+
+def test_each_move_is_worded_from_its_template_for_the_band():
+    for band in config.AGE_BANDS:
+        _, transcript = _session(ENGAGED, age_band=band)
+        assert [t.system_text for t in _inquire(transcript)] == [
+            INQUIRE_TEMPLATES[move][band][0] for move in config.SOCRATIC_MOVES]
+
+
+@pytest.mark.parametrize("band", [None, "", "16-18", "8\u201310", "adult", 9])
+def test_a_missing_or_invalid_band_gives_the_8_10_wording(band):
+    _, transcript = _session(ENGAGED, age_band=band)
+    assert [t.system_text for t in _inquire(transcript)] == [
+        INQUIRE_TEMPLATES[move]["8-10"][0] for move in config.SOCRATIC_MOVES]
+    assert {t.age_band for t in transcript.turns} == {"8-10"}
+
+
+def test_dont_know_repeats_the_move_in_its_easier_form_and_counts_toward_the_cap():
+    _, transcript = _session(["hmm", "idk", "I was playing a game", "It made me feel bad inside"], age_band="11-13")
+    assert _moves(transcript) == [("clarify", False), ("clarify", True), ("consequences", False)]
+    assert _inquire(transcript)[1].system_text == INQUIRE_TEMPLATES["clarify"]["11-13"][1]
+
+
+def test_dont_know_to_the_easier_form_moves_on_rather_than_asking_it_again():
+    _, transcript = _session(["hmm", "idk", "not sure", "I was playing a game"])
+    assert _moves(transcript) == [("clarify", False), ("clarify", True), ("consequences", False)]
+
+
+@pytest.mark.parametrize("reply", ["I don't know, it was so scary", "idk it wasn't my fault"])
+def test_dont_know_with_a_feeling_or_denial_in_it_is_answered_by_the_next_move(reply):
+    _, transcript = _session(["hmm", reply, "ok"])
+    assert _moves(transcript)[:2] == [("clarify", False), ("consequences", False)]
+
+
+def test_inquire_never_asks_more_than_three_moves():
+    _, transcript = _session(["hmm"] + ["idk"] * 6)
+    assert len(_inquire(transcript)) == config.MAX_INQUIRE_MOVES == 3
+
+
+def test_a_refusal_mid_inquire_ends_it_at_once():
+    _, transcript = _session(["hmm", "I was playing a game", "leave me alone", "never asked"])
+    assert _moves(transcript) == [("clarify", False), ("consequences", False)]
+
+
+@pytest.mark.parametrize("plan", ["Next time I'll close it and tell my mum", "I should close it instead"])
+def test_a_safer_plan_in_the_childs_own_words_ends_inquire_after_the_current_move(plan):
+    _, transcript = _session(["hmm", plan, "never asked"])
+    assert _moves(transcript) == [("clarify", False)]
+
+
+def test_the_plan_rule_is_the_assessors_change_talk_stance_not_a_keyword():
+    stated = "I will be careful from now on"
+    assessor = FakeAssessor(EmotionalState.CALM, plan=True, stances={stated: "change_talk"})
+    _, transcript = _session(["hmm", "I was playing a game", stated, "never asked"], assessor=assessor)
+    assert _moves(transcript) == [("clarify", False), ("consequences", False)]
+
+    keyword = "next time I will do exactly the same thing instead"     # the rules would fire; this assessor says no
+    _, transcript = _session(["hmm", keyword], assessor=FakeAssessor(EmotionalState.CALM, plan=False))
+    assert len(_inquire(transcript)) == config.MAX_INQUIRE_MOVES
+
+
+def test_every_turn_records_its_state_move_band_and_where_its_line_came_from():
+    _, transcript = _session(["hmm", "idk", "I was playing a game", "ok"], age_band="14-15")
+    rows = [(t.state.name, t.move, t.easier, t.age_band, t.source, t.fallback_reason) for t in transcript.turns]
+    assert rows == [
+        ("INTERCEPT", None, False, "14-15", "fallback", "model_unreachable"),   # tests block the live model
+        ("INQUIRE", "clarify", False, "14-15", "template", None),
+        ("INQUIRE", "clarify", True, "14-15", "template", None),
+        ("INQUIRE", "consequences", False, "14-15", "template", None),
+        ("EVALUATE", None, False, "14-15", None, None),                          # no child-facing line
+        ("CONTRACT", None, False, "14-15", "template", None),
+    ]
+
+
+def test_the_band_can_be_set_once_on_the_controller():
+    it = iter(ENGAGED)
+    _, transcript = FSMController(age_band="14-15").run(make_trigger(confidence=0.6), lambda _: next(it, "ok"))
+    assert _inquire(transcript)[0].system_text == INQUIRE_TEMPLATES["clarify"]["14-15"][0]
+    it = iter(ENGAGED)
+    _, transcript = FSMController(age_band="14-15").run(make_trigger(confidence=0.6), lambda _: next(it, "ok"),
+                                                        age_band="11-13")
+    assert _inquire(transcript)[0].system_text == INQUIRE_TEMPLATES["clarify"]["11-13"][0]   # per run wins
+
+
+CHILDREN = {
+    "engaged": ENGAGED,
+    "dont_know": ["idk", "idk", "not sure", "no idea", "dunno"],
+    "refuses_at_once": ["leave me alone"],
+    "refuses_later": ["hmm", "whatever", "stop asking"],
+    "plans": ["I was gaming", "I'll tell my dad next time"],
+    "distressed": ["It was really scary", "I can't stop crying about it", "I feel sick"],
+    "silent": [""],
+}
+
+
+@pytest.mark.parametrize("band", [*config.AGE_BANDS, None])
+@pytest.mark.parametrize("child", CHILDREN)
+@pytest.mark.parametrize("confidence", [0.3, 0.6, 0.9])
+def test_every_session_record_validates_against_the_component_4_contract(band, child, confidence):
+    it = iter(CHILDREN[child])
+    record, _ = FSMController().run(make_trigger(confidence=confidence), lambda _: next(it, "ok"), age_band=band)
+    jsonschema.validate(record.to_dict(), COMP3_TO_COMP4)

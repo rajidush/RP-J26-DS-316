@@ -27,7 +27,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from component3_socratic_educator.src import config, emotion_rules                           # noqa: E402
-from component3_socratic_educator.src.fsm_controller import FSMController                    # noqa: E402
+from component3_socratic_educator.src.assessor import CHANGE_TALK, STANCE, RulesAssessor      # noqa: E402
+from component3_socratic_educator.src.fsm_controller import DialogueState, FSMController, Turn  # noqa: E402
 from component3_socratic_educator.src.model_client import LM_STUDIO_URL, call_local_model     # noqa: E402
 from component3_socratic_educator.src import shadow                                          # noqa: E402
 from component3_socratic_educator.src.schemas import RiskCategory, TriggerPayload             # noqa: E402
@@ -149,13 +150,12 @@ def replay():
         out["pending"] = e.args[0]
 
     turns = []   # one per system line the child saw
-    for i, (state, line) in enumerate(gen.lines):
+    for i, (state, line, inquire) in enumerate(gen.lines):
         reply = s.replies[i] if i < len(asked) else None
+        easier = inquire.get("easier", False)
         turns.append({"state": state, "text": line.text, "source": line.source, "reason": line.reason,
-                      "model_output": line.model_output, "reply": reply,
-                      "reply_type": emotion_rules.classify_reply(reply) if reply else None,
-                      "refusal": emotion_rules.is_refusal(reply) if reply else False,
-                      "complete": FSMController()._is_complete(reply) if reply else False})
+                      "model_output": line.model_output, "reply": reply, "move": inquire.get("move"),
+                      "easier": easier, "next": next_action(state, easier, reply) if reply is not None else None})
     out["turns"] = turns
     out["closing"] = out["transcript"].turns[-1].system_text if out["done"] else None
     out["memo"] = memo.get("result")
@@ -166,6 +166,20 @@ def replay():
         out["current"] = turns[-1]["state"] if turns else "INTERCEPT"
         out["visited"] = {t["state"] for t in turns}
     return out
+
+
+def next_action(state, easier, reply):
+    """What the controller does after this reply, by the same rules (src/fsm_controller.py)."""
+    if emotion_rules.is_refusal(reply):
+        return "refusal → stop"
+    if state == "INTERCEPT":
+        return "→ the first Socratic move"
+    stance = RulesAssessor().assess([Turn(DialogueState.INQUIRE, "", reply)]).replies[0].labels[STANCE]
+    if stance == CHANGE_TALK:
+        return "safer plan (change talk) → stop"
+    if emotion_rules.is_dont_know(reply) and not easier:
+        return "“I don't know” → the same move, easier form"
+    return f"→ the next move (at most {config.MAX_INQUIRE_MOVES} questions)"
 
 
 def explain(run):
@@ -190,11 +204,11 @@ def fsm_dot(run, size="7,1.6"):
         fill = "#2563eb" if state == run["current"] else "#bfdbfe" if state in run["visited"] else "#f1f5f9"
         font = "white" if state == run["current"] else "black"
         lines.append(f'{state} [fillcolor="{fill}", fontcolor="{font}"];')
-    n, m = config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS, config.MAX_INQUIRE_ATTEMPTS
+    moves, m = " → ".join(config.SOCRATIC_MOVES), config.MAX_INQUIRE_MOVES
     lines += ['INTERCEPT -> INQUIRE [label="reply"];',
               'INTERCEPT -> EVALUATE [label="refusal", style=dashed];',
-              f'INQUIRE -> INQUIRE [label="< {n} words, no feeling/denial/plan,\\nattempts < {m}"];',
-              f'INQUIRE -> EVALUATE [label="complete, refusal\\nor {m} attempts"];',
+              f'INQUIRE -> INQUIRE [label="{moves}\\n(easier form after I don\'t know)"];',
+              f'INQUIRE -> EVALUATE [label="refusal, change talk\\nor {m} questions"];',
               'EVALUATE -> CONTRACT [label="record built"];', "}"]
     return "\n".join(lines)
 
@@ -481,13 +495,12 @@ def page():
         st.graphviz_chart(fsm_dot(run, size="6,1.2"))
         for t in run["turns"]:
             with st.chat_message("assistant"):
-                st.markdown(f"**{t['state']}** · {badge(t)}  \n{t['text']}")
+                move = f" · {t['move']}{' (easier)' if t['easier'] else ''}" if t["move"] else ""
+                st.markdown(f"**{t['state']}**{move} · {badge(t)}  \n{t['text']}")
             if t["reply"] is not None:
                 with st.chat_message("user"):
                     st.markdown(t["reply"])
-                    st.caption(f"reply type: {t['reply_type']} · "
-                               + ("refusal → stop" if t["refusal"] else "complete → stop" if t["complete"]
-                                  else "incomplete → ask again"))
+                    st.caption(t["next"])
         if run["done"]:
             with st.chat_message("assistant"):
                 st.markdown(f"**CONTRACT**  \n{run['closing']}")

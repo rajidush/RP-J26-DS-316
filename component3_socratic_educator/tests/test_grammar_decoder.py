@@ -3,6 +3,7 @@ Function 2 tests: the controller grammar, constrained decoding and the
 post-check (the adversarial harness is in test_adversarial.py). Run with:
 pytest component3_socratic_educator/tests -v
 """
+import re
 import sys
 from pathlib import Path
 
@@ -10,7 +11,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from component3_socratic_educator.src.grammar_decoder import INQUIRE_LINES, GrammarConstrainedGenerator
+from component3_socratic_educator.src import config
+from component3_socratic_educator.src.grammar_decoder import INQUIRE_TEMPLATES, GrammarConstrainedGenerator, post_check
 from component3_socratic_educator.src.schemas import RiskCategory
 
 
@@ -201,35 +203,81 @@ def test_a_blocked_line_keeps_what_the_model_said_as_evidence():
     assert line.reason == "invalid_json" and line.model_output == "not json at all"
 
 
-# --- 14 Oct: INQUIRE picks its line by the reply type of the child's latest reply ---
+# --- PP2 ticket 03: INQUIRE's template lines, per Socratic move and age band ---
+# One line per move and band, plus an easier form for a child who says "I don't
+# know". They are the template arm of the output study and the fallback for
+# model-written lines (ticket 05).
 
-SUPPORTIVE = INQUIRE_LINES["stated_emotion"]
+PROJECT = Path(__file__).resolve().parents[1]
+if str(PROJECT) not in sys.path:
+    sys.path.insert(0, str(PROJECT))
+import inquire_finetune as ft  # noqa: E402
 
-
-@pytest.mark.parametrize("reply_type", list(INQUIRE_LINES))
-def test_each_reply_type_gets_a_line_from_its_own_pool(reply_type):
-    gen = GrammarConstrainedGenerator()
-    for attempt in range(3):
-        line = gen.generate_with_source("INQUIRE", RiskCategory.VIOLENCE, attempt, reply_type=reply_type)
-        assert line.text in INQUIRE_LINES[reply_type] and line.source == "template"
-
-
-def test_a_pool_never_repeats_a_line_within_the_three_attempts():
-    gen = GrammarConstrainedGenerator()
-    for reply_type in INQUIRE_LINES:
-        lines = [gen.generate("INQUIRE", RiskCategory.HATE_SPEECH, a, reply_type=reply_type) for a in range(3)]
-        assert len(set(lines)) == 3, reply_type
+MOVES, BANDS = config.SOCRATIC_MOVES, config.AGE_BANDS
+ALL_TEMPLATES = [line for move in MOVES for band in BANDS for line in INQUIRE_TEMPLATES[move][band]]
+OPTION_WORD = re.compile(r"\bor\b", re.I)
 
 
-def test_no_inquire_line_hints_at_blame():
+def test_every_move_and_band_has_a_line_and_a_different_easier_form():
+    assert set(INQUIRE_TEMPLATES) == set(MOVES)
+    for move in MOVES:
+        assert set(INQUIRE_TEMPLATES[move]) == set(BANDS)
+        for band in BANDS:
+            line, easier = INQUIRE_TEMPLATES[move][band]
+            assert line != easier
+    assert len(set(ALL_TEMPLATES)) == len(ALL_TEMPLATES)        # no session can repeat a question
+
+
+@pytest.mark.parametrize("line", ALL_TEMPLATES)
+def test_every_template_line_passes_the_post_check_and_the_format_check(line):
+    assert post_check(line) is None
+    result = ft.format_check(line, child_reply="")             # empty reply: the line may name no emotion (S3)
+    assert result.ok, result.failures()
+
+
+@pytest.mark.parametrize("line", ALL_TEMPLATES)
+def test_no_template_line_hints_at_blame(line):
     # "Is there another way you could've reacted?" was asked to a distressed child (12 Oct run).
-    for pool in INQUIRE_LINES.values():
-        for line in pool:
-            assert "reacted" not in line and "should have" not in line.lower()
+    assert not re.search(r"reacted|should have|should've|why did you", line, re.I)
+
+
+@pytest.mark.parametrize("easier", [False, True], ids=["line", "easier"])
+def test_the_8_10_alternatives_move_offers_exactly_two_options(easier):
+    line = INQUIRE_TEMPLATES["alternatives"]["8-10"][easier]
+    assert len(OPTION_WORD.findall(line)) == 1
+
+
+def test_no_other_move_or_band_offers_options():
+    # Safety gate S4: clarify never asks a leading option-posing question.
+    others = [line for move in MOVES for band in BANDS for line in INQUIRE_TEMPLATES[move][band]
+              if (move, band) != ("alternatives", "8-10")]
+    assert not [line for line in others if OPTION_WORD.search(line)]
+
+
+@pytest.mark.parametrize("move", MOVES)
+@pytest.mark.parametrize("band", BANDS)
+@pytest.mark.parametrize("easier", [False, True], ids=["line", "easier"])
+def test_the_generator_gives_the_template_for_the_move_band_and_form(move, band, easier):
+    line = GrammarConstrainedGenerator().generate_with_source("INQUIRE", RiskCategory.VIOLENCE, move=move,
+                                                              age_band=band, easier=easier)
+    assert (line.text, line.source, line.reason) == (INQUIRE_TEMPLATES[move][band][easier], "template", None)
+
+
+@pytest.mark.parametrize("band", [None, "", "16-18", "8–10", "adult", 9])   # –: an en dash
+def test_a_missing_or_invalid_band_gives_the_8_10_wording(band):
+    gen = GrammarConstrainedGenerator()
+    for move in MOVES:
+        line = gen.generate("INQUIRE", RiskCategory.VIOLENCE, move=move, age_band=band)
+        assert line == INQUIRE_TEMPLATES[move]["8-10"][0]
+
+
+def test_an_unknown_move_is_an_error_not_a_line():
+    with pytest.raises(ValueError):
+        GrammarConstrainedGenerator().generate("INQUIRE", RiskCategory.VIOLENCE, move="reflect")
 
 
 def test_the_inquire_grammar_is_exactly_the_template_lines():
     gen = GrammarConstrainedGenerator()
-    assert all(gen.validate("INQUIRE", line) for pool in INQUIRE_LINES.values() for line in pool)
+    assert all(gen.validate("INQUIRE", line) for line in ALL_TEMPLATES)
     assert not gen.validate("INQUIRE", "I understand. Is there another way you could've reacted?")
     assert not gen.validate("INQUIRE", "That makes sense. What did you see?")
