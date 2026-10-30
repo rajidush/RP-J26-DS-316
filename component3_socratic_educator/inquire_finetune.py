@@ -2,7 +2,8 @@
 inquire_finetune.py
 
 Turns the drafted INQUIRE rows (draft_inquire_dataset.py) into a fine-tuning
-pilot for Component 3. Plain JSON/JSONL in and out.
+pilot for Component 3, and makes and scores the blind rating sheets of the PP2
+validation. Plain JSON/JSONL/CSV in and out.
 
     review   step through the drafted rows in the terminal: choose draft A or B,
              rewrite, reject or skip; every decision is saved to the drafts file
@@ -13,6 +14,11 @@ pilot for Component 3. Plain JSON/JSONL in and out.
     sheet    both arms' raw outputs on the test prompts -> shuffled blind CSV
              with opaque IDs, plus a separate key (ID -> arm)
     unblind  a fully scored sheet + key -> summary.json / summary.md per arm
+    label-sheets  simulated sessions -> blind reply-label sheets (classmate: all,
+             counsellor: stratified 40% overlap; or --owner: the owner's
+             train/dev copy, never evidence) plus a hidden key
+    label-score   returned reply-label sheets (+ adjudication) -> agreement,
+             final labels, summary; refuses invalid or mismatched sheets
 
 format_check() is the shared format / stated-emotion contract (ADR 0003).
 Nothing here touches generate(), the FSM controller or the controller grammar.
@@ -24,6 +30,9 @@ Usage:
     python inquire_finetune.py sheet --outputs <control.jsonl> <adapted.jsonl> [--test <file>] [--seed N] [--out <dir>]
     python inquire_finetune.py unblind --sheet <csv> --key <json> --outputs <control.jsonl> <adapted.jsonl>
                                        [--test <file>] [--out <dir>]
+    python inquire_finetune.py label-sheets --sessions <sessions.jsonl> [--owner] [--seed N] [--out <dir>]
+    python inquire_finetune.py label-score --key <key.json> --rated NAME=<csv> [--rated NAME=<csv>]
+                                           [--adjudication <csv>] [--out <dir>]
 """
 import argparse
 import csv
@@ -41,6 +50,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from draft_inquire_dataset import REPLY_TYPES, RISK_CATEGORIES, load_jsonl, parse_inquire_prompt
+from src.codebook import (DISTRESS_SEVERITIES, DISTRESS_SEVERITY, EXPRESSED_EMOTION, EXPRESSED_EMOTIONS, STANCE,
+                          STANCES)
+from src.agreement import krippendorff_alpha_nominal, percent_agreement, prevalence
 from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS
 
 HERE = Path(__file__).resolve().parent
@@ -578,12 +590,12 @@ def _load_raw_outputs(paths, test, command):
     return by_arm
 
 
-def _read_sheet(path):
+def _read_sheet(path, command="unblind"):
     try:
         with open(path, encoding="utf-8-sig", newline="") as f:
             return list(csv.DictReader(f))
     except UnicodeDecodeError:
-        _refuse(f"{path} is not UTF-8", ['re-save it as "CSV UTF-8 (Comma delimited)", not plain "CSV"'], "unblind")
+        _refuse(f"{path} is not UTF-8", ['re-save it as "CSV UTF-8 (Comma delimited)", not plain "CSV"'], command)
 
 
 def cmd_sheet(args):
@@ -739,9 +751,356 @@ def cmd_unblind(args):
               f"mean words {a['mean_words']}  latency {a['latency_seconds']['mean']} s")
 
 
+# ---------------------------------------------------------------- reply-label sheets
+# Session record (one JSONL line per simulated session, written by the ticket 06 notebook):
+#   session_id, pool ("classifier_test" | "train_dev"), age_band, generator, risk_category,
+#   turns (asdict(Turn): state, system_text, child_response, ...); other fields are ignored
+POOLS = {"raters": "classifier_test", "owner": "train_dev"}
+LABEL_PARTS = (EXPRESSED_EMOTION, DISTRESS_SEVERITY, STANCE)
+LABEL_VALUES = {EXPRESSED_EMOTION: EXPRESSED_EMOTIONS, DISTRESS_SEVERITY: DISTRESS_SEVERITIES, STANCE: STANCES}
+SKIP = "skip"   # recorded as missing, never as a judgement
+LABEL_SHOWN = ("sensitive", "dialogue_so_far", "child_reply")
+LABEL_COLUMNS = ("item", *LABEL_SHOWN, *LABEL_PARTS, "notes")
+LABEL_SHEET_SEED = 20261030
+TURN_FIELDS = ("state", "system_text", "child_response")
+RATER_PAIR = ("counsellor", "classmate")   # the two independent raters whose overlap gives agreement
+AGREEMENT_METHOD = ("on the items both raters were given, before adjudication; skips are missing and never "
+                    "compared; Krippendorff's alpha for nominal labels (None when every rating has one value)")
+# The counsellor labels a stratified share of the test sessions; the classmate labels all of them (stories 45-46).
+COUNSELLOR_SHARE = 0.4
+OVERLAP_STRATA = ("age_band", "generator")
+# Marked on the sheet so a rater can skip them (story 42): self-harm and sexual-content triggers.
+SENSITIVE_CATEGORIES = ("explicit_visual", "grooming_language", "self_harm_imagery", "self_harm_language")
+# The rater's one-line definitions (CONTEXT.md; evidence/research/emotion_taxonomy_research_2026-10-25.md).
+# Worked examples come in the window 0 calibration round (ticket 17), not here.
+LABEL_GUIDE = {
+    EXPRESSED_EMOTION: ("The feeling the reply conveys, named or not (GoEmotions' Ekman grouping).", {
+        "anger": "anger, annoyance, disapproval",
+        "disgust": "disgust, being grossed out",
+        "fear": "fear, nervousness, worry",
+        "joy": "joy, amusement, relief, excitement, gratitude, pride, optimism",
+        "sadness": "sadness, disappointment, embarrassment, grief, remorse",
+        "surprise": "surprise, confusion, realisation, curiosity",
+        "neutral": "no feeling conveyed"}),
+    DISTRESS_SEVERITY: ("How much distress the reply shows (after the ReachOut triage scheme).", {
+        "none": "no distress",
+        "past": "distress the child says is over (\"it scared me then, I'm okay now\")",
+        "current_mild": "distress now, softened or manageable (\"kinda scary\", \"a bit worried\")",
+        "current_acute": "strong distress now, being overwhelmed, or any self-harm language"}),
+    STANCE: ("How the reply relates to taking a safer step (Motivational Interviewing client language).", {
+        "change_talk": "the child moves toward a safer step: wants to, can, or will take one",
+        "neutral": "answers or describes without leaning toward or away from a safer step",
+        "sustain_talk": "argues for the risky behaviour or plays it down (\"it's just a joke\")",
+        "discord": "friction with the educator (\"stop asking me\", \"it's not my fault\" said at the educator)",
+        "disengaged": "non-answers and opting out (\"idk\", \"nothing\", \"leave me alone\"); a project code, not MI"}),
+}
+
+
+def _sheet_csv(columns, rows):
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=columns, lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(rows)
+    return "﻿" + buffer.getvalue()   # utf-8-sig, as the comparison sheet
+
+
+def _label_instructions():
+    lines = ["# Reply-label sheet: instructions", "",
+             "Each row is one child reply. Read `dialogue_so_far`, then label `child_reply` only, on three parts. "
+             "Type one value from each list below. To leave a cell out, type `skip`: it is recorded as missing, "
+             "never as a judgement. Rows marked `sensitive` = yes come from self-harm or sexual-content situations; "
+             "skip them whenever you prefer. Use `notes` for anything else. Do not change any other column, "
+             "and save the file as CSV UTF-8.", ""]
+    for part in LABEL_PARTS:
+        about, values = LABEL_GUIDE[part]
+        lines += [f"## `{part}`", "", about, "", *[f"- `{v}`: {values[v]}" for v in LABEL_VALUES[part]], ""]
+    return "\n".join(lines)
+
+
+def _label_items(sessions):
+    """One item per child reply, in session order: what the sheet shows and what the key hides."""
+    items = []
+    for s in sessions:
+        dialogue, reply_index = [], 0
+        for turn_index, turn in enumerate(s["turns"]):
+            if turn["system_text"]:
+                dialogue.append(f"Educator: {turn['system_text']}")
+            if turn["child_response"] is None:
+                continue
+            shown = {"sensitive": "yes" if s["risk_category"] in SENSITIVE_CATEGORIES else "",
+                     "dialogue_so_far": "\n".join(dialogue), "child_reply": turn["child_response"]}
+            hidden = {"session_id": s["session_id"], "reply_index": reply_index, "turn_index": turn_index,
+                      **{k: s[k] for k in ("age_band", "generator", "risk_category")}}
+            items.append((hidden, shown))
+            dialogue.append(f"Child: {turn['child_response']}")
+            reply_index += 1
+    return items
+
+
+def _load_sessions(path, pool):
+    sessions = load_jsonl(path)
+    problems = [f"{s.get('session_id')}: no {field}" for s in sessions
+                for field in ("session_id", "pool", "age_band", "generator", "risk_category", "turns") if field not in s]
+    problems += [f"{s['session_id']}: turn {n} has no {field}" for s in sessions if "turns" in s
+                 for n, turn in enumerate(s["turns"]) for field in TURN_FIELDS if field not in turn]
+    if problems:
+        _refuse("session records are incomplete", problems, "label-sheets")
+    counts = Counter(s["session_id"] for s in sessions)
+    problems = [f"{sid}: appears {n} times" for sid, n in sorted(counts.items()) if n > 1]
+    problems += [f"{s['session_id']}: pool {s['pool']!r}" for s in sessions if s["pool"] != pool]
+    if problems:
+        _refuse(f"sessions must be unique and all from the {pool!r} pool", problems, "label-sheets")
+    return sessions
+
+
+def draw_overlap(sessions, rng, share=COUNSELLOR_SHARE):
+    """{stratum: (sessions, drawn session IDs)}: the share of each band x generator stratum, rounded half up, at least one."""
+    strata = {}
+    for s in sorted(sessions, key=lambda s: s["session_id"]):
+        strata.setdefault(" / ".join(s[k] for k in OVERLAP_STRATA), []).append(s["session_id"])
+    return {name: (len(ids), sorted(rng.sample(ids, max(1, int(len(ids) * share + 0.5)))))
+            for name, ids in sorted(strata.items())}
+
+
+def cmd_label_sheets(args):
+    copy_for = "owner" if args.owner else "raters"
+    sessions = _load_sessions(args.sessions, POOLS[copy_for])
+    # The owner's copy never shares the raters' folder (story 44).
+    out = Path(args.out or HERE / "evidence" / "evaluate" /
+               f"{'owner_' if args.owner else ''}reply_labels_{date.today().isoformat()}")
+    if (out / "key.json").exists():
+        _refuse(f"{out} already holds sheets", ["pass a new --out; recorded runs are never overwritten"], "label-sheets")
+
+    rng = random.Random(args.seed)
+    overlap = draw_overlap(sessions, rng) if copy_for == "raters" else {}
+    items = _label_items(sessions)
+    rng.shuffle(items)
+    ids = [f"L{n:04d}" for n in range(1, len(items) + 1)]
+    if copy_for == "owner":
+        copies = {"owner": ids}
+    else:
+        drawn = {sid for _, chosen in overlap.values() for sid in chosen}
+        counsellor = [i for i, (hidden, _) in zip(ids, items) if hidden["session_id"] in drawn]
+        rng.shuffle(counsellor)
+        copies = {"classmate": ids, "counsellor": counsellor}
+
+    shown_by_id = {i: shown for i, (_, shown) in zip(ids, items)}
+    key = {
+        "sheet_kind": "reply_labels",
+        "evidence": copy_for == "raters",
+        "note": ("blind rater sheets: the classmate labels every item, the counsellor a stratified overlap"
+                 if copy_for == "raters" else "owner labels for training and development: never evidence"),
+        "seed": args.seed,
+        "sessions_file": {"file": Path(args.sessions).name, "sha256": _sha256(args.sessions)},
+        "pool": POOLS[copy_for],
+        "overlap": {"share": COUNSELLOR_SHARE, "strata": list(OVERLAP_STRATA),
+                    "per_stratum": {name: {"sessions": n, "counsellor": len(chosen)}
+                                    for name, (n, chosen) in overlap.items()}} if overlap else None,
+        "copies": {name: {"sheet": f"{name}_reply_labels.csv", "items": order} for name, order in copies.items()},
+        "items": {i: hidden for i, (hidden, _) in zip(ids, items)},
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    for name, order in copies.items():
+        rows = [{"item": i, **shown_by_id[i], **{p: "" for p in LABEL_PARTS}, "notes": ""} for i in order]
+        write_atomic(out / key["copies"][name]["sheet"], _sheet_csv(LABEL_COLUMNS, rows))
+        key["copies"][name]["sha256"] = _sha256(out / key["copies"][name]["sheet"])
+    write_atomic(out / "instructions.md", _label_instructions())
+    write_atomic(out / "key.json", json.dumps(key, ensure_ascii=False, indent=2) + "\n")
+    print(f"wrote {out}: {len(items)} child replies from {len(sessions)} sessions, shuffle seed {args.seed}")
+    for name, order in copies.items():
+        print(f"  {key['copies'][name]['sheet']}: {len(order)} items")
+    print("  key.json: do not open until every sheet is labelled")
+
+
+def _label_value(raw):
+    """A rater's cell as a codebook value: "Current mild" and "current-mild" are current_mild."""
+    return re.sub(r"[\s-]+", "_", (raw or "").strip().lower())
+
+
+def _same_text(a, b):
+    """Shown text compared as Excel may save it: other line endings or trailing spaces are not an edit."""
+    return " ".join((a or "").split()) == " ".join((b or "").split())
+
+
+def _check_labelled(name, blank_rows, rows):
+    """Everything wrong with one returned sheet against its blank copy, each problem naming its item."""
+    blank = {r["item"]: r for r in blank_rows}
+    counts = Counter((r.get("item") or "").strip() for r in rows)
+    problems = [f"{name}: missing: {i}" for i in blank if i not in counts]
+    problems += [f"{name}: duplicated: {i}" for i, n in counts.items() if n > 1 and i in blank]
+    problems += [f"{name}: not on the blank sheet: {i}" for i in counts if i not in blank]
+    for row in rows:
+        item = (row.get("item") or "").strip()
+        if item not in blank:
+            continue
+        problems += [f"{name}: {item}: {c} differs from the blank sheet" for c in LABEL_SHOWN
+                     if not _same_text(row.get(c), blank[item][c])]
+        problems += [f"{name}: {item}: {p} {row.get(p) or ''!r} is not one of {', '.join(LABEL_VALUES[p])} or {SKIP}"
+                     for p in LABEL_PARTS if _label_value(row.get(p)) not in (*LABEL_VALUES[p], SKIP)]
+    return problems
+
+
+def _load_adjudication(path, key):
+    """{(item, part): {label, reason}} from the adjudication CSV (item, part, label, reason); every change needs a reason."""
+    out, problems = {}, []
+    for line, row in enumerate(_read_sheet(path, "label-score"), 2):
+        item, part, label = (row.get("item") or "").strip(), _label_value(row.get("part")), _label_value(row.get("label"))
+        reason, where = (row.get("reason") or "").strip(), f"line {line} ({item} {part})"
+        if item not in key["items"]:
+            problems.append(f"{where}: no such item")
+        elif part not in LABEL_VALUES:
+            problems.append(f"{where}: part must be one of {', '.join(LABEL_PARTS)}")
+        elif label not in LABEL_VALUES[part]:
+            problems.append(f"{where}: label {row.get('label')!r} is not one of {', '.join(LABEL_VALUES[part])}")
+        elif not reason:
+            problems.append(f"{where}: no reason given")
+        elif (item, part) in out:
+            problems.append(f"{where}: adjudicated twice")
+        else:
+            out[item, part] = {"label": label, "reason": reason}
+    if problems:
+        _refuse(f"{Path(path).name}: adjudication rows are invalid", problems, "label-score")
+    return out
+
+
+def _round3(value):
+    return None if value is None else round(value, 3)
+
+
+def _pair_agreement(labels, overlap):
+    """Per part, on the items both raters had: percent agreement, prevalence and nominal alpha."""
+    parts = {}
+    for part in LABEL_PARTS:
+        pairs = [tuple(labels[name][i][part] for name in RATER_PAIR) for i in overlap]
+        compared = sum(None not in pair for pair in pairs)
+        parts[part] = {"compared": compared, "skipped": len(pairs) - compared,
+                       "percent_agreement": _round3(percent_agreement(pairs)),
+                       "prevalence": {v: _round3(share) for v, share in prevalence(pairs).items()},
+                       "krippendorff_alpha": _round3(krippendorff_alpha_nominal(pairs))}
+    return parts
+
+
+def _final_label(part, ratings, adjudicated):
+    """(label, source): the adjudicated label, else the raters' one value; a disagreement or a skip is no label."""
+    if adjudicated:
+        return adjudicated["label"], "adjudicated"
+    given = [r[part] for r in ratings.values() if r[part] is not None]
+    if not ratings:
+        return None, "not_rated"
+    if not given:
+        return None, "skipped"
+    if len(set(given)) > 1:
+        return None, "disagreement"
+    return given[0], "agreed" if len(given) > 1 else "one_rater"
+
+
+def _label_summary_markdown(s):
+    lines = ["# Reply labels: scoring summary", ""]
+    if not s["evidence"]:
+        lines += ["**Not evidence.** " + s["note"], ""]
+    lines += [f"Shuffle seed {s['shuffle_seed']}. Sheets: " +
+              ", ".join(f"{n} ({v['items']} items)" for n, v in s["sheets"].items()) + ".", ""]
+    a = s["agreement"]
+    if a:
+        lines += [f"## Agreement: {' vs '.join(a['between'])} ({a['items']} shared items)", "", a["method"], "",
+                  "| Part | Compared | Skipped | Percent agreement | Krippendorff's α | Prevalence |",
+                  "|---|---|---|---|---|---|",
+                  *[f"| {p} | {v['compared']} | {v['skipped']} | {_pct(v['percent_agreement'])} | "
+                    f"{'n/a' if v['krippendorff_alpha'] is None else v['krippendorff_alpha']} | "
+                    + ", ".join(f"{k} {_pct(x)}" for k, x in v["prevalence"].items()) + " |"
+                    for p, v in a["parts"].items()], ""]
+    else:
+        lines += ["No agreement: fewer than two raters' sheets.", ""]
+    adj = s["adjudication"]
+    lines += ["## Labels" + (f" after adjudication ({adj['changes']} changes, {adj['file']})" if adj else ""), "",
+              "| Part | Labelled | Disagreements left | Missing | Distribution |", "|---|---|---|---|---|",
+              *[f"| {p} | {v['labelled']} | {len(v['disagreements'])} | {v['missing']} | "
+                + ", ".join(f"{k} {n}" for k, n in v["distribution"].items()) + " |"
+                for p, v in s["labels"].items()], ""]
+    return "\n".join(lines)
+
+
+def cmd_label_score(args):
+    key_path = Path(args.key)
+    key, run = _load_json(key_path), key_path.parent
+    rated = {}
+    for spec in args.rated:
+        name, sep, path = spec.partition("=")
+        if not sep or name not in key["copies"] or name in rated:
+            _refuse(f"--rated {spec!r}: give each of the key's copies ({', '.join(key['copies'])}) at most once "
+                    "as NAME=PATH", [], "label-score")
+        rated[name] = Path(path)
+
+    changed = [copy["sheet"] for copy in key["copies"].values() if _sha256(run / copy["sheet"]) != copy["sha256"]]
+    if changed:
+        _refuse("blank sheets have changed since they were written (filled in place?)",
+                [*changed, "label a copy of the blank sheet, and keep the blank as written"], "label-score")
+    blanks = {name: _read_sheet(run / copy["sheet"], "label-score") for name, copy in key["copies"].items()}
+    problems, labels = [], {}
+    for name, path in rated.items():
+        rows = _read_sheet(path, "label-score")
+        problems += _check_labelled(name, blanks[name], rows)
+        cells = {(r.get("item") or "").strip(): {p: _label_value(r.get(p)) for p in LABEL_PARTS} for r in rows}
+        labels[name] = {item: {p: None if v == SKIP else v for p, v in values.items()} for item, values in cells.items()}
+    if problems:
+        _refuse("rated sheets do not match their blank sheets", problems, "label-score")
+    adjudication = _load_adjudication(args.adjudication, key) if args.adjudication else {}
+
+    out = Path(args.out) if args.out else run / f"scores_{date.today().isoformat()}"
+    if any((out / f).exists() for f in ("labels.jsonl", "summary.json", "summary.md")):
+        _refuse(f"{out} already holds scores", ["pass a new --out; recorded scores are never overwritten"],
+                "label-score")
+
+    shown = {r["item"]: r for rows in blanks.values() for r in rows}
+    records = []
+    for item, hidden in sorted(key["items"].items(), key=lambda kv: (kv[1]["session_id"], kv[1]["reply_index"])):
+        ratings = {name: by_item[item] for name, by_item in labels.items() if item in by_item}
+        final = {p: _final_label(p, ratings, adjudication.get((item, p))) for p in LABEL_PARTS}
+        records.append({"item": item, **hidden, "child_reply": shown[item]["child_reply"], "evidence": key["evidence"],
+                        "labels": {p: label for p, (label, _) in final.items()},
+                        "label_source": {p: source for p, (_, source) in final.items()},
+                        "ratings": ratings,
+                        "adjudication": {p: adjudication[item, p]["reason"] for p in LABEL_PARTS
+                                         if (item, p) in adjudication}})
+
+    overlap = sorted(set(labels[RATER_PAIR[0]]) & set(labels[RATER_PAIR[1]])) if set(RATER_PAIR) <= set(labels) else []
+    summary = {
+        "sheet_kind": key["sheet_kind"],
+        "evidence": key["evidence"],
+        "note": key["note"],
+        "shuffle_seed": key["seed"],
+        "key": {"file": key_path.name, "sha256": _sha256(key_path)},
+        "sheets": {name: {"file": path.name, "sha256": _sha256(path), "items": len(labels[name]),
+                          "skipped": {p: sum(r[p] is None for r in labels[name].values()) for p in LABEL_PARTS}}
+                   for name, path in rated.items()},
+        "agreement": {"between": list(RATER_PAIR), "items": len(overlap), "method": AGREEMENT_METHOD,
+                      "parts": _pair_agreement(labels, overlap)} if overlap else None,
+        "adjudication": {"file": Path(args.adjudication).name, "sha256": _sha256(args.adjudication),
+                         "changes": len(adjudication)} if args.adjudication else None,
+        "labels": {p: {"labelled": sum(r["labels"][p] is not None for r in records),
+                       "disagreements": [r["item"] for r in records if r["label_source"][p] == "disagreement"],
+                       "missing": sum(r["label_source"][p] in ("skipped", "not_rated") for r in records),
+                       "distribution": dict(sorted(Counter(r["labels"][p] for r in records
+                                                           if r["labels"][p] is not None).items()))}
+                   for p in LABEL_PARTS},
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    write_atomic(out / "labels.jsonl", dump_jsonl(records))
+    write_atomic(out / "summary.json", json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    write_atomic(out / "summary.md", _label_summary_markdown(summary))
+    print(f"wrote {out}: labels.jsonl, summary.json, summary.md" + ("" if key["evidence"] else "  (NOT evidence)"))
+    if summary["agreement"]:
+        for p, v in summary["agreement"]["parts"].items():
+            print(f"  {p:<18} agreement {_pct(v['percent_agreement'])}  alpha {v['krippendorff_alpha']}  "
+                  f"(compared {v['compared']}, skipped {v['skipped']})")
+    for p, v in summary["labels"].items():
+        print(f"  {p:<18} labelled {v['labelled']}  disagreements left {len(v['disagreements'])}  missing {v['missing']}")
+
+
 # ---------------------------------------------------------------- cli
 def build_parser():
-    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot: review, build, sheet, unblind.")
+    ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot (review, build, sheet, unblind) and PP2 "
+                                             "rating sheets (label-sheets, label-score).")
     sub = ap.add_subparsers(dest="command", required=True)
 
     review = sub.add_parser("review", help="review drafted INQUIRE rows in the terminal")
@@ -774,6 +1133,23 @@ def build_parser():
     unblind.add_argument("--outputs", nargs=2, required=True, metavar="RAW_OUTPUTS_JSONL")
     unblind.add_argument("--out", help="default: the sheet's folder")
     unblind.set_defaults(func=cmd_unblind)
+
+    label_sheets = sub.add_parser("label-sheets", help="blind reply-label sheets + hidden key from simulated sessions")
+    label_sheets.add_argument("--sessions", required=True, help="session records JSONL (ticket 06)")
+    label_sheets.add_argument("--owner", action="store_true",
+                              help="the owner's copy of train/dev sessions (never evidence), not the raters' copies")
+    label_sheets.add_argument("--seed", type=int, default=LABEL_SHEET_SEED)
+    label_sheets.add_argument("--out", help="default: evidence/evaluate/reply_labels_<date>, or "
+                                            "owner_reply_labels_<date> with --owner")
+    label_sheets.set_defaults(func=cmd_label_sheets)
+
+    label_score = sub.add_parser("label-score", help="validate labelled reply-label sheets; agreement, adjudication, labels")
+    label_score.add_argument("--key", required=True, help="the key.json written with the sheets")
+    label_score.add_argument("--rated", action="append", required=True, metavar="NAME=PATH",
+                             help="a returned sheet, e.g. classmate=classmate_filled.csv (repeat per rater)")
+    label_score.add_argument("--adjudication", help="CSV of item, part, label, reason; the rated sheets stay unchanged")
+    label_score.add_argument("--out", help="default: scores_<date> next to the key")
+    label_score.set_defaults(func=cmd_label_score)
     return ap
 
 

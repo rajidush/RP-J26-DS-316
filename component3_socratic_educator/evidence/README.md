@@ -25,6 +25,7 @@ evidence/
 | `capture_intercept_samples`, `run_adversarial_intercept`, `check_temperature`, `trace_token_masking` | `intercept/` |
 | `capture_inquire_served`, `inquire_finetune.py build` / `sheet` (one folder up) | `inquire/` |
 | `evaluate_emotion_rules` | prints to the terminal; save its output under `evaluate/` |
+| `inquire_finetune.py label-sheets` / `label-score` (one folder up) | `evaluate/` (scores into the sheets' run folder) |
 | `run_end_to_end`, `measure_latency`, `validate_schemas`, `readability_check` | `system/` |
 | `score_human_review --run intercept/<run>` | into the reviewed run's own folder |
 
