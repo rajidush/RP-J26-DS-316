@@ -274,6 +274,50 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 **Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
 
+## PP2 reply-label sheets (independent raters)
+
+Each child reply in the simulated sessions gets the codebook's three parts (`src/codebook.py`, ADR 0006) from human raters. The assessor arms are later scored against those labels (ticket 19).
+
+```bash
+# raters: the classifier test pool -> classmate (everything) + counsellor (stratified 40% overlap)
+python inquire_finetune.py label-sheets --sessions classifier_test_sessions.jsonl
+#   -> evidence/evaluate/reply_labels_<date>/classmate_reply_labels.csv, counsellor_reply_labels.csv, key.json
+# owner: the train/dev pool -> one sheet, marked never evidence
+python inquire_finetune.py label-sheets --owner --sessions train_dev_sessions.jsonl
+#   -> evidence/evaluate/owner_reply_labels_<date>/owner_reply_labels.csv, key.json
+# score the returned sheets (and later an adjudication file):
+python inquire_finetune.py label-score --key <run>/key.json \
+    --rated counsellor=<returned.csv> --rated classmate=<returned.csv> [--adjudication adjudication.csv]
+#   -> <run>/scores_<date>/summary.json, summary.md, labels.jsonl
+```
+
+**Input.** One JSONL line per session (ticket 06): `session_id`, `pool` (`classifier_test` for the raters' sheets, `train_dev` for the owner's), `age_band`, `generator`, `risk_category` and `turns` (the controller's `Turn` fields, at least `state`, `system_text`, `child_response`). Other fields, such as `archetype`, are ignored. `label-sheets` refuses sessions from the other pool, a duplicated session ID or a turn without those three fields. It never writes into a folder that already holds sheets. `instructions.md` gives the rater the three fixed lists with one-line definitions; worked examples come in the window 0 calibration (ticket 17).
+
+**The sheet.** One row per child reply: `item` (opaque, `L0001`…), `sensitive`, `dialogue_so_far` (the educator lines and child replies before it), `child_reply`, then `expressed_emotion`, `distress_severity`, `stance` and `notes` for the rater. No session, arm, model, generator, age band, risk category or archetype appears. `sensitive` is `yes` for self-harm and sexual-content triggers (`SENSITIVE_CATEGORIES`), so a rater can skip them. A rater types a codebook value, or `skip`, which is recorded as missing and never compared. Rows are shuffled with a recorded seed (`key.json`), and the same seed reproduces the sheets byte for byte.
+
+**The overlap.** The counsellor's copy is 40% of the sessions in each age band × generator stratum (rounded half up, at least one), with every reply of each drawn session. It uses the same item IDs as the classmate's copy, in a different order. The key records the count per stratum. The draw is by session, so the counsellor's share of *replies* can differ from 40%, and rounding up small strata pushes it higher (27 fixture sessions give 12, 44%).
+
+**Scoring.** `label-score` refuses to run in any of these cases, and names the items involved:
+- a label cell is empty or not a codebook value (spaces and hyphens are read as `_`, so `Current mild` is accepted);
+- an item is missing, duplicated or not on the blank sheet;
+- a shown column (`sensitive`, `dialogue_so_far`, `child_reply`) differs from the blank sheet (line endings and trailing spaces do not count);
+- a blank sheet has changed since `label-sheets` wrote it (its hash is in the key), for example because it was filled in place;
+- the sheet was re-saved in a non-UTF-8 encoding;
+- an adjudication row has no reason, an unknown item or part, or an invalid label.
+
+On the counsellor/classmate overlap it reports, per part, the items compared and skipped, percent agreement, prevalence (each value's share) and Krippendorff's α for nominal labels (`src/agreement.py`). α is `n/a` when every rating has one value. Agreement is always computed before adjudication.
+
+**Adjudication** is a separate CSV (`item, part, label, reason`). The rated sheets are only read, never changed. `labels.jsonl` gives one record per reply with its session, reply index, band, generator and category, plus:
+- each part's final label and where it came from (`agreed`, `one_rater`, `adjudicated`, `disagreement`, `skipped`, or `not_rated` when no returned sheet had the item);
+- every rater's original rating;
+- the adjudication reasons.
+
+A disagreement stays unlabelled until it is adjudicated. A scores folder is never overwritten. Owner sheets are scored the same way, but the key, summary and every label record say `"evidence": false`.
+
+**Limitations of the blinding:**
+- `dialogue_so_far` shows the educator's lines, and INQUIRE's templates are worded per age band, so the wording can hint at the band.
+- `sensitive` follows the session's risk category, not what each reply says. A self-harm remark in a cyberbullying session is not marked.
+
 ## Known current limitations (say this openly at PP1, don't hide it)
 
 - Latency (13 Oct, `evidence/system/latency_2026-10-13_before-fix/`, `_after-fix/`): the
