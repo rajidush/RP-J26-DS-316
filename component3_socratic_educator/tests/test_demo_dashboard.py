@@ -102,3 +102,14 @@ def test_a_score_at_the_detectors_lowest_trigger_starts_a_dialogue(src, category
     assert not _start(app).disabled
     _start(app).click().run()
     assert app.chat_message and not app.exception
+
+
+def test_a_finished_session_explains_each_reply_with_the_assessors_labels():
+    # Ticket 02: the "Why" lines show each reply's three parts and the phrases that fired.
+    app = _page("component2", "cyberbullying", 0.6)
+    _start(app).click().run()
+    while not app.success:                                   # the distressed child, one reply at a time
+        app.button(key="c_scripted").click().run()
+    assert not app.exception
+    why = next(m.value for m in app.markdown if m.value.startswith("- `emotional_state`"))
+    assert "distressed because" in why and "current_" in why and "(" in why

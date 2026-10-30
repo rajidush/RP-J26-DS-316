@@ -335,3 +335,12 @@ def test_every_session_record_validates_against_the_component_4_contract(band, c
     it = iter(CHILDREN[child])
     record, _ = FSMController().run(make_trigger(confidence=confidence), lambda _: next(it, "ok"), age_band=band)
     jsonschema.validate(record.to_dict(), COMP3_TO_COMP4)
+
+
+# --- PP2 ticket 02: current distress outranks a stated plan (ADR 0006) ---------
+
+def test_a_child_with_current_distress_and_a_plan_is_escalated_at_moderate_risk():
+    result, transcript = _session(["hmm", "I'm really scared but I'll tell my mum"])
+    assert _moves(transcript) == [("clarify", False)]                 # the plan still ends INQUIRE
+    assert result.risk_level.value == "moderate" and result.emotional_state.value == "distressed"
+    assert result.escalation_flag is True and "parent" in transcript.turns[-1].system_text

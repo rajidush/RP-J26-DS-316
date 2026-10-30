@@ -60,6 +60,7 @@ evidence/
 | `eva001_baseline_2026-10-09` | The EVALUATE prompt baseline: prompt, raw outputs, review |
 | `emotion_rules_eval_2026-10-14` | Phrase-rule agreement on dev and held-out children, before and after each fix |
 | `emotion_rules_eval_2026-10-26_socratic-moves` | The same rules after INQUIRE became the Socratic moves (ticket 03): a flow change, not a rule change |
+| `emotion_rules_eval_2026-10-29_three-part` | The codebook rules arm and the shared derivation (ticket 02, ADR 0006): agreement with the PP1-era intended profiles |
 
 **`system/`**
 

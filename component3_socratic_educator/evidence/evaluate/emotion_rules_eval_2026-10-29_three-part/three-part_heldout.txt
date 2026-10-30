@@ -1,0 +1,86 @@
+split=heldout  sessions=372  children=20
+agreement with intended state: 226/372 = 60.8%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                       24           4          88           3      20%
+defensive                   1          91          15           5      81%
+distressed                  0           0          75           1      99%
+unclear                     1           1          27          36      55%
+
+output counts: {'distressed': 205, 'defensive': 96, 'unclear': 45, 'calm': 26}
+
+S-000384 intended=unclear output=distressed
+   'I miss you.': sadness ['miss you'] / current_mild ['miss you'] / neutral
+   "It's really hard.": neutral / none / neutral
+   'Just... stay safe.': neutral / none / neutral
+   'Just... stay safe.': neutral / none / neutral
+
+S-000386 intended=unclear output=distressed
+   "I don't understand.": surprise ["don't understand"] / none / disengaged ["i don't understand"]
+   "It's kinda scary.": fear ['scary'] / current_mild ['scary'] / neutral
+   'Just... quiet.': neutral / none / disengaged ['quiet']
+   'Just... quiet.': neutral / none / disengaged ['quiet']
+
+S-000387 intended=calm output=distressed
+   "It was really scary, I felt like I couldn't breathe.": fear ['scary', "couldn't breathe"] / current_acute ["couldn't breathe"] / neutral
+   'I think I need to talk to someone about this instead of just feeling sad.': sadness ['sad'] / current_mild ['sad'] / change_talk ['i need to talk', 'instead']
+
+S-000388 intended=unclear output=distressed
+   "I don't really know.": neutral / none / disengaged ["i don't really know"]
+   'It was kinda weird.': surprise ['weird'] / none / neutral
+   'Just... sad.': sadness ['sad'] / current_mild ['sad'] / neutral
+   'Just... sad.': sadness ['sad'] / current_mild ['sad'] / neutral
+
+S-000393 intended=unclear output=distressed
+   "I don't really understand.": neutral / none / neutral
+   "It's... scary.": fear ['scary'] / current_mild ['scary'] / neutral
+   'Just want to be alone.': sadness ['alone'] / current_mild ['alone'] / neutral
+   'Just want to be alone.': sadness ['alone'] / current_mild ['alone'] / neutral
+
+S-000395 intended=unclear output=distressed
+   "I don't know.": neutral / none / disengaged ["i don't know"]
+   'It just feels...heavy.': sadness ['heavy'] / current_mild ['heavy'] / neutral
+   'Sad.': sadness ['sad'] / current_mild ['sad'] / neutral
+   'Sad.': sadness ['sad'] / current_mild ['sad'] / neutral
+
+S-000401 intended=unclear output=distressed
+   'I miss you.': sadness ['miss you'] / current_mild ['miss you'] / neutral
+   "It's hard to talk about.": neutral / none / neutral
+   'Just... quiet please.': neutral / none / disengaged ['quiet']
+   'Just... quiet please.': neutral / none / disengaged ['quiet']
+
+S-000407 intended=calm output=distressed
+   "I felt really confused and sad about it. It's like I just wanted to disappear.": sadness ['sad', 'wanted to disappear'] / current_acute ['wanted to disappear'] / neutral
+   'I think I might need to talk to someone about this. Like, a grown-up, maybe?': neutral / none / change_talk ['talk to someone']
+
+S-000416 intended=calm output=distressed
+   'It was kinda scary, honestly.': fear ['scary'] / current_mild ['scary'] / neutral
+   'I think I should maybe talk to my parents about that.': neutral / none / change_talk ['talk to my parents']
+
+S-000422 intended=calm output=distressed
+   'It was kinda scary, you know? I felt really down.': fear ['scary'] / current_mild ['scary'] / neutral
+   "I'm thinking about talking to someone about how I'm feeling. Maybe a teacher?": neutral / none / neutral
+   'I could try to do some deep breathing exercises instead of letting it get worse.': neutral / none / change_talk ['instead']
+
+S-000429 intended=calm output=distressed
+   'It was kinda scary, you know? I felt worried about what would happen.': fear ['scary', 'worried'] / current_mild ['scary', 'worried'] / neutral
+   "I guess I should check my own stuff more often, like what I'm looking at.": neutral / none / neutral
+   'Maybe I can talk to someone who knows how to deal with this kind of thing?': neutral / none / change_talk ['i can talk']
+
+S-000441 intended=calm output=distressed
+   "I'm feeling really upset about what happened.": sadness ['upset'] / current_mild ['upset'] / neutral
+   "It was hard to see my friend doing that, and I don't want to do it again.": neutral / none / sustain_talk ['do it again']
+   'Maybe I could try talking to them directly instead of just hiding?': neutral / none / change_talk ['instead']
+
+S-000442 intended=calm output=distressed
+   'It was really scary, like looking at pictures of someone hurting themselves.': fear ['scary'] / current_mild ['scary'] / neutral
+   'I feel a little confused now about why I did it. Maybe I need to talk to someone?': surprise ['confused'] / none / change_talk ['i need to talk']
+
+S-000443 intended=calm output=distressed
+   "It was really confusing, like I felt trapped. I don't want to do it anymore.": surprise ['confusing'] / none / neutral
+   "I guess I've been feeling really sad lately, and that made me think about things. Maybe I could talk to someone?": sadness ['sad'] / current_mild ['sad'] / change_talk ['i could talk']
+
+S-000444 intended=calm output=distressed
+   "It was a video of someone talking about how to do it. I didn't really understand what they meant.": neutral / none / neutral
+   'I felt a little scared, honestly. It made me think about keeping my own space better.': fear ['scared'] / current_mild ['scared'] / neutral
+   'Maybe I should talk to a grown-up about this? I want to learn more.': neutral / none / change_talk ['i should talk']

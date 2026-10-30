@@ -69,7 +69,7 @@ class FSMController:
     def __init__(self, generator: Optional[GrammarConstrainedGenerator] = None,
                  assessor: Optional[SessionAssessor] = None, age_band: Optional[str] = None):
         self.generator = generator or GrammarConstrainedGenerator()
-        # EVALUATE's classifier arm (src/assessor.py): the PP1 rules until the comparison picks one.
+        # EVALUATE's classifier arm (src/assessor.py): the codebook rules arm until the comparison picks one.
         self.assessor = assessor or RulesAssessor()
         self.age_band = age_band
 

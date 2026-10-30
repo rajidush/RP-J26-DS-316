@@ -2,20 +2,26 @@
 EVALUATE state: the session assessor (Seam 2).
 
 EVALUATE no longer calls the phrase rules itself: the controller is given an
-assessor, which reads the session's turns and returns a label set for each
-child reply (with the evidence behind each label, for Component 4's XAI
-layer), the session's emotional state, and whether the child constructed a
-safer plan. Each classifier arm (rules, off-the-shelf, fine-tuned) is one
-implementation, so swapping it never touches the controller.
+assessor, which reads the session's turns and returns, for each child reply,
+the codebook's three parts (src/codebook.py) with the evidence behind each (for
+Component 4's XAI layer), the session's emotional state, and whether the child
+constructed a safer plan. Each classifier arm (rules, off-the-shelf, fine-tuned)
+is one implementation, so swapping it never touches the controller, and every
+arm derives the emotional state with the same rule (derive_emotional_state).
 
 Every arm must pass the contract suite in tests/test_assessor.py.
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol, Sequence
 
 from . import emotion_rules
+from .codebook import (  # noqa: F401  (re-exported: the codebook is part of the assessor's contract)
+    CHANGE_TALK, CURRENT_DISTRESS, DISTRESS_SEVERITIES, DISTRESS_SEVERITY, EXPRESSED_EMOTION, EXPRESSED_EMOTIONS,
+    LABEL_DEFAULTS, STANCE, STANCES,
+)
 from .schemas import EmotionalState
 
 if TYPE_CHECKING:
@@ -24,8 +30,8 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class ReplyAssessment:
-    """One child reply's labels, each with its evidence (the phrases that fired,
-    or a model's top classes and scores; empty when nothing supports it)."""
+    """One child reply's three labels, each with its evidence (the phrases that
+    fired, or a model's top classes and scores; empty for a part's default value)."""
     reply: str
     labels: dict[str, str]
     evidence: dict[str, list[str]]
@@ -44,36 +50,36 @@ class SessionAssessor(Protocol):
     def assess(self, turns: Sequence[Turn]) -> SessionAssessment: ...
 
 
-# Every arm labels each reply's stance (the codebook's five values, ADR 0006):
-# INQUIRE ends once the child states a safer plan, which is change talk.
-STANCE = "stance"
-CHANGE_TALK = "change_talk"
-STANCES = (CHANGE_TALK, "neutral", "sustain_talk", "discord", "disengaged")
-# Provisional rules-arm stance until ticket 02's codebook rules: the first PP1
-# signal that fired, in this order. The PP1 rules have nothing for discord.
-_STANCE_FROM_SIGNAL = (("reflective", CHANGE_TALK), ("defensive", "sustain_talk"), ("withdrawn", "disengaged"))
+# The stance groups that vote; neutral does not. A tie goes in this order (ADR 0006).
+_STANCE_VOTES = {"sustain_talk": EmotionalState.DEFENSIVE, "discord": EmotionalState.DEFENSIVE,
+                 "disengaged": EmotionalState.UNCLEAR, CHANGE_TALK: EmotionalState.CALM}
+_TIE_ORDER = (EmotionalState.DEFENSIVE, EmotionalState.UNCLEAR, EmotionalState.CALM)
 
 
-def _rules_stance(hits: dict[str, list[str]]) -> tuple[str, list[str]]:
-    return next(((stance, hits[signal]) for signal, stance in _STANCE_FROM_SIGNAL if hits[signal]), ("neutral", []))
+def derive_emotional_state(replies: Sequence[ReplyAssessment]) -> EmotionalState:
+    """The session label from the reply labels, the same for every arm (ADR 0006):
+    any current distress gives distressed; otherwise the dominant stance (agreed
+    29 Oct) gives defensive (sustain talk or discord), unclear (disengaged) or calm
+    (change talk), and a session of neutral replies is calm. No replies is unclear."""
+    if not replies:
+        return EmotionalState.UNCLEAR
+    if any(r.labels[DISTRESS_SEVERITY] in CURRENT_DISTRESS for r in replies):
+        return EmotionalState.DISTRESSED
+    votes = Counter(_STANCE_VOTES[r.labels[STANCE]] for r in replies if r.labels[STANCE] in _STANCE_VOTES)
+    if not votes:
+        return EmotionalState.CALM
+    top = max(votes.values())
+    return next(state for state in _TIE_ORDER if votes[state] == top)
 
 
 class RulesAssessor:
-    """The PP1 phrase rules (src/emotion_rules.py), unchanged. Each reply is
-    labelled by which signals fired in it ("yes"/"no"), plus a stance mapped from
-    them; the emotional state is still classify() over all replies together, so
-    no session label changes."""
+    """The codebook phrase rules (src/emotion_rules.py, ticket 02)."""
 
     def assess(self, turns: Sequence[Turn]) -> SessionAssessment:
         replies = [t.child_response for t in turns if t.child_response is not None]
-        per_reply = []
-        for reply in replies:
-            hits = emotion_rules.signal_hits(reply)
-            labels = {k: "yes" if v else "no" for k, v in hits.items()}
-            labels[STANCE], stance_evidence = _rules_stance(hits)
-            per_reply.append(ReplyAssessment(reply, labels, {**hits, STANCE: stance_evidence}))
+        per_reply = [ReplyAssessment(reply, *emotion_rules.label_reply(reply)) for reply in replies]
         return SessionAssessment(
             replies=per_reply,
-            emotional_state=emotion_rules.classify(replies).state,
+            emotional_state=derive_emotional_state(per_reply),
             constructed_plan=any(emotion_rules.SELF_REGULATION.search(r.lower()) for r in replies),
         )

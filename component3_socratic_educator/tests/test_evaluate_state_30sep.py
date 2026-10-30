@@ -144,7 +144,7 @@ class TestEmotionalStateHeuristic:
     was replaced by the rule-based classifier in src/emotion_rules.py, which
     reads every child reply in the session. Bare minimal replies are now
     `unclear` (a refusal alone is not evidence of defensiveness).
-    Classifier-level cases live in tests/test_emotion_rules.py.
+    Reply-level and session-level cases live in tests/test_assessor.py.
     """
 
     def test_empty_response_gives_unclear(self):

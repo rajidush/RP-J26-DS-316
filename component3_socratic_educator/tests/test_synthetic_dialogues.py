@@ -98,8 +98,9 @@ DIALOGUES = [
              note="was complete_on_second_inquire (3 turns) until the complete-reply rule was retired, 26 Oct"),
     Dialogue("dont_know_gets_the_easier_form", RiskCategory.CYBERBULLYING, 0.60,
              ["hmm", "idk", "they kept posting about me", "I felt left out"],
-             4, EmotionalState.UNCLEAR, False, RiskLevel.MODERATE,
-             note="clarify, clarify's easier form, consequences: the repeat counts toward the cap"),
+             4, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
+             note="clarify, clarify's easier form, consequences: the repeat counts toward the cap; "
+                  "'left out' is current mild distress under the codebook (ticket 02; was unclear)"),
     Dialogue("low_risk_closes_normally", RiskCategory.GROOMING_LANGUAGE, 0.30,
              ["someone messaged me", "they asked where I live"],
              4, EmotionalState.CALM, False, RiskLevel.LOW),

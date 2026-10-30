@@ -1,69 +1,20 @@
 """
-Unit tests for the EVALUATE-state emotional_state classifier (src/emotion_rules.py).
-Agreement on the simulated dataset is measured separately by
-evidence/evaluate_emotion_rules.py (dev C001-C020, held-out C021-C040).
+The reply types INQUIRE reacts to (src/emotion_rules.py): a refusal and "I don't know".
+The rules arm's labels are tested through the assessor, in tests/test_assessor.py;
+agreement on the simulated dataset is measured by evidence/evaluate_emotion_rules.py.
 """
 import pytest
 
-from component3_socratic_educator.src.emotion_rules import classify
-from component3_socratic_educator.src.schemas import EmotionalState as E
+from component3_socratic_educator.src.emotion_rules import is_dont_know, is_refusal
 
 
-@pytest.mark.parametrize("replies,expected", [
-    # one clear case per label
-    (["I clicked a link by accident", "I closed it after that"], E.CALM),
-    (["It's not my fault.", "I didn't do anything."], E.DEFENSIVE),
-    (["I feel so alone.", "My heart feels heavy."], E.DISTRESSED),
-    (["I don't know.", "Just... quiet."], E.UNCLEAR),
-    # uncertainty is a non-answer, not calm (14 Oct bug: three "I'm not sure" scored calm)
-    (["I'm not sure", "I'm not sure", "I'm not sure"], E.UNCLEAR),
-    (["dunno", "no idea what happened there"], E.UNCLEAR),
-    (["I guess it was there"], E.UNCLEAR),
-    # ...but "I guess I should" is still a plan
-    (["I guess I should tell my dad"], E.CALM),
-    # a refusal is a non-answer too, however it is worded (14 Oct review: this one scored calm)
-    (["I do not want to talk"], E.UNCLEAR),
-    (["please just go away now"], E.UNCLEAR),
-    (["can you stop asking me that"], E.UNCLEAR),
-    # no answer / bare refusal -> unclear, never defensive
-    ([], E.UNCLEAR),
-    (["", "   "], E.UNCLEAR),
-    (["no", "ok"], E.UNCLEAR),
-    # naming a feeling AND planning a safer step is regulation -> calm
-    (["It was really scary.", "I think I should talk to my mom about it."], E.CALM),
-    # distress that outweighs the planning still wins (3 distress vs 2 reflective)
-    (["I'm so scared and alone and it hurts.", "Maybe I should tell someone."], E.DISTRESSED),
-    # ...but an equal amount of planning counts as regulating (2 vs 2)
-    (["I'm so scared and alone.", "Maybe I should tell someone."], E.CALM),
-    # softened feelings are not distress
-    (["It was kinda scary.", "It made me a little upset."], E.CALM),
-    # "leave me alone" is opting out, not loneliness
-    (["Just... leave me alone."], E.UNCLEAR),
-    # "I don't know what to do" is distress, not a non-answer
-    (["I don't know what to do anymore."], E.DISTRESSED),
-    # curly apostrophes from the LLM are handled
-    (["It’s not my fault.", "I didn’t see it."], E.DEFENSIVE),
-    # ties go distressed > defensive > unclear
-    (["It's not my fault.", "It's scary."], E.DISTRESSED),
-    (["It's not my fault.", "I don't know."], E.DEFENSIVE),
+@pytest.mark.parametrize("reply,expected", [
+    ("leave me alone", True), ("I don't want to talk", True), ("I do not want to talk about it", True),
+    ("can you stop asking me that", True), ("please just go away now", True), ("I need some space", True),
+    ("I feel so alone", False), ("I want to talk to my mum", False), ("", False),
 ])
-def test_classify(replies, expected):
-    assert classify(replies).state == expected
-
-
-def test_verdict_explains_itself():
-    verdict = classify(["It's not my fault.", "I feel so scared."])
-    assert verdict.hits == {"distress": ["scared"], "defensive": ["not my fault"]}
-    assert verdict.counts == {"distress": 1, "defensive": 1}
-
-
-def test_every_label_is_reachable():
-    """The old word-count placeholder could never output `distressed`."""
-    outputs = {classify(r).state for r in (
-        ["I was just curious about it"], ["whatever, not my fault"],
-        ["I feel so scared"], ["idk"],
-    )}
-    assert outputs == set(E)
+def test_refusal(reply, expected):
+    assert is_refusal(reply) is expected
 
 
 @pytest.mark.parametrize("reply,expected", [
@@ -75,5 +26,4 @@ def test_every_label_is_reachable():
     ("I don't know what to do", False), ("nothing", False), ("weird", False), ("ok", False), ("", False),
 ])
 def test_dont_know_is_the_reply_type_inquire_repeats_a_move_for(reply, expected):
-    from component3_socratic_educator.src.emotion_rules import is_dont_know
     assert is_dont_know(reply) is expected

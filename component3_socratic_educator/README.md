@@ -72,31 +72,37 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 
 - `risk_level` comes from the detector's confidence, not from the dialogue:
   `>= 0.85` high, `>= 0.50` moderate, otherwise low.
-- `emotional_state` comes from `src/emotion_rules.py`, which matches phrase lists over
-  every child reply in the session. Its four signals are:
-  - *reflective*, e.g. "maybe I should talk to my mom"
-  - *distress*, e.g. "so scared", "alone", "heavy"; softened forms like "kinda scary" don't count
-  - *defensive*, e.g. "not my fault", "I didn't do it"
-  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone", "not sure" (uncertainty added 14 Oct)
+- `emotional_state` comes from the injected session assessor (`src/assessor.py`). Since
+  29 Oct (ticket 02, ADR 0006) every child reply gets three labels from the codebook
+  (`src/codebook.py`), each with the phrases that fired as its evidence:
+  - *expressed emotion*: anger, disgust, fear, joy, sadness, surprise or neutral (GoEmotions' Ekman grouping);
+  - *distress severity*: none, past, current mild or current acute (after the ReachOut triage
+    branches). Fear or sadness now is current; "I'm fine now" makes it past; self-harm
+    language and overwhelm are acute and never downgraded. Softened forms like "kinda scary" count;
+  - *stance*: change talk, neutral, sustain talk, discord or disengaged (Motivational
+    Interviewing client language; *disengaged* is a project extension for non-answers and
+    opting out). A filler like "hmm" or "ok" is neutral.
 
-  The result is calm if planning is at least as strong as distress. Otherwise the strongest of
-  distressed > defensive > unclear wins. No signal plus only 1-2 word replies gives unclear
-  (a bare "no" is not counted as defensive). `classify()` also returns the phrases that
-  fired, so every label can be explained. On the simulated dataset it agrees with the
-  intended child profile in 89.0% of development sessions (C001-C020, used to write the
-  rules) and **84.7% of held-out sessions** (C021-C040), after the 14 Oct fixes (before:
-  89.8% / 85.2%; `evidence/evaluate/emotion_rules_eval_2026-10-14/`). The drop is two held-out
-  calm children now scored unclear, from the new uncertainty phrases, and two dev
-  unclear children now scored distressed, because a refusal ends INQUIRE earlier and
-  they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
-  data, and were not tuned after these results. Rerun on 26 Oct with the same rules
-  after INQUIRE became the three Socratic moves (ticket 03): 93.7% dev and 90.9%
-  held-out (338/372; `evidence/evaluate/emotion_rules_eval_2026-10-26_socratic-moves/`).
-  The rules did not change (the same phrases fire on all 3,534 saved replies and
-  per-child texts); children who no longer stop at a short complete reply give more
-  replies, so the rules have more text to read. It is still agreement with the
-  generator's intent, not accuracy. The word-count rule it replaced
-  scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
+  One derivation, shared by every classifier arm, turns the reply labels into the session
+  label: any current distress gives distressed (even with a plan, so that child is escalated);
+  otherwise the dominant stance wins (sustain talk or discord: defensive; disengaged: unclear;
+  change talk: calm), with ties in that order; only neutral replies give calm. The rules arm
+  (`src/emotion_rules.py`) handles a negation just before a phrase ("not scared at all"),
+  some words out of context ("lost in the game") and fixed wordings of implicit feelings
+  ("nobody cares about me"); implicit feelings with no fixed wording are known failures
+  (`tests/test_assessor.py`).
+
+  Agreement with the intended child profile on the simulated dataset
+  (`evidence/evaluate/emotion_rules_eval_2026-10-29_three-part/`): **60.8% held-out**
+  (226/372), 67.3% dev. Before: 84.7% (14 Oct, PP1 rules) and 90.9% (26 Oct, PP1 rules
+  with the Socratic moves). The drop is the policy change, not a regression: 88 of 119
+  held-out children generated as *calm* now score distressed, because their profile was
+  written to the PP1 rule that a plan outweighs distress ("it was kinda scary ... I'll talk
+  to my parents"), which ADR 0006 reverses. Distressed children: 75/76 before and after. The
+  rules were written from the codebook and the panel's examples, not from this dataset, and
+  were not tuned after these results. The intended profiles are the generator's brief, not
+  human labels; the human-labelled comparison is ticket 19. Reproduce with
+  `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
   It matches keywords, not a safer plan: "Next time I will do exactly the same thing."
@@ -324,12 +330,15 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 - `self_regulation_shown` is a keyword match (see EVALUATE rules), so it can be
   wrong in both directions. Not changed before PP1: Component 4 clusters on it
   (`selfreg_rate`), and changing it would change the dataset Component 4 holds.
-- EVALUATE is rule-based (phrase lists + detector confidence), not a trained
-  classifier. Its held-out agreement (84.7% on 14 Oct; 90.9% with the 26 Oct
-  Socratic moves, same rules) is measured on LLM-simulated children
-  against the profile they were *generated* with, not on real children or
-  human-annotated labels. Weakest case: withdrawn children who voice sadness are
-  labelled `distressed` (65% agreement for `unclear` on 14 Oct, 72% on 26 Oct).
+- EVALUATE's labels come from phrase rules (the rules arm), not a trained
+  classifier; the off-the-shelf and fine-tuned arms are tickets 13 and 14. Its
+  held-out agreement (60.8% on 29 Oct with the codebook rules; 84.7% and 90.9%
+  with the PP1 rules) is measured on LLM-simulated children against the profile
+  they were *generated* with, under the PP1 plan-outweighs-distress rule, not on
+  real children or human-annotated labels. Weakest cases: implicit feelings with
+  no feeling word ("everyone at school is going to see it"), and children
+  generated as withdrawn who voice sadness, who are labelled `distressed` (55%
+  agreement for `unclear`).
 - Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
   3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
   target of 200+. 0 delivered lines broke the grammar or post-check (by

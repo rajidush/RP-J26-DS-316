@@ -27,7 +27,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from component3_socratic_educator.src import config, emotion_rules                           # noqa: E402
-from component3_socratic_educator.src.assessor import CHANGE_TALK, STANCE, RulesAssessor      # noqa: E402
+from component3_socratic_educator.src.assessor import (                                       # noqa: E402
+    CHANGE_TALK, DISTRESS_SEVERITY, EXPRESSED_EMOTION, STANCE, RulesAssessor,
+)
 from component3_socratic_educator.src.fsm_controller import DialogueState, FSMController, Turn  # noqa: E402
 from component3_socratic_educator.src.model_client import LM_STUDIO_URL, call_local_model     # noqa: E402
 from component3_socratic_educator.src import shadow                                          # noqa: E402
@@ -183,12 +185,15 @@ def next_action(state, easier, reply):
 
 
 def explain(run):
-    """The EVALUATE 'why' lines, from the same rules the FSM used."""
+    """The EVALUATE 'why' lines, from the assessor's labels and evidence (the FSM's default rules arm)."""
     r = run["record"]
     conf = ss().trigger.confidence_score
-    replies = ss().replies[:len([t for t in run["turns"] if t["reply"] is not None])]
-    verdict = emotion_rules.classify(replies)
-    phrases = "; ".join(f"{k}: {', '.join(repr(p) for p in v)}" for k, v in verdict.hits.items()) or "no phrase fired"
+    assessment = RulesAssessor().assess(run["transcript"].turns)
+    phrases = "; ".join(
+        f"“{a.reply}”: " + " / ".join(a.labels[part] + (f" ({', '.join(a.evidence[part])})" if a.evidence[part] else "")
+                                       for part in (EXPRESSED_EMOTION, DISTRESS_SEVERITY, STANCE))
+        for a in assessment.replies) or "no reply"
+    replies = [a.reply for a in assessment.replies]
     selfreg = [m.group(0) for rep in replies for m in [emotion_rules.SELF_REGULATION.search(rep.lower())] if m]
     why = r.dialogue_summary.split("escalated: ")[-1] if r.escalation_flag else "not escalated"
     rule = risk_rule(conf)[1]
@@ -287,9 +292,11 @@ def top_bar(key):
 
 
 LIMITATIONS = [
-    "INQUIRE lines are templates picked by reply type; the model writes only INTERCEPT until after PP1.",
+    "INQUIRE asks the Socratic moves with template lines per age band; the model writes only INTERCEPT "
+    "until model-written INQUIRE lines (ticket 05).",
     "Triggers are built from the Component 1/2 mock fixtures, not live detections.",
-    "EVALUATE is rule-based (phrase lists); off-topic replies are not detected.",
+    "EVALUATE's labels come from phrase rules (the rules arm); implicit feelings with no fixed wording and "
+    "off-topic replies are not detected.",
     "The adapter is a first iteration and is not in the child-facing loop (see the adapter section below).",
 ]
 
