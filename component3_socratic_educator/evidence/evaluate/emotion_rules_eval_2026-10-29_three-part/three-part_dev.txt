@@ -1,0 +1,83 @@
+split=dev  sessions=382  children=20
+agreement with intended state: 257/382 = 67.3%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                       22           2          84           2      20%
+defensive                   2          88           9           6      84%
+distressed                  1           0         116           2      97%
+unclear                     0           1          16          31      65%
+
+output counts: {'distressed': 225, 'defensive': 91, 'unclear': 41, 'calm': 25}
+
+S-000004 intended=defensive output=distressed
+   "I'm feeling upset.": sadness ['upset'] / current_mild ['upset'] / neutral
+   "It's just... a lot.": neutral / none / neutral
+   "I don't know why I did it.": neutral / none / neutral
+   "I don't know why I did it.": neutral / none / neutral
+
+S-000007 intended=calm output=distressed
+   'I saw something really upsetting online. It made me feel sad.': sadness ['upsetting', 'sad'] / current_mild ['upsetting', 'sad'] / neutral
+   "That's a tough thing to deal with. Maybe I could try looking at different things instead?": neutral / none / change_talk ['instead']
+
+S-000009 intended=defensive output=unclear
+   "I don't understand.": surprise ["don't understand"] / none / disengaged ["i don't understand"]
+   "It's not that important.": neutral / none / sustain_talk ['not that important']
+   'Just... leave me alone.': neutral / none / disengaged ['leave me alone']
+
+S-000010 intended=defensive output=unclear
+   'Yeah, it was just a bit.': neutral / none / sustain_talk ['just a bit']
+   "It didn't really happen to me.": neutral / none / neutral
+   "I don't know what you're talking about.": neutral / none / disengaged ["i don't know"]
+   'Just... stop asking.': neutral / none / disengaged ['stop asking']
+
+S-000013 intended=calm output=distressed
+   "It was scary, but I felt like I couldn't talk to anyone about it.": fear ['scary'] / current_mild ['scary'] / neutral
+   'I think I should maybe tell someone I feel really sad. Do you have any ideas?': sadness ['sad'] / current_mild ['sad'] / change_talk ['tell someone']
+
+S-000015 intended=calm output=distressed
+   "It was really scary, but I think it's okay to feel upset about it.": fear ['scary'] / current_mild ['scary', 'upset'] / neutral
+   'I guess I should maybe check out some other stuff instead of just watching that.': neutral / none / change_talk ['instead']
+
+S-000017 intended=calm output=distressed
+   'It just felt really awful to say things that hurt someone else.': sadness ['awful', 'hurt'] / current_mild ['awful', 'hurt'] / neutral
+   'I think I should try talking to my family about it. Maybe we can all agree on how to handle it better.': neutral / none / neutral
+   "I guess I could be more careful about what I share online. It's okay if I don't do it again.": neutral / none / change_talk ['be more careful']
+
+S-000018 intended=calm output=distressed
+   'It was really scary, you know? I felt so upset.': fear ['scary'] / current_mild ['scary', 'upset'] / neutral
+   'I think I should try to look for something else online when I feel this way.': neutral / none / neutral
+   'Maybe I can ask a grown-up about it? They might help me understand.': neutral / none / change_talk ['i can ask']
+
+S-000019 intended=calm output=distressed
+   'It was really confusing, I just felt like I needed to see it.': surprise ['confusing'] / none / neutral
+   'I think I might need to take a break from my phone for a bit. It made me feel a little anxious.': fear ['anxious'] / current_mild ['anxious'] / neutral
+   'Maybe I could try talking to someone? Like, a grown-up?': neutral / none / neutral
+   "I'm going to look up some resources about feeling worried and how to deal with that.": fear ['worried'] / current_mild ['worried'] / neutral
+
+S-000020 intended=calm output=distressed
+   'It was kind of scary, but I felt like I needed to look at it differently now.': fear ['scary'] / current_mild ['scary'] / neutral
+   'I guess I can try to be more careful about what I click on next time.': neutral / none / change_talk ['be more careful', 'next time']
+
+S-000021 intended=calm output=distressed
+   "I'm feeling a little confused right now.": surprise ['confused'] / none / neutral
+   'It seems like something really upsetting happened online.': sadness ['upsetting'] / current_mild ['upsetting'] / neutral
+   'Maybe I could try to look for things that make me happy more often?': joy ['happy'] / none / neutral
+   'Maybe I could try to look for things that make me happy more often?': joy ['happy'] / none / neutral
+
+S-000022 intended=calm output=distressed
+   'It was really confusing to look at, actually. I felt a little worried.': fear ['worried'] / current_mild ['worried'] / neutral
+   "I think I need to check my parents more often about what I'm doing online.": neutral / none / neutral
+   'Maybe I could ask someone who knows me well for advice? It seems like it made me feel uneasy.': neutral / none / change_talk ['i could ask']
+
+S-000023 intended=calm output=distressed
+   'Hey, it happened. I felt kind of sad when that happened to me.': sadness ['sad'] / current_mild ['sad'] / neutral
+   'I wonder if I could try talking about my feelings more openly? Maybe tell someone else?': neutral / none / change_talk ['tell someone']
+
+S-000026 intended=calm output=distressed
+   "I saw something online that made me feel scared. It wasn't good.": fear ['scared'] / current_mild ['scared'] / neutral
+   "It's hard to understand why I felt that way, but I think I need to take a break from looking at things like that for a little while.": neutral / none / neutral
+   'Maybe we could look for some different games or activities instead?  Something that makes me feel happy.': joy ['happy'] / none / change_talk ['instead']
+
+S-000027 intended=calm output=distressed
+   'It was kind of scary, you know? Like, a really weird picture.': fear ['scary'] / current_mild ['scary'] / neutral
+   "I saw something about that. I'll try to be more careful what I click on next time.": neutral / none / change_talk ['be more careful', 'next time']

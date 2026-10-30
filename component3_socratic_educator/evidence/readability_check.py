@@ -1,17 +1,18 @@
 """
 Measurement-only reading level of the lines a child sees (PP1 close-out, 20 Oct).
 
-The project's age range is 8-15, but Component 3's prompts were written for 11+
-and it receives no age (PP2: the age band comes from Component 4's persona).
-This measures whether the lines children actually get are easy enough for the
-youngest band. It reads recorded evidence and the current template pools and
-changes nothing.
+The project's age range is 8-15. Component 3's INTERCEPT prompt was written for
+11+, and since 26 Oct (ticket 03) INQUIRE's template lines are worded per age
+band (8-10, 11-13, 14-15), so they are scored per band; the other sets have no
+band and are read against the youngest. It reads recorded evidence and the
+current template lines and changes nothing.
 
     INTERCEPT, model    delivered model lines of the 13 Oct adversarial run, and
                         of the 14 Oct online after-review end-to-end run
     INTERCEPT fallback  the fallback pool in src/grammar_decoder.py
     openers             the two fixed safe openers
-    INQUIRE templates   INQUIRE_LINES in src/grammar_decoder.py
+    INQUIRE templates   INQUIRE_TEMPLATES in src/grammar_decoder.py, one set per
+                        age band (every move's line and its easier form)
     CONTRACT            the closing lines recorded in the 14 Oct after-review runs
 
 Three formulas, from textstat:
@@ -42,7 +43,8 @@ from pathlib import Path
 
 import textstat
 
-from src.grammar_decoder import INQUIRE_LINES, INTERCEPT_OPENERS, GrammarConstrainedGenerator
+from src import config
+from src.grammar_decoder import INQUIRE_TEMPLATES, INTERCEPT_OPENERS, GrammarConstrainedGenerator
 
 EV = Path(__file__).resolve().parent
 ADVERSARIAL = EV / "intercept" / "adversarial_intercept_2026-10-13" / "adversarial_intercept_2026-10-13.jsonl"
@@ -65,7 +67,8 @@ def collect() -> dict[str, list[str]]:
             [t["system_text"] for s in online for t in s["turns"] if t["state"] == "INTERCEPT" and t["source"] == "model"],
         "INTERCEPT fallback pool": list(GrammarConstrainedGenerator._CANDIDATES["INTERCEPT"]),
         "fixed openers": list(INTERCEPT_OPENERS),
-        "INQUIRE templates": [line for pool in INQUIRE_LINES.values() for line in pool],
+        **{f"INQUIRE templates, ages {band}": [line for bands in INQUIRE_TEMPLATES.values() for line in bands[band]]
+           for band in config.AGE_BANDS},
         "CONTRACT closing lines (14 Oct runs)":
             sorted({t["system_text"] for path in END_TO_END for s in _rows(path) for t in s["turns"]
                     if t["state"] == "CONTRACT"}),
@@ -126,7 +129,9 @@ def to_markdown(summary: dict) -> str:
             "- The formulas measure word and sentence length and word familiarity, not meaning: a short question "
             "can still be hard to answer, for example a hypothetical one for an 8-year-old.",
             "- Readability formulas were built for US school texts in passages, not single spoken questions.",
-            "- Component 3 receives no age today, so this checks the lines against the youngest band only.", "",
+            "- Only the INQUIRE templates are worded per age band; the other sets are read against the youngest.",
+            "- Each band's INQUIRE set is six short lines (three moves, each with its easier form), a small "
+            "passage for these formulas.", "",
             "## Inputs", ""]
     out += [f"- `{name}`: sha256 `{h}`" for name, h in summary["run_record"]["inputs"].items()]
     return "\n".join(out) + "\n"
@@ -151,7 +156,7 @@ def main(argv=None) -> int:
             "textstat_version": version("textstat"), "python": platform.python_version(), "language": "en_US",
             "inputs": {str(p.relative_to(EV)): hashlib.sha256(p.read_bytes()).hexdigest()
                        for p in [ADVERSARIAL, *END_TO_END]},
-            "template_pools": "src/grammar_decoder.py: INTERCEPT_OPENERS, INQUIRE_LINES, INTERCEPT fallback pool",
+            "template_pools": "src/grammar_decoder.py: INTERCEPT_OPENERS, INQUIRE_TEMPLATES, INTERCEPT fallback pool",
         },
         "sets": {set_name: score(lines) for set_name, lines in sets.items()},
     }

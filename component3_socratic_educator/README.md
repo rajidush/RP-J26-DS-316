@@ -64,7 +64,7 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 |---|---|---|
 | (entry) | `trigger.validate()` against the comp1/comp2 contract | Invalid trigger raises before the child is asked anything |
 | INTERCEPT | One opening question from the generator. Never names the flagged category. | -> INQUIRE after one reply; a refusal ("leave me alone") goes straight to EVALUATE |
-| INQUIRE | Follow-up questions picked by the reply type of the child's latest reply (stated emotion: supportive; "I don't know": low-pressure; other: neutral), a different one each attempt | A complete reply (>= `MIN_RESPONSE_WORDS_FOR_COMPLETENESS` (4) words, or a feeling, denial or plan phrase such as "I feel sick"), a refusal, or `MAX_INQUIRE_ATTEMPTS` (3) reached |
+| INQUIRE | The Socratic moves in order (`SOCRATIC_MOVES`): clarify what happened, then consequences, then alternatives. Each line is a pre-checked template for the move and the child's age band (`INQUIRE_TEMPLATES`; 8-10 gets a concrete feeling question and a choice of two safe options, and a missing or invalid band means 8-10). "I don't know" gets the same move once more in its easier form. Since 26 Oct (ticket 03); before, lines were picked by reply type | A refusal (at once), a safer plan in the child's own words (the assessor's change-talk stance, after the move it answers), or `MAX_INQUIRE_MOVES` (3) questions, the easier repeat included |
 | EVALUATE | Builds the typed record (no child-facing text) | Always -> CONTRACT |
 | CONTRACT | Sets `escalation_flag`, says the closing line | Always -> DONE; record is schema-validated and returned |
 
@@ -72,25 +72,37 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
 
 - `risk_level` comes from the detector's confidence, not from the dialogue:
   `>= 0.85` high, `>= 0.50` moderate, otherwise low.
-- `emotional_state` comes from `src/emotion_rules.py`, which matches phrase lists over
-  every child reply in the session. Its four signals are:
-  - *reflective*, e.g. "maybe I should talk to my mom"
-  - *distress*, e.g. "so scared", "alone", "heavy"; softened forms like "kinda scary" don't count
-  - *defensive*, e.g. "not my fault", "I didn't do it"
-  - *withdrawn*, e.g. "I don't know", "quiet", "leave me alone", "not sure" (uncertainty added 14 Oct)
+- `emotional_state` comes from the injected session assessor (`src/assessor.py`). Since
+  29 Oct (ticket 02, ADR 0006) every child reply gets three labels from the codebook
+  (`src/codebook.py`), each with the phrases that fired as its evidence:
+  - *expressed emotion*: anger, disgust, fear, joy, sadness, surprise or neutral (GoEmotions' Ekman grouping);
+  - *distress severity*: none, past, current mild or current acute (after the ReachOut triage
+    branches). Fear or sadness now is current; "I'm fine now" makes it past; self-harm
+    language and overwhelm are acute and never downgraded. Softened forms like "kinda scary" count;
+  - *stance*: change talk, neutral, sustain talk, discord or disengaged (Motivational
+    Interviewing client language; *disengaged* is a project extension for non-answers and
+    opting out). A filler like "hmm" or "ok" is neutral.
 
-  The result is calm if planning is at least as strong as distress. Otherwise the strongest of
-  distressed > defensive > unclear wins. No signal plus only 1-2 word replies gives unclear
-  (a bare "no" is not counted as defensive). `classify()` also returns the phrases that
-  fired, so every label can be explained. On the simulated dataset it agrees with the
-  intended child profile in 89.0% of development sessions (C001-C020, used to write the
-  rules) and **84.7% of held-out sessions** (C021-C040), after the 14 Oct fixes (before:
-  89.8% / 85.2%; `evidence/evaluate/emotion_rules_eval_2026-10-14/`). The drop is two held-out
-  calm children now scored unclear, from the new uncertainty phrases, and two dev
-  unclear children now scored distressed, because a refusal ends INQUIRE earlier and
-  they give fewer replies. The phrases come from the 12 Oct bug, not the held-out
-  data, and were not tuned after these results. The word-count rule it replaced
-  scored 30.5%. Reproduce with `python -m evidence.evaluate_emotion_rules --split heldout`.
+  One derivation, shared by every classifier arm, turns the reply labels into the session
+  label: any current distress gives distressed (even with a plan, so that child is escalated);
+  otherwise the dominant stance wins (sustain talk or discord: defensive; disengaged: unclear;
+  change talk: calm), with ties in that order; only neutral replies give calm. The rules arm
+  (`src/emotion_rules.py`) handles a negation just before a phrase ("not scared at all"),
+  some words out of context ("lost in the game") and fixed wordings of implicit feelings
+  ("nobody cares about me"); implicit feelings with no fixed wording are known failures
+  (`tests/test_assessor.py`).
+
+  Agreement with the intended child profile on the simulated dataset
+  (`evidence/evaluate/emotion_rules_eval_2026-10-29_three-part/`): **60.8% held-out**
+  (226/372), 67.3% dev. Before: 84.7% (14 Oct, PP1 rules) and 90.9% (26 Oct, PP1 rules
+  with the Socratic moves). The drop is the policy change, not a regression: 88 of 119
+  held-out children generated as *calm* now score distressed, because their profile was
+  written to the PP1 rule that a plan outweighs distress ("it was kinda scary ... I'll talk
+  to my parents"), which ADR 0006 reverses. Distressed children: 75/76 before and after. The
+  rules were written from the codebook and the panel's examples, not from this dataset, and
+  were not tuned after these results. The intended profiles are the generator's brief, not
+  human labels; the human-labelled comparison is ticket 19. Reproduce with
+  `python -m evidence.evaluate_emotion_rules --split heldout`.
 - `self_regulation_shown` is True if any child reply contains, as whole words,
   `instead`, `next time`, `should have` or `i could` (so "I couldn't" does not count).
   It matches keywords, not a safer plan: "Next time I will do exactly the same thing."
@@ -107,8 +119,12 @@ don't have to talk right now. I'm here if you want to talk later."*; otherwise
 
 `dialogue_turns` counts turns that have a child reply (INTERCEPT + INQUIRE), so
 it ranges from 1 (a refusal to the opening line) to 4 with the current config. All tunables are in `src/config.py`.
+Every transcript turn records its dialogue state, Socratic move (and whether it was
+the easier form), age band, line source (model, template or fallback) and fallback
+reason. `FSMController(age_band=...)` or `run(..., age_band=...)` sets the band; the
+band is not part of any trigger contract (ADR 0007).
 
-**Tests.** `tests/test_synthetic_dialogues.py` holds 18 scripted dialogues
+**Tests.** `tests/test_synthetic_dialogues.py` holds 19 scripted dialogues
 (normal flow, minimal/silent/defensive children, keyword edge cases, risk
 boundaries), checks each one's outcome, and checks the invariants every session
 must satisfy: state order, no category leak, no repeated question, schema-valid
@@ -303,19 +319,26 @@ JSON validity, controller-grammar compliance and controller correctness are repo
   re-expresses the grammar in GBNF, and reruns the grammar, adversarial and latency
   evidence. If LM Studio is unreachable or times out (30 s), INTERCEPT falls back
   to a template line, so a session always completes.
-- Only INTERCEPT is model-written. INQUIRE picks template lines by reply type,
-  and EVALUATE and CONTRACT are rules. The fine-tuned INQUIRE adapter is shown on
+- Only INTERCEPT is model-written. INQUIRE asks its Socratic moves with template
+  lines per age band (model-written lines are ticket 05), and EVALUATE and
+  CONTRACT are rules. Until ticket 02 rewrites the rules, the plan that ends
+  INQUIRE is the PP1 planning phrases mapped to change talk, so a hedge such as
+  "I think I..." also ends it. An off-topic reply is still not detected. The fine-tuned INQUIRE adapter is shown on
   the demo page as a shadow and never sent to the child: it mentions a trusted
   adult in 43 of 50 responses and repeats one closing question 16 times, so it
   is retrained in PP2 before any integration.
 - `self_regulation_shown` is a keyword match (see EVALUATE rules), so it can be
   wrong in both directions. Not changed before PP1: Component 4 clusters on it
   (`selfreg_rate`), and changing it would change the dataset Component 4 holds.
-- EVALUATE is rule-based (phrase lists + detector confidence), not a trained
-  classifier. Its 84.7% held-out agreement is measured on LLM-simulated children
-  against the profile they were *generated* with, not on real children or
-  human-annotated labels. Weakest case: withdrawn children who voice sadness are
-  labelled `distressed` (65% agreement for `unclear`).
+- EVALUATE's labels come from phrase rules (the rules arm), not a trained
+  classifier; the off-the-shelf and fine-tuned arms are tickets 13 and 14. Its
+  held-out agreement (60.8% on 29 Oct with the codebook rules; 84.7% and 90.9%
+  with the PP1 rules) is measured on LLM-simulated children against the profile
+  they were *generated* with, under the PP1 plan-outweighs-distress rule, not on
+  real children or human-annotated labels. Weakest cases: implicit feelings with
+  no feeling word ("everyone at school is going to see it"), and children
+  generated as withdrawn who voice sadness, who are labelled `distressed` (55%
+  agreement for `unclear`).
 - Tested against 104 adversarial cases plus 8 no-attack controls (13 Oct:
   3 seen + 10 unseen attack styles, x 8 categories), not yet the proposal's
   target of 200+. 0 delivered lines broke the grammar or post-check (by

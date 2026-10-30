@@ -38,8 +38,7 @@ from pathlib import Path
 
 # Run this file from the project root (the folder that contains src/).
 from src.fsm_controller import FSMController
-from src.emotion_rules import OTHER
-from src.grammar_decoder import GrammarConstrainedGenerator
+from src.grammar_decoder import GeneratedLine, GrammarConstrainedGenerator
 from src.model_client import LM_STUDIO_URL
 from src.schemas import _CONTRACTS_DIR, _validate_against_schema, EmotionalState, RiskLevel, TriggerPayload
 
@@ -236,15 +235,16 @@ class StubInterceptGenerator(GrammarConstrainedGenerator):
     """--stub-generator: deterministic, network-free generator.
 
     The real generator sends INTERCEPT to LM Studio (src/model_client.py) and
-    uses the template pool for INQUIRE. This stub uses the existing template
-    pool + grammar validate() for every state, i.e. the pre-SLM code path.
-    Only the INTERCEPT opening text changes; no EvaluateOutput field depends
-    on that text today.
+    uses the template lines for INQUIRE. This stub gives INTERCEPT's template
+    line instead, i.e. the pre-SLM code path; INQUIRE is unchanged. Only the
+    INTERCEPT opening text changes; no EvaluateOutput field depends on that
+    text today.
     """
 
-    def generate(self, state, risk_category, attempt=0, reply_type=OTHER):
-        candidate = self._candidate(state, risk_category, attempt=attempt, reply_type=reply_type)
-        return candidate if self.validate(state, candidate) else self._safe_fallback(state)
+    def generate_with_source(self, state, risk_category, attempt=0, upstream_context=None, **inquire):
+        if state != "INTERCEPT":
+            return super().generate_with_source(state, risk_category, attempt, upstream_context, **inquire)
+        return GeneratedLine(self._candidate(state, risk_category, attempt=attempt), "template")
 
 
 def load_templates(mock_dir=DEFAULT_MOCK_DIR):

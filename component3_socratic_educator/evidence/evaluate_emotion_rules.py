@@ -1,10 +1,13 @@
 """
-Evaluate the EVALUATE-state emotional_state classifier (src/emotion_rules.py)
-against the simulated dataset in out/, by running the real FSM over the saved
-child replies (no model calls).
+Evaluate EVALUATE's emotional_state (the default assessor: the rules arm in
+src/emotion_rules.py and the shared derivation in src/assessor.py) against the
+simulated dataset in out/, by running the real FSM over the saved child replies
+(no model calls).
 
-Rules were written on the DEVELOPMENT children only; report HELD-OUT numbers
-as the result and do not change the rules after looking at them.
+The PP1 rules were written on the DEVELOPMENT children only. The 29 Oct codebook
+rules (ticket 02) were written from the codebook and the panel's examples, not
+from this dataset. Report HELD-OUT numbers as the result and do not change the
+rules after looking at them.
 
     dev     C001-C020   used to write and tune the rules
     heldout C021-C040   evaluation only
@@ -25,7 +28,6 @@ from collections import Counter
 from pathlib import Path
 
 import generate_educator_dataset as g
-from src import emotion_rules
 
 OUT = Path(__file__).resolve().parents[1] / "out"
 SPLITS = {"dev": range(1, 21), "heldout": range(21, 41), "all": range(1, 41)}
@@ -62,8 +64,8 @@ def main():
             return state["last"]
 
         out, transcript = fsm.run(g.make_trigger(s, templates), respond)
-        heard = [t.child_response for t in transcript.turns if t.child_response is not None]
-        rows.append((s, g.ARCHETYPES[s["archetype"]][1], out.emotional_state.value, heard))
+        labelled = fsm.assessor.assess(transcript.turns).replies
+        rows.append((s, g.ARCHETYPES[s["archetype"]][1], out.emotional_state.value, labelled))
 
     n = len(rows)
     agree = sum(i == o for _, i, o, _ in rows)
@@ -78,9 +80,11 @@ def main():
     print("\noutput counts:", dict(Counter(o for *_, o, _ in rows)))
 
     errors = [(s, i, o, h) for s, i, o, h in rows if i != o]
-    for s, i, o, heard in errors[: args.show_errors]:
-        print(f"\n{s['session_id']} intended={i} output={o} hits={emotion_rules.classify(heard).counts}")
-        print("   " + " | ".join(heard))
+    for s, i, o, labelled in errors[: args.show_errors]:
+        print(f"\n{s['session_id']} intended={i} output={o}")
+        for a in labelled:   # each reply's three parts, with the phrases that fired
+            parts = " / ".join(v + (f" {a.evidence[k]}" if a.evidence[k] else "") for k, v in a.labels.items())
+            print(f"   {a.reply!r}: {parts}")
 
 
 if __name__ == "__main__":

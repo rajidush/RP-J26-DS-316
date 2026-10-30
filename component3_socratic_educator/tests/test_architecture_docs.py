@@ -40,8 +40,10 @@ def test_the_fsm_diagram_has_every_dialogue_state_and_the_config_values():
     for state in DialogueState:
         if state is not DialogueState.DONE:
             assert state.name.capitalize() in text, state
-    assert f"< {config.MIN_RESPONSE_WORDS_FOR_COMPLETENESS} words" in text
-    assert f"attempts < {config.MAX_INQUIRE_ATTEMPTS}" in text
+    assert " → ".join(config.SOCRATIC_MOVES) in text
+    assert f"questions < {config.MAX_INQUIRE_MOVES}" in text
+    assert f"`MAX_INQUIRE_MOVES = {config.MAX_INQUIRE_MOVES}`" in text
+    assert f"`AGE_BANDS = {config.AGE_BANDS!r}`".replace("'", '"') in text
     levels = ", ".join(f'"{level}"' for level in sorted(config.ESCALATION_RISK_LEVELS))
     assert f"`ESCALATION_RISK_LEVELS` (`{{{levels}}}`)" in text
 

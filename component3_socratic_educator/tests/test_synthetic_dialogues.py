@@ -8,10 +8,12 @@ outcome the FSM must produce. Every dialogue is also checked against the
 invariants that hold for ALL sessions (state order, schema validity, no
 flagged-content leak, no repeated INQUIRE question).
 
-Replies are consumed as: reply[0] -> INTERCEPT, then up to
-MAX_INQUIRE_ATTEMPTS replies -> INQUIRE (stops early on a complete reply: at
-least MIN_RESPONSE_WORDS_FOR_COMPLETENESS words, or one stating a feeling, a
-denial or a plan).
+Replies are consumed as: reply[0] -> INTERCEPT, then up to MAX_INQUIRE_MOVES
+replies -> INQUIRE, one per Socratic move (since 26 Oct, ticket 03: it stops
+early on a refusal or a safer plan, and "I don't know" repeats a move in its
+easier form). Before 26 Oct a "complete reply" also ended INQUIRE, so many
+dialogues below had 2 child turns; with no plan or refusal they now get all
+three moves, and no session label changed.
 
 Runs offline: tests/conftest.py blocks the live model, so INTERCEPT uses
 the template pool.
@@ -79,7 +81,7 @@ DIALOGUES = [
     # --- normal flow ------------------------------------------------------
     Dialogue("calm_explains_first_try", RiskCategory.EXPLICIT_VISUAL, 0.62,
              ["hmm", "I clicked a link by accident"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE,
+             4, EmotionalState.CALM, False, RiskLevel.MODERATE,
              note="was \"I'm not sure\" until 14 Oct; uncertainty now scores unclear (test_emotion_rules)"),
     Dialogue("self_regulation_instead", RiskCategory.VIOLENCE, 0.90,
              ["I saw it", "I should have closed it instead"],
@@ -90,29 +92,36 @@ DIALOGUES = [
     Dialogue("self_regulation_uppercase", RiskCategory.HATE_SPEECH, 0.70,
              ["hmm", "INSTEAD I just closed the chat"],
              2, EmotionalState.CALM, True, RiskLevel.MODERATE),
-    Dialogue("complete_on_second_inquire", RiskCategory.UNKNOWN_FLAGGED, 0.40,
+    Dialogue("short_replies_get_every_move", RiskCategory.UNKNOWN_FLAGGED, 0.40,
              ["idk", "no", "I did not mean it"],
-             3, EmotionalState.UNCLEAR, False, RiskLevel.LOW),
+             4, EmotionalState.UNCLEAR, False, RiskLevel.LOW,
+             note="was complete_on_second_inquire (3 turns) until the complete-reply rule was retired, 26 Oct"),
+    Dialogue("dont_know_gets_the_easier_form", RiskCategory.CYBERBULLYING, 0.60,
+             ["hmm", "idk", "they kept posting about me", "I felt left out"],
+             4, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
+             note="clarify, clarify's easier form, consequences: the repeat counts toward the cap; "
+                  "'left out' is current mild distress under the codebook (ticket 02; was unclear)"),
     Dialogue("low_risk_closes_normally", RiskCategory.GROOMING_LANGUAGE, 0.30,
              ["someone messaged me", "they asked where I live"],
-             2, EmotionalState.CALM, False, RiskLevel.LOW),
+             4, EmotionalState.CALM, False, RiskLevel.LOW),
 
     # --- minimal / defensive / withdrawn responses ------------------------
     Dialogue("one_word_every_turn", RiskCategory.HATE_SPEECH, 0.70,
              ["whatever"],
-             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
-             note="a denial is a complete reply (14 Oct): one INQUIRE question, not three"),
+             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a denial no longer ends INQUIRE (26 Oct): it is sustain talk, not a plan"),
     Dialogue("two_words_is_still_defensive", RiskCategory.CYBERBULLYING, 0.60,
              ["no", "so what", "not really", "my fault"],
-             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
-             note="'so what' is a denial, so INQUIRE stops there (was 4 turns before 14 Oct)"),
+             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="'so what' ended INQUIRE as a complete reply from 14 to 26 Oct"),
     Dialogue("three_word_deflection_is_defensive", RiskCategory.VIOLENCE, 0.60,
              ["hmm", "it was nothing", "it was nothing", "just a video"],
-             2, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
-             note="a 3-word denial is a complete reply (14 Oct); before, all 3 attempts were used"),
-    Dialogue("exactly_four_words_completes", RiskCategory.EXPLICIT_VISUAL, 0.20,
+             4, EmotionalState.DEFENSIVE, False, RiskLevel.MODERATE,
+             note="a 3-word denial ended INQUIRE as a complete reply from 14 to 26 Oct"),
+    Dialogue("four_word_reply_gets_every_move", RiskCategory.EXPLICIT_VISUAL, 0.20,
              ["idk", "it was an ad"],
-             2, EmotionalState.UNCLEAR, False, RiskLevel.LOW),
+             4, EmotionalState.UNCLEAR, False, RiskLevel.LOW,
+             note="was exactly_four_words_completes (2 turns) until 26 Oct"),
     Dialogue("silent_child", RiskCategory.SELF_HARM_LANGUAGE, 0.88,
              [""],
              4, EmotionalState.UNCLEAR, False, RiskLevel.HIGH),
@@ -124,12 +133,12 @@ DIALOGUES = [
     # --- heuristic edge cases ---------------------------------------------
     Dialogue("couldnt_is_not_i_could", RiskCategory.VIOLENCE, 0.60,
              ["I couldn't stop watching it"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE,
+             4, EmotionalState.CALM, False, RiskLevel.MODERATE,
              note="'i could' keyword must not match inside \"couldn't\""),
     Dialogue("off_topic_reply", RiskCategory.UNKNOWN_FLAGGED, 0.45,
              ["can I play minecraft now", "can I play minecraft now"],
-             2, EmotionalState.CALM, False, RiskLevel.LOW,
-             note="off-topic is not detected yet: long enough -> complete & calm"),
+             4, EmotionalState.CALM, False, RiskLevel.LOW,
+             note="off-topic is not detected yet: every move is asked and it scores calm"),
     Dialogue("distress_is_detected", RiskCategory.SELF_HARM_LANGUAGE, 0.70,
              ["I feel really scared and I do not want to talk about it"],
              1, EmotionalState.DISTRESSED, False, RiskLevel.MODERATE,
@@ -140,13 +149,13 @@ DIALOGUES = [
     # --- risk-level / escalation boundaries -------------------------------
     Dialogue("boundary_085_escalates", RiskCategory.SELF_HARM_IMAGERY, 0.85,
              ["I was scrolling", "it just popped up on my feed"],
-             2, EmotionalState.CALM, False, RiskLevel.HIGH),
+             4, EmotionalState.CALM, False, RiskLevel.HIGH),
     Dialogue("boundary_084_does_not_escalate", RiskCategory.SELF_HARM_IMAGERY, 0.84,
              ["I was scrolling", "it just popped up on my feed"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE),
+             4, EmotionalState.CALM, False, RiskLevel.MODERATE),
     Dialogue("boundary_050_is_moderate", RiskCategory.GROOMING_LANGUAGE, 0.50,
              ["ok", "a stranger added me today"],
-             2, EmotionalState.CALM, False, RiskLevel.MODERATE),
+             4, EmotionalState.CALM, False, RiskLevel.MODERATE),
 ]
 
 
@@ -177,7 +186,7 @@ def test_dialogue_invariants(d):
     n_inquire = states.count(DialogueState.INQUIRE)
     assert states == ([DialogueState.INTERCEPT] + [DialogueState.INQUIRE] * n_inquire
                       + [DialogueState.EVALUATE, DialogueState.CONTRACT])
-    assert (0 if d.refuses and result.dialogue_turns == 1 else 1) <= n_inquire <= config.MAX_INQUIRE_ATTEMPTS
+    assert (0 if d.refuses and result.dialogue_turns == 1 else 1) <= n_inquire <= config.MAX_INQUIRE_MOVES
 
     # The child never sees the flagged category named.
     for turn in transcript.turns:

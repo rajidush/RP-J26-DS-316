@@ -53,8 +53,11 @@ def test_a_delivered_intercept_line_is_checked_against_the_controller_grammar():
 
 
 def test_a_delivered_inquire_line_must_be_one_of_the_current_template_lines():
-    assert schema_audit.delivered_inquire_error("That makes sense. Can you say a bit more about that?") is None
+    from component3_socratic_educator.src.grammar_decoder import INQUIRE_TEMPLATES
+    assert schema_audit.delivered_inquire_error(INQUIRE_TEMPLATES["clarify"]["11-13"][1]) is None
     assert schema_audit.delivered_inquire_error("I understand. Is there another way you could've reacted?") == "grammar"
+    # a 14 Oct reply-type line, retired on 26 Oct (ticket 03)
+    assert schema_audit.delivered_inquire_error("That makes sense. Can you say a bit more about that?") == "grammar"
 
 
 def test_only_a_failure_by_the_rule_that_did_not_exist_yet_counts_as_resolved():

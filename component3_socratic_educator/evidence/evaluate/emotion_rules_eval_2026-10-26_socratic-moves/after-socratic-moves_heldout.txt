@@ -1,0 +1,40 @@
+split=heldout  sessions=372  children=20
+agreement with intended state: 338/372 = 90.9%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                      115           0           4           0      97%
+defensive                   3         101           1           7      90%
+distressed                  0           0          75           1      99%
+unclear                     3           3          12          47      72%
+
+output counts: {'distressed': 92, 'defensive': 104, 'unclear': 55, 'calm': 121}
+
+S-000384 intended=unclear output=distressed hits={'distress': 1}
+   I miss you. | It's really hard. | Just... stay safe. | Just... stay safe.
+
+S-000393 intended=unclear output=distressed hits={'distress': 3}
+   I don't really understand. | It's... scary. | Just want to be alone. | Just want to be alone.
+
+S-000395 intended=unclear output=distressed hits={'distress': 1, 'withdrawn': 1}
+   I don't know. | It just feels...heavy. | Sad. | Sad.
+
+S-000438 intended=distressed output=unclear hits={'distress': 1, 'withdrawn': 3}
+   I feel so scared now. | It's just... weird, and I don't understand it. | Mommy says it's bad, but I don't want to talk about it.
+
+S-000455 intended=calm output=distressed hits={'reflective': 1, 'distress': 2}
+   I saw it on my feed, but it just felt...dark. Like I wanted to disappear. | It made me feel really small. Maybe I should talk about it with someone else?
+
+S-000460 intended=unclear output=distressed hits={'distress': 1, 'withdrawn': 1}
+   I don't know. | It feels... heavy. | Just sad. | Just sad.
+
+S-000467 intended=calm output=distressed hits={'reflective': 2, 'distress': 3}
+   It was a scary thing happening with someone else, and I felt really upset. | I don't know what to do – it just seemed so wrong. Maybe I should talk to my parents?
+
+S-000471 intended=defensive output=distressed hits={'distress': 1, 'defensive': 1}
+   It's not my fault. | Just a random thing. | I didn't even see it. | I don't know why they're worried.
+
+S-000474 intended=defensive output=calm hits={}
+   It was just...a thought. | I didn't choose that. | I don't feel like it happened. | It made me sad.
+
+S-000477 intended=defensive output=unclear hits={'withdrawn': 1}
+   It's just a picture. | I didn't ask for that. | No worries, it was silly. | I don't really feel like talking about it.

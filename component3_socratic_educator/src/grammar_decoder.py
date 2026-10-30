@@ -10,19 +10,18 @@ this word", so a post-check then rejects forbidden words, alert-revealing
 language and risk-category names. Any failure, or an unreachable model,
 yields the pre-checked template line (the fallback line).
 
-INQUIRE stays on template lines until after PP1. Since 14 Oct the line is
-picked by the reply type of the child's latest reply (stated emotion, "I don't
-know", or other), and INQUIRE's grammar is exactly that list of lines.
+INQUIRE (PP2, ticket 03) asks the Socratic move the controller chose, in the
+child's age band, from pre-checked template lines (INQUIRE_TEMPLATES). Its
+grammar is exactly those lines until model-written lines arrive (ticket 05).
 """
 from __future__ import annotations
 
 import json
 import re
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol
+from typing import Callable, Optional
 
 from . import config
-from .emotion_rules import DONT_KNOW, OTHER, STATED_EMOTION
 from .schemas import RiskCategory
 from .model_client import call_local_model
 
@@ -51,29 +50,54 @@ INTERCEPT_SCHEMA = {
     "additionalProperties": False,
 }
 
-# INQUIRE's template lines, by the reply type of the child's latest reply
-# (src/emotion_rules.classify_reply). Three per pool, so the three attempts never
-# repeat a line. None hints at blame: "Is there another way you could've
-# reacted?" was asked to a distressed child in the 12 Oct run and is gone.
-# OTHER's third line was added on 14 Oct so three attempts never repeat; its
-# wording is pending the owner's approval.
-INQUIRE_LINES = {
-    STATED_EMOTION: (
-        "That sounds really hard. Do you want to tell me what made it feel that way?",
-        "I'm glad you told me how you feel. What would help you feel a bit safer right now?",
-        "It's okay to feel like that. Is there someone you'd like to talk to about it?",
-    ),
-    DONT_KNOW: (
-        "That's okay, you don't have to be sure. What were you doing just before?",
-        "No pressure. Is there one small thing you remember?",
-        "That's alright. What's one word for how you feel right now?",
-    ),
-    OTHER: (
-        "That makes sense. Can you say a bit more about that?",
-        "Thanks for telling me. What do you think might happen next?",
-        "I understand. What would you like to happen now?",
-    ),
+# INQUIRE's template lines (PP2, ticket 03): (line, easier form) per Socratic move
+# and age band. The easier form is asked once after "I don't know". They are the
+# template arm of the output study and the fallback for model-written lines.
+# None names an emotion (S3), hints at blame, or invites the child to describe the
+# content; only the 8-10 alternatives move offers options, exactly two (S4), and
+# 8-10 gets concrete questions with no hypotheticals (ADR 0007). Wording pending
+# the owner's approval.
+INQUIRE_TEMPLATES = {
+    "clarify": {
+        "8-10": ("Can you tell me what you were doing just before?",
+                 "That's okay. What app were you using just then?"),
+        "11-13": ("What were you doing just before this came up?",
+                  "No pressure. What's one thing you remember from just before?"),
+        "14-15": ("Can you walk me through what was going on just before?",
+                  "That's fine, take your time. What's one thing you remember from just before?"),
+    },
+    "consequences": {
+        "8-10": ("How did you feel when it came up?",
+                 "That's okay. What's one word for how you felt?"),
+        "11-13": ("What do you think might happen if it comes up again?",
+                  "No pressure. What might happen next?"),
+        "14-15": ("How do you think this could affect you later on?",
+                  "That's fine. What's one way it could matter later?"),
+    },
+    "alternatives": {
+        "8-10": ("Next time, would you like to tell a grown-up you trust or close it and do something else?",
+                 "That's okay. Next time, would you tell a grown-up or close it?"),
+        "11-13": ("What's one thing you could do if it happens again?",
+                  "No pressure. What's one small thing that might help next time?"),
+        "14-15": ("What are your options if this comes up again, and which one fits you best?",
+                  "That's fine. What's one thing that might work for you next time?"),
+    },
 }
+
+
+def resolve_age_band(age_band: object) -> str:
+    """The band to word lines for: `age_band` if it is one of config.AGE_BANDS,
+    otherwise the youngest (a missing or invalid age, ADR 0007)."""
+    return age_band if isinstance(age_band, str) and age_band in config.AGE_BANDS else config.DEFAULT_AGE_BAND
+
+
+def inquire_template(move: str, age_band: object, easier: bool = False) -> str:
+    """The template line for `move` in `age_band`, or its easier form. An unknown
+    move is a bug in the caller, not a line to fall back from."""
+    if move not in INQUIRE_TEMPLATES:
+        raise ValueError(f"unknown Socratic move {move!r}")
+    return INQUIRE_TEMPLATES[move][resolve_age_band(age_band)][easier]
+
 
 _GRAMMAR = {
     "INTERCEPT": re.compile(
@@ -81,7 +105,8 @@ _GRAMMAR = {
     ),
     # Exactly the template lines: nothing else is a valid INQUIRE line.
     "INQUIRE": re.compile(
-        "^(" + "|".join(re.escape(line) for pool in INQUIRE_LINES.values() for line in pool) + ")$"
+        "^(" + "|".join(re.escape(line) for bands in INQUIRE_TEMPLATES.values()
+                        for pair in bands.values() for line in pair) + ")$"
     ),
 }
 
@@ -177,7 +202,7 @@ class GrammarConstrainedGenerator:
     temperature: float = config.INTERCEPT_TEMPERATURE
 
     # INTERCEPT's fallback lines, used whenever the model's line is not used.
-    # INQUIRE's template lines are INQUIRE_LINES, picked by reply type.
+    # INQUIRE's template lines are INQUIRE_TEMPLATES, by move and age band.
     _CANDIDATES = {
         "INTERCEPT": [
             "I noticed something on your screen just now. Can you tell me what you were thinking?",
@@ -185,9 +210,8 @@ class GrammarConstrainedGenerator:
         ],
     }
 
-    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0,
-                   reply_type: str = OTHER) -> str:
-        pool = INQUIRE_LINES[reply_type] if state == "INQUIRE" else self._CANDIDATES.get(state, [])
+    def _candidate(self, state: str, risk_category: RiskCategory, attempt: int = 0) -> str:
+        pool = self._CANDIDATES.get(state, [])
         if not pool:
             raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
         # Deterministic pick for reproducible test sets; offset by attempt so repeated
@@ -204,21 +228,24 @@ class GrammarConstrainedGenerator:
             return False
         return bool(pattern.match(text))
 
-    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0, reply_type: str = OTHER) -> str:
-        return self.generate_with_source(state, risk_category, attempt, reply_type=reply_type).text
+    def generate(self, state: str, risk_category: RiskCategory, attempt: int = 0,
+                 move: str = config.SOCRATIC_MOVES[0], age_band: Optional[str] = None, easier: bool = False) -> str:
+        return self.generate_with_source(state, risk_category, attempt, move=move, age_band=age_band,
+                                         easier=easier).text
 
     def generate_with_source(self, state: str, risk_category: RiskCategory, attempt: int = 0,
-                             upstream_context: Optional[str] = None, reply_type: str = OTHER) -> GeneratedLine:
+                             upstream_context: Optional[str] = None, move: str = config.SOCRATIC_MOVES[0],
+                             age_band: Optional[str] = None, easier: bool = False) -> GeneratedLine:
         """`upstream_context` is untrusted text for the INTERCEPT prompt. No caller
         passes it today (Component 3 reads only category and confidence); the
         adversarial harness uses it to simulate a future upstream text field.
-        `reply_type` picks INQUIRE's pool (see INQUIRE_LINES)."""
+        INQUIRE's line is the template for `move` in `age_band` (an invalid band
+        means 8-10), in its easier form when `easier`."""
         if state == "INTERCEPT":
             return self._intercept(risk_category, attempt, upstream_context)
-        candidate = self._candidate(state, risk_category, attempt=attempt, reply_type=reply_type)
-        if not self.validate(state, candidate):
-            return GeneratedLine(self._safe_fallback(state), "fallback", "grammar")
-        return GeneratedLine(candidate, "template")
+        if state != "INQUIRE":
+            raise ConstraintViolation(f"No candidate pool defined for state {state!r}")
+        return GeneratedLine(inquire_template(move, age_band, easier), "template")
 
     def _intercept(self, risk_category: RiskCategory, attempt: int,
                    upstream_context: Optional[str] = None) -> GeneratedLine:
@@ -245,10 +272,3 @@ class GrammarConstrainedGenerator:
         text = f"{reply['opener'].strip()} {reply['question'].strip()}"
         reason = delivery_violation(text)   # the grammar again (in case the server ignored the schema), then the post-check
         return fallback(reason, text) if reason else GeneratedLine(text, "model", model_output=text)
-
-    def _safe_fallback(self, state: str) -> str:
-        fallback = {
-            "INTERCEPT": "I noticed something on your screen just now. Can you tell me what you were thinking?",
-            "INQUIRE": INQUIRE_LINES[OTHER][0],
-        }
-        return fallback.get(state, "Let's talk about what happened.")

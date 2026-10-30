@@ -35,7 +35,6 @@ from component1_screen_monitoring.src.component1 import simulate_screen_capture 
 from component2_hate_speech_detection.src.component2 import analyze_text as comp2_analyze          # noqa: E402
 from component4_profiling_xai.src.component4 import generate_report as comp4_report                # noqa: E402
 from component3_socratic_educator.src.fsm_controller import DialogueState, FSMController           # noqa: E402
-from component3_socratic_educator.src.emotion_rules import OTHER                                   # noqa: E402
 from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator           # noqa: E402
 from component3_socratic_educator.src.schemas import RiskCategory, TriggerPayload                   # noqa: E402
 from integration.comp3_to_comp4 import DEVICE_CHILD_ID, to_emotional_pattern_row                   # noqa: E402
@@ -66,14 +65,15 @@ def build_trigger_from(source: str, text: Optional[str] = None, age: int = 10) -
 
 @dataclass
 class RecordingGenerator(GrammarConstrainedGenerator):
-    """The FSM only takes text from the generator; this keeps where each line
-    came from (model, template or fallback, with the reason) for the run log."""
+    """Keeps every generated line as (state, line, INQUIRE's move arguments), with
+    what the model produced when its line was blocked (the transcript records only
+    the delivered text), for the run log and the demo page's unfinished sessions."""
     lines: list = field(default_factory=list)
 
-    def generate(self, state, risk_category, attempt=0, reply_type=OTHER):
-        line = self.generate_with_source(state, risk_category, attempt, reply_type=reply_type)
-        self.lines.append((state, line))
-        return line.text
+    def generate_with_source(self, state, risk_category, attempt=0, upstream_context=None, **inquire):
+        line = super().generate_with_source(state, risk_category, attempt, upstream_context, **inquire)
+        self.lines.append((state, line, inquire))
+        return line
 
 
 def run_session(trigger: TriggerPayload, respond, model_call=None, child_id: str = DEVICE_CHILD_ID) -> dict:
@@ -89,10 +89,11 @@ def run_session(trigger: TriggerPayload, respond, model_call=None, child_id: str
     for t in transcript.turns:
         line = None
         if t.state in (DialogueState.INTERCEPT, DialogueState.INQUIRE):
-            state, line = next(lines)
+            state, line, _ = next(lines)
             if state != t.state.name:   # fail loudly rather than label a turn with another line's source
                 raise RuntimeError(f"generator line for {state} paired with a {t.state.name} turn")
         turns.append({"state": t.state.name, "system_text": t.system_text, "child_response": t.child_response,
+                      "move": t.move, "easier": t.easier, "age_band": t.age_band,
                       "source": line.source if line else None, "reason": line.reason if line else None,
                       "model_output": line.model_output if line else None})
     return {"trigger": trigger.to_dict(), "turns": turns, "record": record,

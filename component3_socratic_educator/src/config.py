@@ -1,12 +1,15 @@
 """Tunable constants for Component 3. Keep these here (not scattered
 through the code) so they're easy to point to during Q&A."""
 
-# INQUIRE state: how many follow-up turns before we force a move to EVALUATE
-MAX_INQUIRE_ATTEMPTS = 3
+# INQUIRE state (PP2, ticket 03): the Socratic moves, always asked in this order...
+SOCRATIC_MOVES = ("clarify", "consequences", "alternatives")
+# ...and the most INQUIRE questions in one session; an easier repeat of a move counts.
+MAX_INQUIRE_MOVES = 3
 
-# INQUIRE state: a response shorter than this (in words) is treated as
-# "not yet complete" and triggers another follow-up, up to the max above.
-MIN_RESPONSE_WORDS_FOR_COMPLETENESS = 4
+# The child's age band selects each move's wording (ADR 0007, Component 2's bands).
+# A missing or invalid band means the youngest, whose wording is the safest.
+AGE_BANDS = ("8-10", "11-13", "14-15")
+DEFAULT_AGE_BAND = "8-10"
 
 # CONTRACT state: escalation_flag=True when the risk level is one of these...
 ESCALATION_RISK_LEVELS = {"high"}

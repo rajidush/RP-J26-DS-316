@@ -59,6 +59,8 @@ evidence/
 |---|---|
 | `eva001_baseline_2026-10-09` | The EVALUATE prompt baseline: prompt, raw outputs, review |
 | `emotion_rules_eval_2026-10-14` | Phrase-rule agreement on dev and held-out children, before and after each fix |
+| `emotion_rules_eval_2026-10-26_socratic-moves` | The same rules after INQUIRE became the Socratic moves (ticket 03): a flow change, not a rule change |
+| `emotion_rules_eval_2026-10-29_three-part` | The codebook rules arm and the shared derivation (ticket 02, ADR 0006): agreement with the PP1-era intended profiles |
 
 **`system/`**
 
@@ -69,6 +71,7 @@ evidence/
 | `latency_2026-10-13_before-fix`, `_after-fix` | Per-state latency before and after the `127.0.0.1` fix |
 | `schema_validation_2026-10-15_after-review` | Every recorded trigger, record and delivered line re-validated (761/763) |
 | `readability_2026-10-20` | Readability of child-facing lines for the youngest band |
+| `readability_2026-10-26` | The same with INQUIRE's new Socratic-move templates, scored per age band (ticket 03) |
 
 ## Moved on 25 Oct 2026
 

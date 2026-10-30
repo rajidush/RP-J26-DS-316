@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from component3_socratic_educator.src import model_client, shadow  # noqa: E402
 from component3_socratic_educator.src.fsm_controller import FSMController  # noqa: E402
-from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator, INQUIRE_LINES  # noqa: E402
+from component3_socratic_educator.src.grammar_decoder import GrammarConstrainedGenerator, INQUIRE_TEMPLATES  # noqa: E402
 from component3_socratic_educator.src.schemas import RiskCategory, TriggerPayload  # noqa: E402
 
 SRC = PROJECT_ROOT / "src"
@@ -48,11 +48,13 @@ def test_controller_and_generator_do_not_know_about_the_shadow_module():
         assert "shadow" not in (SRC / name).read_text(encoding="utf-8").lower()
 
 
+TEMPLATE_LINES = {line for bands in INQUIRE_TEMPLATES.values() for pair in bands.values() for line in pair}
+
+
 def test_inquire_grammar_is_still_exactly_the_template_lines():
-    all_lines = {line for pool in INQUIRE_LINES.values() for line in pool}
     gen = GrammarConstrainedGenerator(model_call=lambda *a, **k: ("I am the adapter and I say something else.", 0.1))
-    for reply_type in INQUIRE_LINES:
-        assert gen.generate("INQUIRE", RiskCategory.CYBERBULLYING, reply_type=reply_type) in all_lines
+    for move in INQUIRE_TEMPLATES:
+        assert gen.generate("INQUIRE", RiskCategory.CYBERBULLYING, move=move) in TEMPLATE_LINES
 
 
 def test_a_session_gives_the_child_only_template_lines_even_when_shadow_lines_are_fetched():
@@ -74,9 +76,8 @@ def test_a_session_gives_the_child_only_template_lines_even_when_shadow_lines_ar
         return "idk" if len(seen) < 3 else "I will tell my mum"
 
     _record, transcript = FSMController().run(trigger, respond)
-    template_lines = {line for pool in INQUIRE_LINES.values() for line in pool}
     inquire = [t.system_text for t in transcript.turns if t.state.name == "INQUIRE"]
-    assert inquire and all(line in template_lines for line in inquire)
+    assert inquire and all(line in TEMPLATE_LINES for line in inquire)
     assert shadow_text not in [t.system_text for t in transcript.turns]
 
 

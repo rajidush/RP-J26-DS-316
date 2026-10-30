@@ -1,0 +1,40 @@
+split=dev  sessions=382  children=20
+agreement with intended state: 358/382 = 93.7%
+
+intended \ output         calm   defensive  distressed     unclear    agree
+calm                      107           0           3           0      97%
+defensive                   3          94           1           7      90%
+distressed                  1           0         117           1      98%
+unclear                     0           3           5          40      83%
+
+output counts: {'distressed': 126, 'defensive': 97, 'calm': 111, 'unclear': 48}
+
+S-000004 intended=defensive output=distressed hits={'distress': 1, 'withdrawn': 1}
+   I'm feeling upset. | It's just... a lot. | I don't know why I did it. | I don't know why I did it.
+
+S-000009 intended=defensive output=unclear hits={'defensive': 1, 'withdrawn': 2}
+   I don't understand. | It's not that important. | Just... leave me alone.
+
+S-000010 intended=defensive output=unclear hits={'defensive': 1, 'withdrawn': 2}
+   Yeah, it was just a bit. | It didn't really happen to me. | I don't know what you're talking about. | Just... stop asking.
+
+S-000061 intended=calm output=distressed hits={'distress': 2}
+   It was really hard to see that stuff. I felt kind of confused. | I'm thinking about talking to someone about it – maybe a counselor? | I know it's scary, but I'm trying to be better at staying out of those things. What can I do differently? | Just saying my feelings is okay, right?  It helps me feel a little less alone.
+
+S-000089 intended=unclear output=defensive hits={'defensive': 1, 'withdrawn': 1}
+   It's not my fault. | Just... leave me alone.
+
+S-000094 intended=unclear output=distressed hits={'distress': 2, 'withdrawn': 2}
+   I don't know. | It's...quiet. | Just want to be alone. | Just want to be alone.
+
+S-000130 intended=calm output=distressed hits={'distress': 1}
+   I'm feeling really overwhelmed lately. | It started with some messages that felt kind of sad, but I didn't understand why. | I want to talk about how I can help myself feel better. | I want to talk about how I can help myself feel better.
+
+S-000147 intended=unclear output=distressed hits={'distress': 3}
+   I'm feeling really down. | It's just...heavy. | Wish I could sleep. | Wish I could sleep.
+
+S-000174 intended=unclear output=distressed hits={'distress': 1}
+   I miss you. | It's really not okay. | Just... stay safe. | Just... stay safe.
+
+S-000175 intended=unclear output=distressed hits={'distress': 1, 'withdrawn': 1}
+   I don't know. | It's... heavy. | Just a feeling. | Just a feeling.
