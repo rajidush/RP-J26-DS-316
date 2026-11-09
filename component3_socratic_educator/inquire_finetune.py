@@ -14,6 +14,13 @@ validation. Plain JSON/JSONL/CSV in and out.
     sheet    both arms' raw outputs on the test prompts -> shuffled blind CSV
              with opaque IDs, plus a separate key (ID -> arm)
     unblind  a fully scored sheet + key -> summary.json / summary.md per arm
+    pp2-draw   before any PP2 content exists: roles for 216 scenario IDs (per age
+             band x risk category: output study, classifier test, validation,
+             train), plus a role-free list for writing the contexts
+    build-pp2  reviewed PP2 rows + the scenario draw -> train / validation JSONL
+             by drawn role, plus a manifest; refuses held-out scenarios,
+             unreachable strata, an empty training stratum and a broken
+             trusted-adult cap
     label-sheets  simulated sessions -> blind reply-label sheets (classmate: all,
              counsellor: stratified 40% overlap; or --owner: the owner's
              train/dev copy, never evidence) plus a hidden key
@@ -30,6 +37,8 @@ Usage:
     python inquire_finetune.py sheet --outputs <control.jsonl> <adapted.jsonl> [--test <file>] [--seed N] [--out <dir>]
     python inquire_finetune.py unblind --sheet <csv> --key <json> --outputs <control.jsonl> <adapted.jsonl>
                                        [--test <file>] [--out <dir>]
+    python inquire_finetune.py pp2-draw [--seed N] [--out <dir>]
+    python inquire_finetune.py build-pp2 --draw <scenario_draw.json> --drafts <file> [--out <dir>]
     python inquire_finetune.py label-sheets --sessions <sessions.jsonl> [--owner] [--seed N] [--out <dir>]
     python inquire_finetune.py label-score --key <key.json> --rated NAME=<csv> [--rated NAME=<csv>]
                                            [--adjudication <csv>] [--out <dir>]
@@ -52,6 +61,7 @@ from pathlib import Path
 from draft_inquire_dataset import REPLY_TYPES, RISK_CATEGORIES, load_jsonl, parse_inquire_prompt
 from src.codebook import (DISTRESS_SEVERITIES, DISTRESS_SEVERITY, EXPRESSED_EMOTION, EXPRESSED_EMOTIONS, STANCE,
                           STANCES)
+from src import config
 from src.agreement import krippendorff_alpha_nominal, percent_agreement, prevalence
 from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS
 
@@ -182,8 +192,16 @@ def write_atomic(path, text):
     os.replace(tmp, path)
 
 
+def shown_parts(row):
+    """Context, previous educator message and child reply: a PP2 row's own fields, or a PP1 prompt's parts."""
+    if is_pp2_row(row):
+        return {"context": row.get("context", ""), "previous": row.get("previous_message", ""),
+                "child": row["child_reply"]}
+    return parse_inquire_prompt(row["prompt"][0]["content"])
+
+
 def child_reply(row):
-    return parse_inquire_prompt(row["prompt"][0]["content"])["child"]
+    return shown_parts(row)["child"]
 
 
 def completion_text(row):
@@ -256,9 +274,11 @@ def review_progress(rows):
 
 
 def _show_row(row, position, total):
-    parts = parse_inquire_prompt(row["prompt"][0]["content"])
+    parts = shown_parts(row)
     print(f"\n[{row['example_id']}] {position}/{total}  {row['split']}  reply type: {row['reply_type']}"
           f"  risk: {row['risk_category']}")
+    if is_pp2_row(row):   # the controller's move and the band its wording is for
+        print(f"move: {row['move']}{' (easier form)' if row['easier'] else ''}  band: {row['age_band']}")
     print(f"Context: {parts['context']}")
     print(f"Previous educator message: {parts['previous']}")
     print(f"Child's latest reply: {parts['child']}")
@@ -544,6 +564,236 @@ def cmd_build(args):
     print(f"  rejected: {len(rejected)}  excluded non-INQUIRE seed rows: {sum(manifest['excluded_seed_rows'].values())}")
     print(f"  trusted-adult share: {manifest['trusted_adult_share']}")
     print(f"  test set has no scenario for: {', '.join(manifest['known_gaps']['test_missing_risk_categories'])}")
+
+
+# ---------------------------------------------------------------- PP2 draw / build
+# Before any PP2 content exists, every scenario ID gets its role (spec story 33): per age band x
+# risk category, one output-study scenario, five classifier-test scenarios (ticket 06: 40 per
+# band), one validation and two training scenarios. The drafting notebook then writes each
+# context from scenario_slots.json, knowing only its band and category, never its role.
+PP2_ROLES = {"output_study": 1, "classifier_test": 5, "validation": 1, "train": 2}
+HELD_OUT_ROLES = ("output_study", "classifier_test")
+PP2_DRAW_SEED = 20261104
+
+
+def cmd_pp2_draw(args):
+    out = Path(args.out)
+    if (out / "scenario_draw.json").exists():
+        _refuse(f"{out} already holds a scenario draw", ["pass a new --out; a recorded draw is never redrawn"],
+                "pp2-draw")
+    rng = random.Random(args.seed)
+    scenarios = []
+    for band in config.AGE_BANDS:
+        for category in RISK_CATEGORIES:
+            roles = [role for role, n in PP2_ROLES.items() for _ in range(n)]
+            rng.shuffle(roles)   # IDs run in cell order, so the role must not follow the ID
+            scenarios += [{"scenario_id": f"P2S{len(scenarios) + i + 1:03d}", "age_band": band,
+                           "risk_category": category, "role": role} for i, role in enumerate(roles)]
+    draw = {
+        "dataset": "inquire-pp2",
+        "seed": args.seed,
+        "rule": "per age band x risk category: " + ", ".join(f"{n} {r}" for r, n in PP2_ROLES.items())
+                + "; roles shuffled within each cell; drawn before any scenario context, child reply or "
+                  "educator line exists",
+        "held_out_roles": list(HELD_OUT_ROLES),
+        "roles": {role: [s["scenario_id"] for s in scenarios if s["role"] == role] for role in PP2_ROLES},
+        "scenarios": scenarios,
+    }
+    # What the context-writing step is given: IDs, bands and categories only, so no context is
+    # written knowing it is held out.
+    slots = {"dataset": "inquire-pp2", "note": "write one scenario context per ID; roles are in scenario_draw.json",
+             "scenarios": [{k: s[k] for k in ("scenario_id", "age_band", "risk_category")} for s in scenarios]}
+    out.mkdir(parents=True, exist_ok=True)
+    write_atomic(out / "scenario_draw.json", json.dumps(draw, ensure_ascii=False, indent=2) + "\n")
+    write_atomic(out / "scenario_slots.json", json.dumps(slots, ensure_ascii=False, indent=2) + "\n")
+    print(f"wrote {out / 'scenario_draw.json'}: {len(scenarios)} scenario IDs, seed {args.seed}")
+    print(f"wrote {out / 'scenario_slots.json'}: the same IDs without roles, for writing the contexts")
+    for role, ids in draw["roles"].items():
+        print(f"  {role}: {len(ids)}")
+
+
+# A PP2 row (drafted by the ticket 08 notebook, reviewed with `review`) is a drafted row as above
+# (example_id, scenario_id, risk_category, reply_type, split "train_or_val", prompt, drafts,
+# completion, review) plus age_band, move, easier, and the shown parts context, previous_message
+# and child_reply, so neither `review` nor `build-pp2` depends on the prompt's layout (ticket 05).
+PP2_REPLY_TYPES = SEED_REPLY_TYPES   # explanation is the usual answer to the clarify move
+# Replies that neither end INQUIRE nor ask for the easier form, so the next move follows.
+_CONTINUING_REPLIES = ("stated_emotion", "off_topic", "explanation")
+TRUSTED_ADULT_CAP = 0.5   # per split; the owner's choice (4 Nov), as model-fine-tuning ticket 07 suggested
+
+
+def is_pp2_row(row):
+    return "move" in row
+
+
+def reachable_strata():
+    """(move, easier, reply type) for every INQUIRE line the controller can ask for, found by walking
+    FSMController.inquire_loop's rules: a refusal ends INQUIRE at once, and change talk (an own-safer-plan
+    reply) ends it after the move it answers; "I don't know" gets the move's easier form once; at most
+    MAX_INQUIRE_MOVES lines, an easier repeat included. The first line follows any reply to the opening
+    line except a refusal (FSMController.run)."""
+    moves, found = config.SOCRATIC_MOVES, set()
+
+    def ask(index, easier, asked, after):
+        if index == len(moves) or asked == config.MAX_INQUIRE_MOVES:
+            return
+        found.update((moves[index], easier, reply_type) for reply_type in after)
+        if easier:
+            ask(index + 1, False, asked + 1, ("dont_know", *_CONTINUING_REPLIES))
+        else:
+            ask(index, True, asked + 1, ("dont_know",))
+            ask(index + 1, False, asked + 1, _CONTINUING_REPLIES)
+
+    ask(0, False, 0, tuple(t for t in PP2_REPLY_TYPES if t != "refusal"))
+    order = {t: i for i, t in enumerate(PP2_REPLY_TYPES)}
+    return sorted(found, key=lambda s: (moves.index(s[0]), s[1], order[s[2]]))
+
+
+def _combo_name(move, easier, reply_type):
+    return f"{move}{' (easier)' if easier else ''} / after {reply_type}"
+
+
+def _pp2_cells(band, category, move, easier, reply_type):
+    """The two cells a row fills (owner, 4 Nov: two-way coverage)."""
+    return {"move_reply_type": f"{band} / {_combo_name(move, easier, reply_type)}",
+            "category_move": f"{band} / {category} / {move}"}
+
+
+def _pp2_strata():
+    """Every cell a training split must fill."""
+    strata = {"move_reply_type": [], "category_move": []}
+    for band in config.AGE_BANDS:
+        strata["move_reply_type"] += [_pp2_cells(band, None, *s)["move_reply_type"] for s in reachable_strata()]
+        strata["category_move"] += [_pp2_cells(band, c, m, False, None)["category_move"]
+                                    for c in RISK_CATEGORIES for m in config.SOCRATIC_MOVES]
+    return strata
+
+
+def _pp2_row_problems(row, scenarios):
+    """Why a PP2 row cannot be built, if it cannot."""
+    eid = row.get("example_id")
+    missing = [f for f in ("example_id", "scenario_id", "age_band", "risk_category", "move", "easier", "reply_type",
+                           "split", "child_reply", "prompt", "review") if f not in row]
+    if missing:
+        return [f"{eid}: no {', '.join(missing)}"]
+    problems = [f"{eid}: {label} {row[field]!r} is not one of {', '.join(map(str, values))}"
+                for field, label, values in (("move", "move", config.SOCRATIC_MOVES),
+                                             ("age_band", "age band", config.AGE_BANDS),
+                                             ("risk_category", "risk category", RISK_CATEGORIES),
+                                             ("easier", "easier", (True, False)),
+                                             ("reply_type", "reply type", PP2_REPLY_TYPES),
+                                             ("split", "split", ("train_or_val",)))
+                if row[field] not in values or (field == "easier" and not isinstance(row[field], bool))]
+    if not problems and (row["move"], row["easier"], row["reply_type"]) not in reachable_strata():
+        problems.append(f"{eid}: {row['age_band']} / {_combo_name(row['move'], row['easier'], row['reply_type'])} "
+                        "is not a combination the controller asks for")
+    scenario = scenarios.get(row["scenario_id"]) if isinstance(row["scenario_id"], str) else None
+    if scenario is None:
+        problems.append(f"{eid}: scenario {row['scenario_id']!r} is not in the draw")
+    elif scenario["role"] in HELD_OUT_ROLES:
+        problems.append(f"{eid}: scenario {row['scenario_id']} is held-out ({scenario['role']}); "
+                        "it must never be drafted for")
+    elif (row["age_band"], row["risk_category"]) != (scenario["age_band"], scenario["risk_category"]):
+        problems.append(f"{eid}: age band / category {row['age_band']} / {row['risk_category']} does not match its "
+                        f"scenario's ({scenario['age_band']} / {scenario['risk_category']})")
+    return problems
+
+
+def _completion_problems(row):
+    if not isinstance(row.get("completion"), str) or not row["completion"].strip():
+        return [f"{row['example_id']}: no completion"]
+    problems = [] if row["child_reply"] in row["prompt"][0]["content"] else \
+        [f"{row['example_id']}: the child reply is not in the prompt"]
+    failures = format_check(row["completion"], row["child_reply"]).failures()
+    return problems + ([f"{row['example_id']}: {', '.join(failures)}"] if failures else [])
+
+
+def _pp2_example(row):
+    out = {k: row[k] for k in ("example_id", "scenario_id", "age_band", "risk_category", "move", "easier", "reply_type")}
+    return {**out, "source": "reviewed", "prompt": [{"role": "user", "content": row["prompt"][0]["content"]}],
+            "completion": [{"role": "assistant", "content": row["completion"]}]}
+
+
+def _most_repeated_closing(rows):
+    if not rows:
+        return None
+    text, count = Counter(closing_sentence(completion_text(r)) for r in rows).most_common(1)[0]
+    return {"text": text, "count": count}
+
+
+def cmd_build_pp2(args):
+    out = Path(args.out)
+    if (out / "manifest.json").exists():
+        _refuse(f"{out} already holds a dataset", ["pass a new --out; a recorded dataset is never rebuilt over"],
+                "build-pp2")
+    draw, drafts = _load_json(args.draw), load_jsonl(args.drafts)
+    if draw.get("dataset") != "inquire-pp2" or "roles" not in draw:
+        _refuse(f"{Path(args.draw).name} is not a PP2 scenario draw", ["pass the scenario_draw.json from pp2-draw"],
+                "build-pp2")
+    scenarios = {s["scenario_id"]: s for s in draw["scenarios"]}
+
+    ids = Counter(r.get("example_id") for r in drafts)
+    problems = [f"{eid}: appears {n} times" for eid, n in sorted(ids.items(), key=str) if n > 1]
+    problems += [p for r in drafts for p in _pp2_row_problems(r, scenarios)]
+    if problems:
+        _refuse("PP2 rows have invalid labels or scenarios", problems, "build-pp2")
+    pending = [r["example_id"] for r in drafts if r["review"]["status"] == "pending"]
+    if pending:
+        _refuse(f"{len(pending)} PP2 rows are still pending review", [", ".join(pending)], "build-pp2")
+    kept = [r for r in drafts if r["review"]["status"] != "rejected"]
+    rejected = sorted(r["example_id"] for r in drafts if r["review"]["status"] == "rejected")
+    problems = [p for r in kept for p in _completion_problems(r)]
+    if problems:
+        _refuse("PP2 completions are missing or fail the format or stated-emotion check", problems, "build-pp2")
+
+    splits = {name: sorted((_pp2_example(r) for r in kept if scenarios[r["scenario_id"]]["role"] == name),
+                           key=lambda r: r["example_id"]) for name in ("train", "validation")}
+    strata = _pp2_strata()
+    counts = {name: {kind: Counter(_pp2_cells(r["age_band"], r["risk_category"], r["move"], r["easier"],
+                                              r["reply_type"])[kind] for r in rows) for kind in strata}
+              for name, rows in splits.items()}
+    gaps = {name: {kind: [cell for cell in cells if not counts[name][kind][cell]] for kind, cells in strata.items()}
+            for name in splits}
+    empty = [f"{kind}: {cell}" for kind, cells in gaps["train"].items() for cell in cells]
+    if empty:
+        _refuse(f"{len(empty)} training strata are empty", empty, "build-pp2")
+    shares = {name: _trusted_adult_share(rows) for name, rows in splits.items()}
+    over = [f"{name}: trusted-adult share {share} is over the cap {TRUSTED_ADULT_CAP}"
+            for name, share in shares.items() if share is not None and share > TRUSTED_ADULT_CAP]
+    if over:
+        _refuse("a split mentions a trusted adult too often", over, "build-pp2")
+
+    out.mkdir(parents=True, exist_ok=True)
+    for name, rows in splits.items():
+        write_atomic(out / f"{name}.jsonl", dump_jsonl(rows))
+    manifest = {
+        "dataset": "inquire-pp2",
+        "inputs": {k: {"file": Path(p).name, "sha256": _sha256(p)} for k, p in (("draw", args.draw),
+                                                                                ("drafts", args.drafts))},
+        "outputs": {f"{name}.jsonl": _sha256(out / f"{name}.jsonl") for name in splits},
+        "seeds": {"scenario_draw": draw["seed"]},
+        "held_out": {role: sorted(draw["roles"][role]) for role in HELD_OUT_ROLES},
+        "strata": {"move_reply_type": [_combo_name(*s) for s in reachable_strata()],
+                   "category_move": [f"{c} / {m}" for c in RISK_CATEGORIES for m in config.SOCRATIC_MOVES],
+                   "rule": "training must have a row in every age band x (move, easier, reply type) cell the "
+                           "controller can ask for, and every age band x risk category x move cell; validation "
+                           "gaps are reported, not refused"},
+        "counts": {name: {"rows": len(rows), "scenarios": len({r["scenario_id"] for r in rows}),
+                          **{kind: dict(sorted(counts[name][kind].items())) for kind in strata}}
+                   for name, rows in splits.items()},
+        "coverage_gaps": gaps,
+        "trusted_adult": {"cap": TRUSTED_ADULT_CAP, "share": shares},
+        "most_repeated_closing": {name: _most_repeated_closing(rows) for name, rows in splits.items()},
+        "rejected": {"count": len(rejected), "example_ids": rejected},
+    }
+    write_atomic(out / "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    print(f"wrote {out}")
+    for name, rows in splits.items():
+        c = manifest["counts"][name]
+        print(f"  {name}.jsonl: {c['rows']} rows, {c['scenarios']} scenarios, trusted-adult share {shares[name]} "
+              f"(cap {TRUSTED_ADULT_CAP})")
+    print(f"  rejected: {len(rejected)}  validation gaps: "
+          f"{sum(len(cells) for cells in gaps['validation'].values())}")
 
 
 # ---------------------------------------------------------------- sheet / unblind
@@ -1117,6 +1367,19 @@ def build_parser():
     build.add_argument("--labels", default=str(SEED_INPUTS_DIR / "seed_labels.json"))
     build.add_argument("--out", default=str(HERE / "evidence" / "inquire" / f"inquire_dataset_{date.today().isoformat()}"))
     build.set_defaults(func=cmd_build)
+
+    pp2_draw = sub.add_parser("pp2-draw", help="draw PP2 scenario roles (held-out, validation, train) before drafting")
+    pp2_draw.add_argument("--seed", type=int, default=PP2_DRAW_SEED)
+    pp2_draw.add_argument("--out", default=str(HERE / "evidence" / "inquire" /
+                                              f"pp2_scenario_draw_{date.today().isoformat()}"))
+    pp2_draw.set_defaults(func=cmd_pp2_draw)
+
+    build_pp2 = sub.add_parser("build-pp2", help="reviewed PP2 rows -> train / validation JSONL by drawn role + manifest")
+    build_pp2.add_argument("--draw", required=True, help="the scenario_draw.json written by pp2-draw")
+    build_pp2.add_argument("--drafts", required=True, help="the reviewed PP2 drafts JSONL (ticket 08)")
+    build_pp2.add_argument("--out", default=str(HERE / "evidence" / "inquire" /
+                                               f"inquire_pp2_dataset_{date.today().isoformat()}"))
+    build_pp2.set_defaults(func=cmd_build_pp2)
 
     sheet = sub.add_parser("sheet", help="shuffled blind scoring sheet + hidden key from both arms' raw outputs")
     sheet.add_argument("--test", default=str(HERE / "evidence" / "inquire" / "inquire_dataset_2026-10-10" / "test.jsonl"))

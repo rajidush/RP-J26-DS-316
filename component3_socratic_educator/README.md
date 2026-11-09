@@ -274,6 +274,63 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 **Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
 
+## PP2 INQUIRE dataset (Socratic moves per age band)
+
+PP2 rows teach the model to word the move the controller chose, for the child's age band. The PP1 dataset (`inquire_dataset_2026-10-10`) and `build` are unchanged; PP2 uses its own two commands.
+
+```bash
+# 1. before any PP2 content exists: roles for every scenario ID
+python inquire_finetune.py pp2-draw
+#   -> evidence/inquire/pp2_scenario_draw_<date>/scenario_draw.json (roles) + scenario_slots.json (no roles)
+# 2. ticket 08: write a context per slot, draft rows for train/validation scenarios only, review them
+python inquire_finetune.py review --drafts <pp2_drafts.jsonl>
+# 3. build
+python inquire_finetune.py build-pp2 --draw evidence/inquire/pp2_scenario_draw_<date>/scenario_draw.json \
+    --drafts <pp2_drafts.jsonl>
+#   -> evidence/inquire/inquire_pp2_dataset_<date>/train.jsonl, validation.jsonl, manifest.json
+```
+
+**The draw.** Each age band × risk category gets nine opaque IDs (`P2S001`…), with roles shuffled within the cell: 1 output-study, 5 classifier-test, 1 validation, 2 training. That is 24 output-study scenarios, 120 classifier-test scenarios (40 per band, ticket 06), 24 validation and 48 training. Contexts are written afterwards from `scenario_slots.json`, which has no roles, so no context is written knowing it is held out. Output-study and classifier-test scenarios never get INQUIRE rows.
+
+**A PP2 row** is a drafted row, as for PP1, with these fields:
+- `example_id`, `scenario_id`, `age_band`, `risk_category`;
+- `move` (clarify, consequences, alternatives) and `easier` (`true` for the form asked after "I don't know");
+- `reply_type`: the child's reply the line answers. The PP1 five, plus `explanation`;
+- `context`, `previous_message` and `child_reply`, so `review` shows them whatever the prompt's layout (ticket 05);
+- `split` (`train_or_val`), `prompt`, `drafts`, `completion`, `review`.
+
+**Reachable strata.** `reachable_strata()` walks the controller's INQUIRE rules:
+- a refusal ends INQUIRE at once;
+- change talk (an own-safer-plan reply) ends it after the move it answers;
+- "I don't know" gets the move's easier form once;
+- at most three lines are asked, an easier repeat included.
+
+That leaves 14 combinations per band:
+- clarify after any reply except a refusal, and its easier form after "I don't know";
+- consequences after a stated emotion, "I don't know", off-topic or an explanation, and its easier form after "I don't know";
+- alternatives after a stated emotion, off-topic or an explanation. It is always the third line, so it never follows "I don't know" and has no easier form.
+
+A check that runs the real controller over every four-reply sequence found exactly these 14.
+
+`build-pp2` refuses to run, naming the rows or cells, when:
+- the draw file is not a PP2 scenario draw;
+- an example ID appears twice;
+- a row has an unknown label, a split other than `train_or_val`, a combination the controller never asks for, a scenario not in the draw, a held-out scenario, or a band or category that differs from its scenario's;
+- a row is pending review, a kept row has no completion, or its child reply is not in its prompt;
+- a kept completion fails the format or stated-emotion check;
+- training has no row for some band × (move, easier, reply type) cell (42), or some band × category × move cell (72);
+- a split's trusted-adult share is over the cap, 50% (`TRUSTED_ADULT_CAP`, the owner's choice on 4 Nov).
+
+The manifest records:
+- input and output hashes, and the draw seed;
+- the held-out IDs and the strata rule;
+- counts per cell and split;
+- the trusted-adult share per split and the most repeated closing sentence;
+- the rejected rows;
+- coverage gaps: validation gaps are listed, not refused.
+
+It never writes into a folder that already holds a dataset.
+
 ## PP2 reply-label sheets (independent raters)
 
 Each child reply in the simulated sessions gets the codebook's three parts (`src/codebook.py`, ADR 0006) from human raters. The assessor arms are later scored against those labels (ticket 19).
