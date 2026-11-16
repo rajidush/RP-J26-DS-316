@@ -1,0 +1,1533 @@
+{
+  "dataset": "inquire-pp2",
+  "seed": 20261104,
+  "rule": "per age band x risk category: 1 output_study, 5 classifier_test, 1 validation, 2 train; roles shuffled within each cell; drawn before any scenario context, child reply or educator line exists",
+  "held_out_roles": [
+    "output_study",
+    "classifier_test"
+  ],
+  "roles": {
+    "output_study": [
+      "P2S004",
+      "P2S018",
+      "P2S023",
+      "P2S028",
+      "P2S039",
+      "P2S054",
+      "P2S058",
+      "P2S067",
+      "P2S076",
+      "P2S088",
+      "P2S095",
+      "P2S103",
+      "P2S114",
+      "P2S118",
+      "P2S134",
+      "P2S144",
+      "P2S152",
+      "P2S157",
+      "P2S166",
+      "P2S173",
+      "P2S188",
+      "P2S192",
+      "P2S200",
+      "P2S211"
+    ],
+    "classifier_test": [
+      "P2S002",
+      "P2S005",
+      "P2S007",
+      "P2S008",
+      "P2S009",
+      "P2S011",
+      "P2S012",
+      "P2S013",
+      "P2S016",
+      "P2S017",
+      "P2S019",
+      "P2S021",
+      "P2S022",
+      "P2S024",
+      "P2S025",
+      "P2S030",
+      "P2S032",
+      "P2S033",
+      "P2S035",
+      "P2S036",
+      "P2S037",
+      "P2S040",
+      "P2S041",
+      "P2S042",
+      "P2S043",
+      "P2S047",
+      "P2S048",
+      "P2S050",
+      "P2S051",
+      "P2S053",
+      "P2S056",
+      "P2S057",
+      "P2S059",
+      "P2S060",
+      "P2S061",
+      "P2S064",
+      "P2S065",
+      "P2S069",
+      "P2S070",
+      "P2S071",
+      "P2S073",
+      "P2S074",
+      "P2S077",
+      "P2S079",
+      "P2S081",
+      "P2S084",
+      "P2S085",
+      "P2S087",
+      "P2S089",
+      "P2S090",
+      "P2S091",
+      "P2S092",
+      "P2S094",
+      "P2S097",
+      "P2S099",
+      "P2S100",
+      "P2S102",
+      "P2S105",
+      "P2S106",
+      "P2S107",
+      "P2S109",
+      "P2S111",
+      "P2S113",
+      "P2S116",
+      "P2S117",
+      "P2S121",
+      "P2S122",
+      "P2S124",
+      "P2S125",
+      "P2S126",
+      "P2S127",
+      "P2S128",
+      "P2S129",
+      "P2S131",
+      "P2S133",
+      "P2S136",
+      "P2S138",
+      "P2S139",
+      "P2S140",
+      "P2S142",
+      "P2S145",
+      "P2S146",
+      "P2S148",
+      "P2S151",
+      "P2S153",
+      "P2S154",
+      "P2S155",
+      "P2S158",
+      "P2S159",
+      "P2S161",
+      "P2S163",
+      "P2S165",
+      "P2S167",
+      "P2S170",
+      "P2S171",
+      "P2S174",
+      "P2S177",
+      "P2S178",
+      "P2S179",
+      "P2S180",
+      "P2S181",
+      "P2S184",
+      "P2S185",
+      "P2S186",
+      "P2S189",
+      "P2S191",
+      "P2S194",
+      "P2S195",
+      "P2S197",
+      "P2S198",
+      "P2S201",
+      "P2S202",
+      "P2S203",
+      "P2S204",
+      "P2S207",
+      "P2S208",
+      "P2S209",
+      "P2S213",
+      "P2S214",
+      "P2S215"
+    ],
+    "validation": [
+      "P2S001",
+      "P2S015",
+      "P2S020",
+      "P2S034",
+      "P2S045",
+      "P2S046",
+      "P2S062",
+      "P2S066",
+      "P2S080",
+      "P2S082",
+      "P2S096",
+      "P2S108",
+      "P2S115",
+      "P2S119",
+      "P2S130",
+      "P2S137",
+      "P2S147",
+      "P2S160",
+      "P2S169",
+      "P2S176",
+      "P2S183",
+      "P2S190",
+      "P2S199",
+      "P2S212"
+    ],
+    "train": [
+      "P2S003",
+      "P2S006",
+      "P2S010",
+      "P2S014",
+      "P2S026",
+      "P2S027",
+      "P2S029",
+      "P2S031",
+      "P2S038",
+      "P2S044",
+      "P2S049",
+      "P2S052",
+      "P2S055",
+      "P2S063",
+      "P2S068",
+      "P2S072",
+      "P2S075",
+      "P2S078",
+      "P2S083",
+      "P2S086",
+      "P2S093",
+      "P2S098",
+      "P2S101",
+      "P2S104",
+      "P2S110",
+      "P2S112",
+      "P2S120",
+      "P2S123",
+      "P2S132",
+      "P2S135",
+      "P2S141",
+      "P2S143",
+      "P2S149",
+      "P2S150",
+      "P2S156",
+      "P2S162",
+      "P2S164",
+      "P2S168",
+      "P2S172",
+      "P2S175",
+      "P2S182",
+      "P2S187",
+      "P2S193",
+      "P2S196",
+      "P2S205",
+      "P2S206",
+      "P2S210",
+      "P2S216"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenario_id": "P2S001",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S002",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S003",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S004",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S005",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S006",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S007",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S008",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S009",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S010",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S011",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S012",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S013",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S014",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S015",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S016",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S017",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S018",
+      "age_band": "8-10",
+      "risk_category": "violence",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S019",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S020",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S021",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S022",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S023",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S024",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S025",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S026",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S027",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S028",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S029",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S030",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S031",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S032",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S033",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S034",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S035",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S036",
+      "age_band": "8-10",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S037",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S038",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S039",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S040",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S041",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S042",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S043",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S044",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S045",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S046",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S047",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S048",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S049",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S050",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S051",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S052",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S053",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S054",
+      "age_band": "8-10",
+      "risk_category": "grooming_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S055",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S056",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S057",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S058",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S059",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S060",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S061",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S062",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S063",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S064",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S065",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S066",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S067",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S068",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S069",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S070",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S071",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S072",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S073",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S074",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S075",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S076",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S077",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S078",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S079",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S080",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S081",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S082",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S083",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S084",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S085",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S086",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S087",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S088",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S089",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S090",
+      "age_band": "11-13",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S091",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S092",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S093",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S094",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S095",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S096",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S097",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S098",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S099",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S100",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S101",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S102",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S103",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S104",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S105",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S106",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S107",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S108",
+      "age_band": "11-13",
+      "risk_category": "hate_speech",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S109",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S110",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S111",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S112",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S113",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S114",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S115",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S116",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S117",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S118",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S119",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S120",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S121",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S122",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S123",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S124",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S125",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S126",
+      "age_band": "11-13",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S127",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S128",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S129",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S130",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S131",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S132",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S133",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S134",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S135",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S136",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S137",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S138",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S139",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S140",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S141",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S142",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S143",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S144",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S145",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S146",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S147",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S148",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S149",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S150",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S151",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S152",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S153",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S154",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S155",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S156",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S157",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S158",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S159",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S160",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S161",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S162",
+      "age_band": "14-15",
+      "risk_category": "violence",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S163",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S164",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S165",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S166",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S167",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S168",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S169",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S170",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S171",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S172",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S173",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S174",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S175",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S176",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S177",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S178",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S179",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S180",
+      "age_band": "14-15",
+      "risk_category": "hate_speech",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S181",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S182",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S183",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S184",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S185",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S186",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S187",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S188",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S189",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S190",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S191",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S192",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S193",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S194",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S195",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S196",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S197",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S198",
+      "age_band": "14-15",
+      "risk_category": "grooming_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S199",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S200",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S201",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S202",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S203",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S204",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S205",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S206",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S207",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S208",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S209",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S210",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    },
+    {
+      "scenario_id": "P2S211",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "output_study"
+    },
+    {
+      "scenario_id": "P2S212",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "validation"
+    },
+    {
+      "scenario_id": "P2S213",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S214",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S215",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "classifier_test"
+    },
+    {
+      "scenario_id": "P2S216",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged",
+      "role": "train"
+    }
+  ]
+}

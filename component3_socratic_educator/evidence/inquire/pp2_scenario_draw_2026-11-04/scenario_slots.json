@@ -1,0 +1,1086 @@
+{
+  "dataset": "inquire-pp2",
+  "note": "write one scenario context per ID; roles are in scenario_draw.json",
+  "scenarios": [
+    {
+      "scenario_id": "P2S001",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S002",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S003",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S004",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S005",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S006",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S007",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S008",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S009",
+      "age_band": "8-10",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S010",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S011",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S012",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S013",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S014",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S015",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S016",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S017",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S018",
+      "age_band": "8-10",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S019",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S020",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S021",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S022",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S023",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S024",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S025",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S026",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S027",
+      "age_band": "8-10",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S028",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S029",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S030",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S031",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S032",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S033",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S034",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S035",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S036",
+      "age_band": "8-10",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S037",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S038",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S039",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S040",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S041",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S042",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S043",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S044",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S045",
+      "age_band": "8-10",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S046",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S047",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S048",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S049",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S050",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S051",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S052",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S053",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S054",
+      "age_band": "8-10",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S055",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S056",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S057",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S058",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S059",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S060",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S061",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S062",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S063",
+      "age_band": "8-10",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S064",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S065",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S066",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S067",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S068",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S069",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S070",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S071",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S072",
+      "age_band": "8-10",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S073",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S074",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S075",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S076",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S077",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S078",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S079",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S080",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S081",
+      "age_band": "11-13",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S082",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S083",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S084",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S085",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S086",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S087",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S088",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S089",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S090",
+      "age_band": "11-13",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S091",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S092",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S093",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S094",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S095",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S096",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S097",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S098",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S099",
+      "age_band": "11-13",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S100",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S101",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S102",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S103",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S104",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S105",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S106",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S107",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S108",
+      "age_band": "11-13",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S109",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S110",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S111",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S112",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S113",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S114",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S115",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S116",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S117",
+      "age_band": "11-13",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S118",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S119",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S120",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S121",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S122",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S123",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S124",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S125",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S126",
+      "age_band": "11-13",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S127",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S128",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S129",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S130",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S131",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S132",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S133",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S134",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S135",
+      "age_band": "11-13",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S136",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S137",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S138",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S139",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S140",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S141",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S142",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S143",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S144",
+      "age_band": "11-13",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S145",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S146",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S147",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S148",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S149",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S150",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S151",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S152",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S153",
+      "age_band": "14-15",
+      "risk_category": "explicit_visual"
+    },
+    {
+      "scenario_id": "P2S154",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S155",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S156",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S157",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S158",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S159",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S160",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S161",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S162",
+      "age_band": "14-15",
+      "risk_category": "violence"
+    },
+    {
+      "scenario_id": "P2S163",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S164",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S165",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S166",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S167",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S168",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S169",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S170",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S171",
+      "age_band": "14-15",
+      "risk_category": "self_harm_imagery"
+    },
+    {
+      "scenario_id": "P2S172",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S173",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S174",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S175",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S176",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S177",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S178",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S179",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S180",
+      "age_band": "14-15",
+      "risk_category": "hate_speech"
+    },
+    {
+      "scenario_id": "P2S181",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S182",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S183",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S184",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S185",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S186",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S187",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S188",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S189",
+      "age_band": "14-15",
+      "risk_category": "cyberbullying"
+    },
+    {
+      "scenario_id": "P2S190",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S191",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S192",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S193",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S194",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S195",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S196",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S197",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S198",
+      "age_band": "14-15",
+      "risk_category": "grooming_language"
+    },
+    {
+      "scenario_id": "P2S199",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S200",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S201",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S202",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S203",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S204",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S205",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S206",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S207",
+      "age_band": "14-15",
+      "risk_category": "self_harm_language"
+    },
+    {
+      "scenario_id": "P2S208",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S209",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S210",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S211",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S212",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S213",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S214",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S215",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    },
+    {
+      "scenario_id": "P2S216",
+      "age_band": "14-15",
+      "risk_category": "unknown_flagged"
+    }
+  ]
+}

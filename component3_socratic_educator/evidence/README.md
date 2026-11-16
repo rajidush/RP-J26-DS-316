@@ -23,7 +23,7 @@ evidence/
 | Script | Writes to |
 |---|---|
 | `capture_intercept_samples`, `run_adversarial_intercept`, `check_temperature`, `trace_token_masking` | `intercept/` |
-| `capture_inquire_served`, `inquire_finetune.py build` / `sheet` (one folder up) | `inquire/` |
+| `capture_inquire_served`, `inquire_finetune.py build` / `sheet` / `pp2-draw` / `build-pp2` (one folder up) | `inquire/` |
 | `evaluate_emotion_rules` | prints to the terminal; save its output under `evaluate/` |
 | `inquire_finetune.py label-sheets` / `label-score` (one folder up) | `evaluate/` (scores into the sheets' run folder) |
 | `run_end_to_end`, `measure_latency`, `validate_schemas`, `readability_check` | `system/` |
@@ -53,6 +53,7 @@ evidence/
 | `inquire_comparison_2026-10-10` | The blind control-vs-adapted comparison: sheet, key, scores, summary |
 | `gguf_conversion_2026-10-17` | Merging the adapter and converting it to GGUF |
 | `inquire_served_2026-10-17` | The held-out prompts run on the served GGUFs in LM Studio |
+| `pp2_scenario_draw_2026-11-04` | The PP2 held-out draw, made before any PP2 content existed: roles for 216 scenario IDs (24 output-study, 120 classifier-test, 24 validation, 48 training), and the same IDs without roles for writing the contexts |
 
 **`evaluate/`**
 
