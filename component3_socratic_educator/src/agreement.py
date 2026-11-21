@@ -1,11 +1,15 @@
 """
 Agreement between independent raters on the items they both rated (spec story 48):
-percent agreement, prevalence (so a high agreement on a rare value is visible)
-and Krippendorff's alpha for nominal labels. A missing rating (a skip) is None
-and never counts as a judgement.
+percent agreement, prevalence (so a high agreement on a rare value is visible),
+Krippendorff's alpha for nominal labels, and Gwet's AC1 for pass/fail items,
+whose rare failures make kappa low or undefined despite high agreement. A
+missing rating (a skip) is None and never counts as a judgement.
 
 Krippendorff, K. (2011). Computing Krippendorff's Alpha-Reliability. Annenberg
 School for Communication, University of Pennsylvania.
+Gwet, K. L. (2008). Computing inter-rater reliability and its variance in the
+presence of high agreement. British Journal of Mathematical and Statistical
+Psychology, 61(1), 29-48.
 """
 from __future__ import annotations
 
@@ -52,3 +56,17 @@ def krippendorff_alpha_nominal(units: Sequence[Sequence[Value]]) -> Optional[flo
         return None
     observed = sum(w for (a, b), w in coincidence.items() if a != b) / n
     return 1 - observed / expected
+
+
+def gwet_ac1(pairs: Sequence[tuple[Value, Value]], categories: Sequence[Hashable]) -> Optional[float]:
+    """AC1 for two raters over the pairs where neither rating is missing, on the item's q possible
+    categories (Gwet 2008): chance agreement is the sum of pi_k(1 - pi_k) over q - 1, where pi_k is
+    category k's share of both raters' ratings. None when no pair is rated."""
+    rated = [(a, b) for a, b in pairs if a is not None and b is not None]
+    if not rated:
+        return None
+    observed = sum(a == b for a, b in rated) / len(rated)
+    shares = Counter(v for pair in rated for v in pair)
+    expected = sum(shares[k] / (2 * len(rated)) * (1 - shares[k] / (2 * len(rated))) for k in categories)
+    expected /= len(categories) - 1
+    return (observed - expected) / (1 - expected)

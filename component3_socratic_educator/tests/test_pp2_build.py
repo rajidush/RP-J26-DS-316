@@ -181,8 +181,12 @@ def test_build_splits_rows_by_their_scenarios_planned_role(pp2):
     assert {role[r["scenario_id"]] for r in splits["validation"]} == {"validation"}
     assert len(splits["train"]) == 48 * 3 and len(splits["validation"]) == 24 * 3
     row = splits["train"][0]
+    # the shown parts stay, for the dataset-validation sheet (ticket 10)
     assert set(row) == {"example_id", "scenario_id", "age_band", "risk_category", "move", "easier", "reply_type",
-                        "source", "prompt", "completion"}
+                        "context", "previous_message", "child_reply", "source", "prompt", "completion"}
+    drafted = next(r for r in pp2["rows"] if r["example_id"] == row["example_id"])
+    assert [row[k] for k in ("context", "previous_message", "child_reply")] == \
+        [drafted[k] for k in ("context", "previous_message", "child_reply")]
     assert row["completion"] == [{"role": "assistant", "content": next(
         r["completion"] for r in pp2["rows"] if r["example_id"] == row["example_id"])}]
     assert [r["example_id"] for r in splits["train"]] == sorted(r["example_id"] for r in splits["train"])
@@ -270,6 +274,13 @@ def test_build_refuses_rows_with_invalid_or_unreachable_labels(pp2, edit, proble
     target.update(edit)
     message = refused(pp2, rows)
     assert target["example_id"] in message and problem in message
+
+
+@pytest.mark.parametrize("field", ["context", "previous_message"])
+def test_build_refuses_a_row_without_the_parts_a_rater_is_shown(pp2, field):
+    rows = [dict(r) for r in pp2["rows"]]
+    del rows[5][field]
+    assert f"{rows[5]['example_id']}: no {field}" in refused(pp2, rows)
 
 
 def test_build_refuses_pending_rows_and_failing_completions(pp2):
