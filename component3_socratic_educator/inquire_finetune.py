@@ -1025,7 +1025,9 @@ LABEL_GUIDE = {
         "none": "no distress",
         "past": "distress the child says is over (\"it scared me then, I'm okay now\")",
         "current_mild": "distress now, softened or manageable (\"kinda scary\", \"a bit worried\")",
-        "current_acute": "strong distress now, being overwhelmed, or any self-harm language"}),
+        "current_acute": "strong distress now, being overwhelmed, any self-harm language, or the child "
+                         "threatening or saying they want to hurt someone (not a denial such as \"I would "
+                         "never hurt anyone\", not someone else's harm, not play in a game)"}),
     STANCE: ("How the reply relates to taking a safer step (Motivational Interviewing client language).", {
         "change_talk": "the child moves toward a safer step: wants to, can, or will take one",
         "neutral": "answers or describes without leaning toward or away from a safer step",

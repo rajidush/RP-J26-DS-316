@@ -4,7 +4,10 @@ each child reply with, and their values. Research and sources:
 evidence/research/emotion_taxonomy_research_2026-10-25.md.
 
     expressed emotion  GoEmotions' Ekman grouping, or neutral
-    distress severity  after the ReachOut triage branches (CLPsych 2016)
+    distress severity  after the ReachOut triage branches (CLPsych 2016); self-harm
+                       language and the child's own threat to hurt another person are
+                       current acute (ticket 26: raised by the counsellor on 2 Nov,
+                       triaged by the owner on 21 Nov 2026)
     stance             Motivational Interviewing client language (MISC 2.5),
                        plus "disengaged", a project extension for non-answers
                        and opting out
