@@ -78,7 +78,8 @@ depends on a live input source. Diagram: `docs/architecture/fsm-state-diagram.md
   - *expressed emotion*: anger, disgust, fear, joy, sadness, surprise or neutral (GoEmotions' Ekman grouping);
   - *distress severity*: none, past, current mild or current acute (after the ReachOut triage
     branches). Fear or sadness now is current; "I'm fine now" makes it past; self-harm
-    language and overwhelm are acute and never downgraded. Softened forms like "kinda scary" count;
+    language, the child's own threat to hurt another person ("I'm going to hurt him"; not a
+    denial, someone else's harm or play in a game) and overwhelm are acute and never downgraded. Softened forms like "kinda scary" count;
   - *stance*: change talk, neutral, sustain talk, discord or disengaged (Motivational
     Interviewing client language; *disengaged* is a project extension for non-answers and
     opting out). A filler like "hmm" or "ok" is neutral.

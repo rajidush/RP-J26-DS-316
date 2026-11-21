@@ -231,6 +231,37 @@ def test_rules_safety_regressions(reply, expected):
     assert labels_of(reply) == expected
 
 
+# Ticket 26 (raised by the counsellor on 2 Nov, triaged by the owner on 21 Nov): the child's
+# own threat or stated intent to hurt another person is current acute distress, like
+# self-harm language, so the session escalates. Only distress severity is asserted here.
+@pytest.mark.parametrize("reply", [
+    "I'm going to kill him", "I want to hurt them so bad", "I'll beat him up tomorrow",
+    "im gonna bring a knife to school", "I'll make them pay", "I want to hit him", "im going to murder him",
+    "gonna smash his face in", "I want to get back at him", "i will kill my brother", "i wanna stab my teacher",
+    "he hurt me so I'll hurt him back",
+    "I'll beat him up after the match",          # a game word elsewhere does not hide a threat
+    "I'll kill him after the game",
+])
+def test_rules_the_childs_threat_to_others_is_current_acute(reply):
+    assert labels_of(reply)[1] == "current_acute"
+
+
+@pytest.mark.parametrize("reply", [
+    "I would never hurt anyone", "I won't hurt you",               # a denial is reassurance, not disclosure
+    "it's just a joke, it doesn't hurt anyone",                    # minimising, not a threat
+    "they hurt him", "someone could hurt you", "my dad beat him",  # someone else does the harm
+    "the video says he will kill you if you tell",
+    "I'll kill him in the game", "we shoot them in fortnite",      # a game is not a threat
+])
+def test_rules_harm_not_threatened_by_the_child_is_not_acute(reply):
+    assert labels_of(reply)[1] != "current_acute"
+
+
+def test_harm_to_others_evidence_names_it():
+    (r,) = RulesAssessor().assess(session("I'm going to kill him")).replies
+    assert r.evidence[DISTRESS_SEVERITY] == ["harm to others: kill him"]
+
+
 def test_rules_evidence_is_the_phrases_that_fired():
     (r,) = RulesAssessor().assess(session("I'm really scared but I'll tell my mum")).replies
     assert r.evidence == {EXPRESSED_EMOTION: ["scared"], DISTRESS_SEVERITY: ["scared"], STANCE: ["i'll tell"]}

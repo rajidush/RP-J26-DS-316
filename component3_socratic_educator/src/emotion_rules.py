@@ -94,6 +94,22 @@ EMOTIONS = {
                r"cool", r"awesome", r"yay"),
 }
 ACUTE_DISTRESS_PHRASES = _rx(*_ACUTE_SADNESS, *_ACUTE_FEAR)
+# Risk of harm to another person (ticket 26: raised by the counsellor on 2 Nov, triaged by
+# the owner on 21 Nov): the child's own threat or stated intent to hurt someone is current
+# acute distress, like self-harm language, and its evidence says so. Unlike self-harm
+# language, a negation cancels it ("I would never hurt anyone" is reassurance, not a
+# disclosure), someone else's harm is not it ("they hurt him"), and neither is play in a
+# game ("I'll kill him in the game"). A bare name ("punch jake") is not caught.
+_TARGET = (r"(?:him|her|them|you|someone|somebody|people|everyone|everybody|anyone"
+           r"|(?:my|his|her|their|our|that|this) [\w']+)")
+_THREAT = (rf"(?:kill|murder|hurt|hit|beat|punch|stab|shoot|attack|smash|slap|kick)(?: [\w']+)? {_TARGET}"
+           rf"|get back at {_TARGET}|make {_TARGET} pay|get (?:my )?revenge|bring(?:ing)? a (?:gun|knife|weapon)")
+# The child is the one who would do it: "I", "I'm", "I'll" up to three words before
+# ("I want to", "I'm going to"), or a reply that starts with the intent ("gonna ...").
+HARM_TO_OTHERS = re.compile(rf"(?:\b(?:i|i'm|im|i'll|ill|i'd|id)\b(?:\s+[\w']+){{0,3}}?\s+"
+                            rf"|^\s*(?:(?:gonna|wanna|going to|want to)\s+)?)(?P<threat>{_THREAT})\b")
+_IN_A_GAME = re.compile(r"^(?:\s+[\w']+){0,3}?\s+(?:in|on)\s+(?:the\s+|my\s+)?(?:game|fortnite|minecraft|roblox"
+                        r"|server)\b")
 # The child says the feeling is over, after naming it, and not "still": past distress.
 RESOLVED = _rx(r"(fine|okay|ok|better|alright) now", r"not anymore", r"over it", r"back then")
 _STILL = _rx(r"still")
@@ -157,14 +173,24 @@ def _fired(pattern: re.Pattern, text: str) -> list[str]:
     return [m.group(0) for m in _matches(pattern, text)]
 
 
-def _emotion(text: str) -> tuple[str, list[str]]:
-    hits = {group: _fired(rx, text) for group, rx in EMOTIONS.items()}
+def _threats(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, phrase) of each threat the child makes, not negated and not in a game."""
+    return [(m.start("threat"), m.end("threat"), m.group("threat")) for m in HARM_TO_OTHERS.finditer(text)
+            if not _NEGATED.search(text[:m.start("threat")]) and not _IN_A_GAME.search(text[m.end("threat"):])]
+
+
+def _emotion(text: str, threats: list) -> tuple[str, list[str]]:
+    # Inside a threat, "hurt" is the threat, not the child's sadness.
+    hits = {group: [m.group(0) for m in _matches(rx, text) if not any(s <= m.start() < e for s, e, _ in threats)]
+            for group, rx in EMOTIONS.items()}
     best = max(EMOTIONS, key=lambda g: (len(hits[g]), -list(EMOTIONS).index(g)))
     return (best, hits[best]) if hits[best] else ("neutral", [])
 
 
-def _distress(text: str) -> tuple[str, list[str]]:
-    if acute := [m.group(0) for m in ACUTE_DISTRESS_PHRASES.finditer(text)]:
+def _distress(text: str, threats: list) -> tuple[str, list[str]]:
+    acute = [m.group(0) for m in ACUTE_DISTRESS_PHRASES.finditer(text)]
+    acute += [f"harm to others: {phrase}" for _, _, phrase in threats]
+    if acute:
         return "current_acute", acute
     hits = sorted(_matches(EMOTIONS["fear"], text) + _matches(EMOTIONS["sadness"], text), key=lambda m: m.start())
     if not hits:
@@ -195,7 +221,9 @@ def label_reply(reply: str) -> tuple[dict[str, str], dict[str, list[str]]]:
     default value). Stance precedence: a refusal, "the same again", change talk,
     discord, sustain talk, a non-answer."""
     text = (reply or "").lower().replace("’", "'")
-    parts = {EXPRESSED_EMOTION: _emotion(text), DISTRESS_SEVERITY: _distress(text), STANCE: _stance(text)}
+    threats = _threats(text)
+    parts = {EXPRESSED_EMOTION: _emotion(text, threats), DISTRESS_SEVERITY: _distress(text, threats),
+             STANCE: _stance(text)}
     return {k: v for k, (v, _) in parts.items()}, {k: e for k, (_, e) in parts.items()}
 
 
