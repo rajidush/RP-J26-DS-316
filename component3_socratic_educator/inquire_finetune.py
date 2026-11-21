@@ -63,7 +63,8 @@ from src.codebook import (DISTRESS_SEVERITIES, DISTRESS_SEVERITY, EXPRESSED_EMOT
                           STANCES)
 from src import config
 from src.agreement import krippendorff_alpha_nominal, percent_agreement, prevalence
-from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS
+from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS, inquire_violation
+from src.stated_emotion import EMOTION_WORDS, POST_CHECK_EMOTION_WORDS, unstated_emotions
 
 HERE = Path(__file__).resolve().parent
 DRAFTS_DIR = HERE / "evidence" / "inquire" / "inquire_drafts_2026-10-08"
@@ -78,20 +79,6 @@ FORBIDDEN_SUBSTRINGS = _FORBIDDEN_SUBSTRINGS
 MAX_SENTENCES = 2
 MAX_WORDS = 30
 
-# Fixed list for the stated-emotion check: words that attribute a feeling. Words
-# that are mostly used another way ("hurt someone", "don't worry", "weird")
-# are left out, so a paraphrase can slip through (see README limitations).
-EMOTION_WORDS = (
-    "afraid", "angry", "anger", "annoyed", "anxious", "anxiety", "ashamed", "bored",
-    "confused", "creeped out", "depressed", "disappointed", "disgusted", "distressed",
-    "embarrassed", "excited", "fear", "frightened", "frightening", "frustrated",
-    "frustrating", "frustration", "furious", "grossed out", "guilty", "happy",
-    "heartbroken", "helpless", "hopeless", "horrified", "irritated", "jealous",
-    "lonely", "mad", "miserable", "nervous", "overwhelmed", "panicked", "sad",
-    "sadness", "scared", "scary", "shaken", "shocked", "stressed", "terrified",
-    "uncomfortable", "uneasy", "unhappy", "upset", "upsetting", "worried",
-)
-
 _SENTENCE_END = re.compile(r"[.!?]+(?=\s|$)")
 _DOUBLE_QUOTES = ('"', "“", "”")
 # A single quote opening a word is quoting; one inside a word is an apostrophe.
@@ -102,20 +89,6 @@ _META = (
     re.compile(r"\bas an ai\b", re.I),
     re.compile(r"[\[\]*#]|\(note\b", re.I),
 )
-
-
-def _normalise(text):
-    return text.replace("’", "'").replace("‘", "'").lower()
-
-
-def _has_phrase(phrase, text):
-    return re.search(rf"(?<![a-z']){re.escape(phrase)}(?![a-z'])", text) is not None
-
-
-def unstated_emotions(text, child_reply):
-    """Emotion words in `text` that the child's reply does not contain verbatim."""
-    said, child = _normalise(text), _normalise(child_reply)
-    return [w for w in EMOTION_WORDS if _has_phrase(w, said) and not _has_phrase(w, child)]
 
 
 @dataclass(frozen=True)
@@ -162,8 +135,9 @@ class CheckResult:
         return out
 
 
-def format_check(text, child_reply):
-    """ADR 0003 format check plus the stated-emotion check, each rule reported separately."""
+def format_check(text, child_reply, emotion_words=EMOTION_WORDS):
+    """ADR 0003 format check plus the stated-emotion check, each rule reported separately.
+    PP1 data keeps EMOTION_WORDS; PP2 rows use the post-check's stricter list (row_problems)."""
     text = text.strip()
     lowered = text.lower()
     return CheckResult(
@@ -174,7 +148,7 @@ def format_check(text, child_reply):
         forbidden=tuple(bad for bad in FORBIDDEN_SUBSTRINGS if bad in lowered),
         quoted=any(q in text for q in _DOUBLE_QUOTES) or bool(_SINGLE_QUOTE_OPEN.search(text)),
         meta=any(p.search(text) for p in _META),
-        unstated_emotions=unstated_emotions(text, child_reply),
+        unstated_emotions=unstated_emotions(text, child_reply, emotion_words),
     )
 
 
@@ -226,11 +200,26 @@ def highlight_trusted_adults(text):
     return TRUSTED_ADULT.sub(lambda m: f"[[{m.group(0)}]]", text)
 
 
-def describe_checks(text, child):
-    result = format_check(text, child)
+def row_problems(text, row):
+    """Why `text` cannot be a row's completion. A PP2 row must also pass the check the live
+    system applies to a model-written INQUIRE line (inquire_violation), with its stricter
+    feeling words, so training never teaches a line the runtime would block."""
+    if not is_pp2_row(row):
+        return format_check(text, child_reply(row)).failures()
+    problems = format_check(text, row["child_reply"], POST_CHECK_EMOTION_WORDS).failures()
+    reason = inquire_violation(text, row["move"], row["child_reply"])
+    return problems + ([f"runtime check: {reason}"] if reason and reason != "unstated_emotion" else [])
+
+
+def describe_checks(text, child, row=None):
+    result = format_check(text, child, POST_CHECK_EMOTION_WORDS if row and is_pp2_row(row) else EMOTION_WORDS)
     rule_failures = [name for name, passed in result.rules.items() if not passed]
     parts = ["format ok" if result.format_ok else "format FAIL: " + ", ".join(rule_failures),
              "emotion ok" if result.emotion_ok else "emotion FAIL: " + ", ".join(result.unstated_emotions)]
+    if row and is_pp2_row(row):
+        reason = inquire_violation(text, row["move"], row["child_reply"])
+        if reason and reason != "unstated_emotion":
+            parts.append(f"runtime FAIL: {reason}")
     if TRUSTED_ADULT.search(text):
         parts.append("mentions trusted adult")
     return " | ".join(parts)
@@ -287,7 +276,7 @@ def _show_row(row, position, total):
     for letter, idx in zip("AB", draft_order(row["example_id"])):
         text = row["drafts"][idx]
         print(f"  {letter}: {highlight_trusted_adults(text)}")
-        print(f"     {describe_checks(text, parts['child'])}")
+        print(f"     {describe_checks(text, parts['child'], row)}")
 
 
 def _decide(row, status, chosen=None, completion=None, rewritten=False, notes=""):
@@ -307,7 +296,7 @@ def _rewrite(row, idx, child, note):
         if not text:
             print("rewrite cancelled")
             return False
-        problems = format_check(text, child).failures()
+        problems = row_problems(text, row)
         if not problems:
             _decide(row, "rewritten", chosen=idx, completion=text, rewritten=True, notes=note)
             return True
@@ -337,7 +326,7 @@ def _review_row(row):
             return "decided"
         elif not is_test and key in ("a", "b"):
             idx = order["ab".index(key)]
-            problems = format_check(row["drafts"][idx], child).failures()
+            problems = row_problems(row["drafts"][idx], row)
             if problems:
                 print(f"draft {key.upper()} fails the checks ({', '.join(problems)}); rewrite it instead")
                 continue
@@ -704,7 +693,7 @@ def _completion_problems(row):
         return [f"{row['example_id']}: no completion"]
     problems = [] if row["child_reply"] in row["prompt"][0]["content"] else \
         [f"{row['example_id']}: the child reply is not in the prompt"]
-    failures = format_check(row["completion"], row["child_reply"]).failures()
+    failures = row_problems(row["completion"], row)
     return problems + ([f"{row['example_id']}: {', '.join(failures)}"] if failures else [])
 
 

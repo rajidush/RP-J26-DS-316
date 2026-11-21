@@ -276,8 +276,8 @@ def test_an_unknown_move_is_an_error_not_a_line():
         GrammarConstrainedGenerator().generate("INQUIRE", RiskCategory.VIOLENCE, move="reflect")
 
 
-def test_the_inquire_grammar_is_exactly_the_template_lines():
+def test_every_template_line_passes_the_inquire_grammar_and_the_post_check():
+    # Since ticket 05 the grammar is a rule a model line can meet too (tests/test_model_inquire.py);
+    # the templates are its fallback, so each must pass it.
     gen = GrammarConstrainedGenerator()
-    assert all(gen.validate("INQUIRE", line) for line in ALL_TEMPLATES)
-    assert not gen.validate("INQUIRE", "I understand. Is there another way you could've reacted?")
-    assert not gen.validate("INQUIRE", "That makes sense. What did you see?")
+    assert all(gen.validate("INQUIRE", line) and post_check(line) is None for line in ALL_TEMPLATES)

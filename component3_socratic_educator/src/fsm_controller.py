@@ -152,8 +152,12 @@ class FSMController:
         move: Optional[str] = next(moves)
         easier = False
         while move is not None and len(responses) < config.MAX_INQUIRE_MOVES:
+            # The model words the move as an answer to the child's latest reply (ADR 0010).
+            previous = transcript.turns[-1] if transcript.turns else None
             line = self.generator.generate_with_source("INQUIRE", trigger.risk_category, move=move,
-                                                       age_band=age_band, easier=easier)
+                                                       age_band=age_band, easier=easier,
+                                                       child_reply=previous and previous.child_response,
+                                                       previous_line=previous and previous.system_text)
             answer = respond(line.text)
             transcript.add(Turn.of(DialogueState.INQUIRE, line, answer, age_band, move, easier))
             responses.append(answer)
