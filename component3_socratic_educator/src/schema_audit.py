@@ -20,7 +20,7 @@ from typing import Optional
 import jsonschema
 
 from .adversarial import POST_CHECK_REASONS, SCHEMA_REASONS
-from .grammar_decoder import _GRAMMAR, delivery_violation
+from .grammar_decoder import _GRAMMAR, delivery_violation, post_check
 from .schemas import _validate_against_schema
 
 _INBOUND = {"component1_screen_monitoring": "comp1_to_comp3.schema.json",
@@ -67,7 +67,12 @@ def delivered_intercept_error(line: str) -> Optional[str]:
 
 
 def delivered_inquire_error(line: str) -> Optional[str]:
-    return None if _GRAMMAR["INQUIRE"].match(line) else "grammar"
+    """INQUIRE's grammar, then the post-check (ticket 05: lines are no longer only
+    templates). The option-question and stated-emotion rules need the move and the
+    child's reply, which this check does not see."""
+    if not _GRAMMAR["INQUIRE"].match(line):
+        return "grammar"
+    return post_check(line)
 
 
 def failed_only_by(result: Optional[str], rule: Optional[str]) -> bool:

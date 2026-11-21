@@ -21,6 +21,14 @@ ESCALATION_EMOTIONAL_STATES = {"distressed"}
 # gemma-3-1B-it-QAT-Q4_0.gguf). See src/model_client.py.
 LOCAL_MODEL_ID = "google/gemma-3-1b"
 
+# INQUIRE's arms (PP2 output study, ticket 05): the template lines, or a model writing each move's wording.
+# The arm is a property of the generator, so the controller is the same for every arm. The model IDs are
+# the GGUFs LM Studio serves (evidence/inquire/inquire_served_2026-10-17); the adapter is retrained in ticket 20.
+INQUIRE_ARMS = ("template", "control", "adapted")
+INQUIRE_MODEL_IDS = {"control": "gemma3-1b-it-base", "adapted": "gemma3-1b-inquire-adapted"}
+# Greedy, as in the PP1 comparison, so the arms differ only by their weights.
+INQUIRE_TEMPERATURE = 0
+
 # INTERCEPT sampling temperature, sent with every live call (fixed for the plan's Mon 12 Oct task;
 # before that the server's default, 0.8 per llama.cpp's log, was used: evidence/intercept/temperature_check_2026-10-13/). 1.0 is Google's
 # recommended sampling temperature for Gemma 3; the post-check and the fallback

@@ -335,3 +335,15 @@ def test_build_refuses_a_kept_row_without_a_completion_and_a_duplicated_id(pp2):
 def test_build_refuses_a_file_that_is_not_a_pp2_draw(pp2):
     pp2["plan_path"].write_text(json.dumps({"dataset": "inquire-finetune", "scenarios": []}), encoding="utf-8")
     assert "not a PP2 scenario draw" in refused(pp2, pp2["rows"])
+
+
+@pytest.mark.parametrize("completion, problem", [
+    ("That sounds hard, doesn't it?", "runtime check: leading_tag_question"),
+    ("What was the child doing just before?", "runtime check: third_person"),
+    ("That sounds unsettling. What happened next?", "unstated emotion: unsettling"),   # the post-check's stricter list
+])
+def test_build_refuses_a_completion_the_live_check_would_block(pp2, completion, problem):
+    rows = [dict(r) for r in pp2["rows"]]
+    rows[4]["completion"] = completion
+    message = refused(pp2, rows)
+    assert rows[4]["example_id"] in message and problem in message

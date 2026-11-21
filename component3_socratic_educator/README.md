@@ -274,6 +274,27 @@ JSON validity, controller-grammar compliance and controller correctness are repo
 
 **Limitation:** the stated-emotion check uses a fixed word list (`EMOTION_WORDS`), so it can miss a paraphrased emotion that isn't on the list.
 
+## PP2 model-written INQUIRE lines (ticket 05, ADR 0010)
+
+The generator has an INQUIRE arm (`GrammarConstrainedGenerator(inquire_arm=...)`), so the controller is the same for every arm:
+- **`template`** (the default): the pre-checked line for the move and age band;
+- **`control`** and **`adapted`**: the model words the move, using `config.INQUIRE_MODEL_IDS` at temperature 0.
+
+**The prompt** names the move, the age band and whether it is the easier form. The previous educator line and the child's latest reply come last, between `<<<` and `>>>`, marked as data. The risk category is never in the prompt.
+
+**Decoding** is held to `INQUIRE_LINE` (LM Studio's JSON schema): at most one short sentence, then one question ending in "?", 30 words at most, plain characters. Every template line matches it, and `validate()` uses the same pattern.
+
+**Then the post-check** runs: forbidden words, alert language, category names, invitations to describe the content, "the child" (the prompt's word copied back), a leading tag question ("…, doesn't it?"), an option question ("… or …?") outside the alternatives move, and a feeling the child did not use verbatim. The feeling check uses `POST_CHECK_EMOTION_WORDS` (`src/stated_emotion.py`), which is stricter than the PP1 format check's list. PP2 rows must pass this same check in `review` and `build-pp2`, so training never teaches a line the runtime would block. Any failure, or an unreachable model, gives the move's template line, with the reason in the transcript and the model's text kept for evidence.
+
+Live capture (LM Studio running with the INTERCEPT model and both INQUIRE models):
+
+```bash
+python -m evidence.capture_inquire_model
+#   -> evidence/inquire/inquire_model_capture_<date>/sessions.jsonl + run_record.json
+```
+
+It runs three scripted children per age band through every arm, and records each INQUIRE line's source, fallback reason and model output. The first run (`inquire_model_capture_2026-11-21`) delivered 22 of 27 control and 23 of 27 adapted lines. Reading them showed leading tag questions, "the child", and feelings missing from the word list; the post-check rules after it were added for those (rerun with `--tag after-checks`). The adapted model it calls was trained on the PP1 prompt, so until ticket 20 retrains it, this shows that the path works, not the adapted model's PP2 quality.
+
 ## PP2 INQUIRE dataset (Socratic moves per age band)
 
 PP2 rows teach the model to word the move the controller chose, for the child's age band. The PP1 dataset (`inquire_dataset_2026-10-10`) and `build` are unchanged; PP2 uses its own two commands.
