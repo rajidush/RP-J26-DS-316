@@ -8,7 +8,6 @@ theme.page_header("Behavioral Anomaly Detection")
 
 
 def show_model_error(status):
-    """No prediction, chart or explanation without the saved model -- only this card."""
     theme.error_card(
         "f2", "Function 2 model could not be loaded. No anomaly prediction is shown.",
         status["reason"],
@@ -18,26 +17,51 @@ def show_model_error(status):
          "Install the scikit-learn version the model was trained with: "
          "`pip install scikit-learn==1.6.1`.",
          "Then restart the app."])
+
+
+def show_urgent(report):
+    with theme.card("urgent-alerts", "Urgent Alerts (rule-based)"):
+        st.caption("These rules check recorded safety signals separately from the anomaly model. A rule match does not confirm harm.")
+        urgent = report["urgent"]
+        if urgent.empty:
+            st.write("No urgent rules matched the available records.")
+        else:
+            st.dataframe(urgent.rename(columns={"reasons": "rule matched"}), hide_index=True,
+                         width="stretch")
+        if report["urgent_incomplete"]:
+            st.caption("Some urgent signals were unavailable or missing from the records.")
+
+
+try:
+    source = services.behavioral_daily_source()
+except (OSError, ValueError) as exc:
+    st.error(f"Behavioral records could not be loaded: {exc}")
     st.stop()
-
-
-f2_status = services.function2_status()
-if not f2_status["available"]:
-    show_model_error(f2_status)
-
-source = services.behavioral_daily_source()
+if source["source"] == "demo":
+    st.caption("Research demonstration using synthetic data")
+st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
+           "It does not guarantee that the child is safe.")
 ids = source["child_ids"]
+if not ids:
+    st.info("Insufficient recorded information to assess behavior for this period.")
+    st.stop()
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
                          key="f2_child")
 
+report = None
 try:
     report = services.behavioral_report(source["daily"], child)
 except services.ModelUnavailableError as exc:
     show_model_error(exc.status)
 except ValueError as exc:
     st.error(f"Function 2 could not run on this data: {exc}")
+if report is None:
+    try:
+        show_urgent(services.behavioral_urgent_report(source["daily"], child))
+    except ValueError as alert_error:
+        st.error(f"Urgent records could not be checked: {alert_error}")
     st.stop()
 
 table = report["daily"]
@@ -46,9 +70,17 @@ last = latest["date"]
 window_start = last - timedelta(days=29)
 recent = table[table["date"].between(window_start, last)]
 with theme.card("latest-day", "Latest Prediction"):
-    theme.flag_status(bool(latest["unusual"]), latest["date"])
-    st.metric("Flagged days · latest 30 days", int(recent["unusual"].sum()))
+    if latest["label"] == "Insufficient data":
+        st.write("**Insufficient data**")
+        st.write("Insufficient recorded information to assess behavior for this period.")
+    else:
+        theme.flag_status(bool(latest["unusual"]), latest["date"])
+    assessed = int(recent["unusual"].count())
+    if assessed:
+        st.metric("Flagged days · latest 30 days", int(recent["unusual"].sum()))
     st.caption(f"{window_start} to {last} · ending on this child's latest recorded day")
+    if assessed < len(recent):
+        st.caption(f"{len(recent) - assessed} recorded days in this period could not be assessed.")
     if latest["imputed"]:
         theme.note("Some values were missing and were filled in.")
 
@@ -57,25 +89,21 @@ with theme.card("anomaly-history", "Daily Behavioral Anomaly History"):
                     config=theme.PLOTLY_CONFIG, width="stretch")
     theme.screen_reader_text(
         f"Daily behavioral anomaly history for {child} from {table['date'].min()} to {last}. "
-        f"{int(table['unusual'].sum())} of {len(table)} recorded days are flagged. "
+        f"{int(table['unusual'].sum())} of {table['unusual'].count()} assessed days are flagged. "
         "Flagged days are amber diamonds; days not flagged are grey circles. "
+        "Days with insufficient data are open squares. "
         "Each chart point includes its date and status.")
 
 with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
     st.caption("Observed differences from typical training values; these are not exact model attributions.")
     flagged_dates = list(table.loc[table["unusual"], "date"])
-    if not flagged_dates:
+    if not table["unusual"].notna().any():
+        st.write("No days had enough recorded information for a prediction.")
+    elif not flagged_dates:
         st.write("No flagged days for this child.")
     else:
         day = st.selectbox("Flagged day", flagged_dates[::-1], key=f"f2_day_{child}")
         st.dataframe(services.explanation_table(report["explanations"][day]).head(3),
                      hide_index=True, width="stretch")
 
-with theme.card("urgent-alerts", "Urgent Alerts (rule-based)"):
-    st.caption("Independent rules for urgent language, grooming, self-harm or self-harm imagery; separate from behavioral predictions.")
-    urgent = report["urgent"]
-    if urgent.empty:
-        st.write("No urgent rule-based alerts for this child.")
-    else:
-        st.dataframe(urgent.rename(columns={"reasons": "rule matched"}), hide_index=True,
-                     width="stretch")
+show_urgent(report)

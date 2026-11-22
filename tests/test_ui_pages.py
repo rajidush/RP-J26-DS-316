@@ -116,7 +116,7 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
     main = html_of(at, at.main)
     assert "Behavioral Anomaly Detection" in main
     assert "Behavioral Anomaly (Function 2)" not in main
-    assert not any("Synthetic child data" in c.value for c in at.caption)
+    assert "Research demonstration using synthetic data" in [c.value for c in at.caption]
     assert at.selectbox(key="f2_child").options[0] == "C001"
     assert len(at.selectbox(key="f2_child").options) == 40
     assert "c4-flag" in main and "c4-badge" not in main
@@ -135,7 +135,8 @@ def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
     text = visible_main_text(at).lower()
     # The helper sees real visible text (so the check below is not vacuous) ...
     assert "flagged days" in text and "behavioral anomaly detection" in text
-    assert "synthetic child data" not in text
+    assert "research demonstration using synthetic data" in text
+    assert "it does not guarantee that the child is safe" in text
     # ... but not the screen-reader-only chart description.
     assert "amber diamonds" not in text
     for word in F2_BANNED:
@@ -174,7 +175,7 @@ def test_behavioral_anomaly_page_switches_child(temp_db):
     assert at.selectbox(key="f2_day_C009").value is not None   # C009 has flagged days
 
 
-def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp_path, monkeypatch):
+def test_behavioral_anomaly_page_missing_model_keeps_urgent_alerts(temp_db, tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))   # empty folder
     at = run_page("behavioral_anomaly")
     main = html_of(at, at.main)
@@ -182,8 +183,25 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp
     assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
     assert "c4-flag" not in main
     assert not at.get("plotly_chart")
-    assert not at.selectbox and not at.dataframe
-    assert F2_URGENT_TITLE not in main
+    assert at.selectbox(key="f2_child").value == "C001"
+    assert F2_URGENT_TITLE in main
+    assert len(at.dataframe) == 1 and "rule matched" in at.dataframe[0].value.columns
+    assert not at.dataframe[0].value.empty
+
+
+def test_behavioral_anomaly_page_shows_insufficient_data_instead_of_a_normal_status(temp_db, monkeypatch):
+    source = services.behavioral_daily_source()
+    daily = source["daily"].query("child_id == 'C001'").tail(1).copy()
+    daily.loc[:, "screen_monitor_observed"] = 0.0
+    daily.loc[:, "language_urgent_flags"] = 2
+    monkeypatch.setattr(services, "behavioral_daily_source",
+                        lambda: {"daily": daily, "child_ids": ["C001"], "source": "demo"})
+    at = run_page("behavioral_anomaly")
+    main = html_of(at, at.main)
+    assert "Insufficient recorded information to assess behavior for this period." in visible_main_text(at)
+    assert "c4-flag" not in main and not at.metric
+    assert "Insufficient data" in str(at.get("plotly_chart")[0].proto)
+    assert "urgent language flag (2)" in at.dataframe[0].value.iloc[0]["rule matched"]
 
 
 def test_function2_failure_leaves_function1_page_working(child_with_sessions, tmp_path, monkeypatch):

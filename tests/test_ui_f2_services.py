@@ -139,6 +139,11 @@ def test_upload_drops_extra_columns_and_parses_text_booleans():
     (lambda d: d.assign(date="01/07/2026"), "YYYY-MM-DD"),
     (lambda d: d.assign(is_weekend="maybe"), "is_weekend"),
     (lambda d: d.assign(language_flags="many"), "must be numeric"),
+    (lambda d: d.assign(screen_incidents=-1), "screen_incidents.*nonnegative whole counts"),
+    (lambda d: d.assign(language_urgent_flags=0.5), "language_urgent_flags.*nonnegative whole counts"),
+    (lambda d: d.assign(is_weekend=2), "is_weekend.*1/0"),
+    (lambda d: d.assign(screen_flagged_seconds=float("inf")), "screen_flagged_seconds.*finite"),
+    (lambda d: d.assign(screen_monitor_observed="unknown"), "screen_monitor_observed.*1/0"),
     (lambda d: pd.concat([d, d.head(1)]), "more than one row"),
     (lambda d: d.assign(child_id=np.nan), "without a child_id"),
 ])
@@ -201,6 +206,36 @@ def test_missing_values_are_imputed_and_flagged():
     report = services.behavioral_report(services.load_daily_csv(_csv(raw)), "C004")
     assert report["daily"]["imputed"].tolist() == [i == 3 for i in range(len(raw))]
     assert np.isfinite(report["daily"]["anomaly_score"]).all()
+
+
+def test_incomplete_daily_inputs_do_not_become_normal_or_suppress_urgent_matches():
+    f2 = services._f2_module()
+    rows = _demo().query("child_id == 'C001'").head(5).copy().reset_index(drop=True)
+    rows.loc[0, f2.FEATURE_SET_A] = np.nan
+    rows.loc[1, "screen_monitor_observed"] = 0
+    rows.loc[1, "language_grooming_flags"] = 2
+    rows.loc[2, "language_flags"] = np.nan
+    rows.loc[3, "language_monitor_observed"] = np.nan
+    rows.loc[4, list(f2.DAILY_COUNTS)] = 0
+    rows.loc[4, "screen_flagged_seconds"] = 0
+    report = services.behavioral_report(rows, "C001")
+    table = report["daily"]
+    assert table.loc[:3, "label"].tolist() == ["Insufficient data"] * 4
+    assert table.loc[:3, ["anomaly_score", "margin", "unusual"]].isna().all().all()
+    assert table.loc[4, "label"] in ("Normal", "Unusual")
+    assert "grooming language flag (2)" in report["urgent"]["reasons"].str.cat(sep=" ")
+    assert report["urgent_incomplete"]
+    assert f2.predict_anomalies(rows)["is_flagged"].iloc[:4].isna().all()
+
+
+def test_urgent_report_does_not_load_model_and_accepts_partial_sources(monkeypatch):
+    rows = pd.DataFrame({"child_id": ["C001"], "date": ["2026-07-01"],
+                         "language_urgent_flags": [2]})
+    monkeypatch.setattr(services, "function2_status", lambda *args: pytest.fail("model loaded"))
+    monkeypatch.setattr(services, "_f2_module", lambda: pytest.fail("model module imported"))
+    report = services.behavioral_urgent_report(rows, "C001")
+    assert report["urgent"]["reasons"].tolist() == ["urgent language flag (2)"]
+    assert report["urgent_incomplete"]
 
 
 def test_unknown_child_is_a_readable_error():
