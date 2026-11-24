@@ -397,6 +397,39 @@ A disagreement stays unlabelled until it is adjudicated. A scores folder is neve
 - `dialogue_so_far` shows the educator's lines, and INQUIRE's templates are worded per age band, so the wording can hint at the band.
 - `sensitive` follows the session's risk category, not what each reply says. A self-harm remark in a cyberbullying session is not marked.
 
+## PP2 dataset-validation sheets (independent raters)
+
+Before the adapter is retrained, the raters check the PP2 dataset itself (ticket 10, spec story 38): every validation row and a stratified 30% of training rows. PP2 has no test rows. Held-out scenarios are never drafted for; their sessions are rated on the reply-label and dialogue sheets instead.
+
+```bash
+python inquire_finetune.py dataset-sheets --dataset evidence/inquire/inquire_pp2_dataset_<date>
+#   -> evidence/inquire/dataset_validation_<date>/classmate_dataset_validation.csv,
+#      counsellor_dataset_validation.csv, instructions.md, key.json
+python inquire_finetune.py dataset-score --key <run>/key.json \
+    --rated counsellor=<returned.csv> --rated classmate=<returned.csv>
+#   -> <run>/scores_<date>/summary.json, summary.md, rows.jsonl, rejected.csv, unrated.csv
+```
+
+**Input.** The folder `build-pp2` wrote. `dataset-sheets` refuses a folder that is not a PP2 dataset, a split file whose hash differs from the manifest, and rows built before the shown parts were kept (rebuild them). It never writes into a folder that already holds sheets.
+
+**The sheet.** One row per dataset row: `item` (opaque, `D0001`…), `sensitive`, `age_band`, `context`, `educator_before`, `child_reply`, `reply_type`, `move` (with "(easier form)" when it is), `educator_line`, then four questions and `notes`:
+- `reply_type_correct`: is `reply_type` the right label for the child's reply? `yes` or `no`;
+- `realistic_for_age`: could a child in this band plausibly write this reply? `yes` or `no`;
+- `safety_gate`: `pass`, or every gate item the line fails, such as `S3` or `S2 S3` (S1–S7, from the output rubric note);
+- `performs_move`: does the line do what its move asks? `yes` or `no`.
+
+`skip` is recorded as missing and never compared. No example ID, scenario, split or risk category appears; the age band, reply type and move are shown because the rater checks them. Rows are shuffled with a recorded seed. `instructions.md` defines the reply types, the gate items and the moves.
+
+**The draws.** Training rows are drawn per age band × move: 30%, rounded half up, at least one. The counsellor's copy is 40% of the sheet per split × age band × move, drawn the same way, with the same item IDs as the classmate's copy, in a different order. The key records both draws per stratum. Rounding up puts the real training share at or above 30%, and the key records it. Reply type and risk category are not strata of the training draw, so their coverage on the sheet is left to the draw; stratifying by them too would push small strata well above 30%.
+
+**Scoring.** `dataset-score` refuses invalid or empty cells, missing, duplicated or unknown items, edited shown columns, a blank sheet changed since it was written and a non-UTF-8 sheet, and names the items involved. It reports:
+- agreement on the shared rows, per question: rows compared and skipped, percent agreement, prevalence, Gwet's AC1 (`src/agreement.py`) and each rater's counts (from which Cohen's κ can be recomputed). The safety gate is compared as pass/fail, whichever items failed. The same statistics are given per age band; with about 15 shared rows per band, read those as indications;
+- results per split × age band × move stratum: rows, rejected rows, unrated rows and the rows failed on each question;
+- the rejected rows. **A row is rejected when any rater fails it on any question**; a skip is not a failure. `rejected.csv` lists each one with its example ID, split, band, move, reply type, the child reply, the line, who failed what and their notes, so the owner can fix or drop it before retraining. No adjudication file is needed, because the owner's fix is the resolution. The ratings that led to it stay in `rows.jsonl`; record each fix or drop as a review note on the drafted row (`review`), so the rebuilt dataset's manifest and the drafts file show what changed and why;
+- the unrated rows: **a row is unrated when no rater answered some question for it**, because both skipped it or no returned sheet had it. It is not validated, so `unrated.csv` lists it with the questions left open, to have it rated or drop it. Scoring only the counsellor's sheet therefore leaves every row only the classmate has unrated.
+
+The rated sheets are only read, never changed, and a scores folder is never overwritten.
+
 ## Known current limitations (say this openly at PP1, don't hide it)
 
 - Latency (13 Oct, `evidence/system/latency_2026-10-13_before-fix/`, `_after-fix/`): the

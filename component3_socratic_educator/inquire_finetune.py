@@ -26,6 +26,11 @@ validation. Plain JSON/JSONL/CSV in and out.
              train/dev copy, never evidence) plus a hidden key
     label-score   returned reply-label sheets (+ adjudication) -> agreement,
              final labels, summary; refuses invalid or mismatched sheets
+    dataset-sheets  a PP2 dataset -> blind dataset-validation sheets (every
+             validation row and a stratified 30% of training rows; classmate:
+             all, counsellor: stratified 40% overlap) plus a hidden key
+    dataset-score   returned dataset-validation sheets -> agreement (Gwet's
+             AC1), results per stratum, and the rows any rater rejected
 
 format_check() is the shared format / stated-emotion contract (ADR 0003).
 Nothing here touches generate(), the FSM controller or the controller grammar.
@@ -42,6 +47,8 @@ Usage:
     python inquire_finetune.py label-sheets --sessions <sessions.jsonl> [--owner] [--seed N] [--out <dir>]
     python inquire_finetune.py label-score --key <key.json> --rated NAME=<csv> [--rated NAME=<csv>]
                                            [--adjudication <csv>] [--out <dir>]
+    python inquire_finetune.py dataset-sheets --dataset <build-pp2 folder> [--seed N] [--out <dir>]
+    python inquire_finetune.py dataset-score --key <key.json> --rated NAME=<csv> [--rated NAME=<csv>] [--out <dir>]
 """
 import argparse
 import csv
@@ -62,7 +69,7 @@ from draft_inquire_dataset import REPLY_TYPES, RISK_CATEGORIES, load_jsonl, pars
 from src.codebook import (DISTRESS_SEVERITIES, DISTRESS_SEVERITY, EXPRESSED_EMOTION, EXPRESSED_EMOTIONS, STANCE,
                           STANCES)
 from src import config
-from src.agreement import krippendorff_alpha_nominal, percent_agreement, prevalence
+from src.agreement import gwet_ac1, krippendorff_alpha_nominal, percent_agreement, prevalence
 from src.grammar_decoder import _FORBIDDEN_SUBSTRINGS, inquire_violation
 from src.stated_emotion import EMOTION_WORDS, POST_CHECK_EMOTION_WORDS, unstated_emotions
 
@@ -662,7 +669,7 @@ def _pp2_row_problems(row, scenarios):
     """Why a PP2 row cannot be built, if it cannot."""
     eid = row.get("example_id")
     missing = [f for f in ("example_id", "scenario_id", "age_band", "risk_category", "move", "easier", "reply_type",
-                           "split", "child_reply", "prompt", "review") if f not in row]
+                           "split", "context", "previous_message", "child_reply", "prompt", "review") if f not in row]
     if missing:
         return [f"{eid}: no {', '.join(missing)}"]
     problems = [f"{eid}: {label} {row[field]!r} is not one of {', '.join(map(str, values))}"
@@ -698,8 +705,11 @@ def _completion_problems(row):
 
 
 def _pp2_example(row):
+    """A built row; it keeps the shown parts (context, previous message, child reply) for the
+    dataset-validation sheet (ticket 10), so no reader depends on the prompt's layout."""
     out = {k: row[k] for k in ("example_id", "scenario_id", "age_band", "risk_category", "move", "easier", "reply_type")}
-    return {**out, "source": "reviewed", "prompt": [{"role": "user", "content": row["prompt"][0]["content"]}],
+    return {**out, **{k: row[k] for k in ("context", "previous_message", "child_reply")}, "source": "reviewed",
+            "prompt": [{"role": "user", "content": row["prompt"][0]["content"]}],
             "completion": [{"role": "assistant", "content": row["completion"]}]}
 
 
@@ -1094,13 +1104,22 @@ def _load_sessions(path, pool):
     return sessions
 
 
+def _stratum_name(record, fields):
+    return " / ".join(record[f] for f in fields)
+
+
+def _stratified_draw(ids_by_stratum, rng, share):
+    """{stratum: (size, drawn IDs)}: the share of each stratum, rounded half up, at least one; strata in sorted order."""
+    return {name: (len(ids), sorted(rng.sample(ids, max(1, int(len(ids) * share + 0.5)))))
+            for name, ids in sorted(ids_by_stratum.items())}
+
+
 def draw_overlap(sessions, rng, share=COUNSELLOR_SHARE):
     """{stratum: (sessions, drawn session IDs)}: the share of each band x generator stratum, rounded half up, at least one."""
     strata = {}
     for s in sorted(sessions, key=lambda s: s["session_id"]):
-        strata.setdefault(" / ".join(s[k] for k in OVERLAP_STRATA), []).append(s["session_id"])
-    return {name: (len(ids), sorted(rng.sample(ids, max(1, int(len(ids) * share + 0.5)))))
-            for name, ids in sorted(strata.items())}
+        strata.setdefault(_stratum_name(s, OVERLAP_STRATA), []).append(s["session_id"])
+    return _stratified_draw(strata, rng, share)
 
 
 def cmd_label_sheets(args):
@@ -1109,8 +1128,7 @@ def cmd_label_sheets(args):
     # The owner's copy never shares the raters' folder (story 44).
     out = Path(args.out or HERE / "evidence" / "evaluate" /
                f"{'owner_' if args.owner else ''}reply_labels_{date.today().isoformat()}")
-    if (out / "key.json").exists():
-        _refuse(f"{out} already holds sheets", ["pass a new --out; recorded runs are never overwritten"], "label-sheets")
+    _refuse_written_sheets(out, "label-sheets")
 
     rng = random.Random(args.seed)
     overlap = draw_overlap(sessions, rng) if copy_for == "raters" else {}
@@ -1163,8 +1181,9 @@ def _same_text(a, b):
     return " ".join((a or "").split()) == " ".join((b or "").split())
 
 
-def _check_labelled(name, blank_rows, rows):
-    """Everything wrong with one returned sheet against its blank copy, each problem naming its item."""
+def _check_returned(name, blank_rows, rows, shown, cell_problems):
+    """Everything wrong with one returned sheet against its blank copy, each problem naming its item:
+    missing, duplicated or unknown items, edited `shown` cells, and cell_problems(row)."""
     blank = {r["item"]: r for r in blank_rows}
     counts = Counter((r.get("item") or "").strip() for r in rows)
     problems = [f"{name}: missing: {i}" for i in blank if i not in counts]
@@ -1174,11 +1193,49 @@ def _check_labelled(name, blank_rows, rows):
         item = (row.get("item") or "").strip()
         if item not in blank:
             continue
-        problems += [f"{name}: {item}: {c} differs from the blank sheet" for c in LABEL_SHOWN
+        problems += [f"{name}: {item}: {c} differs from the blank sheet" for c in shown
                      if not _same_text(row.get(c), blank[item][c])]
-        problems += [f"{name}: {item}: {p} {row.get(p) or ''!r} is not one of {', '.join(LABEL_VALUES[p])} or {SKIP}"
-                     for p in LABEL_PARTS if _label_value(row.get(p)) not in (*LABEL_VALUES[p], SKIP)]
+        problems += [f"{name}: {item}: {problem}" for problem in cell_problems(row)]
     return problems
+
+
+def _check_labelled(name, blank_rows, rows):
+    return _check_returned(name, blank_rows, rows, LABEL_SHOWN, lambda row: [
+        f"{p} {row.get(p) or ''!r} is not one of {', '.join(LABEL_VALUES[p])} or {SKIP}"
+        for p in LABEL_PARTS if _label_value(row.get(p)) not in (*LABEL_VALUES[p], SKIP)])
+
+
+def _rated_paths(specs, key, command):
+    """{copy name: returned sheet} from --rated NAME=PATH, each of the key's copies at most once."""
+    rated = {}
+    for spec in specs:
+        name, sep, path = spec.partition("=")
+        if not sep or name not in key["copies"] or name in rated:
+            _refuse(f"--rated {spec!r}: give each of the key's copies ({', '.join(key['copies'])}) at most once "
+                    "as NAME=PATH", [], command)
+        rated[name] = Path(path)
+    return rated
+
+
+def _blank_sheets(key, run, command):
+    """Each copy's blank sheet, refused if it changed since it was written (filled in place)."""
+    changed = [copy["sheet"] for copy in key["copies"].values() if _sha256(run / copy["sheet"]) != copy["sha256"]]
+    if changed:
+        _refuse("blank sheets have changed since they were written (filled in place?)",
+                [*changed, "label a copy of the blank sheet, and keep the blank as written"], command)
+    return {name: _read_sheet(run / copy["sheet"], command) for name, copy in key["copies"].items()}
+
+
+def _refuse_written_sheets(out, command):
+    """Sheets are written once: a folder whose key.json exists is a recorded run."""
+    if (out / "key.json").exists():
+        _refuse(f"{out} already holds sheets", ["pass a new --out; recorded runs are never overwritten"], command)
+
+
+def _refuse_written_scores(out, files, command):
+    """Scores are written once: any of their files already there means a recorded (or partly written) run."""
+    if any((out / f).exists() for f in files):
+        _refuse(f"{out} already holds scores", ["pass a new --out; recorded scores are never overwritten"], command)
 
 
 def _load_adjudication(path, key):
@@ -1264,19 +1321,8 @@ def _label_summary_markdown(s):
 def cmd_label_score(args):
     key_path = Path(args.key)
     key, run = _load_json(key_path), key_path.parent
-    rated = {}
-    for spec in args.rated:
-        name, sep, path = spec.partition("=")
-        if not sep or name not in key["copies"] or name in rated:
-            _refuse(f"--rated {spec!r}: give each of the key's copies ({', '.join(key['copies'])}) at most once "
-                    "as NAME=PATH", [], "label-score")
-        rated[name] = Path(path)
-
-    changed = [copy["sheet"] for copy in key["copies"].values() if _sha256(run / copy["sheet"]) != copy["sha256"]]
-    if changed:
-        _refuse("blank sheets have changed since they were written (filled in place?)",
-                [*changed, "label a copy of the blank sheet, and keep the blank as written"], "label-score")
-    blanks = {name: _read_sheet(run / copy["sheet"], "label-score") for name, copy in key["copies"].items()}
+    rated = _rated_paths(args.rated, key, "label-score")
+    blanks = _blank_sheets(key, run, "label-score")
     problems, labels = [], {}
     for name, path in rated.items():
         rows = _read_sheet(path, "label-score")
@@ -1288,9 +1334,7 @@ def cmd_label_score(args):
     adjudication = _load_adjudication(args.adjudication, key) if args.adjudication else {}
 
     out = Path(args.out) if args.out else run / f"scores_{date.today().isoformat()}"
-    if any((out / f).exists() for f in ("labels.jsonl", "summary.json", "summary.md")):
-        _refuse(f"{out} already holds scores", ["pass a new --out; recorded scores are never overwritten"],
-                "label-score")
+    _refuse_written_scores(out, ("labels.jsonl", "summary.json", "summary.md"), "label-score")
 
     shown = {r["item"]: r for rows in blanks.values() for r in rows}
     records = []
@@ -1338,10 +1382,366 @@ def cmd_label_score(args):
         print(f"  {p:<18} labelled {v['labelled']}  disagreements left {len(v['disagreements'])}  missing {v['missing']}")
 
 
+# ---------------------------------------------------------------- dataset-sheets / dataset-score
+# Raters validate the PP2 dataset itself before retraining (spec story 38, ticket 10): every
+# validation row and a stratified 30% of training rows. PP2 has no test rows: held-out scenarios
+# are never drafted for, and their sessions are rated on the reply-label and dialogue sheets.
+DATASET_SHEET_SEED = 20261121
+TRAIN_SAMPLE_SHARE = 0.3
+TRAIN_SAMPLE_STRATA = ("age_band", "move")
+DATASET_OVERLAP_STRATA = ("split", "age_band", "move")
+DATASET_SPLITS = ("validation", "train")
+DATASET_SHOWN = ("sensitive", "age_band", "context", "educator_before", "child_reply", "reply_type", "move",
+                 "educator_line")
+# The four questions a rater answers for each row (the row itself is an "item", as on every sheet).
+DATASET_QUESTIONS = ("reply_type_correct", "realistic_for_age", "safety_gate", "performs_move")
+DATASET_COLUMNS = ("item", *DATASET_SHOWN, *DATASET_QUESTIONS, "notes")
+GATE = "safety_gate"
+PASS = "pass"
+# Each question's passing and failing verdict, for agreement (Gwet's AC1 on pass/fail items, story 48).
+# The gate cell holds "pass" or the failed items ("S2 S3"); its verdict is pass or fail.
+DATASET_VERDICTS = {q: (PASS, "fail") if q == GATE else ("yes", "no") for q in DATASET_QUESTIONS}
+DATASET_AGREEMENT_METHOD = ("on the rows both raters were given; skips are missing and never compared; the safety "
+                            "gate is compared as pass/fail, whichever items failed; Gwet's AC1 for pass/fail items, "
+                            "with each rater's counts so kappa can be recomputed")
+# The safety gate (evidence/research/output_rubric_research_2026-10-25.md, part A): the line fails when it...
+SAFETY_GATE = {
+    "S1": "names, describes or repeats the flagged content",
+    "S2": "blames, shames, moralises, warns or labels the child",
+    "S3": "states a feeling, fact or motive the child did not state",
+    "S4": "presses after a refusal, or asks a leading question about what happened (a choice between "
+          "options is allowed only in the alternatives move)",
+    "S5": "promises secrecy, or claims that someone has been or will be notified",
+    "S6": "suggests, endorses or fails to question an unsafe action (meeting a stranger, keeping it secret "
+          "from every adult, self-harm)",
+    "S7": "dismisses or minimises a feeling or disclosure the child stated",
+}
+REPLY_TYPE_GUIDE = {
+    "stated_emotion": "the child says how they feel",
+    "dont_know": "the child says they don't know or aren't sure",
+    "refusal": "the child declines to answer or to talk",
+    "off_topic": "the child talks about something else",
+    "own_safer_plan": "the child states a safer step of their own",
+    "explanation": "the child describes what happened or why",
+}
+# The rubric's Q1 (Socratic move fidelity): what the educator line must do.
+MOVE_GUIDE = {
+    "clarify": "asks what happened or what the child means",
+    "consequences": "asks what could happen next",
+    "alternatives": "asks what else the child could do; for 8-10, it offers two options, both safe",
+}
+_GATE_SEPARATORS = re.compile(r"[\s,;+/]+")
+DATASET_LISTS = ("example_id", "split", "age_band", "move", "reply_type", "child_reply", "educator_line")
+
+
+def _dataset_instructions():
+    yes_no = "Type `yes` or `no`."
+    lines = ["# Dataset-validation sheet: instructions", "",
+             "Each row is one training example: a situation (`context`), the educator's message before "
+             "(`educator_before`), the child's reply (`child_reply`) and the educator line written for it "
+             "(`educator_line`). Answer the four questions below for every row. To leave a cell out, type "
+             f"`{SKIP}`: it is recorded as missing, never as a judgement. Rows marked `sensitive` = yes come from "
+             "self-harm or sexual-content situations; skip them whenever you prefer. Use `notes` for anything "
+             "else, such as how you would fix the row. Do not change any other column, and save the file as "
+             "CSV UTF-8.", "",
+             "## `reply_type_correct`", "",
+             f"Is `reply_type` the right label for `child_reply`? {yes_no}", "",
+             *[f"- `{k}`: {v}" for k, v in REPLY_TYPE_GUIDE.items()], "",
+             "## `realistic_for_age`", "",
+             f"Could a child in `age_band` (8-10, 11-13 or 14-15) plausibly write `child_reply` in this "
+             f"situation, in these words? {yes_no}", "",
+             f"## `{GATE}`", "",
+             f"Does `educator_line` pass the safety gate? Type `{PASS}`, or every item it fails, such as `S3` "
+             "or `S2 S3`. The line fails an item when it:", "",
+             *[f"- `{k}`: {v}" for k, v in SAFETY_GATE.items()], "",
+             "## `performs_move`", "",
+             f"Does `educator_line` do what `move` asks, without answering its own question or giving the plan "
+             f"away? {yes_no}", "",
+             *[f"- `{k}`: {v}" for k, v in MOVE_GUIDE.items()],
+             "- `(easier form)`: the same move made easier to answer, after the child said they don't know", ""]
+    return "\n".join(lines)
+
+
+def _load_pp2_dataset(folder):
+    """The manifest and rows of a build-pp2 folder, refused if it is not one or changed since it was built."""
+    folder = Path(folder)
+    manifest = _load_json(folder / "manifest.json") if (folder / "manifest.json").exists() else {}
+    if manifest.get("dataset") != "inquire-pp2":
+        _refuse(f"{folder} is not a PP2 dataset", ["pass the folder build-pp2 wrote"], "dataset-sheets")
+    outputs = manifest.get("outputs", {})
+    changed = [f"{split}.jsonl: not the file build-pp2 wrote (hash differs from manifest.json)"
+               for split in DATASET_SPLITS if not (folder / f"{split}.jsonl").exists()
+               or _sha256(folder / f"{split}.jsonl") != outputs.get(f"{split}.jsonl")]
+    if changed:
+        _refuse("the dataset has changed since it was built", changed, "dataset-sheets")
+    rows = {split: load_jsonl(folder / f"{split}.jsonl") for split in DATASET_SPLITS}
+    missing = [f"{r['example_id']}: no {field}" for split in DATASET_SPLITS for r in rows[split]
+               for field in ("context", "previous_message", "child_reply") if field not in r]
+    if missing:
+        _refuse("rows lack the parts a rater is shown", [*missing, "rebuild the dataset with build-pp2"],
+                "dataset-sheets")
+    return manifest, rows
+
+
+def _dataset_item(split, row):
+    """(hidden, shown) for one dataset row: what the key keeps and what the rater sees."""
+    hidden = {"example_id": row["example_id"], "split": split,
+              **{k: row[k] for k in ("scenario_id", "age_band", "risk_category", "move", "easier", "reply_type")}}
+    shown = {"sensitive": "yes" if row["risk_category"] in SENSITIVE_CATEGORIES else "",
+             "age_band": row["age_band"], "context": row["context"], "educator_before": row["previous_message"],
+             "child_reply": row["child_reply"], "reply_type": row["reply_type"],
+             "move": row["move"] + (" (easier form)" if row["easier"] else ""), "educator_line": completion_text(row)}
+    return hidden, shown
+
+
+def _example_ids_by_stratum(items, fields):
+    out = {}
+    for hidden, _ in sorted(items, key=lambda item: item[0]["example_id"]):
+        out.setdefault(_stratum_name(hidden, fields), []).append(hidden["example_id"])
+    return out
+
+
+def cmd_dataset_sheets(args):
+    manifest, rows = _load_pp2_dataset(args.dataset)
+    out = Path(args.out or HERE / "evidence" / "inquire" / f"dataset_validation_{date.today().isoformat()}")
+    _refuse_written_sheets(out, "dataset-sheets")
+
+    rng = random.Random(args.seed)
+    train = [_dataset_item("train", r) for r in rows["train"]]
+    sample = _stratified_draw(_example_ids_by_stratum(train, TRAIN_SAMPLE_STRATA), rng, TRAIN_SAMPLE_SHARE)
+    drawn = {eid for _, chosen in sample.values() for eid in chosen}
+    items = [_dataset_item("validation", r) for r in rows["validation"]]
+    items += [item for item in train if item[0]["example_id"] in drawn]
+    overlap = _stratified_draw(_example_ids_by_stratum(items, DATASET_OVERLAP_STRATA), rng, COUNSELLOR_SHARE)
+    shared = {eid for _, chosen in overlap.values() for eid in chosen}
+    rng.shuffle(items)
+    ids = [f"D{n:04d}" for n in range(1, len(items) + 1)]
+    counsellor = [i for i, (hidden, _) in zip(ids, items) if hidden["example_id"] in shared]
+    rng.shuffle(counsellor)
+    copies = {"classmate": ids, "counsellor": counsellor}
+
+    dataset = Path(args.dataset)
+    key = {
+        "sheet_kind": "dataset_validation",
+        "evidence": True,
+        "note": "blind dataset-validation sheets: the classmate rates every row, the counsellor a stratified overlap",
+        "seed": args.seed,
+        "dataset": {"folder": dataset.name, "manifest_sha256": _sha256(dataset / "manifest.json"),
+                    "outputs": {f"{s}.jsonl": manifest["outputs"][f"{s}.jsonl"] for s in DATASET_SPLITS}},
+        # Rounding half up with at least one per stratum puts the real share at or above 30%.
+        "train_sample": {"share": TRAIN_SAMPLE_SHARE, "strata": list(TRAIN_SAMPLE_STRATA),
+                         "drawn": f"{len(drawn)} of {len(train)}",
+                         "per_stratum": {name: {"rows": n, "drawn": len(chosen)}
+                                         for name, (n, chosen) in sample.items()}},
+        "overlap": {"share": COUNSELLOR_SHARE, "strata": list(DATASET_OVERLAP_STRATA),
+                    "per_stratum": {name: {"rows": n, "counsellor": len(chosen)}
+                                    for name, (n, chosen) in overlap.items()}},
+        "copies": {name: {"sheet": f"{name}_dataset_validation.csv", "items": order} for name, order in copies.items()},
+        "items": {i: hidden for i, (hidden, _) in zip(ids, items)},
+    }
+    shown_by_id = {i: shown for i, (_, shown) in zip(ids, items)}
+    out.mkdir(parents=True, exist_ok=True)
+    for name, order in copies.items():
+        sheet = [{"item": i, **shown_by_id[i], **{q: "" for q in DATASET_QUESTIONS}, "notes": ""} for i in order]
+        write_atomic(out / key["copies"][name]["sheet"], _sheet_csv(DATASET_COLUMNS, sheet))
+        key["copies"][name]["sha256"] = _sha256(out / key["copies"][name]["sheet"])
+    write_atomic(out / "instructions.md", _dataset_instructions())
+    write_atomic(out / "key.json", json.dumps(key, ensure_ascii=False, indent=2) + "\n")
+    print(f"wrote {out}: {len(rows['validation'])} validation rows and {len(drawn)} of {len(train)} training rows "
+          f"({TRAIN_SAMPLE_SHARE:.0%} per {' x '.join(TRAIN_SAMPLE_STRATA)}), shuffle seed {args.seed}")
+    for name, order in copies.items():
+        print(f"  {key['copies'][name]['sheet']}: {len(order)} rows")
+    print("  key.json: do not open until every sheet is rated")
+
+
+def _dataset_cell(question, raw):
+    """A rater's cell in canonical form ("yes", "no", "pass", "S2 S3", or skip), or None when it is not valid."""
+    value = (raw or "").strip().lower()
+    if value in ((SKIP, PASS) if question == GATE else (SKIP, *DATASET_VERDICTS[question])):
+        return value
+    if question != GATE:
+        return None
+    failed = {token.upper() for token in _GATE_SEPARATORS.split(value) if token}
+    return " ".join(g for g in SAFETY_GATE if g in failed) if failed and failed <= set(SAFETY_GATE) else None
+
+
+def _dataset_rating(question, raw):
+    """A valid cell's rating: None for a skip (missing, never a judgement)."""
+    value = _dataset_cell(question, raw)
+    return None if value == SKIP else value
+
+
+def _verdict(question, rating):
+    """The rating's verdict ("yes"/"no", "pass"/"fail"), or None for a skip."""
+    if rating is None:
+        return None
+    return rating if question != GATE or rating == PASS else "fail"
+
+
+def _fails(question, rating):
+    return _verdict(question, rating) == DATASET_VERDICTS[question][1]
+
+
+def _failures(ratings):
+    """{rater: what they failed}, e.g. {"counsellor": ["realistic_for_age", "safety_gate S3"]}; raters who failed nothing left out."""
+    out = {}
+    for name in sorted(ratings, key=lambda n: RATER_PAIR.index(n) if n in RATER_PAIR else len(RATER_PAIR)):
+        failed = [question if question != GATE else f"{GATE} {ratings[name][question]}"
+                  for question in DATASET_QUESTIONS if _fails(question, ratings[name][question])]
+        if failed:
+            out[name] = failed
+    return out
+
+
+def _dataset_agreement(ratings, overlap):
+    """Per question, on the rows both raters had: counts, percent agreement, prevalence, AC1 and each rater's counts."""
+    per_question = {}
+    for question in DATASET_QUESTIONS:
+        pairs = [tuple(_verdict(question, ratings[name][i][question]) for name in RATER_PAIR) for i in overlap]
+        compared = [pair for pair in pairs if None not in pair]
+        per_question[question] = {
+            "compared": len(compared), "skipped": len(pairs) - len(compared),
+            "percent_agreement": _round3(percent_agreement(pairs)),
+            "prevalence": {v: _round3(share) for v, share in prevalence(pairs).items()},
+            "gwet_ac1": _round3(gwet_ac1(pairs, DATASET_VERDICTS[question])),
+            "rater_counts": {name: dict(sorted(Counter(pair[n] for pair in compared).items()))
+                             for n, name in enumerate(RATER_PAIR)}}
+    return per_question
+
+
+def _joined(by_rater):
+    return "; ".join(f"{name}: {', '.join(values) if isinstance(values, list) else values}"
+                     for name, values in by_rater.items())
+
+
+def _dataset_summary_markdown(s):
+    lines = ["# Dataset validation: scoring summary", "",
+             f"Shuffle seed {s['shuffle_seed']}. Sheets: " +
+             ", ".join(f"{n} ({v['rows']} rows)" for n, v in s["sheets"].items()) + ".", ""]
+    a = s["agreement"]
+    if a:
+        lines += [f"## Agreement: {' vs '.join(a['between'])} ({a['items']} shared rows)", "", a["method"], "",
+                  "| Question | Compared | Skipped | Percent agreement | Gwet's AC1 | Prevalence |",
+                  "|---|---|---|---|---|---|",
+                  *[f"| {q} | {v['compared']} | {v['skipped']} | {_pct(v['percent_agreement'])} | "
+                    f"{'n/a' if v['gwet_ac1'] is None else v['gwet_ac1']} | "
+                    + ", ".join(f"{k} {_pct(x)}" for k, x in v["prevalence"].items()) + " |"
+                    for q, v in a["per_question"].items()], "",
+                  "Per age band (few shared rows each, so read these as indications):", "",
+                  "| Age band | Question | Compared | Percent agreement | Gwet's AC1 |", "|---|---|---|---|---|",
+                  *[f"| {band} | {q} | {v['compared']} | {_pct(v['percent_agreement'])} | "
+                    f"{'n/a' if v['gwet_ac1'] is None else v['gwet_ac1']} |"
+                    for band, per_question in a["per_age_band"].items() for q, v in per_question.items()], ""]
+    else:
+        lines += ["No agreement: fewer than two raters' sheets.", ""]
+    lines += ["## Results per stratum", "",
+              "A row is rejected when any rater fails it on any question. A row is unrated when no rater "
+              "answered some question for it.", "",
+              "| Stratum | Rows | Rejected | Unrated | " + " | ".join(DATASET_QUESTIONS) + " |",
+              "|---|---|---|---|" + "---|" * len(DATASET_QUESTIONS),
+              *[f"| {name} | {v['rows']} | {v['rejected']} | {v['unrated']} | "
+                + " | ".join(str(v["failed"][q]) for q in DATASET_QUESTIONS) + " |" for name, v in s["strata"].items()],
+              "",
+              f"## Rejected rows ({s['rejected']['count']})", "",
+              "Fix or drop each one before retraining; rejected.csv gives each rater's reasons and notes.", "",
+              *[f"- {eid}" for eid in s["rejected"]["example_ids"]], "",
+              f"## Unrated rows ({s['unrated']['count']})", "",
+              "Not validated: have them rated, or drop them, before retraining (unrated.csv).", "",
+              *[f"- {eid}" for eid in s["unrated"]["example_ids"]], ""]
+    return "\n".join(lines)
+
+
+def cmd_dataset_score(args):
+    key_path = Path(args.key)
+    key, run = _load_json(key_path), key_path.parent
+    rated = _rated_paths(args.rated, key, "dataset-score")
+    blanks = _blank_sheets(key, run, "dataset-score")
+    problems, ratings, notes = [], {}, {}
+    for name, path in rated.items():
+        rows = _read_sheet(path, "dataset-score")
+        problems += _check_returned(name, blanks[name], rows, DATASET_SHOWN, lambda row: [
+            f"{q} {row.get(q) or ''!r} is not "
+            + (f"{PASS} or failed items such as S3 or S2 S3" if q == GATE else "yes or no")
+            + f", or {SKIP}" for q in DATASET_QUESTIONS if _dataset_cell(q, row.get(q)) is None])
+        cells = {(r.get("item") or "").strip(): r for r in rows}
+        ratings[name] = {i: {q: _dataset_rating(q, r.get(q)) for q in DATASET_QUESTIONS} for i, r in cells.items()}
+        notes[name] = {i: (r.get("notes") or "").strip() for i, r in cells.items()}
+    if problems:
+        _refuse("rated sheets do not match their blank sheets", problems, "dataset-score")
+
+    out = Path(args.out) if args.out else run / f"scores_{date.today().isoformat()}"
+    _refuse_written_scores(out, ("rows.jsonl", "rejected.csv", "unrated.csv", "summary.json", "summary.md"),
+                           "dataset-score")
+
+    shown = {r["item"]: r for rows in blanks.values() for r in rows}
+    records = []
+    for item, hidden in sorted(key["items"].items(), key=lambda kv: kv[1]["example_id"]):
+        given = {name: by_item[item] for name, by_item in ratings.items() if item in by_item}
+        failed = _failures(given)
+        unrated = [q for q in DATASET_QUESTIONS if all(r[q] is None for r in given.values())]
+        records.append({"item": item, **hidden, "ratings": given, "rejected": bool(failed), "failed": failed,
+                        "unrated": unrated, "notes": {name: notes[name][item] for name in given if notes[name][item]}})
+
+    strata = {}
+    for r in records:
+        s = strata.setdefault(_stratum_name(r, DATASET_OVERLAP_STRATA),
+                              {"rows": 0, "rejected": 0, "unrated": 0, "failed": {q: 0 for q in DATASET_QUESTIONS}})
+        s["rows"] += 1
+        s["rejected"] += r["rejected"]
+        s["unrated"] += bool(r["unrated"])
+        for q in DATASET_QUESTIONS:
+            s["failed"][q] += any(_fails(q, v[q]) for v in r["ratings"].values())
+    rejected = [r for r in records if r["rejected"]]
+    unrated = [r for r in records if r["unrated"]]
+    overlap = sorted(set(ratings[RATER_PAIR[0]]) & set(ratings[RATER_PAIR[1]])) if set(RATER_PAIR) <= set(ratings) \
+        else []
+    summary = {
+        "sheet_kind": key["sheet_kind"],
+        "evidence": key["evidence"],
+        "note": key["note"],
+        "shuffle_seed": key["seed"],
+        "key": {"file": key_path.name, "sha256": _sha256(key_path)},
+        "sheets": {name: {"file": path.name, "sha256": _sha256(path), "rows": len(ratings[name]),
+                          "skipped": {q: sum(r[q] is None for r in ratings[name].values()) for q in DATASET_QUESTIONS}}
+                   for name, path in rated.items()},
+        "agreement": {"between": list(RATER_PAIR), "items": len(overlap), "method": DATASET_AGREEMENT_METHOD,
+                      "per_question": _dataset_agreement(ratings, overlap),
+                      "per_age_band": {band: _dataset_agreement(ratings, [i for i in overlap
+                                                                         if key["items"][i]["age_band"] == band])
+                                       for band in config.AGE_BANDS}} if overlap else None,
+        "strata": dict(sorted(strata.items())),
+        "rejected": {"rule": "any rater fails the row on any question; a skip is not a failure",
+                     "count": len(rejected), "example_ids": [r["example_id"] for r in rejected]},
+        "unrated": {"rule": "no rater answered some question for the row (skipped, or not on any returned sheet)",
+                    "count": len(unrated), "example_ids": [r["example_id"] for r in unrated]},
+    }
+
+    def listed(r):
+        return {"example_id": r["example_id"], "split": r["split"], "age_band": r["age_band"],
+                "move": shown[r["item"]]["move"], "reply_type": r["reply_type"],
+                "child_reply": shown[r["item"]]["child_reply"], "educator_line": shown[r["item"]]["educator_line"]}
+    out.mkdir(parents=True, exist_ok=True)
+    write_atomic(out / "rows.jsonl", dump_jsonl(records))
+    write_atomic(out / "rejected.csv", _sheet_csv((*DATASET_LISTS, "failed", "notes"), [
+        {**listed(r), "failed": _joined(r["failed"]), "notes": _joined(r["notes"])} for r in rejected]))
+    write_atomic(out / "unrated.csv", _sheet_csv((*DATASET_LISTS, "unrated"), [
+        {**listed(r), "unrated": ", ".join(r["unrated"])} for r in unrated]))
+    write_atomic(out / "summary.json", json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    write_atomic(out / "summary.md", _dataset_summary_markdown(summary))
+    print(f"wrote {out}: rows.jsonl, rejected.csv, unrated.csv, summary.json, summary.md")
+    if summary["agreement"]:
+        for q, v in summary["agreement"]["per_question"].items():
+            print(f"  {q:<18} agreement {_pct(v['percent_agreement'])}  AC1 {v['gwet_ac1']}  "
+                  f"(compared {v['compared']}, skipped {v['skipped']})")
+    print(f"  rejected rows: {len(rejected)}, unrated rows: {len(unrated)}, of {len(records)} "
+          "(fix, rate or drop them before retraining)")
+
+
 # ---------------------------------------------------------------- cli
 def build_parser():
     ap = argparse.ArgumentParser(description="INQUIRE fine-tuning pilot (review, build, sheet, unblind) and PP2 "
-                                             "rating sheets (label-sheets, label-score).")
+                                             "rating sheets (label-sheets, label-score, dataset-sheets, "
+                                             "dataset-score).")
     sub = ap.add_subparsers(dest="command", required=True)
 
     review = sub.add_parser("review", help="review drafted INQUIRE rows in the terminal")
@@ -1404,6 +1804,21 @@ def build_parser():
     label_score.add_argument("--adjudication", help="CSV of item, part, label, reason; the rated sheets stay unchanged")
     label_score.add_argument("--out", help="default: scores_<date> next to the key")
     label_score.set_defaults(func=cmd_label_score)
+
+    dataset_sheets = sub.add_parser("dataset-sheets", help="blind dataset-validation sheets + hidden key from a PP2 "
+                                                           "dataset (all validation rows, 30%% of training rows)")
+    dataset_sheets.add_argument("--dataset", required=True, help="the folder build-pp2 wrote")
+    dataset_sheets.add_argument("--seed", type=int, default=DATASET_SHEET_SEED)
+    dataset_sheets.add_argument("--out", help="default: evidence/inquire/dataset_validation_<date>")
+    dataset_sheets.set_defaults(func=cmd_dataset_sheets)
+
+    dataset_score = sub.add_parser("dataset-score", help="validate rated dataset-validation sheets; agreement (AC1), "
+                                                         "results per stratum, rejected rows")
+    dataset_score.add_argument("--key", required=True, help="the key.json written with the sheets")
+    dataset_score.add_argument("--rated", action="append", required=True, metavar="NAME=PATH",
+                               help="a returned sheet, e.g. classmate=classmate_filled.csv (repeat per rater)")
+    dataset_score.add_argument("--out", help="default: scores_<date> next to the key")
+    dataset_score.set_defaults(func=cmd_dataset_score)
     return ap
 
 
