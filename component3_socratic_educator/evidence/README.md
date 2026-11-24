@@ -25,6 +25,7 @@ evidence/
 | `capture_intercept_samples`, `run_adversarial_intercept`, `check_temperature`, `trace_token_masking` | `intercept/` |
 | `capture_inquire_served`, `capture_inquire_model`, `inquire_finetune.py build` / `sheet` / `pp2-draw` / `build-pp2` / `dataset-sheets` / `dataset-score` / `dialogue-sheets` / `dialogue-score` (one folder up) | `inquire/` (dataset and dialogue scores into the sheets' run folder) |
 | `evaluate_emotion_rules` | prints to the terminal; save its output under `evaluate/` |
+| `simulate_children` (one folder up; run from `notebooks/simulate_children_colab.ipynb`) | `evaluate/simulated_children_<date>/` |
 | `inquire_finetune.py label-sheets` / `label-score` (one folder up) | `evaluate/` (scores into the sheets' run folder) |
 | `run_end_to_end`, `measure_latency`, `validate_schemas`, `readability_check` | `system/` |
 | `score_human_review --run intercept/<run>` | into the reviewed run's own folder |

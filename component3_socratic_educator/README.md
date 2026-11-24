@@ -353,6 +353,42 @@ The manifest records:
 
 It never writes into a folder that already holds a dataset.
 
+## PP2 simulated children (ticket 06)
+
+`simulate_children.py` has a language model play children aged 8–15. The child answers every line of the **real** controller as it comes, not from a script written in advance. Run it from `notebooks/simulate_children_colab.ipynb` on your student account. It gives two pools:
+- **classifier_test:** one session per classifier-test scenario of the PP2 draw, 120 in all (40 per band). The raters label these replies.
+- **train_dev:** one session per training or validation scenario, 72 in all (24 per band). The owner labels these for the fine-tuned arm (ticket 14); they are never evidence.
+
+About 1 in 5 children per band is played by Gemma through AI Studio, as the generator-sensitivity slice (spec story 30); the rest by Gemini through Colab.
+
+```bash
+python simulate_children.py plan --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json
+python simulate_children.py run --plan <dir>/children.json --generator gemini --model google/gemini-2.5-pro --backend colab
+python simulate_children.py run --plan <dir>/children.json --generator gemma --model gemma-3-27b-it --backend aistudio --fold-system
+python simulate_children.py finish --dir <dir> --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json
+#   -> <dir>/classifier_test_sessions.jsonl, train_dev_sessions.jsonl, manifest.json (default dir:
+#      evidence/evaluate/simulated_children_<date>)
+```
+
+- **plan** draws, before any child exists, each session's pool, scenario (and its draw role, so ticket 14 can keep train and dev apart), band, archetype (calm-reflective, defensive, distressed, withdrawn; balanced in each band: 10 each per band in the test pool, owner, 24 Nov), an interest (so children of the same band, archetype and category differ), generator and trigger, with a recorded seed. Gemma's children are taken in turn from each archetype. Held-out children (`CT…`) and scenarios never appear in the train/dev pool (`CD…`). It never redraws a recorded plan; `--tag` names a second plan on the same day.
+- **run** simulates one generator's planned sessions and appends each to `sessions.jsonl` as it finishes:
+  - The child's prompt is written per band: how a child of that age types and how long its messages run (under 15, 20 or 30 words), the archetype, the interest, and what the app noticed, in plain words (never the category code or the content). The child may say how they feel, however strongly, so acute distress can occur; it never describes what it saw.
+  - The educator's lines arrive as user messages and the child's own replies as assistant messages.
+  - A reply is cleaned (first line, no speaker label or quotes) and retried when the model steps out of character. Each session keeps the child's prompt and every raw model output, retries included.
+  - A quota or network error stops the run cleanly. The same command resumes it, and finished sessions are never redone. A torn last line (the runtime died mid-write) is cut off on the next run.
+  - A child that gives no usable reply in three tries is skipped and listed; the next run tries it again. A code error is raised, never hidden as a resumable stop.
+  - `--pool train_dev --per-band 1` is the trial: one train/dev child per band, so the prompt is never tuned on held-out sessions.
+  - `run_<generator>.json` records the model asked for and the models that answered, the backend, temperature, token limit, the child seed ("not recorded": the chat endpoints take none), the plan seed, the educator setup, the runtime (Python, platform, openai) and the children without a usable reply.
+  - `--fold-system` sends the persona in the first user message, for models with no system role (AI Studio's Gemma).
+- **finish** refuses until every planned session exists. It also checks the draw is the one the plan was made from, every session's scenario has its pool's role in that draw, no session is duplicated, no child or scenario is in both pools, every Component 4 record passes the contract, and no record holds a raw child reply. Then it writes one file per pool (the `label-sheets` input, with `pool` = `classifier_test` or `train_dev`) and a manifest: counts per pool × band × generator and archetype, the models per generator, the run records and hashes.
+
+Each session record holds `session_id`, `child_id`, `pool`, `scenario_id`, `scenario_role`, `age_band`, `archetype`, `interest`, `risk_category`, `risk_level` (the trigger's drawn level), `generator`, `model_id`, `child_prompt`, `child_outputs` (the raw outputs per reply), the controller's `turns` and the Component 4 `record`.
+
+**Limits:**
+- Every child reply is simulated by a language model.
+- The educator is the template arm, with INTERCEPT's template line, because the notebook has no local model. Its lines are those from before any ticket 27 rewording.
+- The Gemma slice has 2 test children per archetype per band, so per-generator results are indications.
+
 ## PP2 reply-label sheets (independent raters)
 
 Each child reply in the simulated sessions gets the codebook's three parts (`src/codebook.py`, ADR 0006) from human raters. The assessor arms are later scored against those labels (ticket 19).

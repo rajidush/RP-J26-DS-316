@@ -299,20 +299,26 @@ def run_sessions(seeds, replies, templates, stub_generator=False):
             return state["last"]
 
         out, _transcript = fsm.run(make_trigger(s, templates), respond)
-        rec = {
-            "session_id": out.session_id,
-            "timestamp": s["timestamp"],  # simulated time; the contract requires a timestamp
-            "risk_level": out.risk_level.value,
-            "emotional_state": out.emotional_state.value,
-            "self_regulation_shown": bool(out.self_regulation_shown),
-            "escalation_flag": bool(out.escalation_flag),
-            "dialogue_turns": int(out.dialogue_turns),
-            "dialogue_summary": out.dialogue_summary,
-        }
-        _validate_against_schema(rec, SCHEMA_FILE)  # raises if the record breaks the contract
-        parse_timestamp(rec["timestamp"])           # raises ValueError if not ISO 8601
-        records.append(rec)
+        records.append(session_record(out, s["timestamp"]))
     return records
+
+
+def session_record(out, timestamp):
+    """The Component 4 record of one session (EvaluateOutput + its simulated time), checked against the
+    contract; it holds labels and counts, never a child's words. Also used by simulate_children.py."""
+    rec = {
+        "session_id": out.session_id,
+        "timestamp": timestamp,  # simulated time; the contract requires a timestamp
+        "risk_level": out.risk_level.value,
+        "emotional_state": out.emotional_state.value,
+        "self_regulation_shown": bool(out.self_regulation_shown),
+        "escalation_flag": bool(out.escalation_flag),
+        "dialogue_turns": int(out.dialogue_turns),
+        "dialogue_summary": out.dialogue_summary,
+    }
+    _validate_against_schema(rec, SCHEMA_FILE)  # raises if the record breaks the contract
+    parse_timestamp(rec["timestamp"])           # raises ValueError if not ISO 8601
+    return rec
 
 
 # ---------------------------------------------------------------- export
