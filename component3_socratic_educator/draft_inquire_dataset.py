@@ -304,20 +304,25 @@ if _OpenAILLM is not None:
             completions.create = _without_unsupported_fields(completions.create)
 
 
-def make_llm(backend, model, temperature, max_new_tokens=8192):
-    # Written against distilabel 1.5.x; check import paths if your version differs.
-    from distilabel.models import OpenAILLM
-    if backend == "aistudio":
-        OpenAILLM = AIStudioLLM
+def model_endpoint(backend):
+    """(base_url, api_key) of an OpenAI-compatible Gemini endpoint: Colab's model proxy, or AI Studio's free
+    key. Also used by simulate_children.py."""
     if backend == "colab":
         host, key = os.environ.get("MODEL_PROXY_HOST"), os.environ.get("MODEL_PROXY_API_KEY")
         if not (host and key):
             sys.exit("MODEL_PROXY_HOST / MODEL_PROXY_API_KEY not set: run `from google.colab import ai` "
                      "and one ai.generate_text() call in the notebook first.")
-        base_url = f"{host.rstrip('/')}/models/openapi"
-    else:  # aistudio: free Gemini API key, OpenAI-compatible endpoint
-        key = os.environ.get("GEMINI_API_KEY") or sys.exit("GEMINI_API_KEY not set")
-        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+        return f"{host.rstrip('/')}/models/openapi", key
+    key = os.environ.get("GEMINI_API_KEY") or sys.exit("GEMINI_API_KEY not set")
+    return "https://generativelanguage.googleapis.com/v1beta/openai/", key
+
+
+def make_llm(backend, model, temperature, max_new_tokens=8192):
+    # Written against distilabel 1.5.x; check import paths if your version differs.
+    from distilabel.models import OpenAILLM
+    if backend == "aistudio":
+        OpenAILLM = AIStudioLLM
+    base_url, key = model_endpoint(backend)
     # Thinking tokens can count against max_new_tokens. Colab's proxy reserved quota as if no limit was
     # sent (65,536 tokens, 8 Oct), and the reservation multiplies by --batch-size concurrent requests.
     return OpenAILLM(model=model, base_url=base_url, api_key=key, timeout=300, max_retries=3,
