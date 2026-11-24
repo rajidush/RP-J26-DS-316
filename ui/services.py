@@ -16,6 +16,8 @@ import sys
 import warnings
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
+from hashlib import sha256
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -681,6 +683,121 @@ def behavioral_report(daily, child_id, artifact_dir=None):
     return {"child_id": str(child_id), "status": status, "threshold": threshold,
             "daily": table, "weekly": weekly_summary(table), "explanations": explanations,
             "urgent": urgent_days, "urgent_incomplete": incomplete, "latest": table.iloc[-1].to_dict()}
+
+
+F2_RESEARCH_SHA256 = (
+    "25634fbafabd133495bc66b9ced5921f27ddaac222902d72f38a5fe1515774b7",
+    "3f5f0fa72eb5ac1cb19644c36d9a96e063a4aa2855515028c97293b406f375a4",
+    "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+)
+
+
+def research_shap_enabled():
+    return os.environ.get("C4_F2_RESEARCH_SHAP") == "1"
+
+
+def research_shap_context(source):
+    """Verify the active files even on a rerun that would reuse a result."""
+    if not research_shap_enabled():
+        raise ValueError("The preview requires research mode and the bundled synthetic data.")
+    return _verified_shap_context(source)
+
+
+def _verified_shap_context(source):
+    if source.get("source") != "demo":
+        raise ValueError("The preview requires the bundled synthetic data.")
+    artifact_dir = f2_artifact_dir().resolve()
+    dataset = F2_DEMO_DATA.resolve()
+    files = [*(artifact_dir / name for name in F2_ARTIFACT_FILES), dataset]
+    fingerprints = tuple(sha256(file.read_bytes()).hexdigest() for file in files)
+    if fingerprints != F2_RESEARCH_SHA256:
+        raise ValueError("The active model, metadata, and synthetic dataset must match the frozen files.")
+    return artifact_dir, dataset, fingerprints
+
+
+@lru_cache(maxsize=2)
+def _research_shap_resources(artifact_dir, dataset, fingerprints):
+    raw = dataset.read_bytes()
+    if sha256(raw).hexdigest() != fingerprints[-1]:
+        raise ValueError("The bundled synthetic data changed during loading.")
+    _c4_package()
+    shap_module = importlib.import_module(f"{F2_PACKAGE}.behavioral_shap")
+    reliability = importlib.import_module(f"{F2_PACKAGE}.behavioral_shap_reliability")
+    daily = pd.read_csv(BytesIO(raw))
+    explainer = shap_module.BehavioralShap(artifact_dir)
+    if tuple(sha256((artifact_dir / name).read_bytes()).hexdigest()
+             for name in F2_ARTIFACT_FILES) != fingerprints[:2]:
+        raise ValueError("The frozen model files changed during loading.")
+    gate = reliability.ReliabilityGate(explainer, daily)
+    return gate, _clean_daily(daily, "The verified synthetic dataset")
+
+
+def _verified_shap_decision(source, child, day, context):
+    gate, daily = _research_shap_resources(*context)
+    if not daily.equals(source["daily"]):
+        raise ValueError("The preview accepts only unmodified bundled synthetic rows.")
+    row = daily.loc[daily["child_id"].eq(child) & daily["date"].eq(day)]
+    if len(row) != 1:
+        raise ValueError("Select one day from the bundled synthetic records.")
+    # review calculates exact group-aware explanations only for flagged,
+    # assessable rows. Reuse its original reference vectors for display.
+    return gate, gate.review(row)
+
+
+def research_shap_report(source, child, day):
+    """Return research diagnostics for one verified synthetic child-day."""
+    gate, decision = _verified_shap_decision(source, child, day, research_shap_context(source))
+    vectors = decision.diagnostics.get("full_groups", [])
+    references = [
+        {"size": len(background.values), "seed": background.seed, "groups": groups}
+        for background, groups in zip(gate.references[:len(vectors)], vectors, strict=True)
+    ]
+    return {
+        "score": decision.score,
+        "threshold": gate.explainer.metadata["threshold"],
+        "flag": decision.is_flagged,
+        "status": decision.status.value,
+        "reasons": decision.reasons,
+        "neutral_text": decision.text if decision.status.value == "uncertain" else None,
+        "references": references,
+    }
+
+
+def parent_xai_demo_enabled(server_address):
+    return (os.environ.get("C4_F2_PARENT_XAI_DEMO") == "1"
+            and server_address in ("127.0.0.1", "::1"))
+
+
+def parent_xai_demo_context(source, server_address):
+    if not parent_xai_demo_enabled(server_address):
+        raise ValueError("The parent demo requires explicit loopback-only opt-in.")
+    return _verified_shap_context(source)
+
+
+_PARENT_ACTIVITY_FACTORS = {
+    "screen-related recorded activity": "Your child's recorded screen-related activity",
+    "language-related recorded signals": "Your child's recorded language-related activity",
+    "weekday or weekend context": "Whether the activity was recorded on a weekday or weekend",
+}
+
+
+def parent_activity_update(source, child, day, server_address):
+    """Expose only plain-language wording from a verified synthetic decision."""
+    context = parent_xai_demo_context(source, server_address)
+    _, decision = _verified_shap_decision(source, child, day, context)
+    status = decision.status.value
+    if status == "insufficient_data":
+        return "There isn't enough recorded activity to assess today's pattern."
+    if status == "not_flagged":
+        return "No unusual activity pattern was detected in the available recorded data."
+    if status == "uncertain" and decision.is_flagged and decision.text:
+        return decision.text
+    if status == "reliable" and decision.is_flagged and not decision.reasons:
+        leader = decision.diagnostics.get("stability", {}).get("leader")
+        factor = _PARENT_ACTIVITY_FACTORS.get(leader)
+        if factor:
+            return f"We noticed an unusual activity pattern. {factor} contributed most to this pattern."
+    return None
 
 
 def explanation_table(explanation):

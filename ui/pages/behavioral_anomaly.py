@@ -1,10 +1,16 @@
 from datetime import timedelta
+import logging
+from math import isclose
 
+import plotly.graph_objects as go
 import streamlit as st
 
 from ui import services, theme
 
 theme.page_header("Behavioral Anomaly Detection")
+RESEARCH_RESULT = "f2_research_shap_result"
+PARENT_ACTIVITY_RESULT = "f2_parent_activity_result"
+logger = logging.getLogger(__name__)
 
 
 def show_model_error(status):
@@ -32,9 +38,127 @@ def show_urgent(report):
             st.caption("Some urgent signals were unavailable or missing from the records.")
 
 
+def show_shap_result(result, child, day):
+    st.write(f"**Synthetic child:** {child} · **Day:** {day}")
+    st.write(f"**Saved threshold:** {result['threshold']}")
+    if result["score"] is None:
+        st.write("No anomaly score or flag because monitoring coverage is insufficient.")
+    else:
+        st.write(f"**Frozen anomaly score:** {result['score']:.12g}")
+        st.write(f"**Anomaly flag:** {'Flagged' if result['flag'] else 'Not flagged'}")
+    st.write(f"**Reliability status:** `{result['status']}`")
+    st.write("**Gate reasons:** " + (", ".join(result["reasons"]) or "All reliability checks passed."))
+    if result["neutral_text"]:
+        st.write(result["neutral_text"])
+    if not result["references"]:
+        return
+
+    st.subheader("Exact group-aware SHAP")
+    st.caption("Research diagnostics only. Positive contributions raise the model score "
+               "relative to the stated background. Negative contributions lower it.")
+    table = [
+        {"Group": group, "Contribution": value, "Background size": reference["size"],
+         "Seed": reference["seed"]}
+        for reference in result["references"] for group, value in reference["groups"].items()
+    ]
+    st.dataframe(table, hide_index=True, width="stretch",
+                 column_config={"Contribution": st.column_config.NumberColumn(format="%+.6f")})
+    first = result["references"][0]
+    groups = first["groups"]
+    figure = go.Figure(go.Bar(
+        x=list(groups.values()), y=list(groups), orientation="h",
+        marker_color=["#94601c" if value >= 0 else "#3d6b98" for value in groups.values()],
+    ))
+    figure.update_layout(
+        title=f"Primary background · {first['size']} normal training days · seed {first['seed']}",
+        xaxis_title="Signed contribution to anomaly score",
+        yaxis={"autorange": "reversed", "automargin": True},
+    )
+    figure.add_vline(x=0, line_color="#666666")
+    st.plotly_chart(figure, config=theme.PLOTLY_CONFIG, width="stretch")
+
+
+def show_research_shap(source, child, table):
+    if not services.research_shap_enabled():
+        st.session_state.pop(RESEARCH_RESULT, None)
+        return
+    with st.expander("Research SHAP preview · synthetic data"):
+        st.caption("Local research use only. This explains a model score on synthetic records. "
+                   "An anomaly flag does not confirm harm.")
+        try:
+            context = services.research_shap_context(source)
+            day = st.selectbox("Research day", table["date"].tolist()[::-1],
+                               key=f"f2_research_day_{child}")
+            key = (context, child, day)
+            stored = st.session_state.get(RESEARCH_RESULT)
+            if stored is not None and stored[0] != key:
+                st.session_state.pop(RESEARCH_RESULT)
+                stored = None
+            if st.button("Explain selected day", key="f2_research_explain"):
+                with st.spinner("Checking group attributions and reliability…"):
+                    result = services.research_shap_report(source, child, day)
+                expected = table.loc[table["date"].eq(day)].iloc[0]
+                same_prediction = (
+                    result["score"] is None and result["flag"] is None
+                    if expected["label"] == "Insufficient data" else
+                    result["score"] is not None
+                    and isclose(result["score"], expected["anomaly_score"], rel_tol=0, abs_tol=1e-8)
+                    and result["flag"] == bool(expected["unusual"])
+                )
+                if not same_prediction or result["threshold"] != expected["threshold"]:
+                    raise ValueError("The verified research result disagrees with the displayed prediction.")
+                stored = (key, result)
+                st.session_state[RESEARCH_RESULT] = stored
+            if stored is not None:
+                show_shap_result(stored[1], child, day)
+        except (OSError, ValueError) as exc:
+            st.session_state.pop(RESEARCH_RESULT, None)
+            st.warning(f"Research SHAP preview unavailable: {exc}")
+        except Exception:
+            st.session_state.pop(RESEARCH_RESULT, None)
+            logger.exception("Research SHAP preview failed")
+            st.warning("Research SHAP preview could not run for the selected day.")
+
+
+def show_parent_activity_demo(source, child, table):
+    address = st.get_option("server.address")
+    if not services.parent_xai_demo_enabled(address):
+        st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
+        return
+    with theme.card("parent-activity-demo", "Your Child's Activity Update"):
+        st.caption("SYNTHETIC DEMO PREVIEW · Uses simulated activity for a local demonstration.")
+        st.caption("An unusual pattern does not confirm harm.")
+        try:
+            context = services.parent_xai_demo_context(source, address)
+            day = st.selectbox("Activity date", table["date"].tolist()[::-1],
+                               key=f"f2_parent_activity_day_{child}")
+            key = (context, child, day)
+            stored = st.session_state.get(PARENT_ACTIVITY_RESULT)
+            if stored is not None and stored[0] != key:
+                st.session_state.pop(PARENT_ACTIVITY_RESULT)
+                stored = None
+            if st.button("Show activity update", key="f2_parent_activity_show"):
+                st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
+                with st.spinner("Preparing the activity update…"):
+                    message = services.parent_activity_update(source, child, day, address)
+                stored = (key, message)
+                st.session_state[PARENT_ACTIVITY_RESULT] = stored
+            if stored is not None:
+                if stored[1]:
+                    st.write(stored[1])
+                else:
+                    st.info("An activity update is unavailable for this day.")
+        except Exception:
+            st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
+            logger.exception("Synthetic parent activity preview failed")
+            st.info("An activity update is unavailable for this day.")
+
+
 try:
     source = services.behavioral_daily_source()
 except (OSError, ValueError) as exc:
+    st.session_state.pop(RESEARCH_RESULT, None)
+    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
     st.error(f"Behavioral records could not be loaded: {exc}")
     st.stop()
 if source["source"] == "demo":
@@ -43,6 +167,8 @@ st.caption("Not flagged means the model did not detect an unusual pattern in the
            "It does not guarantee that the child is safe.")
 ids = source["child_ids"]
 if not ids:
+    st.session_state.pop(RESEARCH_RESULT, None)
+    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
     st.info("Insufficient recorded information to assess behavior for this period.")
     st.stop()
 
@@ -58,6 +184,8 @@ except services.ModelUnavailableError as exc:
 except ValueError as exc:
     st.error(f"Function 2 could not run on this data: {exc}")
 if report is None:
+    st.session_state.pop(RESEARCH_RESULT, None)
+    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
     try:
         show_urgent(services.behavioral_urgent_report(source["daily"], child))
     except ValueError as alert_error:
@@ -106,4 +234,6 @@ with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
         st.dataframe(services.explanation_table(report["explanations"][day]).head(3),
                      hide_index=True, width="stretch")
 
+show_parent_activity_demo(source, child, table)
 show_urgent(report)
+show_research_shap(source, child, table)

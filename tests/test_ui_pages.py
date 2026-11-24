@@ -1,12 +1,16 @@
 """Render the real Streamlit pages (streamlit.testing AppTest) and check what
 a viewer would see when the trained models load or fail to load."""
+from datetime import date
+
 import pytest
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 from ui import services
 
 APP = str(services.ROOT / "ui" / "app.py")
 F1_ERROR = "Function 1 model could not be loaded. No emotional pattern is shown."
+SHAP_PREVIEW = "Research SHAP preview · synthetic data"
 
 
 def html_of(at, area):
@@ -20,6 +24,117 @@ def run_page(page=None):
         at.switch_page(f"pages/{page}.py").run()
     assert not at.exception, [e.value for e in at.exception]
     return at
+
+
+def test_research_shap_is_hidden_and_inactive_by_default(temp_db, monkeypatch):
+    monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
+    monkeypatch.setattr(services, "research_shap_context",
+                        lambda *_: pytest.fail("Preview must be inactive"))
+    at = run_page("behavioral_anomaly")
+    assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
+    assert not any(button.label == "Explain selected day" for button in at.button)
+
+
+def test_research_shap_is_on_demand_and_clears_changed_selection(temp_db, monkeypatch):
+    monkeypatch.setenv("C4_F2_RESEARCH_SHAP", "1")
+    original = services.research_shap_report
+    calls = []
+
+    def record(*args):
+        calls.append(args[1:])
+        return original(*args)
+
+    monkeypatch.setattr(services, "research_shap_report", record)
+    at = run_page("behavioral_anomaly")
+    assert any(expander.label == SHAP_PREVIEW for expander in at.expander)
+    assert not calls
+    at.selectbox(key="f2_child").select("C033").run()
+    at.selectbox(key="f2_research_day_C033").select(date(2026, 9, 25)).run()
+    assert not calls
+    at.button(key="f2_research_explain").click().run()
+    assert not at.exception and calls == [("C033", date(2026, 9, 25))]
+    text = "\n".join(node.value for node in at.markdown)
+    assert "`uncertain`" in text and "**Frozen anomaly score:**" in text
+    assert ("The system identified an unusual pattern in the available recorded activity, "
+            "but cannot reliably identify which recorded factors contributed most.") in text
+    assert len(at.get("plotly_chart")) == 2
+    assert any("Contribution" in frame.value.columns and len(frame.value) == 12 for frame in at.dataframe)
+    at.selectbox(key="f2_research_day_C033").select(date(2026, 9, 24)).run()
+    assert len(calls) == 1 and len(at.get("plotly_chart")) == 1
+    assert not any("Reliability status" in node.value for node in at.markdown)
+    at.selectbox(key="f2_research_day_C033").select(date(2026, 9, 25)).run()
+    assert not any("Reliability status" in node.value for node in at.markdown)
+    at.button(key="f2_research_explain").click().run()
+    at.selectbox(key="f2_child").select("C008").run()
+    assert not any("Reliability status" in node.value for node in at.markdown)
+    at.selectbox(key="f2_research_day_C008").select(date(2026, 9, 15)).run()
+    at.button(key="f2_research_explain").click().run()
+    text = "\n".join(node.value for node in at.markdown)
+    assert "`reliable`" in text
+    assert "Compared with typical recorded days" not in text
+
+
+def test_research_shap_failure_keeps_existing_cards(temp_db, monkeypatch):
+    monkeypatch.setenv("C4_F2_RESEARCH_SHAP", "1")
+
+    def unavailable(*args):
+        raise RuntimeError("research-only failure")
+
+    monkeypatch.setattr(services, "research_shap_report", unavailable)
+    at = run_page("behavioral_anomaly")
+    at.button(key="f2_research_explain").click().run()
+    assert not at.exception
+    assert any("Research SHAP preview could not run" in warning.value for warning in at.warning)
+    assert len(at.get("plotly_chart")) == 1
+    assert "Urgent Alerts (rule-based)" in html_of(at, at.main)
+
+
+def parent_demo_address(monkeypatch, address):
+    get_option = st.get_option
+    monkeypatch.setattr(st, "get_option",
+                        lambda name: address if name == "server.address" else get_option(name))
+
+
+@pytest.mark.parametrize(("flag", "address"), [(None, "127.0.0.1"), ("1", "0.0.0.0")])
+def test_parent_demo_hides_without_local_opt_in(temp_db, monkeypatch, flag, address):
+    if flag is None:
+        monkeypatch.delenv("C4_F2_PARENT_XAI_DEMO", raising=False)
+    else:
+        monkeypatch.setenv("C4_F2_PARENT_XAI_DEMO", flag)
+    parent_demo_address(monkeypatch, address)
+    monkeypatch.setattr(services, "parent_xai_demo_context",
+                        lambda *_: pytest.fail("Hidden demo must remain inactive"))
+    at = run_page("behavioral_anomaly")
+    assert "Activity Update" not in html_of(at, at.main)
+    assert not any(button.label == "Show activity update" for button in at.button)
+
+
+def test_parent_demo_shows_plain_text_and_clears_stale_day(temp_db, monkeypatch):
+    monkeypatch.setenv("C4_F2_PARENT_XAI_DEMO", "1")
+    monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
+    parent_demo_address(monkeypatch, "127.0.0.1")
+    at = run_page("behavioral_anomaly")
+    assert "Activity Update" in html_of(at, at.main)
+    assert any("SYNTHETIC DEMO PREVIEW" in item.value for item in at.caption)
+    at.selectbox(key="f2_child").select("C008").run()
+    at.selectbox(key="f2_parent_activity_day_C008").select(date(2026, 9, 15)).run()
+    original_html = html_of(at, at.main)
+    assert not any("contributed most" in item.value for item in at.markdown)
+    at.button(key="f2_parent_activity_show").click().run()
+    assert not at.exception
+    text = "\n".join(item.value for item in at.markdown)
+    assert "Your child's recorded screen-related activity contributed most" in text
+    assert all(marker not in text for marker in ("SHAP", "Saved threshold", "Reliability status", "Gate reasons"))
+    assert len(at.get("plotly_chart")) == 1
+    assert "Urgent Alerts (rule-based)" in original_html and "Urgent Alerts (rule-based)" in html_of(at, at.main)
+    assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
+    at.selectbox(key="f2_parent_activity_day_C008").select(date(2026, 9, 16)).run()
+    assert not any("contributed most" in item.value for item in at.markdown)
+    at.selectbox(key="f2_parent_activity_day_C008").select(date(2026, 9, 15)).run()
+    assert not any("contributed most" in item.value for item in at.markdown)
+    at.button(key="f2_parent_activity_show").click().run()
+    at.selectbox(key="f2_child").select("C002").run()
+    assert not any("contributed most" in item.value for item in at.markdown)
 
 
 @pytest.fixture

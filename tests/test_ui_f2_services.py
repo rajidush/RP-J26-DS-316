@@ -7,12 +7,139 @@ import json
 import shutil
 import subprocess
 import sys
+from datetime import date
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from ui import services
+
+
+@pytest.fixture
+def research_source(monkeypatch):
+    monkeypatch.setenv("C4_F2_RESEARCH_SHAP", "1")
+    clear = services._research_shap_resources.cache_clear
+    clear()
+    yield services.behavioral_daily_source()
+    clear()
+
+
+@pytest.mark.parametrize(("child", "day", "state"), [
+    ("C008", date(2026, 9, 15), "reliable"),
+    ("C033", date(2026, 9, 25), "uncertain"),
+])
+def test_research_shap_uses_frozen_score_and_group_diagnostics(research_source, child, day, state):
+    result = services.research_shap_report(research_source, child, day)
+    expected = services.behavioral_report(research_source["daily"], child)["daily"].set_index("date").loc[day]
+    assert result["score"] == pytest.approx(expected["anomaly_score"], abs=1e-8)
+    assert result["threshold"] == expected["threshold"]
+    assert result["flag"] == expected["unusual"]
+    assert result["status"] == state
+    assert [(ref["size"], ref["seed"]) for ref in result["references"]] == [
+        (32, 17), (32, 29), (64, 17), (64, 29),
+    ]
+    assert all(len(ref["groups"]) == 3 for ref in result["references"])
+    if state == "uncertain":
+        assert result["reasons"]
+        assert result["neutral_text"] == (
+            "The system identified an unusual pattern in the available recorded activity, "
+            "but cannot reliably identify which recorded factors contributed most."
+        )
+    else:
+        assert result["neutral_text"] is None
+
+
+def test_research_shap_never_explains_unflagged_or_unassessable_days(research_source, monkeypatch):
+    gate, daily = services._research_shap_resources(*services.research_shap_context(research_source))
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("SHAP must not run")
+
+    monkeypatch.setattr(gate.explainer, "explain", unexpected)
+    child, day = "C002", date(2026, 9, 18)
+    unflagged = services.research_shap_report(research_source, child, day)
+    assert unflagged["status"] == "not_flagged" and not unflagged["references"]
+    incomplete = daily.copy()
+    incomplete.loc[incomplete.child_id.eq(child) & incomplete.date.eq(day), "language_monitor_observed"] = 0
+    monkeypatch.setattr(services, "_research_shap_resources", lambda *_: (gate, incomplete))
+    result = services.research_shap_report({**research_source, "daily": incomplete}, child, day)
+    assert result["status"] == "insufficient_data" and not result["references"]
+    assert result["score"] is result["flag"] is result["neutral_text"] is None
+
+
+def test_research_shap_rejects_uploads_and_changed_assets(research_source, monkeypatch, tmp_path):
+    with pytest.raises(ValueError, match="bundled synthetic data"):
+        services.research_shap_context({**research_source, "source": "upload"})
+    artifacts = _copy_f2_artifacts(tmp_path, metadata_overrides={"threshold": -11})
+    monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(artifacts))
+    with pytest.raises(ValueError, match="match the frozen files"):
+        services.research_shap_context(research_source)
+    monkeypatch.delenv("C4_F2_ARTIFACT_DIR")
+    altered = tmp_path / "altered.csv"
+    altered.write_bytes(F2_DATA.read_bytes() + b"\n")
+    monkeypatch.setattr(services, "F2_DEMO_DATA", altered)
+    with pytest.raises(ValueError, match="match the frozen files"):
+        services.research_shap_context(research_source)
+
+
+def test_research_shap_rejects_altered_demo_rows(research_source):
+    changed = research_source["daily"].assign(language_flags=500)
+    with pytest.raises(ValueError, match="unmodified bundled"):
+        services.research_shap_report({**research_source, "daily": changed}, "C002", date(2026, 9, 18))
+
+
+@pytest.fixture
+def parent_demo(research_source, monkeypatch):
+    monkeypatch.delenv("C4_F2_RESEARCH_SHAP")
+    monkeypatch.setenv("C4_F2_PARENT_XAI_DEMO", "1")
+    return research_source
+
+
+@pytest.mark.parametrize(("child", "day", "message"), [
+    ("C008", date(2026, 9, 15),
+     "We noticed an unusual activity pattern. Your child's recorded screen-related activity contributed most to this pattern."),
+    ("C002", date(2026, 9, 23),
+     "We noticed an unusual activity pattern. Your child's recorded language-related activity contributed most to this pattern."),
+    ("C033", date(2026, 9, 25),
+     "The system identified an unusual pattern in the available recorded activity, "
+     "but cannot reliably identify which recorded factors contributed most."),
+    ("C002", date(2026, 9, 18),
+     "No unusual activity pattern was detected in the available recorded data."),
+])
+def test_parent_activity_uses_verified_gate_wording(parent_demo, child, day, message):
+    assert services.parent_activity_update(parent_demo, child, day, "127.0.0.1") == message
+
+
+def test_parent_activity_insufficient_coverage_skips_attribution(parent_demo, monkeypatch):
+    context = services.parent_xai_demo_context(parent_demo, "::1")
+    gate, daily = services._research_shap_resources(*context)
+    child, day = "C008", date(2026, 9, 15)
+    incomplete = daily.copy()
+    incomplete.loc[incomplete.child_id.eq(child) & incomplete.date.eq(day), "screen_monitor_observed"] = 0
+    monkeypatch.setattr(services, "_research_shap_resources", lambda *_: (gate, incomplete))
+    monkeypatch.setattr(gate.explainer, "explain", lambda *_: pytest.fail("Unexpected attribution"))
+    assert services.parent_activity_update({**parent_demo, "daily": incomplete}, child, day, "::1") == (
+        "There isn't enough recorded activity to assess today's pattern."
+    )
+
+
+def test_parent_activity_fails_closed_without_approved_factor(parent_demo, monkeypatch):
+    decision = SimpleNamespace(status=SimpleNamespace(value="reliable"), is_flagged=True,
+                               reasons=(), diagnostics={"stability": {"leader": "unapproved factor"}})
+    monkeypatch.setattr(services, "_verified_shap_decision", lambda *_: (None, decision))
+    assert services.parent_activity_update(parent_demo, "C008", date(2026, 9, 15), "127.0.0.1") is None
+    decision.diagnostics["stability"]["leader"] = "screen-related recorded activity"
+    decision.reasons = ("failed_evidence",)
+    assert services.parent_activity_update(parent_demo, "C008", date(2026, 9, 15), "127.0.0.1") is None
+
+
+def test_parent_activity_rejects_public_bind_and_uploads(parent_demo):
+    with pytest.raises(ValueError, match="loopback-only"):
+        services.parent_xai_demo_context(parent_demo, "0.0.0.0")
+    with pytest.raises(ValueError, match="bundled synthetic data"):
+        services.parent_xai_demo_context({**parent_demo, "source": "upload"}, "127.0.0.1")
 
 F2_DATA = services.F2_DEMO_DATA
 
