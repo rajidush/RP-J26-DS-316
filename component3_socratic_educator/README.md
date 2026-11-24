@@ -430,6 +430,51 @@ python inquire_finetune.py dataset-score --key <run>/key.json \
 
 The rated sheets are only read, never changed, and a scores folder is never overwritten.
 
+## PP2 dialogue sheets (output study and calibration)
+
+The output study's dialogues are rated blind with the three-layer rubric of `evidence/research/output_rubric_research_2026-10-25.md`, and the three layers are never averaged together (ticket 11):
+- the **safety gate** on every line the child sees;
+- **quality** (`q1`–`q5`, 0/1/2) on INQUIRE lines that pass the gate, and `q6_non_repetition` once per dialogue, in the scripted replay set only;
+- one **outcome** per dialogue.
+
+Each rater also guesses which arm wrote each dialogue.
+
+```bash
+python inquire_finetune.py dialogue-sheets --dialogues output_study_dialogues.jsonl --set scripted_replay
+python inquire_finetune.py dialogue-sheets --dialogues output_study_dialogues.jsonl --set adaptive
+#   -> evidence/inquire/dialogues_<set>_<date>/classmate_dialogues.csv, counsellor_dialogues.csv,
+#      instructions.md, key.json
+# window 0: calibration copies, both raters rate everything, never evidence
+python inquire_finetune.py dialogue-sheets --dialogues calibration_dialogues.jsonl --set scripted_replay --calibration
+python inquire_finetune.py dialogue-score --key <run>/key.json \
+    --rated counsellor=<returned.csv> --rated classmate=<returned.csv> [--adjudication adjudication.csv]
+#   -> <run>/scores_<date>/summary.json, summary.md, turns.jsonl, dialogues.jsonl
+```
+
+**Input.** One JSONL line per dialogue (ticket 22): `dialogue_id`, `set` (`scripted_replay` or `adaptive`), `arm` (`template`, `control` or `adapted`), `scenario_id`, `age_band`, `risk_category` and `turns` (the controller's `Turn` fields, at least `state`, `system_text`, `child_response`, `move`, `easier`; `source` gives the fallback rate). Other fields are ignored. `dialogue-sheets` refuses invalid records (an unknown set, arm, band, risk category or turn state, a missing field, a dialogue with no line the child saw) and duplicated IDs, names them, and never writes into a folder that already holds sheets. For calibration on PP1 dialogues, convert them to this format first, choosing an age band and `arm` = `template`.
+
+**The sheet.** One row per line the child saw (opening, INQUIRE lines, closing; EVALUATE says nothing), grouped by dialogue and in order: `item` (`T0001`…), `dialogue` (`D001`…), `turn`, `sensitive`, `age_band`, `step` (opening, the move, closing), `educator_line`, `child_reply`, then the rated columns and `notes`. No dialogue ID, arm, scenario, risk category or line source appears, typography is normalised (curly quotes, dashes, ellipses), and dialogues are shuffled with a recorded seed.
+- **Classmate, scripted replay:** `safety_gate`, `q1_move_fidelity`, `q2_child_agency`, `q3_responsiveness`, `q4_age_fit`, `q5_tone`, `q6_non_repetition`, `outcome`, `guess_arm`.
+- **Counsellor (both sets), and classmate (adaptive set):** `safety_gate`, `outcome`, `guess_arm` (owner, 24 Nov; spec stories 40 and 45). The counsellor's copy has the dialogues in another order.
+- **Calibration:** both raters get the classmate's columns, and the key says `"evidence": false`.
+
+`safety_gate` is `pass` or the failed items (`S3`, `S2 S3`), as on the dataset-validation sheet. `q1`–`q5` go on INQUIRE rows only, and may be left blank on a row the rater failed. `q6`, `outcome` and `guess_arm` go on each dialogue's last row only. `skip` is missing, never a judgement. `instructions.md` gives every gate item with a failing example, the quality anchors (0/1/2) with examples and the band anchors for `q4`, the outcomes, and the arms to guess from. The examples were written for the instructions; revise them after calibration. The instructions also say that the controller's fixed escalation closing line (`fsm_controller.ESCALATION_CLOSING`) does not fail `S5`: the counsellor advised on 23 Nov that the child is told (ticket 25).
+
+**Scoring.** `dialogue-score` refuses invalid or misplaced cells (a quality score on an opening row, an outcome before the last row), missing, duplicated, unknown or edited rows, a changed blank sheet and a non-UTF-8 sheet, and names the rows. Adjudication is a separate CSV (`item`, `question` = `safety_gate` or `outcome`, `value`, `reason`); the rated sheets are only read. Per arm × age band it reports:
+- **safety gate:** the dialogues that failed, each with the turn, the step and the items failed; next to them, the dialogues any rater failed, and the dialogues with a gate disagreement still unresolved. A line's gate is settled when the raters' pass/fail verdicts agree (a failure lists every item either rater named), or by adjudication;
+- **quality:** the mean of each item over the INQUIRE lines whose settled gate is pass (`q6` over the dialogues that pass), so a failed or unresolved line never counts; readability (Dale-Chall and Flesch-Kincaid on the pooled INQUIRE lines, when `textstat` is installed) sits next to `q4_age_fit`;
+- **outcomes:** the distribution, with `unresolved` for a disagreement not adjudicated (labelled as simulator behaviour in the adaptive set, and as recognition of the scripted plan in the scripted replay set);
+- the fallback rate of the INQUIRE lines.
+
+Per arm, over all bands: the safety-gate totals the ship rule reads (failed, any rater, unresolved), and the trusted-adult share, the most repeated closing question and the fallback rate of the INQUIRE lines. Per rater: guess-the-arm accuracy, with skips counted apart and chance (1/3), and the guesses for each arm that really wrote the dialogue. On the lines both raters rated, with each rater's counts so κ can be recomputed: Gwet's AC1 for the gate (pass/fail, and per item S1–S7), Krippendorff's α (nominal) for the outcome, and, when both rated quality (calibration), ordinal α per quality item (`src/agreement.py`, checked against Krippendorff's published example). A scores folder is never overwritten.
+
+**Limits:**
+- Quality is rated by the classmate only, so its reliability is measured in calibration, not in the study.
+- The instructions have one passing and one failing example per item. The rubric's borderline examples per band, taken from development dialogues, come from calibration (ticket 17).
+- Cohen's κ, bootstrap intervals, the pairwise round and the paired Wilcoxon test are not computed here (ticket 24).
+- Latency and the format-check pass rate are reported by ticket 24 from the raw outputs, not from the sheets.
+- The counsellor is not blind to the template arm (ticket 12), so the classmate's guess is the blinding check.
+
 ## Known current limitations (say this openly at PP1, don't hide it)
 
 - Latency (13 Oct, `evidence/system/latency_2026-10-13_before-fix/`, `_after-fix/`): the
