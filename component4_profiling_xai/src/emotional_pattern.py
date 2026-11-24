@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 
 EMOTIONS = ["calm", "defensive", "distressed", "unclear"]
@@ -42,6 +43,8 @@ def clean_sessions(df):
             raise ValueError(f"{col} has values that are not True/False")
 
     sessions["timestamp"] = pd.to_datetime(sessions["timestamp"], utc=True)
+    if sessions["timestamp"].isna().any():
+        raise ValueError("timestamp is required for every session")
     sessions["emotional_state"] = sessions["emotional_state"].astype(str).str.strip().str.lower()
 
     unknown = set(sessions["emotional_state"]) - set(EMOTIONS)
@@ -49,8 +52,10 @@ def clean_sessions(df):
         raise ValueError(f"Unknown emotional_state values: {sorted(unknown)}")
 
     sessions["dialogue_turns"] = pd.to_numeric(sessions["dialogue_turns"], errors="raise")
-    if (sessions["dialogue_turns"] < 1).any():
-        raise ValueError("dialogue_turns must be at least 1")
+    turns = sessions["dialogue_turns"]
+    if (turns.isna().any() or not np.isfinite(turns).all()
+            or not turns.ge(1).all() or not turns.mod(1).eq(0).all()):
+        raise ValueError("dialogue_turns must be a positive whole number for every session")
 
     sessions = sessions.drop_duplicates()
     if sessions["session_id"].duplicated().any():
@@ -104,6 +109,87 @@ def run_emotional_pattern(data, artifact_dir=ARTIFACT_DIR):
     """Full pipeline: CSV path or DataFrame -> validate -> clean -> features -> patterns."""
     df = pd.read_csv(data) if isinstance(data, (str, Path)) else data
     return predict_patterns(clean_sessions(df), artifact_dir)
+
+
+def explain_pattern(sessions, artifact_dir=ARTIFACT_DIR):
+    """Explain the trained model's prediction for one child's cleaned sessions."""
+    if sessions["child_id"].nunique() != 1 or sessions["child_id"].isna().any():
+        raise ValueError("A pattern explanation requires sessions for exactly one child")
+    model, scaler, metadata = load_artifacts(artifact_dir)
+    features = metadata["features"]
+    observed = build_features(sessions)[features]
+    scaled = scaler.transform(observed)
+    # Let predict decide the assignment, including ties.
+    assigned = int(model.predict(scaled)[0])
+    squared_terms = (scaled[0] - model.cluster_centers_) ** 2
+    distances = squared_terms.sum(axis=1)
+    alternative = min(
+        (i for i in range(len(distances)) if i != assigned),
+        key=lambda i: (distances[i], i),
+    )
+    contributions = squared_terms[alternative] - squared_terms[assigned]
+    rows = [
+        {"feature": feature, "observed_value": float(value), "contribution": float(term)}
+        for feature, value, term in zip(features, observed.iloc[0], contributions)
+    ]
+    supporting = sorted(
+        (row for row in rows if row["contribution"] > 0),
+        key=lambda row: -row["contribution"],
+    )
+    return {
+        "status": "available",
+        "assigned_cluster": assigned,
+        "pattern": metadata["cluster_names"][assigned],
+        "alternative_cluster": alternative,
+        "alternative_pattern": metadata["cluster_names"][alternative],
+        "assigned_squared_distance": float(distances[assigned]),
+        "alternative_squared_distance": float(distances[alternative]),
+        "distance_margin": float(distances[alternative] - distances[assigned]),
+        "equal_distance": bool(np.isclose(distances[assigned], distances[alternative],
+                                          rtol=1e-12, atol=1e-12)),
+        "feature_contributions": rows,
+        "top_supporting_features": supporting[:3],
+        "session_count": len(sessions),
+    }
+
+
+def explain_emotion_trend(trend, metadata):
+    """Describe the same severity comparison used by the trend classifier."""
+    severity = metadata["severity_order"]
+    settings = metadata["trend_settings"]
+    threshold = settings["change_threshold"]
+    reliable = [
+        {**window, "severity": severity[window["pattern"]]}
+        for window in trend["windows"]
+        if window["reliable"] and window["pattern"] in severity
+    ]
+    status = trend["trend"]
+    change = trend["severity_change"]
+    earlier, recent = [], []
+    earlier_mean = recent_mean = None
+    if change is None:
+        message = f"At least {settings['min_valid_windows']} reliable windows are needed to explain the trend."
+    else:
+        earlier, recent = reliable[:2], reliable[-2:]
+        earlier_mean = sum(w["severity"] for w in earlier) / 2
+        recent_mean = sum(w["severity"] for w in recent) / 2
+        reason = {
+            "worsening": f"meets the worsening threshold of +{threshold}",
+            "improving": f"meets the improving threshold of −{threshold}",
+            "stable": f"is between the improving and worsening thresholds of −{threshold} and +{threshold}",
+        }[status]
+        message = (f"Mean emotional severity went from {earlier_mean:.1f} to {recent_mean:.1f}. "
+                   f"The change of {change:+.2f} {reason}.")
+    return {
+        "status": status,
+        "reliable_window_count": len(reliable),
+        "earlier_windows": earlier,
+        "recent_windows": recent,
+        "earlier_mean": earlier_mean,
+        "recent_mean": recent_mean,
+        "severity_change": change,
+        "explanation": message,
+    }
 
 
 def build_emotion_trend(sessions, artifact_dir=ARTIFACT_DIR):

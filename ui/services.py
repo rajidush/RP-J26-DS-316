@@ -16,6 +16,7 @@ import sys
 import warnings
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
+from math import isfinite
 from pathlib import Path
 
 import pandas as pd
@@ -320,16 +321,12 @@ def _run_function1(df, artifact_dir=None):
             "features": f1.build_features(sessions).round(3), "trend": trend}
 
 
-def _window_features(sessions, child_id, window_start, window_days):
-    """Features of one child's sessions in the 2-week trend window starting at
-    window_start (ISO date). Windows are counted from the first session's day,
-    as in component4's build_emotion_trend, so these are the features behind
-    that window's pattern."""
+def _window_sessions(sessions, window_start, window_days):
+    """Select the same half-open UTC window as build_emotion_trend."""
     begin = pd.Timestamp(window_start, tz="UTC")
-    in_window = ((sessions["child_id"].astype(str) == child_id)
-                 & (sessions["timestamp"] >= begin)
+    in_window = ((sessions["timestamp"] >= begin)
                  & (sessions["timestamp"] < begin + pd.Timedelta(days=window_days)))
-    return _f1_module().build_features(sessions[in_window]).round(3).loc[child_id].to_dict()
+    return sessions[in_window]
 
 
 def emotional_pattern_report(sessions, child_id, artifact_dir=None):
@@ -350,20 +347,49 @@ def emotional_pattern_report(sessions, child_id, artifact_dir=None):
     if not status["available"]:
         raise ModelUnavailableError(status)
 
-    n_sessions = int((sessions["child_id"].astype(str) == child_id).sum())
+    f1 = _f1_module()
+    metadata = status["metadata"]
+    child_rows = sessions.loc[sessions["child_id"].astype(str) == child_id,
+                             [c for c in F1_COLUMNS if c in sessions.columns]]
+    child_rows = f1.clean_sessions(child_rows)
+    n_sessions = len(child_rows)
     if n_sessions < MIN_SESSIONS_FOR_PATTERN:
         return {"enough_data": False, "child_id": child_id, "sessions": n_sessions,
                 "min_sessions": MIN_SESSIONS_FOR_PATTERN, "status": status,
                 "overall_pattern": None, "current_pattern": None, "current_since": None,
                 "trend": None, "severity_change": None, "timeline": [], "features": None,
-                "window_features": None}
+                "window_features": None, "xai": {
+                    "status": "insufficient_data", "pattern": None,
+                    "trend": f1.explain_emotion_trend(
+                        {"trend": "not enough data", "severity_change": None, "windows": []},
+                        metadata),
+                }}
 
-    run = _run_function1(sessions, artifact_dir)
+    run = _run_function1(child_rows, artifact_dir)
     trend = run["trend"][child_id]
     timeline = [{"date": w["window_start"], "pattern": w["pattern"], "sessions": w["sessions"]}
                 for w in trend["windows"] if w["pattern"] in PATTERN_ORDER]
     overall = run["patterns"].loc[child_id, "pattern"]
-    window_days = status["metadata"]["trend_settings"]["window_days"]
+    window_days = metadata["trend_settings"]["window_days"]
+    child_sessions = run["sessions"][run["sessions"]["child_id"] == child_id]
+    selected = (_window_sessions(child_sessions, timeline[-1]["date"], window_days)
+                if timeline else child_sessions)
+    earlier_features = None
+    if len(timeline) > 1 and trend["severity_change"] is not None:
+        earlier = _window_sessions(child_sessions, timeline[0]["date"], window_days)
+        earlier_features = f1.build_features(earlier).loc[child_id].to_dict()
+    explanation = f1.explain_pattern(selected, status["artifact_dir"])
+    if timeline:
+        start = timeline[-1]["date"]
+        end = (pd.Timestamp(start) + pd.Timedelta(days=window_days - 1)).date().isoformat()
+    else:
+        start = selected["timestamp"].min().date().isoformat()
+        end = selected["timestamp"].max().date().isoformat()
+    if explanation:
+        explanation["analysis_period"] = {
+            "start": start, "end": end,
+            "source": "latest_reliable_window" if timeline else "all_sessions",
+        }
     return {
         "enough_data": True,
         "min_sessions": MIN_SESSIONS_FOR_PATTERN,
@@ -379,8 +405,11 @@ def emotional_pattern_report(sessions, child_id, artifact_dir=None):
         "features": run["features"].loc[child_id].to_dict(),
         # Features behind current_pattern (the latest window); None when there is
         # no window with enough sessions and current_pattern is the overall one.
-        "window_features": (_window_features(run["sessions"], child_id, timeline[-1]["date"],
-                                             window_days) if timeline else None),
+        "window_features": (f1.build_features(selected).round(3).loc[child_id].to_dict()
+                            if timeline else None),
+        "earlier_window_features": earlier_features,
+        "xai": {"status": "available" if explanation else "unavailable", "pattern": explanation,
+                "trend": f1.explain_emotion_trend(trend, metadata)},
     }
 
 
@@ -392,6 +421,106 @@ FEATURE_LABELS = {
     "selfreg_rate": "Share with self-regulation shown",
     "mean_turns": "Average dialogue turns",
 }
+
+
+_PARENT_PATTERN_GUIDANCE = {
+    "Calm / reflective": "Make room for your child to share what felt manageable or enjoyable online.",
+    "Defensive": "Keep the conversation low-pressure. Let your child tell their side before offering suggestions.",
+    "Distressed": "Offer a quiet moment to listen and ask what kind of support would feel helpful.",
+    "Withdrawn / unclear": "Offer a choice about when and how to talk, and give your child time to respond.",
+}
+
+_PARENT_TREND_ACTIONS = {
+    "worsening": "Check in at the next quiet moment and offer to talk again in a few days.",
+    "improving": "At your next check-in, ask what has felt easier lately and what support they want to keep.",
+    "stable": "Set aside a few minutes during a regular check-in to ask how things have felt online.",
+}
+
+_PARENT_TREND_REASONS = {
+    "worsening": "The recent periods shifted toward patterns that may call for more support, so we suggest checking in sooner.",
+    "improving": "The recent periods shifted toward calmer patterns, so we suggest asking what has felt easier.",
+    "stable": "The pattern showed little overall change across comparable periods, so a regular check-in is a good starting point.",
+}
+
+_ZERO_FEATURE_OBSERVATIONS = {
+    "p_calm": "No sessions were labeled calm.",
+    "p_defensive": "No sessions were labeled defensive.",
+    "p_distressed": "No sessions were labeled distressed.",
+    "p_unclear": "No sessions were labeled unclear.",
+    "selfreg_rate": "Self-regulation was not recorded in these sessions.",
+    "mean_turns": "The recorded average was zero dialogue turns.",
+}
+
+# Prompts rooted in what was actually recorded. Dialogue length alone does
+# not suggest a particular kind of support.
+_PARENT_FEATURE_PROMPTS = {
+    "p_calm": "What felt manageable or good online lately?",
+    "p_defensive": "What would you like me to understand about how that felt?",
+    "p_distressed": "Was there a hard moment you’d like me to listen to?",
+    "p_unclear": "Would it be easier to talk, write it down, or come back to it later?",
+    "selfreg_rate": "Was there anything you tried that helped you feel more settled?",
+}
+
+
+def parent_guidance(report):
+    """Turn existing Function 1 evidence into an optional conversation prompt."""
+    xai = report.get("xai") or {}
+    explanation = xai.get("pattern") or {}
+    pattern = report.get("current_pattern")
+    trend = report.get("trend")
+    observations = []
+    supporting_features = []
+    prompt_feature = None
+    if xai.get("status") == "available" and explanation.get("pattern") == pattern:
+        for row in explanation.get("top_supporting_features") or ():
+            feature = row.get("feature")
+            value = row.get("observed_value")
+            contribution = row.get("contribution")
+            if (feature not in FEATURE_LABELS
+                    or not isinstance(value, (int, float)) or not isfinite(value)
+                    or not isinstance(contribution, (int, float))
+                    or not isfinite(contribution) or contribution <= 0):
+                continue
+            formatted = f"{value:.2f}" if feature == "mean_turns" else f"{value:.1%}"
+            observations.append({
+                "label": FEATURE_LABELS[feature],
+                "observed": _ZERO_FEATURE_OBSERVATIONS[feature] if value == 0 else formatted,
+                "contribution": contribution,
+            })
+            supporting_features.append(row)
+            if prompt_feature is None and value > 0 and feature in _PARENT_FEATURE_PROMPTS:
+                prompt_feature = feature
+
+    next_action = "At a quiet moment, ask how things have felt online and listen at your child’s pace."
+    personalized = False
+    question = None
+    if not report.get("enough_data"):
+        guidance = "There are too few recorded sessions to suggest guidance based on a pattern."
+        why = "An open question gives your child room to share what matters to them."
+    elif explanation.get("equal_distance"):
+        guidance = "Two patterns were equally close, so use an open-ended check-in."
+        why = "The sessions fit both patterns about equally well, so the suggestion leaves room for your child’s own account."
+    elif pattern not in _PARENT_PATTERN_GUIDANCE or not observations:
+        guidance = "There isn’t enough supporting information to tailor guidance to this pattern."
+        why = "An open-ended check-in leaves room for your child to describe their experience in their own words."
+    elif trend not in _PARENT_TREND_ACTIONS:
+        guidance = "There are too few comparable periods to tell how the pattern is changing. Keep the check-in open-ended."
+        why = (f"The observations support the current {pattern} pattern. More comparable periods "
+               "would help decide when to suggest a follow-up.")
+    else:
+        personalized = True
+        guidance = _PARENT_PATTERN_GUIDANCE[pattern]
+        next_action = _PARENT_TREND_ACTIONS[trend]
+        why = (f"The recorded observations helped the model match the {pattern} pattern, "
+               f"which guides the way we suggest starting the conversation. {_PARENT_TREND_REASONS[trend]}")
+        if prompt_feature:
+            question = _PARENT_FEATURE_PROMPTS[prompt_feature]
+            next_action += f' You could ask “{question}”'
+            label = FEATURE_LABELS[prompt_feature].lower()
+            why += f" The optional question draws on the recorded {label}."
+    return {"observations": observations, "guidance": guidance, "next_action": next_action,
+            "why": why, "personalized": personalized, "question": question,
+            "supporting_features": supporting_features}
 
 
 def features_table(columns):

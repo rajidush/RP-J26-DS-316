@@ -90,6 +90,14 @@ def test_timeline_hover_pluralises_sessions():
     assert defensive.customdata[0][1] == "1 session"
 
 
+def test_timeline_uses_parent_label_in_axis_legend_and_hover():
+    fig = theme.pattern_timeline_figure(TIMELINE, labels={"Withdrawn / unclear": "Harder to read"})
+    assert fig.layout.yaxis.ticktext[1] == "Harder to read"
+    marker = next(trace for trace in fig.data if trace.name == "Harder to read")
+    assert marker.customdata[0][0] == "Harder to read"
+    assert list(marker.y) == [1]
+
+
 # --- Function 2 ------------------------------------------------------------------------
 
 def _anomaly_days():

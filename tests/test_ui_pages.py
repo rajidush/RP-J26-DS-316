@@ -6,7 +6,9 @@ from streamlit.testing.v1 import AppTest
 from ui import services
 
 APP = str(services.ROOT / "ui" / "app.py")
-F1_ERROR = "Function 1 model could not be loaded. No emotional pattern is shown."
+F1_ERROR = "The emotional wellbeing summary is temporarily unavailable."
+HISTORY = "View Emotional History"
+AI_DETAILS = "Why Did the AI Identify This Pattern?"
 
 
 def html_of(at, area):
@@ -22,6 +24,16 @@ def run_page(page=None):
     return at
 
 
+def wellbeing_card(at):
+    return next(container for container in at.get("flex_container")
+                if container.proto.id.endswith("-card-emotional-wellbeing"))
+
+
+def emotional_expanders(at):
+    # AppTest classifies expandable blocks with icons as status blocks.
+    return [block for block in at.main if block.type in ("expander", "status")]
+
+
 @pytest.fixture
 def child_with_sessions(temp_db):
     for i, emo in enumerate(["calm", "calm", "defensive", "calm", "calm"]):
@@ -34,21 +46,96 @@ def child_with_sessions(temp_db):
 def test_emotional_pattern_page_with_real_model(child_with_sessions):
     at = run_page()
     main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
-    assert "c4-badge" in main and "Calm" in main
-    assert at.get("plotly_chart")
-    assert "Why this pattern?" in [e.label for e in at.expander]
-    assert F1_ERROR not in main
+    assert len(at.get("plotly_chart")) == 1
+    assert [e.label for e in emotional_expanders(at)] == [HISTORY, AI_DETAILS]
+    assert not at.info
     assert "Function 1 model" in sidebar and "not loaded" not in sidebar
+    card = wellbeing_card(at)
+    assert "Your Child&#x27;s Emotional Wellbeing" in html_of(at, card)
+    lines = [item.value for item in card.markdown]
+    assert [line for line in lines if line.startswith("#### ")] == [
+        "#### Current Emotional Pattern", "#### Has Anything Changed?",
+        "#### What Can You Do?", "#### Try Asking",
+    ]
+    assert "**Calm and reflective**" in lines
+    assert "More recorded sessions are needed to tell whether the pattern has changed." in lines
+    assert lines.count("“How have things felt online lately?”") == 1
+
+
+def test_emotional_pattern_page_keeps_prediction_when_xai_is_missing(child_with_sessions,
+                                                                      monkeypatch):
+    monkeypatch.setattr(services._f1_module(), "explain_pattern", lambda *args: None)
+    at = run_page()
+    assert "Calm and reflective" in visible_main_text(at)
+    assert "There isn’t enough clear supporting information to explain this pattern." in visible_main_text(at)
+    assert "This describes how your child responded in the latest period" in visible_main_text(at)
+
+
+def test_emotional_pattern_page_labels_synthetic_guidance(temp_db):
+    at = run_page()
+    at.selectbox[0].set_value("C004").run()
+    assert not at.exception
+    text = visible_main_text(at)
+    assert "SYNTHETIC DEMO DATA" in text
+    for removed in ("Parent Guidance", "Emotional Change Summary", "What Did We Notice?",
+                    "Why Are We Suggesting This?", "Why Was This Change Detected?",
+                    "What Pattern Did We Notice?", "Why Does the AI Think This?",
+                    "What Does This Mean for You?"):
+        assert removed not in text
+    history, details = emotional_expanders(at)
+    assert [history.label, details.label] == [HISTORY, AI_DETAILS]
+    assert not history.proto.expanded and not details.proto.expanded
+    assert len(history.get("plotly_chart")) == 1
+    assert [item.value for item in history.caption] == [
+        "The chart shows how the pattern varied across the recorded two-week periods.",
+    ]
+    assert not history.markdown
+    assert [item.value for item in details.markdown] == [
+        "3 out of 3 recent sessions were recorded as guarded. "
+        "This was one detail that supported the AI’s match.",
+    ]
+    assert [item.value for item in details.caption] == [
+        "These observations describe recorded interactions and cannot diagnose your child.",
+    ]
+    assert not at.metric and not at.dataframe and not at.table
+    assert len(at.get("plotly_chart")) == 1
+    for technical in ("Assigned cluster", "Nearest alternative cluster", "Squared-distance",
+                      "contribution", "mean severity", "severity change"):
+        assert technical.lower() not in text.lower()
+    parent = wellbeing_card(at)
+    assert not parent.metric and not parent.dataframe and not parent.get("plotly_chart")
+    summary = " ".join(item.value for item in parent.markdown)
+    assert "Calm and reflective" in summary and "Guarded responses" in summary
+    assert "The overall trend showed more signs that your child may need support." in summary
+    assert "This describes how your child responded in the latest period" in summary
+    assert text.count("3 out of 3 recent sessions were recorded as guarded") == 1
+    assert text.count("At the next quiet moment, keep the conversation low-pressure.") == 1
+    assert text.count("What would you like me to understand about how that felt?") == 1
+    assert "contribution" not in summary.lower()
+
+
+def test_emotional_pattern_page_with_no_sessions(temp_db, monkeypatch):
+    empty = services.demo_sessions().iloc[:0]
+    monkeypatch.setattr(services, "sessions_for_child", lambda *_: empty)
+    at = run_page()
+    assert [e.label for e in emotional_expanders(at)] == [HISTORY, AI_DETAILS]
+    assert not at.get("plotly_chart")
+    text = visible_main_text(at)
+    assert "Not enough information yet" in text
+    assert "More recorded sessions are needed" in text
+    assert "How have things felt online lately?" in text
+    assert "The explanation will appear once there are enough recorded sessions." in text
 
 
 def test_emotional_pattern_page_has_no_upload_label_or_contract_notice(child_with_sessions):
     at = run_page()
     main = html_of(at, at.main)
-    assert "Emotional Pattern" in main and "(Function 1)" not in main
-    assert "Use your own data (CSV with child_id)" not in [e.label for e in at.expander]
+    assert "Emotional Pattern" not in main and "(Function 1)" not in main
+    assert [e.label for e in emotional_expanders(at)] == [HISTORY, AI_DETAILS]
     assert not at.get("file_uploader")
     assert "pending a contract update" not in main
     assert "from the database" not in main                 # no child-count note
+    assert at.selectbox[0].label == "Select Child"
     assert at.selectbox[0].value == "K1"                   # database children still loaded
 
 
@@ -57,12 +144,11 @@ def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_se
     monkeypatch.setenv("C4_F1_ARTIFACT_DIR", str(tmp_path))  # empty folder
     at = run_page()
     main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
-    assert F1_ERROR in main
-    assert "emotional_pattern_kmeans.pkl" in main          # the reason names the files
-    assert "scikit-learn==1.6.1" in main                   # and says how to fix it
-    assert "c4-badge" not in main                          # no badge
+    assert [notice.value for notice in at.info] == [F1_ERROR]
+    assert "emotional_pattern_kmeans.pkl" not in visible_main_text(at)
+    assert "Emotional Wellbeing" not in main
     assert not at.get("plotly_chart")                      # no chart
-    assert "Why this pattern?" not in [e.label for e in at.expander]  # no features
+    assert not emotional_expanders(at)
     assert not at.selectbox                                # nothing to select
     assert "not loaded" in sidebar
 
@@ -73,8 +159,8 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
     monkeypatch.setenv("C4_F1_ARTIFACT_DIR", str(tmp_path))
     at = run_page()
     main = html_of(at, at.main)
-    assert F1_ERROR in main and "Could not load the model files" in main
-    assert "c4-badge" not in main
+    assert [notice.value for notice in at.info] == [F1_ERROR]
+    assert "Emotional Wellbeing" not in main
 
 
 # --- Function 2: Behavioral Anomaly page ----------------------------------------------
@@ -101,7 +187,8 @@ def visible_main_text(at):
 def test_emotional_pattern_is_still_the_default_page(temp_db):
     at = run_page()
     main = html_of(at, at.main)
-    assert "Emotional Pattern" in main
+    assert at.selectbox[0].label == "Select Child"
+    assert "Emotional Wellbeing" in main
     assert "Behavioral Anomaly Detection" not in main
 
 
@@ -190,7 +277,8 @@ def test_function2_failure_leaves_function1_page_working(child_with_sessions, tm
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
     at = run_page()
     main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
-    assert "c4-badge" in main and F1_ERROR not in main
+    assert F1_ERROR not in main
+    assert "**Calm and reflective**" in [item.value for item in wellbeing_card(at).markdown]
     assert "Function 2 model" in sidebar and "not loaded" in sidebar
 
 
