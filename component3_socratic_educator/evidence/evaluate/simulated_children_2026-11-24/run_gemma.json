@@ -1,0 +1,203 @@
+{
+  "generator": "gemma",
+  "model": "google/gemma-3-27b-it",
+  "served_models": [
+    "google/gemma-3-27b-it"
+  ],
+  "backend": "hf",
+  "base_url": "https://router.huggingface.co/v1",
+  "settings": {
+    "temperature": 0.9,
+    "max_tokens": 1024
+  },
+  "child_seed": "not recorded (the chat endpoints take no seed)",
+  "fold_system": true,
+  "plan_seed": 20261124,
+  "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+  "runtime": {
+    "python": "3.13.18",
+    "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "openai": "2.54.0"
+  },
+  "started": "2026-11-25T11:06:55+00:00",
+  "finished": "2026-11-25T11:09:39+00:00",
+  "sessions_written": 39,
+  "children_without_a_usable_reply": [],
+  "stopped_by": null,
+  "earlier_runs": [
+    {
+      "generator": "gemma",
+      "model": "google/gemma-3-27b-it",
+      "served_models": "not recorded",
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T11:01:49+00:00",
+      "finished": "2026-11-25T11:01:50+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: APIStatusError: Error code: 402 - {'error': 'Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.'}"
+    },
+    {
+      "generator": "gemma",
+      "model": "google/gemma-3-27b-it",
+      "served_models": "not recorded",
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T10:56:44+00:00",
+      "finished": "2026-11-25T10:56:45+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: APIStatusError: Error code: 402 - {'error': 'Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.'}"
+    },
+    {
+      "generator": "gemma",
+      "model": "gemma-4-26b-a4b-it",
+      "served_models": "not recorded",
+      "backend": "aistudio",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T10:07:41+00:00",
+      "finished": "2026-11-25T10:07:46+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    },
+    {
+      "generator": "gemma",
+      "model": "gemma-4-26b-a4b-it",
+      "served_models": [
+        "gemma-4-26b-a4b-it"
+      ],
+      "backend": "aistudio",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T15:59:17+00:00",
+      "finished": "2026-11-24T16:05:01+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    },
+    {
+      "generator": "gemma",
+      "model": "gemma-4-31b-it",
+      "served_models": [
+        "gemma-4-31b-it"
+      ],
+      "backend": "aistudio",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T15:53:54+00:00",
+      "finished": "2026-11-24T15:56:39+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    },
+    {
+      "generator": "gemma",
+      "model": "gemma-4-31b-it",
+      "served_models": "not recorded",
+      "backend": "aistudio",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T15:26:58+00:00",
+      "finished": "2026-11-24T15:27:37+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    },
+    {
+      "generator": "gemma",
+      "model": "gemma-4-31b-it",
+      "served_models": "not recorded",
+      "backend": "aistudio",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T15:19:16+00:00",
+      "finished": "2026-11-24T15:19:21+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    }
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "dataset": "pp2-simulated-children",
+  "plan": {
+    "file": "children.json",
+    "sha256": "5f2608344b0b9d8efc011555e08d1fd1e079f368b500bebc20f66c943d9215a0",
+    "seed": 20261124,
+    "draw": {
+      "file": "scenario_draw.json",
+      "sha256": "ff45efe399394c12f9d77da5ec5d27f6ac0826374e55fd65c783a6ab978f232e",
+      "seed": 20261104
+    }
+  },
+  "outputs": {
+    "classifier_test_sessions.jsonl": "90b29fe500cf597f0b997b9f3968b2b0830abe46c766ae255b407c8cec82d91d",
+    "train_dev_sessions.jsonl": "6345a0073db9b8a678fcc99d96d4b2a8be6e4e80ab68cfe2c390476cde0e9940"
+  },
+  "counts": {
+    "classifier_test": {
+      "8-10": {
+        "gemini": 32,
+        "gemma": 8
+      },
+      "11-13": {
+        "gemini": 32,
+        "gemma": 8
+      },
+      "14-15": {
+        "gemini": 32,
+        "gemma": 8
+      }
+    },
+    "train_dev": {
+      "8-10": {
+        "gemini": 19,
+        "gemma": 5
+      },
+      "11-13": {
+        "gemini": 19,
+        "gemma": 5
+      },
+      "14-15": {
+        "gemini": 19,
+        "gemma": 5
+      }
+    }
+  },
+  "archetypes": {
+    "classifier_test": {
+      "8-10": {
+        "calm_reflective": 10,
+        "defensive": 10,
+        "distressed": 10,
+        "withdrawn": 10
+      },
+      "11-13": {
+        "calm_reflective": 10,
+        "defensive": 10,
+        "distressed": 10,
+        "withdrawn": 10
+      },
+      "14-15": {
+        "calm_reflective": 10,
+        "defensive": 10,
+        "distressed": 10,
+        "withdrawn": 10
+      }
+    },
+    "train_dev": {
+      "8-10": {
+        "calm_reflective": 6,
+        "defensive": 6,
+        "distressed": 6,
+        "withdrawn": 6
+      },
+      "11-13": {
+        "calm_reflective": 6,
+        "defensive": 6,
+        "distressed": 6,
+        "withdrawn": 6
+      },
+      "14-15": {
+        "calm_reflective": 6,
+        "defensive": 6,
+        "distressed": 6,
+        "withdrawn": 6
+      }
+    }
+  },
+  "train_dev_roles": {
+    "train": 48,
+    "validation": 24
+  },
+  "models": {
+    "gemini": [
+      "google/gemini-3.8-flash"
+    ],
+    "gemma": [
+      "google/gemma-3-27b-it"
+    ]
+  },
+  "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+  "runs": {
+    "gemini": {
+      "generator": "gemini",
+      "model": "google/gemini-3.8-flash",
+      "served_models": [
+        "google/gemini-3.8-flash"
+      ],
+      "backend": "colab",
+      "base_url": "fixed by the backend",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": false,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T16:44:20+00:00",
+      "finished": "2026-11-25T16:44:47+00:00",
+      "sessions_written": 1,
+      "children_without_a_usable_reply": [],
+      "stopped_by": null,
+      "earlier_runs": [
+        {
+          "generator": "gemini",
+          "model": "gemini-3.8-flash",
+          "served_models": [
+            "gemini-3.8-flash"
+          ],
+          "backend": "aistudio",
+          "base_url": "fixed by the backend",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": false,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-25T11:21:23+00:00",
+          "finished": "2026-11-25T11:23:46+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CD072: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        },
+        {
+          "generator": "gemini",
+          "model": "google/gemini-3.8-flash",
+          "served_models": [
+            "google/gemini-3.8-flash"
+          ],
+          "backend": "colab",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": false,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T14:18:21+00:00",
+          "finished": "2026-11-24T15:07:47+00:00",
+          "sessions_written": 149,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CD072: PermissionDeniedError: Error code: 403 - {'code': '', 'message': 'The max estimated cost of operation ($0.0040815) exceeds your available quota (based on max_output_tokens). Set max_output_tokens in your request to lower th"
+        },
+        {
+          "generator": "gemini",
+          "model": "google/gemini-3.8-flash",
+          "served_models": [
+            "google/gemini-3.8-flash"
+          ],
+          "backend": "colab",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": false,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T13:57:53+00:00",
+          "finished": "2026-11-24T13:58:50+00:00",
+          "sessions_written": 3,
+          "children_without_a_usable_reply": [],
+          "stopped_by": null
+        }
+      ]
+    },
+    "gemma": {
+      "generator": "gemma",
+      "model": "google/gemma-3-27b-it",
+      "served_models": [
+        "google/gemma-3-27b-it"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": true,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T11:06:55+00:00",
+      "finished": "2026-11-25T11:09:39+00:00",
+      "sessions_written": 39,
+      "children_without_a_usable_reply": [],
+      "stopped_by": null,
+      "earlier_runs": [
+        {
+          "generator": "gemma",
+          "model": "google/gemma-3-27b-it",
+          "served_models": "not recorded",
+          "backend": "hf",
+          "base_url": "https://router.huggingface.co/v1",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-25T11:01:49+00:00",
+          "finished": "2026-11-25T11:01:50+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: APIStatusError: Error code: 402 - {'error': 'Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.'}"
+        },
+        {
+          "generator": "gemma",
+          "model": "google/gemma-3-27b-it",
+          "served_models": "not recorded",
+          "backend": "hf",
+          "base_url": "https://router.huggingface.co/v1",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-25T10:56:44+00:00",
+          "finished": "2026-11-25T10:56:45+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: APIStatusError: Error code: 402 - {'error': 'Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.'}"
+        },
+        {
+          "generator": "gemma",
+          "model": "gemma-4-26b-a4b-it",
+          "served_models": "not recorded",
+          "backend": "aistudio",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-25T10:07:41+00:00",
+          "finished": "2026-11-25T10:07:46+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        },
+        {
+          "generator": "gemma",
+          "model": "gemma-4-26b-a4b-it",
+          "served_models": [
+            "gemma-4-26b-a4b-it"
+          ],
+          "backend": "aistudio",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T15:59:17+00:00",
+          "finished": "2026-11-24T16:05:01+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        },
+        {
+          "generator": "gemma",
+          "model": "gemma-4-31b-it",
+          "served_models": [
+            "gemma-4-31b-it"
+          ],
+          "backend": "aistudio",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T15:53:54+00:00",
+          "finished": "2026-11-24T15:56:39+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        },
+        {
+          "generator": "gemma",
+          "model": "gemma-4-31b-it",
+          "served_models": "not recorded",
+          "backend": "aistudio",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T15:26:58+00:00",
+          "finished": "2026-11-24T15:27:37+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        },
+        {
+          "generator": "gemma",
+          "model": "gemma-4-31b-it",
+          "served_models": "not recorded",
+          "backend": "aistudio",
+          "settings": {
+            "temperature": 0.9,
+            "max_tokens": 1024
+          },
+          "child_seed": "not recorded (the chat endpoints take no seed)",
+          "fold_system": true,
+          "plan_seed": 20261124,
+          "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+          "runtime": {
+            "python": "3.13.18",
+            "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+            "openai": "2.54.0"
+          },
+          "started": "2026-11-24T15:19:16+00:00",
+          "finished": "2026-11-24T15:19:21+00:00",
+          "sessions_written": 0,
+          "children_without_a_usable_reply": [],
+          "stopped_by": "SIM-CT009: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "held_out_children_in_train_dev": 0,
+    "held_out_scenarios_in_train_dev": 0,
+    "sessions_off_their_draw_role": 0,
+    "records_failing_the_contract": 0,
+    "records_holding_a_raw_reply": 0
+  },
+  "limitations": [
+    "every child reply is simulated by a language model, not written by a child",
+    "the educator lines are the template arm's, from before any ticket 27 rewording",
+    "the Gemma slice has 2 children per archetype per band in the test pool"
+  ]
+}
