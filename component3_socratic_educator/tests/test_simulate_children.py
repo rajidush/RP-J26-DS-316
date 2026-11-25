@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import inquire_finetune as ft  # noqa: E402
+import chat_client  # noqa: E402
 import simulate_children as sc  # noqa: E402
 from src.schemas import _validate_against_schema  # noqa: E402
 
@@ -400,9 +401,9 @@ def test_the_hf_backend_uses_the_hugging_face_router_with_the_token(tmp_path, dr
     plan(tmp_path, draw[0])
     sc.main(["run", "--plan", str(tmp_path / "sim" / "children.json"), "--generator", "gemma",
              "--model", "google/gemma-3-27b-it", "--backend", "hf", "--limit", "1"])
-    assert FakeOpenAI.built[0]["base_url"] == sc.HF_BASE_URL
+    assert FakeOpenAI.built[0]["base_url"] == chat_client.HF_BASE_URL
     assert FakeOpenAI.built[0]["api_key"] == "hf_test_token"
-    assert run_record(tmp_path, "gemma")["base_url"] == sc.HF_BASE_URL
+    assert run_record(tmp_path, "gemma")["base_url"] == chat_client.HF_BASE_URL
 
 
 def test_the_hf_backend_needs_a_token(tmp_path, draw, monkeypatch):

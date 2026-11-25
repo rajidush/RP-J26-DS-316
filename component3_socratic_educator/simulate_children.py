@@ -35,16 +35,14 @@ import dataclasses
 import hashlib
 import json
 import os
-import platform
 import random
 import re
 import sys
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from draft_inquire_dataset import model_endpoint
+from chat_client import BACKENDS, LOCAL_BASE_URL, base_url_of, is_resumable, make_chat, runtime
 from generate_educator_dataset import (ARCHETYPES, RISK_BANDS, RISK_WEIGHTS, SCHEMA_FILE, StubInterceptGenerator,
                                        load_templates, make_trigger, normalize_text, pick, session_record)
 from src import config
@@ -61,8 +59,6 @@ CHILD_TEMPERATURE = 0.9
 # Thinking tokens can count against the limit, and Colab's proxy reserves quota for it (8 Oct).
 CHILD_MAX_TOKENS = 1024
 CHILD_SEED = "not recorded (the chat endpoints take no seed)"
-LOCAL_BASE_URL = "http://127.0.0.1:1234/v1"   # LM Studio's OpenAI-compatible server
-HF_BASE_URL = "https://router.huggingface.co/v1"   # Hugging Face Inference Providers, with HF_TOKEN
 MAX_REPLY_CHARS = 300   # the stored reply; the raw output is kept whole in child_outputs
 REPLY_TRIES = 3
 EDUCATOR_SETUP = ("FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line "
@@ -235,25 +231,8 @@ class ChildFailed(RuntimeError):
 
 
 def make_ask(backend, model, base_url=None):
-    """messages -> text through an OpenAI-compatible endpoint: Colab's proxy, AI Studio, Hugging Face's router,
-    or a local server (LM Studio, Ollama) at `base_url`; `ask.served` collects the models that answered."""
-    from openai import OpenAI
-    if backend == "local":
-        key = "local"
-    elif backend == "hf":
-        base_url, key = HF_BASE_URL, os.environ.get("HF_TOKEN") or sys.exit("HF_TOKEN not set: a Hugging Face "
-                                                                             "access token with inference rights")
-    else:
-        base_url, key = model_endpoint(backend)
-    client = OpenAI(base_url=base_url, api_key=key, timeout=120, max_retries=3)
-
-    def ask(messages):
-        response = client.chat.completions.create(model=model, messages=messages, temperature=CHILD_TEMPERATURE,
-                                                  max_tokens=CHILD_MAX_TOKENS)
-        ask.served.add(getattr(response, "model", None) or "not recorded")
-        return response.choices[0].message.content or ""
-    ask.served = set()
-    return ask
+    """The child model: messages -> text through `chat_client` (Colab, AI Studio, Hugging Face or a local server)."""
+    return make_chat(backend, model, CHILD_TEMPERATURE, CHILD_MAX_TOKENS, base_url)
 
 
 def simulate_session(child, ask, controller, templates, model_id):
@@ -267,6 +246,8 @@ def simulate_session(child, ask, controller, templates, model_id):
             try:
                 text = ask(child_messages(child, history, line))
             except Exception as error:
+                if not is_resumable(error):   # a bad key or model name: waiting will not help
+                    raise
                 raise ModelError(f"{type(error).__name__}: {str(error)[:200]}") from error
             raw.append(text)
             reply = clean_reply(text)
@@ -309,14 +290,6 @@ def _append(path, session):
         os.fsync(f.fileno())
 
 
-def _runtime():
-    try:
-        openai_version = version("openai")
-    except PackageNotFoundError:
-        openai_version = "not recorded"
-    return {"python": platform.python_version(), "platform": platform.platform(), "openai": openai_version}
-
-
 def cmd_run(args, ask=None):
     plan_path = Path(args.plan)
     plan, folder = json.loads(plan_path.read_text(encoding="utf-8")), plan_path.parent
@@ -352,11 +325,10 @@ def cmd_run(args, ask=None):
     served = getattr(ask, "served", None)
     record = {"generator": args.generator, "model": args.model,
               "served_models": sorted(served) if served else "not recorded", "backend": args.backend,
-              "base_url": {"local": args.base_url or LOCAL_BASE_URL, "hf": HF_BASE_URL}.get(args.backend,
-                                                                                           "fixed by the backend"),
+              "base_url": base_url_of(args.backend, args.base_url),
               "settings": {"temperature": CHILD_TEMPERATURE, "max_tokens": CHILD_MAX_TOKENS},
               "child_seed": CHILD_SEED, "fold_system": args.fold_system, "plan_seed": plan["seed"],
-              "educator": EDUCATOR_SETUP, "runtime": _runtime(), "started": started,
+              "educator": EDUCATOR_SETUP, "runtime": runtime(), "started": started,
               "finished": datetime.now(timezone.utc).isoformat(timespec="seconds"), "sessions_written": written,
               "children_without_a_usable_reply": failed, "stopped_by": stopped,
               "earlier_runs": ([{k: v for k, v in earlier.items() if k != "earlier_runs"}]
@@ -462,7 +434,7 @@ def build_parser():
     run.add_argument("--plan", required=True, help="the children.json written by plan")
     run.add_argument("--generator", required=True, choices=GENERATORS)
     run.add_argument("--model", required=True, help="the model id, e.g. google/gemini-2.5-pro or gemma-3-27b-it")
-    run.add_argument("--backend", required=True, choices=("colab", "aistudio", "hf", "local"),
+    run.add_argument("--backend", required=True, choices=BACKENDS,
                      help="hf: Hugging Face Inference Providers (HF_TOKEN); local: an OpenAI-compatible server on "
                           "this machine, such as LM Studio (see --base-url)")
     run.add_argument("--base-url", help=f"the local server's address (default {LOCAL_BASE_URL}, LM Studio)")
