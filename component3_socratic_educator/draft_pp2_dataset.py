@@ -45,6 +45,7 @@ from draft_inquire_dataset import _REPLY_GUIDE, near_duplicates, parse_json_bloc
 from inquire_finetune import _refuse, closing_sentence, dump_jsonl, load_jsonl, reachable_strata, row_problems, write_atomic
 from simulate_children import BAND_VOICE
 from src import config
+from src.grammar_decoder import _ALERT_WORDS, _CATEGORY_WORDS, _FORBIDDEN_SUBSTRINGS
 from src.grammar_decoder import (CONVERSATION_FENCE, INQUIRE_EASIER, INQUIRE_GUIDE, INQUIRE_PROMPT,
                                  GrammarConstrainedGenerator, inquire_prompt, inquire_violation)
 
@@ -55,7 +56,7 @@ REQUEST_TRIES = 3   # attempts for a context batch or a row's conversation that 
 OVERUSED_AT = 3   # a closing question used this often in a band and move is named for the teacher to avoid
 TEACHER_TEMPERATURE = 0.9
 TEACHER_MAX_TOKENS = 4096   # thinking tokens can count against it
-PROMPT_VERSION = "pp2-draft-v3"
+PROMPT_VERSION = "pp2-draft-v4"
 # The small model's prompt, as text: a change to it changes this hash, recorded with every row.
 TRAINING_PROMPT_SHA256 = hashlib.sha256(json.dumps([INQUIRE_PROMPT, INQUIRE_GUIDE, INQUIRE_EASIER, CONVERSATION_FENCE],
                                                    sort_keys=True).encode("utf-8")).hexdigest()
@@ -209,6 +210,12 @@ def plan_rows(draw, contexts, rng, seed):
             for n, r in enumerate(rows, 1)]
 
 
+# The live check's word lists, told to the teacher: on the first run a row about a link in a messaging app failed
+# 36 times because the teacher kept writing "that message" in an educator line.
+BANNED_WORDS = (f"Never use these words: {', '.join(sorted(set(_ALERT_WORDS) | set(_CATEGORY_WORDS)))}; "
+                f"and no word containing {', '.join(_FORBIDDEN_SUBSTRINGS)} (so not even \"skills\").")
+
+
 def _answered_move(row):
     """The move of the line the child answered: the same move for an easier form, otherwise the move before."""
     moves = config.SOCRATIC_MOVES
@@ -236,7 +243,7 @@ Return ONLY a JSON object: {{"child_reply": "..."}}"""}]
 Situation (the educator never names it): {row['context']}
 
 Write two things:
-1. "previous_message": the educator's last line, which the child is answering: the {move} question, which should {INQUIRE_GUIDE[move][row['age_band']]} At most one short, kind sentence, then one question ending in "?". Never name or describe what was on the screen, never name a feeling, and offer no choice ("... or ...?") unless it is the alternatives question.
+1. "previous_message": the educator's last line, which the child is answering: the {move} question, which should {INQUIRE_GUIDE[move][row['age_band']]} At most one short, kind sentence, then one question ending in "?". Never name or describe what was on the screen, never name a feeling, and offer no choice ("... or ...?") unless it is the alternatives question. {BANNED_WORDS}
 2. {child}
 
 Return ONLY a JSON object: {{"previous_message": "...", "child_reply": "..."}}"""}]
@@ -337,6 +344,7 @@ Hard rules (a line that breaks one is thrown away):
 - Name a feeling only if the child used that exact word. Never invent facts, motives or the educator's feelings.
 - Offer a choice ("... or ...?") only in the alternatives move. No tag questions ("..., right?"). Speak to the child as "you".
 - Never name, describe or hint at what was on the screen; never mention alerts, warnings or that anyone was told.
+- {BANNED_WORDS} If the child used one, say it another way.
 - Never blame or lecture. Mention a trusted adult only in the alternatives move.
 - The child's reply is "{row['reply_type']}": {_DRAFT_GUIDE[row['reply_type']]}{differ}{avoid}
 
