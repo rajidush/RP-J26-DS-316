@@ -354,3 +354,63 @@ def test_finish_refuses_a_session_whose_scenario_is_held_out_for_another_use(tmp
     with pytest.raises(SystemExit) as e:
         finish(tmp_path, draw[0])
     assert f"{moved['session_id']}: scenario {moved['scenario_id']} is output_study" in str(e.value.code)
+
+
+# ---------------------------------------------------------------- the model client
+class FakeOpenAI:
+    """Stands in for the openai package: records how the client was built and answers as a calm child."""
+    built = []
+
+    def __init__(self, **kwargs):
+        FakeOpenAI.built.append(kwargs)
+        self.chat = type("Chat", (), {"completions": self})()
+
+    def create(self, **kwargs):
+        message = type("Message", (), {"content": REPLIES["calm_reflective"]})()
+        return type("Response", (), {"model": "gemma-3-4b-served", "choices": [type("Choice", (), {"message": message})()]})()
+
+
+def test_a_local_backend_talks_to_the_given_address_and_records_the_model_that_answered(tmp_path, draw, monkeypatch):
+    monkeypatch.setitem(sys.modules, "openai", type(sys)("openai"))
+    sys.modules["openai"].OpenAI = FakeOpenAI
+    FakeOpenAI.built.clear()
+    plan(tmp_path, draw[0])
+    sc.main(["run", "--plan", str(tmp_path / "sim" / "children.json"), "--generator", "gemma", "--model", "gemma-3-4b",
+             "--backend", "local", "--base-url", "http://127.0.0.1:1234/v1", "--limit", "1"])
+    assert FakeOpenAI.built[0]["base_url"] == "http://127.0.0.1:1234/v1"
+    record = run_record(tmp_path, "gemma")
+    assert record["backend"] == "local" and record["base_url"] == "http://127.0.0.1:1234/v1"
+    assert record["served_models"] == ["gemma-3-4b-served"]
+    assert len(sessions(tmp_path)) == 1
+
+
+def test_a_base_url_is_only_for_the_local_backend(tmp_path, draw):
+    plan(tmp_path, draw[0])
+    with pytest.raises(SystemExit) as e:
+        sc.main(["run", "--plan", str(tmp_path / "sim" / "children.json"), "--generator", "gemma", "--model", "x",
+                 "--backend", "aistudio", "--base-url", "http://127.0.0.1:1234/v1"])
+    assert "--base-url is only for --backend local" in str(e.value.code)
+
+
+def test_the_hf_backend_uses_the_hugging_face_router_with_the_token(tmp_path, draw, monkeypatch):
+    monkeypatch.setitem(sys.modules, "openai", type(sys)("openai"))
+    sys.modules["openai"].OpenAI = FakeOpenAI
+    FakeOpenAI.built.clear()
+    monkeypatch.setenv("HF_TOKEN", "hf_test_token")
+    plan(tmp_path, draw[0])
+    sc.main(["run", "--plan", str(tmp_path / "sim" / "children.json"), "--generator", "gemma",
+             "--model", "google/gemma-3-27b-it", "--backend", "hf", "--limit", "1"])
+    assert FakeOpenAI.built[0]["base_url"] == sc.HF_BASE_URL
+    assert FakeOpenAI.built[0]["api_key"] == "hf_test_token"
+    assert run_record(tmp_path, "gemma")["base_url"] == sc.HF_BASE_URL
+
+
+def test_the_hf_backend_needs_a_token(tmp_path, draw, monkeypatch):
+    monkeypatch.setitem(sys.modules, "openai", type(sys)("openai"))
+    sys.modules["openai"].OpenAI = FakeOpenAI
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    plan(tmp_path, draw[0])
+    with pytest.raises(SystemExit) as e:
+        sc.main(["run", "--plan", str(tmp_path / "sim" / "children.json"), "--generator", "gemma",
+                 "--model", "google/gemma-3-27b-it", "--backend", "hf"])
+    assert "HF_TOKEN not set" in str(e.value.code)
