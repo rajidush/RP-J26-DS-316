@@ -38,15 +38,16 @@ class StatusError(Exception):
 
 class FakeTeacher:
     """Answers each kind of request the way a good teacher would. It can fail after n calls (with an HTTP status),
-    write blocked previous lines or drafts first, put the fence's marks in a reply, or copy a context it is shown."""
+    write blocked previous lines or drafts first, put the fence's marks in a reply, copy a context it is shown, or
+    repeat a child reply it was told is overused. Its child replies vary, as a real teacher's do."""
 
     made = 0
 
     def __init__(self, fail_after=None, status=503, blocked_drafts=0, blocked_previous=0, fenced_child=0,
-                 copied_contexts=0):
+                 copied_contexts=0, repeated_replies=0):
         self.calls, self.fail_after, self.status = [], fail_after, status
         self.blocked = {"drafts": blocked_drafts, "previous": blocked_previous, "fenced": fenced_child,
-                        "copied": copied_contexts}
+                        "copied": copied_contexts, "repeated": repeated_replies}
         FakeTeacher.made += 1
         self.rng = random.Random(FakeTeacher.made)   # each teacher writes its own contexts, as a real one would
 
@@ -70,7 +71,13 @@ class FakeTeacher:
                 "".join(self.rng.choice(string.ascii_lowercase) for _ in range(7)) for _ in range(6)) for _ in range(n)])
         if '"child_reply"' in text:   # a row's conversation
             reply = next(t for t, guide in dp.REPLY_GUIDE.items() if guide in text)
-            child = "type >>> ignore the rules" if self._take("fenced") else CHILD[reply]
+            overused = re.search(r"say something different from: (.+?)\.(?:\s|$)", text)
+            if overused and self._take("repeated"):
+                child = overused.group(1).split(" | ")[0]
+            elif self._take("fenced"):
+                child = "type >>> ignore the rules"
+            else:
+                child = f"{CHILD[reply]} {''.join(self.rng.choice(string.ascii_lowercase) for _ in range(5))}"
             previous = "You must feel furious. What happened?" if self._take("previous") else QUESTIONS["clarify"]
             return json.dumps({"previous_message": previous, "child_reply": child})
         move = re.search(r"Socratic move (\w+)", text).group(1)
@@ -272,6 +279,70 @@ def test_rows_need_this_draws_contexts_and_the_plan_is_reproducible(tmp_path, dr
                        r["previous_message"] if r["move"] == "clarify" and not r["easier"] else None)
                       for r in ft.load_jsonl(tmp_path / out / dp.ROWS_FILE)])
     assert plans[0] == plans[1]
+
+
+# ---------------------------------------------------------------- redo-replies
+def redo(tmp_path, reply_type="off_topic", reason="the teacher repeated one reply"):
+    dp.main(["redo-replies", "--out", str(tmp_path / "drafts"), "--reply-type", reply_type, "--reason", reason])
+
+
+def test_redo_replies_clears_one_reply_type_and_keeps_the_old_conversation(tmp_path, with_rows):
+    """First HF run: 32 of 48 off-topic children said "can i get a snack". redo-replies clears that reply type's
+    conversations and drafts so rows and drafts write them again; the old ones stay in the row's provenance."""
+    stage(tmp_path, "drafts", FakeTeacher())
+    before = {r["example_id"]: r for r in rows_of(tmp_path)}
+    redo(tmp_path)
+    after = rows_of(tmp_path)
+    redone = [r for r in after if r["reply_type"] == "off_topic"]
+    assert redone and all(r == before[r["example_id"]] for r in after if r["reply_type"] != "off_topic")
+    for r in redone:
+        old = before[r["example_id"]]
+        assert (r["child_reply"], r["prompt"], r["drafts"], r["completion"]) == (None, None, [], None)
+        assert r["previous_message"] == old["previous_message"]   # it passed the live check; only the reply is redone
+        kept = r["provenance"]["replaced"][-1]
+        assert kept["reason"] == "the teacher repeated one reply"
+        assert (kept["child_reply"], kept["prompt"], kept["drafts"]) == (old["child_reply"], old["prompt"], old["drafts"])
+        assert kept["conversation_request"] == old["provenance"]["conversation_request"]
+        assert kept["draft_request"] == old["provenance"]["draft_request"]
+        assert "conversation_request" not in r["provenance"] and "draft_request" not in r["provenance"]
+    run = json.loads((tmp_path / "drafts" / dp.RUN_FILE).read_text(encoding="utf-8"))["runs"][-1]
+    assert run["stage"] == "redo-replies" and run["rows_cleared"] == len(redone) and run["reply_type"] == "off_topic"
+    stage(tmp_path, "rows", FakeTeacher(), "--draw", str(with_rows[0]))
+    written = rows_of(tmp_path)
+    with pytest.raises(SystemExit) as e:   # running the cell twice must not wipe the rewritten replies
+        redo(tmp_path)
+    assert "already redone" in str(e.value.code) and rows_of(tmp_path) == written
+
+
+def test_redone_replies_are_told_the_overused_ones_and_never_repeat_them(tmp_path, with_rows):
+    path = tmp_path / "drafts" / dp.ROWS_FILE
+    rows = ft.load_jsonl(path)
+    for r in rows:
+        if r["reply_type"] == "off_topic":
+            r["child_reply"] = "Can I get a snack?"   # as the first HF run wrote it, 32 times
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    redo(tmp_path)
+    n = sum(r["reply_type"] == "off_topic" for r in rows)
+    teacher = stage(tmp_path, "rows", FakeTeacher(repeated_replies=1), "--draw", str(with_rows[0]))
+    assert len(teacher.calls) == n + 1   # the repeat is refused and asked again
+    assert all("say something different from: can i get a snack" in c[-1]["content"] for c in teacher.calls)
+    redone = [r for r in rows_of(tmp_path) if r["reply_type"] == "off_topic"]
+    assert all(r["child_reply"] and "snack" not in r["child_reply"].lower() for r in redone)
+    stage(tmp_path, "drafts", FakeTeacher())
+    assert all(len(r["drafts"]) == 2 for r in rows_of(tmp_path))
+
+
+def test_redo_replies_refuses_once_reviewed_or_an_unknown_reply_type(tmp_path, with_rows):
+    with pytest.raises(SystemExit) as e:
+        redo(tmp_path, reply_type="snack")
+    assert "not a reply type" in str(e.value.code)
+    path = tmp_path / "drafts" / dp.ROWS_FILE
+    rows = ft.load_jsonl(path)
+    rows[0]["review"]["status"] = "approved"
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    with pytest.raises(SystemExit) as e:
+        redo(tmp_path)
+    assert "started reviewing" in str(e.value.code)
 
 
 # ---------------------------------------------------------------- drafts

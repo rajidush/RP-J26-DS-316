@@ -56,7 +56,7 @@ REQUEST_TRIES = 3   # attempts for a context batch or a row's conversation that 
 OVERUSED_AT = 3   # a closing question used this often in a band and move is named for the teacher to avoid
 TEACHER_TEMPERATURE = 0.9
 TEACHER_MAX_TOKENS = 4096   # thinking tokens can count against it
-PROMPT_VERSION = "pp2-draft-v4"
+PROMPT_VERSION = "pp2-draft-v5"
 # The small model's prompt, as text: a change to it changes this hash, recorded with every row.
 TRAINING_PROMPT_SHA256 = hashlib.sha256(json.dumps([INQUIRE_PROMPT, INQUIRE_GUIDE, INQUIRE_EASIER, CONVERSATION_FENCE],
                                                    sort_keys=True).encode("utf-8")).hexdigest()
@@ -66,7 +66,10 @@ NEAR_DUPLICATE = 0.7   # Jaccard over words, as the PP1 drafter
 OPENING_LINES = tuple(GrammarConstrainedGenerator._CANDIDATES["INTERCEPT"])
 REPLY_GUIDE = {**_REPLY_GUIDE,
                "dont_know": "says they don't know or aren't sure (vary the wording; not always 'I don't know')",
-               "explanation": "describes what they were doing or why, without describing what was on the screen"}
+               "explanation": "describes what they were doing or why, without describing what was on the screen",
+               # First HF run: 32 of 48 off-topic children asked for a snack.
+               "off_topic": "changes the subject: asks for or talks about something unrelated (vary it: a game, a show, "
+                            "a friend, a pet, school, sport, plans for later; not always food)"}
 _FENCE_MARKS = re.compile(r"<{3}|>{3}")
 
 
@@ -222,11 +225,28 @@ def _answered_move(row):
     return row["move"] if row["easier"] else moves[moves.index(row["move"]) - 1]
 
 
-def conversation_request(row):
+def said(text):
+    """A child reply reduced to its words, so "Can I get a snack?" and "can i get a snack" count as one."""
+    return " ".join(re.findall(r"[a-z0-9']+", (text or "").lower()))
+
+
+def overused_replies(rows, reply_type):
+    """The replies of this type already said OVERUSED_AT times or more, counting the ones redo-replies replaced."""
+    counts = Counter()
+    for r in rows:
+        if r["reply_type"] == reply_type:
+            counts.update(said(x) for x in [r["child_reply"], *(old["child_reply"] for old in
+                                                                 r["provenance"].get("replaced", []))] if x)
+    return [text for text, n in counts.most_common() if n >= OVERUSED_AT]
+
+
+def conversation_request(row, overused=()):
     voice, words = BAND_VOICE[row["age_band"]]
+    avoid = f" Other children said these too often, so say something different from: {' | '.join(overused)}." \
+        if overused else ""
     child = (f'"child_reply": the child\'s reply to that line. The child {REPLY_GUIDE[row["reply_type"]]}. {voice} '
              f"Under {words} words. Never describe or quote what was on the screen; no slurs, graphic detail or "
-             "self-harm methods.")
+             f"self-harm methods.{avoid}")
     if row["previous_message"] is not None:
         return [{"role": "user", "content": f"""You are helping build a sanitized, synthetic training dataset for a child digital-safety educator talking with a child aged {row['age_band']}.
 
@@ -249,10 +269,13 @@ Write two things:
 Return ONLY a JSON object: {{"previous_message": "...", "child_reply": "..."}}"""}]
 
 
-def conversation_problems(row, previous, child):
+def conversation_problems(row, previous, child, overused=()):
     """Why a written conversation cannot go into a row: the line the child answered must pass the live check for
-    its move (it goes into the training prompt), and the reply must be text that stays inside the prompt's fence."""
+    its move (it goes into the training prompt), the reply must be text that stays inside the prompt's fence, and
+    it must not be one other children already said too often."""
     problems = [] if child else ["no child reply"]
+    if child and said(child) in overused:
+        problems.append("the child reply is overused")
     if _FENCE_MARKS.search(child):
         problems.append("the child reply holds the fence's marks")
     if row["previous_message"] is None:
@@ -287,7 +310,8 @@ def cmd_rows(args, ask):
     for row in rows:
         if row["child_reply"] is not None:
             continue
-        request = conversation_request(row)
+        overused = overused_replies(rows, row["reply_type"])
+        request = conversation_request(row, overused)
         try:
             for _ in range(REQUEST_TRIES):
                 try:
@@ -297,7 +321,7 @@ def cmd_rows(args, ask):
                 obj = obj if isinstance(obj, dict) else {}
                 child = str(obj.get("child_reply", "")).strip()
                 previous = row["previous_message"] or str(obj.get("previous_message", "")).strip()
-                if not conversation_problems(row, previous, child):
+                if not conversation_problems(row, previous, child, overused):
                     row.update(previous_message=previous, child_reply=child,
                                prompt=[{"role": "user", "content": inquire_prompt(
                                    row["move"], row["age_band"], row["easier"], previous, child)}])
@@ -413,6 +437,44 @@ def cmd_drafts(args, ask):
 
 
 # ---------------------------------------------------------------- run record and cli
+# ---------------------------------------------------------------- redo-replies
+def cmd_redo_replies(args):
+    """Clear one reply type's conversations and drafts so rows and drafts write them again (no teacher here). The
+    line the child answered stays: it passed the live check. The old reply, prompt, drafts and requests are kept in
+    the row's provenance under "replaced", with the reason."""
+    _refuse_once_reviewed(args.out, "redo-replies")
+    if args.reply_type not in REPLY_GUIDE:
+        _refuse(f"{args.reply_type} is not a reply type", [", ".join(REPLY_GUIDE)], "redo-replies")
+    out = Path(args.out)
+    path = _rows_path(out)
+    if not path.exists():
+        _refuse("there are no rows yet", ["run the rows stage first"], "redo-replies")
+    run_path = out / RUN_FILE
+    record = json.loads(run_path.read_text(encoding="utf-8")) if run_path.exists() else {"runs": []}
+    if any(r["stage"] == "redo-replies" and r["reply_type"] == args.reply_type for r in record["runs"]):
+        _refuse(f"{args.reply_type} replies were already redone", [
+            "running it again would clear the rewritten replies; see draft_run.json"], "redo-replies")
+    rows = load_jsonl(path)
+    when = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    cleared = []
+    for row in rows:
+        if row["reply_type"] != args.reply_type or row["child_reply"] is None:
+            continue
+        provenance = row["provenance"]
+        provenance.setdefault("replaced", []).append({
+            "reason": args.reason, "at": when, "child_reply": row["child_reply"], "prompt": row["prompt"],
+            "drafts": row["drafts"], **{k: provenance.pop(k) for k in ("conversation_request", "draft_request",
+                                                                       "blocked_drafts") if k in provenance}})
+        row.update(child_reply=None, prompt=None, drafts=[], completion=None)
+        cleared.append(row["example_id"])
+    write_atomic(path, dump_jsonl(rows))
+    record["runs"].append({"stage": "redo-replies", "reply_type": args.reply_type, "reason": args.reason,
+                           "rows_cleared": len(cleared), "prompt_version": PROMPT_VERSION,
+                           "code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "finished": when})
+    write_atomic(run_path, json.dumps(record, ensure_ascii=False, indent=2) + "\n")
+    print(f"redo-replies: {len(cleared)} {args.reply_type} rows cleared; now run rows, then drafts")
+
+
 def _say_rerun(unusable, stopped, what):
     if unusable:
         print(f"  {what}: {', '.join(unusable[:12])}{' ...' if len(unusable) > 12 else ''}\n"
@@ -458,12 +520,19 @@ def build_parser():
     drafts = sub.add_parser("drafts", help="two educator lines per row for the exact training prompt")
     add_teacher_options(drafts)
     drafts.set_defaults(func=cmd_drafts)
+    redo = sub.add_parser("redo-replies", help="clear one reply type's conversations and drafts to write them again")
+    redo.add_argument("--out", required=True, help="the drafting folder")
+    redo.add_argument("--reply-type", required=True, help="e.g. off_topic")
+    redo.add_argument("--reason", required=True, help="why, kept in each row's provenance")
+    redo.set_defaults(func=cmd_redo_replies)
     return ap
 
 
 def main(argv=None, ask=None):
     """`ask` (messages -> text) replaces the teacher model; tests pass a fake."""
     args = build_parser().parse_args(argv)
+    if args.command == "redo-replies":   # no teacher needed
+        return args.func(args)
     if args.base_url and args.backend != "local":
         _refuse("--base-url is only for --backend local", ["colab, aistudio and hf have fixed addresses"], args.command)
     ask = ask or make_chat(args.backend, args.model, TEACHER_TEMPERATURE, TEACHER_MAX_TOKENS, args.base_url)
