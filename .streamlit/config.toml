@@ -11,10 +11,16 @@ primaryColor = "#2F6FDE"
 backgroundColor = "#F5F8FD"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#2B3A5C"
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap, sans-serif"
+font = "Inter, sans-serif"
 borderColor = "#E3EAF5"
 baseRadius = "10px"
 
 [theme.sidebar]
 backgroundColor = "#E9F0FB"
 secondaryBackgroundColor = "#FFFFFF"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+address = "127.0.0.1"

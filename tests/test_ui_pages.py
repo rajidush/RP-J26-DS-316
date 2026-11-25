@@ -10,6 +10,14 @@ from ui import services
 
 APP = str(services.ROOT / "ui" / "app.py")
 F1_ERROR = "Function 1 model could not be loaded. No emotional pattern is shown."
+
+
+@pytest.fixture(autouse=True)
+def original_behavioral_view(monkeypatch):
+    # Preserve regression coverage of the original dashboard and frozen model.
+    monkeypatch.setenv("C4_F2_LEGACY_VIEW", "1")
+
+
 SHAP_PREVIEW = "Research SHAP preview · synthetic data"
 
 

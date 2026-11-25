@@ -1,11 +1,13 @@
 from datetime import timedelta
 import logging
+import os
 from math import isclose
 
 import plotly.graph_objects as go
 import streamlit as st
 
 from ui import services, theme
+from ui.pages import _behavioral_upgrade
 
 theme.page_header("Behavioral Anomaly Detection")
 RESEARCH_RESULT = "f2_research_shap_result"
@@ -155,7 +157,8 @@ def show_parent_activity_demo(source, child, table):
 
 
 try:
-    source = services.behavioral_daily_source()
+    local_csv = os.getenv("C4_F2_DAILY_CSV")
+    source = services.behavioral_daily_source(local_csv) if local_csv else services.behavioral_daily_source()
 except (OSError, ValueError) as exc:
     st.session_state.pop(RESEARCH_RESULT, None)
     st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
@@ -163,8 +166,6 @@ except (OSError, ValueError) as exc:
     st.stop()
 if source["source"] == "demo":
     st.caption("Research demonstration using synthetic data")
-st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
-           "It does not guarantee that the child is safe.")
 ids = source["child_ids"]
 if not ids:
     st.session_state.pop(RESEARCH_RESULT, None)
@@ -172,6 +173,17 @@ if not ids:
     st.info("Insufficient recorded information to assess behavior for this period.")
     st.stop()
 
+if os.getenv("C4_F2_LEGACY_VIEW") != "1":
+    try:
+        upgrade = _behavioral_upgrade.selected_bundle()
+    except (OSError, ValueError, KeyError):
+        logger.exception("Could not load deployed Function 2 detector")
+        upgrade = None
+    _behavioral_upgrade.render(source, upgrade)
+    st.stop()
+
+st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
+           "It does not guarantee that the child is safe.")
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
                          key="f2_child")
@@ -236,4 +248,5 @@ with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
 
 show_parent_activity_demo(source, child, table)
 show_urgent(report)
-show_research_shap(source, child, table)
+if os.getenv("C4_F2_LEGACY_VIEW") == "1":
+    show_research_shap(source, child, table)

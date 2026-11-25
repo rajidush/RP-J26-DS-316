@@ -67,25 +67,19 @@ instead, delete `project.db` and re-run the two commands above.
 
 ## Running the UI
 
-Component 4's Streamlit UI ("Child Behavior Monitoring") reads Component 3
-sessions from the shared database (same `DATABASE_URL` as `db/`, default
-`./project.db`; tables are created on startup).
+The Parent Dashboard is the Streamlit application for Component 4.
 
-```bash
-pip install -r requirements.txt
-streamlit run ui/app.py      # run from the repo root so .streamlit/config.toml (theme) applies
+Install the dependencies once with `python -m pip install -r requirements.txt`. Then run these Windows Command Prompt commands:
+
+```cmd
+cd /d E:\RP-J26-DS-316
+python -m streamlit run ui/app.py --server.address 127.0.0.1
 ```
 
-- **Emotional Pattern** (Function 1): per-child pattern + 2-week trend from the
-  trained KMeans model, for the children in the database (run
-  `scripts/import_comp3_sessions.py` first). If no stored session has a
-  `child_id`, the page falls back to a clearly labelled demo dataset (C001-C005).
-- **Child Profile**: not built yet ("Coming soon" card).
-- **Data & Admin**: Dashboard, Sessions (filters + details), Escalations,
-  Add record (form or JSON, for testing).
+- **Emotional Pattern** shows a child's current emotional pattern and recent trend using local Component 3 session records or clearly labeled demo records.
+- **Behavioral Anomaly** shows unusual activity, changes from the child's own history, an explanation of the AI assessment, supportive next steps, and independent safety alerts.
 
-All data and model logic is in `ui/services.py`; colours, CSS and charts in
-`ui/theme.py`. Tests: `pytest tests -v`.
+Both functions run locally with their saved models. The default session database is `project.db`. PP2 methods and evaluation results are available in the [Function 02 guide](component4_profiling_xai/PP2_FUNCTION02.md) and [optimization report](component4_profiling_xai/PP2_FUNCTION02_OPTIMIZATION.md).
 
 The Emotional Pattern page uses the trained artifacts committed in
 `component4_profiling_xai/models/` (about 15 KB), with `scikit-learn==1.6.1`:

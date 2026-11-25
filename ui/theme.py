@@ -104,7 +104,6 @@ def face_svg(face, color, size=92):
 # --- CSS ------------------------------------------------------------------------------
 
 CSS = f"""
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 html, body, .stApp, [class*="css"] {{ font-family: {FONT_FAMILY}; }}
 .stApp {{ background: {COLORS["page_bg"]}; color: {COLORS["text"]}; }}
@@ -132,6 +131,14 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
 }}
 .c4-card-title {{ color: {COLORS["navy"]}; font-size: 1.35rem; font-weight: 700; margin: 0 0 .2rem; }}
 .c4-card-text {{ color: {COLORS["muted"]}; margin: 0; }}
+
+/* Compact cards on the qualitative Function 02 page. */
+[class*="st-key-card-f2-"] {{
+    padding: .55rem .8rem;
+    margin-bottom: 0;
+}}
+[class*="st-key-card-f2-"] .c4-card-title {{ font-size: 1.1rem; margin: 0; }}
+[class*="st-key-card-f2-"] [data-testid="stVerticalBlock"] {{ gap: .35rem; }}
 
 /* Error cards: containers created with key="card-error-..." */
 [class*="st-key-card-error-"] {{

@@ -2,7 +2,9 @@
 
 **Owner:** IT23135116
 **Status:** Function 1 complete — Component 3 session records → per-child emotional pattern (K-Means) + 2-week trend.
-Function 2 integrated in the dashboard — daily C1/C2 risk features → Normal / Unusual day (One-Class SVM), on **synthetic** data only ([details](#function-2--behavioral-anomaly-detection)).
+[Function 02 PP2 upgrade](PP2_FUNCTION02.md) covers the current parent dashboard, training, research experiments and Windows commands. The original Function 02 pipeline and evaluation remain described below.
+
+The [Function 02 optimization report](PP2_FUNCTION02_OPTIMIZATION.md) documents the separate validation search, sealed synthetic holdout, error analysis and PP2 conclusions.
 
 ## What it does
 
@@ -284,7 +286,16 @@ never reads anomaly scores or labels, and the model never reads its output.
 Grooming and self-harm counts are also model inputs, so urgent days are often
 Unusual too; the dashboard shows the two side by side and never merges them.
 
-### Dashboard
+### Parent Dashboard
+
+Launch both functions from [the single local Streamlit app](PP2_FUNCTION02.md#windows-command-prompt).
+Behavioral Anomaly shows the selected day's activity, changes from prior records, a plain-language
+explanation of the AI assessment, next steps, and independent safety alerts. PP2 results are in the
+[optimization report](PP2_FUNCTION02_OPTIMIZATION.md) and its saved output files.
+
+### Original Function 02 view and model reference
+
+The following notes document the historical fallback view.
 
 `streamlit run ui/app.py` from the repository root, then open **Behavioral
 Anomaly** in the sidebar (Emotional Pattern stays the default page). The page

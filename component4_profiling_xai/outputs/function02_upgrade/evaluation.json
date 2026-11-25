@@ -1,0 +1,182 @@
+{
+  "source": "Existing synthetic cohort, previously used for research",
+  "dataset_sha256": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+  "selected": {
+    "design": "global",
+    "algorithm": "one_class_svm",
+    "features": [
+      "screen_incidents",
+      "screen_flagged_frames",
+      "screen_flagged_seconds",
+      "screen_max_confidence",
+      "screen_mean_confidence",
+      "screen_night_incidents",
+      "screen_blocked_incidents",
+      "screen_escalated_incidents",
+      "screen_dismissed_incidents",
+      "language_flags",
+      "language_threat_flags",
+      "language_hate_identity_flags",
+      "language_bullying_flags",
+      "language_self_harm_flags",
+      "language_grooming_flags",
+      "language_profanity_flags",
+      "language_urgent_flags",
+      "language_block_rung_flags",
+      "language_max_risk",
+      "language_mean_risk",
+      "language_night_flags",
+      "language_audio_flags",
+      "language_distinct_apps",
+      "language_distinct_app_categories",
+      "total_risk_events",
+      "night_risk_events",
+      "is_weekend"
+    ],
+    "threshold": -14.178161304275191,
+    "trend": {
+      "threshold": 3,
+      "cusum_threshold": 6,
+      "alpha": 0.3,
+      "drift": 0.5,
+      "min_run": 2
+    },
+    "profile": {
+      "days": 14,
+      "frequency_days": 7,
+      "minimum": 5,
+      "count_scale_floor": 1.0,
+      "clip_z": 12.0
+    },
+    "sklearn_version": "1.6.1"
+  },
+  "splits": {
+    "train": {
+      "scored_days": 2240,
+      "first": "2026-07-01",
+      "last": "2026-08-25"
+    },
+    "validation": {
+      "scored_days": 680,
+      "first": "2026-08-26",
+      "last": "2026-09-11"
+    },
+    "test": {
+      "scored_days": 680,
+      "first": "2026-09-12",
+      "last": "2026-09-28"
+    }
+  },
+  "priority_validation": {
+    "1": {
+      "precision": 0.09785932721712538,
+      "recall": 0.6530612244897959,
+      "f1": 0.1702127659574468,
+      "tp": 32,
+      "fp": 295,
+      "fn": 17,
+      "tn": 336,
+      "fpr": 0.4675118858954041
+    },
+    "2": {
+      "precision": 0.09785932721712538,
+      "recall": 0.6530612244897959,
+      "f1": 0.1702127659574468,
+      "tp": 32,
+      "fp": 295,
+      "fn": 17,
+      "tn": 336,
+      "fpr": 0.4675118858954041
+    },
+    "3": {
+      "precision": 0.09785932721712538,
+      "recall": 0.6530612244897959,
+      "f1": 0.1702127659574468,
+      "tp": 32,
+      "fp": 295,
+      "fn": 17,
+      "tn": 336,
+      "fpr": 0.4675118858954041
+    },
+    "4": {
+      "precision": 0.09785932721712538,
+      "recall": 0.6530612244897959,
+      "f1": 0.1702127659574468,
+      "tp": 32,
+      "fp": 295,
+      "fn": 17,
+      "tn": 336,
+      "fpr": 0.4675118858954041
+    }
+  },
+  "priority_repeated": 4,
+  "temporal": {
+    "ewma": {
+      "threshold": 3,
+      "validation": {
+        "episodes": 24,
+        "detected": 4,
+        "detection_rate": 0.16666666666666666,
+        "delay_days_detected_only": 1.75,
+        "false_alert_rate": 0.001584786053882726,
+        "normal_scored_days": 631
+      },
+      "test": {
+        "episodes": 22,
+        "detected": 7,
+        "detection_rate": 0.3181818181818182,
+        "delay_days_detected_only": 1.4285714285714286,
+        "false_alert_rate": 0.003189792663476874,
+        "normal_scored_days": 627
+      }
+    },
+    "cusum": {
+      "threshold": 6,
+      "validation": {
+        "episodes": 24,
+        "detected": 3,
+        "detection_rate": 0.125,
+        "delay_days_detected_only": 0.6666666666666666,
+        "false_alert_rate": 0.009508716323296355,
+        "normal_scored_days": 631
+      },
+      "test": {
+        "episodes": 22,
+        "detected": 5,
+        "detection_rate": 0.22727272727272727,
+        "delay_days_detected_only": 1.4,
+        "false_alert_rate": 0.003189792663476874,
+        "normal_scored_days": 627
+      }
+    }
+  },
+  "global_shap": {
+    "shap: Calendar context": 0.001116604129351052,
+    "shap: Language activity": 3.50929148829337,
+    "shap: Screen activity": 0.9519296638958519
+  },
+  "resources": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.7",
+    "rss_before_bytes": 217640960,
+    "rss_after_bytes": 217980928,
+    "xai_cpu_seconds": 0.71875,
+    "xai_cpu_percent_one_core": 99.8372323212972,
+    "bundle_bytes": 6209
+  },
+  "emotional_ablation": "Unavailable: no aligned labeled emotional observations",
+  "xai_means": {
+    "joint_ms": 11.69041333196219,
+    "shap_ms": 10.287766666442621,
+    "lime_ms": 11.148506665388899,
+    "lime_heldout_weighted_r2": 0.946670845439888,
+    "shap_additivity_error": 3.2566542055671256e-16,
+    "shap_top_group_agreement": 1.0,
+    "lime_top_group_agreement": 1.0,
+    "shap_top_group_deletion": 4.369089156357555,
+    "lime_top_group_deletion": 4.369089156357555,
+    "shap: Calendar context": -0.0005928774512178349,
+    "shap: Language activity": 3.4496510473575537,
+    "shap: Screen activity": 0.9428110226483761
+  }
+}
