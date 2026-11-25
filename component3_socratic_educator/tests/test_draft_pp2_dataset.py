@@ -38,12 +38,17 @@ class StatusError(Exception):
 
 class FakeTeacher:
     """Answers each kind of request the way a good teacher would. It can fail after n calls (with an HTTP status),
-    write blocked previous lines or drafts first, or put the fence's marks in a reply."""
+    write blocked previous lines or drafts first, put the fence's marks in a reply, or copy a context it is shown."""
 
-    def __init__(self, fail_after=None, status=503, blocked_drafts=0, blocked_previous=0, fenced_child=0):
+    made = 0
+
+    def __init__(self, fail_after=None, status=503, blocked_drafts=0, blocked_previous=0, fenced_child=0,
+                 copied_contexts=0):
         self.calls, self.fail_after, self.status = [], fail_after, status
-        self.blocked = {"drafts": blocked_drafts, "previous": blocked_previous, "fenced": fenced_child}
-        self.rng = random.Random(len(self.calls))
+        self.blocked = {"drafts": blocked_drafts, "previous": blocked_previous, "fenced": fenced_child,
+                        "copied": copied_contexts}
+        FakeTeacher.made += 1
+        self.rng = random.Random(FakeTeacher.made)   # each teacher writes its own contexts, as a real one would
 
     def _take(self, kind):
         if self.blocked[kind] > 0:
@@ -58,6 +63,9 @@ class FakeTeacher:
         text = messages[-1]["content"]
         if text.endswith(f"strings."):   # a context batch
             n = int(re.search(r"Write (\d+) different", text).group(1))
+            shown = re.findall(r"^- (A risk trigger.*)$", text, re.M)
+            if shown and self._take("copied"):   # copies a context already written, as a stuck teacher does
+                return json.dumps([shown[0]] * n)
             return json.dumps(["A risk trigger was received for " + " ".join(
                 "".join(self.rng.choice(string.ascii_lowercase) for _ in range(7)) for _ in range(6)) for _ in range(n)])
         if '"child_reply"' in text:   # a row's conversation
@@ -122,6 +130,48 @@ def test_contexts_stop_on_an_overload_and_resume(tmp_path, draw, capsys):
     assert len(teacher.calls) == 24 - 5   # finished cells are never written again
     again = contexts_of(tmp_path)["contexts"]
     assert all(again[k] == v for k, v in first.items()) and len(again) == 216
+
+
+def test_a_rewritten_context_is_shown_its_cell_and_must_not_repeat_any_context(tmp_path, draw):
+    """A deleted context (a near-duplicate of a held-out one) is written again knowing the other contexts of its
+    band and category, so the teacher does not write the same typical scenario again; a copy is asked again."""
+    _, slots, d = draw
+    stage(tmp_path, "contexts", FakeTeacher(), "--slots", str(slots))
+    saved = contexts_of(tmp_path)
+    gone = sorted(saved["contexts"])[0]
+    cell = next(s for s in d["scenarios"] if s["scenario_id"] == gone)
+    others = [saved["contexts"][s["scenario_id"]] for s in d["scenarios"]
+              if (s["age_band"], s["risk_category"]) == (cell["age_band"], cell["risk_category"])
+              and s["scenario_id"] != gone]
+    first_requests = dict(saved["requests"])
+    del saved["contexts"][gone]
+    (tmp_path / "drafts" / dp.CONTEXTS_FILE).write_text(json.dumps(saved), encoding="utf-8")
+
+    teacher = stage(tmp_path, "contexts", FakeTeacher(copied_contexts=1), "--slots", str(slots))
+    assert len(teacher.calls) == 2   # the copy is refused and asked again
+    request = teacher.calls[-1][-1]["content"]
+    assert all(f"- {o}" in request for o in others) and "Write 1 different" in request
+    assert not any(role in request.lower() for role in ("output_study", "classifier", "held", "validation", "train "))
+    again = contexts_of(tmp_path)
+    assert gone in again["contexts"] and again["contexts"][gone] not in others
+    assert not dp.near_duplicates(again["contexts"], dp.NEAR_DUPLICATE)
+    assert all(again["requests"][k] == v for k, v in first_requests.items())   # the first requests are kept
+    assert len(again["requests"]) == len(first_requests) + 1
+
+
+def test_a_context_the_teacher_keeps_copying_is_left_for_a_rerun(tmp_path, draw, capsys):
+    _, slots, _ = draw
+    stage(tmp_path, "contexts", FakeTeacher(), "--slots", str(slots))
+    saved = contexts_of(tmp_path)
+    gone = sorted(saved["contexts"])[0]
+    del saved["contexts"][gone]
+    (tmp_path / "drafts" / dp.CONTEXTS_FILE).write_text(json.dumps(saved), encoding="utf-8")
+    capsys.readouterr()
+    teacher = stage(tmp_path, "contexts", FakeTeacher(copied_contexts=10 ** 6), "--slots", str(slots))
+    assert len(teacher.calls) == dp.REQUEST_TRIES
+    assert gone not in contexts_of(tmp_path)["contexts"]
+    out = capsys.readouterr().out
+    assert "1 still to write" in out and "rerun the same command" in out
 
 
 @pytest.mark.parametrize("status", [400, 401, 404])
@@ -249,6 +299,12 @@ def test_drafts_stop_on_an_overload_and_resume(tmp_path, with_rows, capsys):
     stage(tmp_path, "drafts", FakeTeacher())
     assert all(len(r["drafts"]) == 2 for r in rows_of(tmp_path))
     assert rows_of(tmp_path)[:3] == done   # finished rows are never drafted again
+
+
+def test_drafts_before_the_rows_stage_say_so(tmp_path, with_contexts):
+    with pytest.raises(SystemExit) as e:
+        stage(tmp_path, "drafts", FakeTeacher())
+    assert "run the rows stage first" in str(e.value.code)
 
 
 def test_drafts_refuse_rows_without_their_conversation(tmp_path, with_contexts):

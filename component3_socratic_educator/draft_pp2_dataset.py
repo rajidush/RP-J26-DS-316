@@ -55,7 +55,7 @@ REQUEST_TRIES = 3   # attempts for a context batch or a row's conversation that 
 OVERUSED_AT = 3   # a closing question used this often in a band and move is named for the teacher to avoid
 TEACHER_TEMPERATURE = 0.9
 TEACHER_MAX_TOKENS = 4096   # thinking tokens can count against it
-PROMPT_VERSION = "pp2-draft-v2"
+PROMPT_VERSION = "pp2-draft-v3"
 # The small model's prompt, as text: a change to it changes this hash, recorded with every row.
 TRAINING_PROMPT_SHA256 = hashlib.sha256(json.dumps([INQUIRE_PROMPT, INQUIRE_GUIDE, INQUIRE_EASIER, CONVERSATION_FENCE],
                                                    sort_keys=True).encode("utf-8")).hexdigest()
@@ -98,7 +98,12 @@ def _refuse_once_reviewed(out, command):
 
 
 # ---------------------------------------------------------------- contexts
-def context_request(band, category, n):
+def context_request(band, category, n, written=()):
+    """A batch of contexts for one band and category. When some are already written (a context deleted because it
+    nearly repeated another), the teacher sees them all, so it does not write the same typical scenario again."""
+    shown = ("\n\nThese contexts are already written for this category. Each new one must describe a different "
+             "situation from all of them, on another platform where you can, in different words:\n"
+             + "\n".join(f"- {w}" for w in written)) if written else ""
     return [{"role": "user", "content": f"""You are helping build a sanitized, synthetic training dataset for a child digital-safety educator talking with children aged {band}.
 
 Write {n} different one-sentence scenario contexts for the risk category "{category.replace('_', ' ')}". Each says, at a high level, what an on-screen detector flagged and what the child was doing, as it could happen to a child aged {band}.
@@ -107,9 +112,23 @@ Rules:
 - Start every line with "A risk trigger was received for".
 - High level only: never graphic, sexual or self-harm method details, slurs or quoted harmful text.
 - No names, usernames, schools, cities or other identifying details.
-- Vary the platform (games, video, social media, messaging, browser, school apps) and the situation.
+- Vary the platform (games, video, social media, messaging, browser, school apps) and the situation.{shown}
 
 Return ONLY a JSON array of {n} strings."""}]
+
+
+def _repeats(fresh, contexts):
+    """Whether a new context nearly repeats one already written, or another new one. Roles are never looked at."""
+    pool = {**contexts, **{f"\0new{i}": text for i, text in enumerate(fresh)}}
+    return any(a.startswith("\0new") or b.startswith("\0new")
+               for a, b, _ in near_duplicates(pool, NEAR_DUPLICATE))
+
+
+def _request_key(requests, band, category):
+    """The first request of a cell keeps its key; later ones (rewrites) are kept beside it, never over it."""
+    key = f"{band} / {category}"
+    done = sum(1 for k in requests if k == key or k.startswith(f"{key} / rewrite "))
+    return key if not done else f"{key} / rewrite {done}"
 
 
 def cmd_contexts(args, ask):
@@ -131,7 +150,7 @@ def cmd_contexts(args, ask):
         missing = sorted(i for i in ids if i not in contexts)
         if not missing:
             continue
-        request = context_request(band, category, len(missing))
+        request = context_request(band, category, len(missing), [contexts[i] for i in sorted(ids) if i in contexts])
         try:
             for _ in range(REQUEST_TRIES):
                 try:
@@ -139,9 +158,10 @@ def cmd_contexts(args, ask):
                 except ValueError:
                     continue
                 if isinstance(lines, list) and len(lines) == len(missing) and all(
-                        isinstance(x, str) and x.strip() for x in lines):
+                        isinstance(x, str) and x.strip() for x in lines) and not _repeats(
+                        [x.strip() for x in lines], contexts):
                     contexts.update(zip(missing, (x.strip() for x in lines)))
-                    requests[f"{band} / {category}"] = request[0]["content"]
+                    requests[_request_key(requests, band, category)] = request[0]["content"]
                     break
             else:
                 unusable.append(f"{band} / {category}")
@@ -346,6 +366,8 @@ def cmd_drafts(args, ask):
     _refuse_once_reviewed(args.out, "drafts")
     out = Path(args.out)
     path = _rows_path(out)
+    if not path.exists():
+        _refuse("there are no rows yet", ["run the rows stage first"], "drafts")
     rows = load_jsonl(path)
     unwritten = [r["example_id"] for r in rows if r["prompt"] is None]
     if unwritten:
