@@ -26,7 +26,7 @@ notebook has no local model (EDUCATOR_SETUP). Run from component3_socratic_educa
 
     python simulate_children.py plan --draw <scenario_draw.json> [--seed N] [--tag x] [--out <dir>]
     python simulate_children.py run --plan <dir>/children.json --generator gemini|gemma
-                                    --model <id> --backend colab|aistudio
+                                    --model <id> --backend colab|aistudio|hf|local [--base-url <url>]
                                     [--pool classifier_test|train_dev] [--per-band N] [--limit N] [--fold-system]
     python simulate_children.py finish --dir <dir> --draw <scenario_draw.json>
 """
@@ -61,6 +61,8 @@ CHILD_TEMPERATURE = 0.9
 # Thinking tokens can count against the limit, and Colab's proxy reserves quota for it (8 Oct).
 CHILD_MAX_TOKENS = 1024
 CHILD_SEED = "not recorded (the chat endpoints take no seed)"
+LOCAL_BASE_URL = "http://127.0.0.1:1234/v1"   # LM Studio's OpenAI-compatible server
+HF_BASE_URL = "https://router.huggingface.co/v1"   # Hugging Face Inference Providers, with HF_TOKEN
 MAX_REPLY_CHARS = 300   # the stored reply; the raw output is kept whole in child_outputs
 REPLY_TRIES = 3
 EDUCATOR_SETUP = ("FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line "
@@ -232,10 +234,17 @@ class ChildFailed(RuntimeError):
     """The child model answered, but gave no usable reply in REPLY_TRIES tries: skip this child for now."""
 
 
-def make_ask(backend, model):
-    """messages -> text through an OpenAI-compatible endpoint; `ask.served` collects the models that answered."""
+def make_ask(backend, model, base_url=None):
+    """messages -> text through an OpenAI-compatible endpoint: Colab's proxy, AI Studio, Hugging Face's router,
+    or a local server (LM Studio, Ollama) at `base_url`; `ask.served` collects the models that answered."""
     from openai import OpenAI
-    base_url, key = model_endpoint(backend)
+    if backend == "local":
+        key = "local"
+    elif backend == "hf":
+        base_url, key = HF_BASE_URL, os.environ.get("HF_TOKEN") or sys.exit("HF_TOKEN not set: a Hugging Face "
+                                                                             "access token with inference rights")
+    else:
+        base_url, key = model_endpoint(backend)
     client = OpenAI(base_url=base_url, api_key=key, timeout=120, max_retries=3)
 
     def ask(messages):
@@ -319,7 +328,9 @@ def cmd_run(args, ask=None):
         todo = [c for band in config.AGE_BANDS for c in [c for c in todo if c["age_band"] == band][:args.per_band]]
     if args.limit is not None:
         todo = todo[:args.limit]
-    ask = ask or make_ask(args.backend, args.model)
+    if args.base_url and args.backend != "local":
+        _refuse("--base-url is only for --backend local", ["colab, aistudio and hf have fixed addresses"], "run")
+    ask = ask or make_ask(args.backend, args.model, args.base_url or LOCAL_BASE_URL)
     send = (lambda chat: ask(fold_system(chat))) if args.fold_system else ask
     controller, templates = FSMController(generator=StubInterceptGenerator()), load_templates()
 
@@ -341,6 +352,8 @@ def cmd_run(args, ask=None):
     served = getattr(ask, "served", None)
     record = {"generator": args.generator, "model": args.model,
               "served_models": sorted(served) if served else "not recorded", "backend": args.backend,
+              "base_url": {"local": args.base_url or LOCAL_BASE_URL, "hf": HF_BASE_URL}.get(args.backend,
+                                                                                           "fixed by the backend"),
               "settings": {"temperature": CHILD_TEMPERATURE, "max_tokens": CHILD_MAX_TOKENS},
               "child_seed": CHILD_SEED, "fold_system": args.fold_system, "plan_seed": plan["seed"],
               "educator": EDUCATOR_SETUP, "runtime": _runtime(), "started": started,
@@ -449,7 +462,10 @@ def build_parser():
     run.add_argument("--plan", required=True, help="the children.json written by plan")
     run.add_argument("--generator", required=True, choices=GENERATORS)
     run.add_argument("--model", required=True, help="the model id, e.g. google/gemini-2.5-pro or gemma-3-27b-it")
-    run.add_argument("--backend", required=True, choices=("colab", "aistudio"))
+    run.add_argument("--backend", required=True, choices=("colab", "aistudio", "hf", "local"),
+                     help="hf: Hugging Face Inference Providers (HF_TOKEN); local: an OpenAI-compatible server on "
+                          "this machine, such as LM Studio (see --base-url)")
+    run.add_argument("--base-url", help=f"the local server's address (default {LOCAL_BASE_URL}, LM Studio)")
     run.add_argument("--pool", choices=tuple(POOLS), help="only this pool's children (a trial on train_dev)")
     run.add_argument("--per-band", type=int, help="at most this many children per age band (a trial)")
     run.add_argument("--limit", type=int, help="simulate at most this many sessions (a quota chunk)")
