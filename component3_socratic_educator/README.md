@@ -353,6 +353,27 @@ The manifest records:
 
 It never writes into a folder that already holds a dataset.
 
+## PP2 drafting (ticket 08)
+
+`draft_pp2_dataset.py` has a teacher model draft the PP2 INQUIRE rows; the owner reviews every row with `review`, and `build-pp2` builds the dataset. Run it from `notebooks/draft_pp2_dataset_colab.ipynb`. It has three resumable stages, all in one folder:
+
+```bash
+python draft_pp2_dataset.py contexts --slots evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_slots.json --out <dir> --model <id> --backend aistudio
+python draft_pp2_dataset.py rows --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json --out <dir> --model <id> --backend aistudio
+python draft_pp2_dataset.py drafts --out <dir> --model <id> --backend aistudio
+#   -> <dir>/contexts.json, pp2_drafts.jsonl (the review and build-pp2 input), draft_run.json
+python inquire_finetune.py review --drafts <dir>/pp2_drafts.jsonl
+python inquire_finetune.py build-pp2 --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json --drafts <dir>/pp2_drafts.jsonl
+```
+
+- **contexts** writes one scenario context per ID of `scenario_slots.json` (all 216, held-out ones included), one request per age band × risk category, and keeps each request. It refuses `scenario_draw.json`, because no context may be written knowing it is held out.
+- **rows** gives every training and validation scenario one row per Socratic move (owner, 25 Nov): 144 training and 72 validation rows. Each move's (easier, reply type) runs through the combinations the controller can ask for (`reachable_strata`), shuffled with a recorded seed per band, so training fills every stratum `build-pp2` requires. Before clarify, the child answers one of INTERCEPT's real fallback lines; otherwise the teacher writes the line the child answered (the move before, or the same move before an easier form), and that line must pass the live check for its move, because it goes into the training prompt. The teacher writes the child's reply in the band's voice; a reply holding the prompt's fence marks is written again. Each row stores the exact training prompt, `grammar_decoder.inquire_prompt(...)`, its request, the plan seed and a hash of the training prompt's text. It refuses contexts that are not this draw's, and a training or validation context that nearly repeats a held-out one (delete the training context and rerun contexts).
+- **drafts** writes two different educator lines per row for that prompt. A line the live check would block (`row_problems`: format, an unstated feeling, an option question outside alternatives, a tag question) is drafted again, up to three times, and kept in the row's `provenance.blocked_drafts`. The band and move's closing questions used three times or more are named for the teacher to avoid (ticket 07's concern). `review` refuses a file with a row left short of two drafts.
+- A quota or an overload stops a stage cleanly, and the same command resumes it; finished contexts, rows and drafts are never redone. A bad request, key or model name (400, 401, 404) stops it for good. Once the owner has started reviewing, every stage refuses, so review decisions are never drafted over. `--backend colab|aistudio|hf|local` uses `chat_client.py`, shared with `simulate_children.py`.
+- `draft_run.json` records, per stage run, the teacher model asked for and the models that answered, the backend and address, temperature and token limit, the teacher seed ("not recorded"), the plan seed (rows only), the prompt version, the training prompt's hash, the code's hash and the runtime.
+
+The INQUIRE guidance inside every prompt follows the counsellor's written review (23 Nov; ticket 27): an optional reassuring sentence, varied acknowledgements, "work it out together" in the 8–10 alternatives, a blame-free 11–13 clarify ("not in trouble"), one value (wellbeing, privacy or digital footprint) in the 14–15 consequences, and, owner's decision A (25 Nov), one or two varied examples (blocking, reporting, an adult they trust) named in the 11–13 and 14–15 alternatives. Outside alternatives a line may not offer a choice, so the guidance there asks for one thing, never a list. Naming examples means some older children's plans will count as chosen or echoed, not constructed.
+
 ## PP2 simulated children (ticket 06)
 
 `simulate_children.py` has a language model play children aged 8–15. The child answers every line of the **real** controller as it comes, not from a script written in advance. Run it from `notebooks/simulate_children_colab.ipynb` on your student account. It gives two pools:

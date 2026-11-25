@@ -364,6 +364,11 @@ def _review_row(row):
 def cmd_review(args):
     path = Path(args.drafts)
     rows = load_jsonl(path)
+    # Review shows two drafts, A and B; a PP2 row the drafter left short is drafted again first (ticket 08).
+    short = [r["example_id"] for r in rows if r["split"] == "train_or_val" and len(r["drafts"]) < 2]
+    if short:
+        _refuse(f"{len(short)} rows have fewer than two drafts", [", ".join(short[:12]),
+                "rerun draft_pp2_dataset.py drafts until no row is short"], "review")
     splits = ("train_or_val", "test") if args.split == "all" else (args.split,)
     queue = [r for split in splits for r in rows if r["split"] == split and r["review"]["status"] == "pending"]
     print(review_progress(rows))

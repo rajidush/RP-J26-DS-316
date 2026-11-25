@@ -225,3 +225,56 @@ def test_the_controller_gives_the_model_the_latest_reply_and_the_line_it_answere
     opening = transcript.turns[0]
     assert opening.child_response in first and opening.system_text in first
     assert "I don't know." in second and "What happened right before that?" in second
+
+
+# ---------------------------------------------------------------- the counsellor's guidance (ticket 27, 23 Nov)
+def _prompt(move, band, easier=False):
+    from src.grammar_decoder import inquire_prompt
+    return inquire_prompt(move, band, easier, "What were you doing just before?", "I was watching videos.")
+
+
+@pytest.mark.parametrize("band", ["8-10", "11-13", "14-15"])
+@pytest.mark.parametrize("move", ["clarify", "consequences", "alternatives"])
+def test_every_prompt_allows_reassurance_and_asks_for_varied_acknowledgements(move, band):
+    prompt = _prompt(move, band).lower()
+    assert "not in trouble" in prompt
+    assert "vary" in prompt
+
+
+def test_the_youngest_band_offers_two_choices_and_doing_it_together():
+    prompt = _prompt("alternatives", "8-10").lower()
+    assert "exactly two" in prompt and "together" in prompt
+
+
+@pytest.mark.parametrize("band", ["11-13", "14-15"])
+def test_older_bands_ask_for_their_own_step_naming_examples(band):
+    prompt = _prompt("alternatives", band).lower()
+    assert all(example in prompt for example in ("blocking", "reporting", "adult they trust"))
+    assert "exactly two" not in prompt
+
+
+def test_the_oldest_band_weighs_values_and_the_middle_band_is_blame_free():
+    from src.grammar_decoder import INQUIRE_GUIDE
+    assert all(value in _prompt("consequences", "14-15").lower() for value in ("wellbeing", "privacy", "digital footprint"))
+    assert "not in trouble" in INQUIRE_GUIDE["clarify"]["11-13"]
+
+
+@pytest.mark.parametrize("move, band, line", [
+    # lines that follow the guidance pass the live check: outside alternatives a line names one thing, not a list
+    ("clarify", "8-10", "That's okay, you're not in trouble. What were you doing just before?"),
+    ("consequences", "14-15", "Thanks for being honest. How could this affect your privacy later on?"),
+    ("alternatives", "11-13", "You're not in trouble. What could you do if it happens again, like blocking them?"),
+    ("alternatives", "14-15", "Your call. Would blocking them or talking to an adult you trust fit you best next time?"),
+    ("alternatives", "8-10", "We can work it out together. Would you like to tell a grown-up you trust or close it?"),
+])
+def test_lines_that_follow_the_guidance_pass_the_live_check(move, band, line):
+    from src.grammar_decoder import inquire_violation
+    assert inquire_violation(line, move, "I was watching videos.") is None
+
+
+def test_no_guidance_outside_alternatives_asks_for_a_choice_of_things():
+    from src.grammar_decoder import INQUIRE_GUIDE
+    for move in ("clarify", "consequences"):
+        for band, guide in INQUIRE_GUIDE[move].items():
+            assert "doing or thinking" not in guide, (move, band)
+    assert "just one thing" in INQUIRE_GUIDE["consequences"]["14-15"]
