@@ -222,6 +222,19 @@ def test_a_blocked_previous_line_or_a_fenced_reply_is_written_again(tmp_path, wi
     assert len(teacher.calls) == len(rows) + 1   # the bad answer was asked for again
 
 
+def test_the_teacher_is_told_every_word_the_live_check_refuses(tmp_path, with_contexts):
+    """First HF run: a 14-15 consequences row about a link sent in a messaging app failed 36 times, because the
+    teacher wrote "that message" in the line the child answered and the live check refuses "message"."""
+    from src.grammar_decoder import _ALERT_WORDS, _CATEGORY_WORDS, _FORBIDDEN_SUBSTRINGS
+    teacher = stage(tmp_path, "rows", FakeTeacher(), "--draw", str(with_contexts[0]))
+    written = next(c[-1]["content"] for c in teacher.calls if '"previous_message"' in c[-1]["content"])
+    row = rows_of(tmp_path)[0]
+    drafted = dp.draft_request(row, [], [])[0]["content"]
+    for request in (written, drafted):
+        for word in (*_ALERT_WORDS, *_CATEGORY_WORDS, *_FORBIDDEN_SUBSTRINGS):
+            assert re.search(rf"\b{word}\b", request), word
+
+
 def test_rows_stop_on_an_overload_and_resume_without_redoing_finished_rows(tmp_path, with_contexts, capsys):
     stage(tmp_path, "rows", FakeTeacher(fail_after=10), "--draw", str(with_contexts[0]))
     assert "rerun the same command to resume" in capsys.readouterr().out
