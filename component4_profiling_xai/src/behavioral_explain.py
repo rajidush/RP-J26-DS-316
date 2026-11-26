@@ -70,6 +70,16 @@ def explain(pipeline, row, background, seed=42):
     scores = scores.reshape(len(masks), len(background))
     shared_ms = (perf_counter() - start) * 1000
     start = perf_counter()
+    result = summarize_coalitions(scores, masks, groups)
+    shap_ms = shared_ms + (perf_counter() - start) * 1000
+    start = perf_counter()
+    surrogate = fit_surrogate(scores, masks, groups, seed)
+    return {"shap_ms": shap_ms, "lime_ms": shared_ms + (perf_counter() - start) * 1000,
+            **result, **surrogate}
+
+
+def summarize_coalitions(scores, masks, groups):
+    n = len(groups)
     values = dict(zip(map(tuple, masks), scores.mean(axis=1), strict=True))
     shap = {}
     deletion = {}
@@ -81,12 +91,15 @@ def explain(pipeline, row, background, seed=42):
         )
         deletion[name] = actual - values[tuple(int(j != i) for j in range(n))]
 
-    shap_ms = shared_ms + (perf_counter() - start) * 1000
-    start = perf_counter()
+    return {"shap": shap, "deletion": deletion, "score": actual, "reference": values[(0,) * n]}
+
+
+def fit_surrogate(scores, masks, groups, seed):
+    n = len(groups)
     # LIME with binary interpretable group presence, empirical replacements,
     # exponential locality kernel and a separate set of replacement samples.
-    train, test = np.split(np.random.default_rng(seed).permutation(len(background)),
-                           [len(background) // 2])
+    donors = scores.shape[1]
+    train, test = np.split(np.random.default_rng(seed).permutation(donors), [donors // 2])
     distance = np.sqrt(np.sum(1 - masks, axis=1) / n)
     weights = np.exp(-distance**2 / 0.75**2)
 
@@ -100,9 +113,7 @@ def explain(pipeline, row, background, seed=42):
     lime = dict(zip(groups, surrogate.coef_.tolist(), strict=True))
     residual = surrogate.predict(x_test) - y_test
     variance = np.average((y_test - np.average(y_test, weights=w_test)) ** 2, weights=w_test)
-    return {"shap_ms": shap_ms, "lime_ms": shared_ms + (perf_counter() - start) * 1000,
-            "shap": shap, "lime": lime, "deletion": deletion, "score": actual,
-            "reference": values[(0,) * n], "lime_intercept": float(surrogate.intercept_),
+    return {"lime": lime, "lime_intercept": float(surrogate.intercept_),
             "lime_r2": float(surrogate.score(x_test, y_test, sample_weight=w_test)),
             "lime_rmse": float(np.sqrt(np.average(residual**2, weights=w_test))),
             "lime_mae": float(np.average(abs(residual), weights=w_test)),

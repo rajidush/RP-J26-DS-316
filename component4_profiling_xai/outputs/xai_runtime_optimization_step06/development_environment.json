@@ -1,0 +1,13 @@
+{
+  "load_plus_first_request_ms": {
+    "original": 716.7592999758199
+  },
+  "process_after_experiment": {
+    "rss_bytes": 272580608,
+    "peak_working_set_bytes": 276127744
+  },
+  "repetitions": 5,
+  "artifact_bytes": 6209,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.13.7"
+}

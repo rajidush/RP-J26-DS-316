@@ -10,11 +10,12 @@ import streamlit as st
 from component4_profiling_xai.src.behavioral_anomaly import assessable_days
 from component4_profiling_xai.src.behavioral_adaptive_profile import adaptive_profiles, admission_evidence
 from component4_profiling_xai.src.behavioral_explanation_reliability import (
-    assess_daily, assess_temporal, daily_evidence, temporal_evidence,
+    EXPLANATION_ERRORS, assess_daily, assess_temporal, daily_evidence, temporal_evidence,
 )
 from component4_profiling_xai.src.behavioral_profile import (
     ANCHORS, BUNDLE, ProfileConfig, profiles, score_history,
 )
+from component4_profiling_xai.src.behavioral_xai_runtime import ExplanationRequest
 from ui import services, theme
 
 logger = logging.getLogger(__name__)
@@ -278,15 +279,26 @@ def render(source, bundle):
     flagged = assessed and bool(flag)
     summary, active, earlier = recent_behavior(history, day, config.minimum)
     temporal_result = temporal_review = None
+    request = None
     if bundle:
-        temporal_result, variants = temporal_evidence(history, matrix, bundle, child, day)
+        try:
+            request = ExplanationRequest(bundle)
+        except EXPLANATION_ERRORS:
+            logger.exception("Could not start the batched explanation request")
+        temporal_result, variants = (request.temporal(history, matrix, child, day) if request is not None else
+                                     temporal_evidence(history, matrix, bundle, child, day))
         temporal_review = assess_temporal(temporal_result, variants)
     result = None
     daily_review = None
     if assessed:
         score = history.at[index, "score"]
-        result, variants = daily_evidence(matrix.loc[[index], bundle["features"]], score, bundle)
-        daily_review = assess_daily(result, score, flagged, bundle, variants)
+        row = matrix.loc[[index], bundle["features"]]
+        if request is not None:
+            result, variants = request.daily(row, score)
+            daily_review = request.review_daily(result, score, flagged, variants)
+        else:
+            result, variants = daily_evidence(row, score, bundle)
+            daily_review = assess_daily(result, score, flagged, bundle, variants)
 
     with theme.card("f2-overview", "Behavior Overview"):
         if flagged:

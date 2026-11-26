@@ -73,7 +73,7 @@ def valid_lime(lime, groups, metrics):
         return False
 
 
-def assess_daily(result, score, flagged, bundle, variants, policy=DEFAULT_POLICY):
+def assess_daily(result, score, flagged, bundle, variants, policy=DEFAULT_POLICY, *, reference=None):
     """Review signed SHAP separately from held-out LIME fit and agreement."""
     if not np.isfinite(score):
         return Review("insufficient_data")
@@ -81,7 +81,8 @@ def assess_daily(result, score, flagged, bundle, variants, policy=DEFAULT_POLICY
         return Review("invalid", reasons=("explanation_unavailable",))
     features = bundle["features"]
     groups = grouped_features(features)
-    reference = reference_score(bundle["pipeline"], bundle["background"])
+    if reference is None:
+        reference = reference_score(bundle["pipeline"], bundle["background"])
     if not verify_shap(result, score, groups, reference):
         return Review("invalid", reasons=("shap_reconstruction",))
     if any(not verify_shap(candidate, variant_score, groups, reference) for candidate, variant_score in variants):
