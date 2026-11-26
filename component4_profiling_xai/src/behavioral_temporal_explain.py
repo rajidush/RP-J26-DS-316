@@ -5,11 +5,10 @@ from math import ceil
 import numpy as np
 import pandas as pd
 
-from .behavioral_explain import explain, source_group
-from .behavioral_shap import TOTALS
+from .behavioral_explain import SCORE_ATOL as SCORE_ATOL
+from .behavioral_explain import explain, grouped_features, reference_score, verify_shap
 
 
-SCORE_ATOL = 1e-8
 DEFAULT_WINDOW = 7
 
 
@@ -23,6 +22,7 @@ class TemporalExplanation:
     detectors: tuple[str, ...] = ()
     earlier_count: int = 0
     recent_count: int = 0
+    reason: str | None = None
 
 
 def _windows(day, window):
@@ -39,22 +39,15 @@ def contribution_history(history, matrix, bundle):
     An unverified scored row retains NaN contributions so it can trigger fallback.
     """
     features = bundle["features"]
-    groups = sorted({source_group(feature) for feature in features if feature not in TOTALS})
-    contributions = pd.DataFrame(np.nan, index=history.index, columns=groups)
-    reference = None
+    groups = grouped_features(features)
+    contributions = pd.DataFrame(np.nan, index=history.index, columns=sorted(groups))
+    reference = reference_score(bundle["pipeline"], bundle["background"])
     for index, score in history["score"].items():
         if not np.isfinite(score):
             continue
         result = explain(bundle["pipeline"], matrix.loc[[index], features], bundle["background"])
-        shap = result["shap"]
-        base = result["reference"]
-        if (shap.keys() != set(groups) or not np.isfinite([base, *shap.values()]).all()
-                or not np.isclose(score, result["score"], rtol=0, atol=SCORE_ATOL)
-                or not np.isclose(score, base + sum(shap.values()), rtol=0, atol=SCORE_ATOL)
-                or (reference is not None and not np.isclose(reference, base, rtol=0, atol=SCORE_ATOL))):
-            continue
-        reference = base
-        contributions.loc[index] = pd.Series(shap)
+        if verify_shap(result, score, groups, reference):
+            contributions.loc[index] = pd.Series(result["shap"])
     return contributions
 
 
@@ -95,7 +88,7 @@ def compare_contributions(history, contributions, child, day, scale, window=DEFA
         group = candidates.idxmax()
         # Near ties do not support a single-factor summary.
         if (candidates.max() - candidates < band[group]).sum() > 1:
-            return TemporalExplanation("unclear", **details)
+            return TemporalExplanation("unclear", reason="sustained_tie", **details)
         streak = rows.set_index("date").reindex(consecutive)
         detectors = tuple(
             method for method in ("ewma", "cusum")
@@ -112,9 +105,11 @@ def compare_contributions(history, contributions, child, day, scale, window=DEFA
         group = candidates.idxmax()
         if (candidates.max() - candidates < band[group]).sum() == 1:
             return TemporalExplanation("isolated", group, **details)
+        return TemporalExplanation("unclear", reason="isolated_tie", **details)
     if recent.sub(median).abs().le(band).to_numpy().all() and deltas.abs().le(band).all():
         return TemporalExplanation("stable", **details)
-    return TemporalExplanation("unclear", **details)
+    reason = "repeated_without_sustained_evidence" if elevated_dates.sum() > 1 else "other_out_of_band_change"
+    return TemporalExplanation("unclear", reason=reason, **details)
 
 
 def explain_temporal(history, matrix, bundle, child, day, window=DEFAULT_WINDOW):

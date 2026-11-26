@@ -8,11 +8,12 @@ import sklearn
 import streamlit as st
 
 from component4_profiling_xai.src.behavioral_anomaly import assessable_days
-from component4_profiling_xai.src.behavioral_explain import explain
+from component4_profiling_xai.src.behavioral_explanation_reliability import (
+    assess_daily, assess_temporal, daily_evidence, temporal_evidence,
+)
 from component4_profiling_xai.src.behavioral_profile import (
     ANCHORS, BUNDLE, ProfileConfig, profiles, score_history,
 )
-from component4_profiling_xai.src.behavioral_temporal_explain import explain_temporal
 from ui import services, theme
 
 logger = logging.getLogger(__name__)
@@ -108,11 +109,16 @@ def observed_summary(row, details):
     return f"{direction} {OBSERVED_LABELS[largest]} were recorded than usual."
 
 
-def temporal_text(result, active):
+def temporal_text(result, active, review=None):
     if result is None or result.status == "unsupported":
         return "An AI explanation of changes across days is unavailable."
     if result.status == "insufficient":
         return "There are too few usable records to explain changes across days."
+    if review is not None and review.status == "invalid":
+        return "An AI explanation of changes across days is unavailable."
+    if review is not None and review.status != "supported":
+        return ("A recent change was detected, but the AI could not identify a clear contributing factor."
+                if active else "The AI could not identify a clear factor that contributed more strongly across days.")
     if result.status == "stable":
         return ("The recent change alert has no clear accompanying change in the AI’s activity factors."
                 if active else "The factors the AI used to assess activity were similar across recent and earlier records.")
@@ -127,7 +133,17 @@ def temporal_text(result, active):
     return message
 
 
-def explanation_text(result, flagged):
+def explanation_text(result, flagged, review=None):
+    if review is not None:
+        if review.status in {"invalid", "insufficient_data"}:
+            return "An AI explanation is unavailable for this day."
+        if review.status != "supported":
+            return ("The AI identified an unusual pattern, but the available information "
+                    "does not clearly explain which activity contributed most."
+                    if flagged else "The AI could not identify a clear factor behind this day’s assessment.")
+        direction = "more unusual" if flagged else "less unusual"
+        text = f"The AI assessment found that {GROUPS[review.group]} made this day look {direction}."
+        return text + " A second explanation also pointed in that direction." if review.corroborated else text
     if result is None:
         return "An AI explanation is unavailable for this day."
     sign = 1 if flagged else -1
@@ -205,13 +221,16 @@ def render(source, bundle):
     assessed = pd.notna(flag)
     flagged = assessed and bool(flag)
     summary, active, earlier = recent_behavior(history, day, config.minimum)
-    temporal_result = explain_temporal(history, matrix, bundle, child, day) if bundle else None
+    temporal_result = temporal_review = None
+    if bundle:
+        temporal_result, variants = temporal_evidence(history, matrix, bundle, child, day)
+        temporal_review = assess_temporal(temporal_result, variants)
     result = None
+    daily_review = None
     if assessed:
-        try:
-            result = explain(bundle["pipeline"], matrix.loc[[index], bundle["features"]], bundle["background"])
-        except (ValueError, FloatingPointError):
-            logger.exception("Could not explain behavioral activity")
+        score = history.at[index, "score"]
+        result, variants = daily_evidence(matrix.loc[[index], bundle["features"]], score, bundle)
+        daily_review = assess_daily(result, score, flagged, bundle, variants)
 
     with theme.card("f2-overview", "Behavior Overview"):
         if flagged:
@@ -230,13 +249,13 @@ def render(source, bundle):
             st.caption("This compares the recorded activity with your child’s earlier records.")
         with theme.card("f2-recent", "Recent Behavioral Pattern"):
             st.write(summary)
-            st.caption(temporal_text(temporal_result, active))
+            st.caption(temporal_text(temporal_result, active, temporal_review))
             if earlier is not None and not active:
                 st.caption(f"An earlier change was detected on {earlier}. "
                            "Recent records do not establish that it is still continuing.")
     with second:
         with theme.card("f2-xai", "Why Did the AI Say This?"):
-            st.write(explanation_text(result, flagged))
+            st.write(explanation_text(result, flagged, daily_review))
             st.caption("This explains the AI’s assessment for the selected day.")
         with theme.card("f2-guidance", "How Can You Help?"):
             advice, question = guidance(matrix.loc[index], result, active)

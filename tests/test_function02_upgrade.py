@@ -77,7 +77,7 @@ def test_group_explanations_match_actual_scoring(sample):
 
 
 def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_path):
-    from component4_profiling_xai.src.behavioral_temporal_explain import explain_temporal
+    from component4_profiling_xai.src.behavioral_explanation_reliability import assess_temporal, temporal_evidence
     from ui.pages._behavioral_upgrade import recent_behavior, temporal_text
 
     def blocked(*args, **kwargs):
@@ -126,7 +126,8 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     assert "compares the recorded activity" in full_text
     assert "An unusual activity pattern was detected on this day" in full_text
     recent = recent_behavior(scored, flagged_date, model["profile"]["minimum"])
-    expected = temporal_text(explain_temporal(scored, matrix, model, "C001", flagged_date), recent[1])
+    temporal, probes = temporal_evidence(scored, matrix, model, "C001", flagged_date)
+    expected = temporal_text(temporal, recent[1], assess_temporal(temporal, probes))
     assert any(item.value == expected for item in page.caption)
     assert "No detected anomaly does not guarantee safety." in full_text
     for research_metric in ("F1-score", "Precision", "Recall", "confusion matrix", "weighted R²"):
@@ -144,7 +145,8 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     other_matrix, _ = profiles(other_child)
     other_scores = score_history(other_child, other_matrix, model)
     recent = recent_behavior(other_scores, other_date, model["profile"]["minimum"])
-    expected = temporal_text(explain_temporal(other_scores, other_matrix, model, "C009", other_date), recent[1])
+    temporal, probes = temporal_evidence(other_scores, other_matrix, model, "C009", other_date)
+    expected = temporal_text(temporal, recent[1], assess_temporal(temporal, probes))
     assert any(item.value == expected for item in page.caption)
 
 def test_local_research_interface():

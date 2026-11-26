@@ -1,0 +1,6 @@
+case,base_child,base_date,status,group,lime_corroborated,reasons
+original,C001,2026-09-28,supported,Screen activity,True,lime_agrees
+low_lime_fit,C001,2026-09-28,supported,Screen activity,False,lime_below_fidelity_gate
+lime_disagrees_stable_shap,C001,2026-09-28,supported,Screen activity,False,lime_disagrees
+lime_disagrees_unstable_shap,C001,2026-09-28,conflicting,,False,rank_or_direction_ambiguous
+unstable_shap_rank,C001,2026-09-28,limited,,False,rank_or_direction_ambiguous

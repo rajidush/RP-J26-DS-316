@@ -10,6 +10,34 @@ from sklearn.linear_model import Ridge
 from .behavioral_anomaly import anomaly_scores
 from .behavioral_shap import TOTALS
 
+SCORE_ATOL = 1e-8
+
+
+def grouped_features(columns):
+    return {source_group(column) for column in columns if column not in TOTALS}
+
+
+def verify_shap(result, score, groups, reference):
+    """Check signed additivity against the deployed higher-is-more-unusual score."""
+    try:
+        shap, base = result["shap"], result["reference"]
+        return bool(
+            set(shap) == groups and np.isfinite([score, base, *shap.values()]).all()
+            and np.isclose(score, result["score"], rtol=0, atol=SCORE_ATOL)
+            and np.isclose(score, base + sum(shap.values()), rtol=0, atol=SCORE_ATOL)
+            and (reference is None or np.isclose(reference, base, rtol=0, atol=SCORE_ATOL))
+        )
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
+
+
+def reference_score(pipeline, background):
+    donor = background.copy()
+    for total, constituents in TOTALS.items():
+        if total in donor:
+            donor[total] = donor[list(constituents)].sum(axis=1, skipna=False)
+    return float(anomaly_scores(pipeline, donor).mean())
+
 
 def source_group(feature):
     if feature.startswith("screen_"):
@@ -22,7 +50,7 @@ def source_group(feature):
 def explain(pipeline, row, background, seed=42):
     """Keep source columns and their derived histories together in perturbations."""
     start = perf_counter()
-    groups = {source_group(col) for col in row.columns if col not in TOTALS}
+    groups = grouped_features(row.columns)
     groups = {name: [col for col in row if source_group(col) == name] for name in sorted(groups)}
     n = len(groups)
     masks = np.array(list(product((0, 1), repeat=n)))
@@ -70,9 +98,14 @@ def explain(pipeline, row, background, seed=42):
     surrogate = Ridge(alpha=0.01).fit(x, y, sample_weight=w)
     x_test, y_test, w_test = neighborhood(test)
     lime = dict(zip(groups, surrogate.coef_.tolist(), strict=True))
+    residual = surrogate.predict(x_test) - y_test
+    variance = np.average((y_test - np.average(y_test, weights=w_test)) ** 2, weights=w_test)
     return {"shap_ms": shap_ms, "lime_ms": shared_ms + (perf_counter() - start) * 1000,
             "shap": shap, "lime": lime, "deletion": deletion, "score": actual,
             "reference": values[(0,) * n], "lime_intercept": float(surrogate.intercept_),
-            "lime_r2": float(surrogate.score(x_test, y_test, sample_weight=w_test))}
+            "lime_r2": float(surrogate.score(x_test, y_test, sample_weight=w_test)),
+            "lime_rmse": float(np.sqrt(np.average(residual**2, weights=w_test))),
+            "lime_mae": float(np.average(abs(residual), weights=w_test)),
+            "lime_variance": float(variance)}
 
 
