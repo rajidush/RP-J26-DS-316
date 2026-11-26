@@ -1,0 +1,34 @@
+{
+  "adaptive": {
+    "cases": 48,
+    "coverage": 0.686322463768116,
+    "labeled_rows": 384,
+    "labeled_rows_admitted": 0,
+    "normalization_cases": 0,
+    "concern_cases": 16,
+    "drift_cases": 8,
+    "detected_drifts": 8,
+    "false_alerts": 0,
+    "median_drift_delay": 9.0,
+    "median_adaptation_delay": 10.0,
+    "median_recovery_delay": 6.0,
+    "median_update_recovery_delay": 1.0,
+    "median_comparison_ms": 48.02610000479035
+  },
+  "fixed": {
+    "cases": 48,
+    "coverage": 0.8156702898550724,
+    "labeled_rows": 384,
+    "labeled_rows_admitted": 384,
+    "normalization_cases": 16,
+    "concern_cases": 16,
+    "drift_cases": 8,
+    "detected_drifts": 8,
+    "false_alerts": 56,
+    "median_drift_delay": 8.5,
+    "median_adaptation_delay": 10.0,
+    "median_recovery_delay": 8.0,
+    "median_update_recovery_delay": 0.0,
+    "median_comparison_ms": 9.842150000622496
+  }
+}

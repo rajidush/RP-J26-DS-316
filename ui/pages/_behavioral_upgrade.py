@@ -8,6 +8,7 @@ import sklearn
 import streamlit as st
 
 from component4_profiling_xai.src.behavioral_anomaly import assessable_days
+from component4_profiling_xai.src.behavioral_adaptive_profile import adaptive_profiles, admission_evidence
 from component4_profiling_xai.src.behavioral_explanation_reliability import (
     assess_daily, assess_temporal, daily_evidence, temporal_evidence,
 )
@@ -109,6 +110,51 @@ def observed_summary(row, details):
     return f"{direction} {OBSERVED_LABELS[largest]} were recorded than usual."
 
 
+def adaptive_summary(profile):
+    if not profile["available"]:
+        return "There isn’t enough recorded activity on this day to make a reliable comparison."
+    if not adaptive_history_ready(profile):
+        return "There aren’t enough usable earlier records to make a reliable comparison."
+    if profile["abrupt"]:
+        return "This day’s recorded activity differs from your child’s established pattern."
+    if profile["shift"]:
+        return "Your child’s usual recorded activity has changed over recent days."
+    return "This day’s recorded activity was similar to your child’s recent usual pattern."
+
+
+def adaptive_history_ready(profile):
+    return all(pd.notna(value) for value in profile["median"])
+
+
+def adaptive_update_caption(profile):
+    if profile["recent_exclusion"]:
+        return "Recent records that raised a concern were kept out of updates to the usual activity pattern."
+    if profile["decision"] == "confirmed_update" and profile["admitted_indices"]:
+        return "Recent suitable records were included in the usual activity profile."
+    if profile["decision"] == "probation":
+        return "This record will only inform future comparisons if later records show a similar pattern."
+    return None
+
+
+def historical_comparison(daily, matrix, details, flags, index, day, config):
+    through = daily.loc[daily["date"].le(day)]
+    try:
+        comparison = adaptive_profiles(through, matrix.loc[through.index], flags)
+        profile = comparison.loc[index]
+        return adaptive_summary(profile), adaptive_update_caption(profile), adaptive_history_ready(profile)
+    except (KeyError, ValueError, FloatingPointError):
+        logger.exception("Could not build the adaptive activity comparison")
+    window = through.loc[through["date"].ge(day - timedelta(days=config.days))]
+    try:
+        available, urgent, concern = admission_evidence(window, matrix.loc[window.index])
+        if (available.all() and not urgent.any() and not concern.any(axis=None)
+                and flags.reindex(window.index).eq(False).fillna(False).all()):
+            return observed_summary(matrix.loc[index], details.loc[index]), None, None
+    except (KeyError, ValueError, FloatingPointError):
+        logger.exception("Could not verify the fixed activity comparison")
+    return "A usual activity comparison is unavailable for this day.", None, None
+
+
 def temporal_text(result, active, review=None):
     if result is None or result.status == "unsupported":
         return "An AI explanation of changes across days is unavailable."
@@ -160,26 +206,33 @@ def explanation_text(result, flagged, review=None):
     return text
 
 
-def guidance(row, attribution, sustained):
-    positive = {} if not attribution else {key: value for key, value in attribution["shap"].items()
-                                           if value > 0}
-    focus = max(positive, key=positive.get) if positive else None
-
+def guidance(row, review, sustained, urgent=False):
     def recorded(field):
-        return pd.notna(row[field]) and row[field] > 0
+        value = row.get(field)
+        return pd.notna(value) and value > 0
 
+    if urgent:
+        return ("A safety alert was recorded for this day. Review it promptly and seek appropriate human support.",
+                None)
+    focus = review.group if review is not None and review.status == "supported" else None
     if focus == "Screen activity" and recorded("screen_night_incidents"):
-        return ("Find a calm time to talk about your child’s online evenings.",
+        return ("The AI explanation highlighted screen activity. Find a calm time to talk about online evenings.",
                 "How have your online evenings been feeling lately?")
     if focus == "Language activity" and recorded("language_flags"):
-        return ("Invite your child to talk about recent online conversations.",
+        return ("The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
                 "Was there anything someone said online that you’d like to talk about?")
+    if focus == "Screen activity" and recorded("screen_incidents"):
+        return ("The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
+                "Did anything you saw online surprise you or make you uncomfortable?")
+    if recorded("language_bullying_flags"):
+        return ("The records include language flagged for possible bullying. Invite your child to talk about it.",
+                "How have your online conversations been feeling lately?")
+    if recorded("screen_escalated_incidents"):
+        return ("A screen activity record was marked for review. Offer to look at it together.",
+                "Is there anything you saw online that you’d like to talk about?")
     if sustained:
         return ("Make time for regular, supportive check-ins.",
                 "Has anything changed about how it feels to spend time online lately?")
-    if focus == "Screen activity" and recorded("screen_incidents"):
-        return ("Offer to talk through any uncomfortable online experiences together.",
-                "Did anything you saw online surprise you or make you uncomfortable?")
     return ("Keep an open conversation about your child’s digital experiences.",
             "What did you enjoy online, and was there anything you’d like help with?")
 
@@ -201,6 +254,9 @@ def render(source, bundle):
     latest = daily["date"].iloc[-1]
     urgent_report = services.behavioral_urgent_report(daily, child)
     alerts = urgent_report["urgent"]
+    selected_rows = daily.loc[daily["date"].eq(day)]
+    selected_urgent = bool(alerts["date"].eq(day).any())
+    selected_coverage = services.behavioral_urgent_report(selected_rows, child)
     for alert in alerts[alerts["date"].isin({day, latest})].itertuples(index=False):
         label = "Latest recorded day" if alert.date == latest else "Selected day"
         st.warning(f"**Urgent safety review · {label} ({alert.date})**  \n"
@@ -245,7 +301,12 @@ def render(source, bundle):
     first, second = st.columns(2)
     with first:
         with theme.card("f2-observed", "Has Anything Changed?"):
-            st.write(observed_summary(matrix.loc[index], details.loc[index]))
+            comparison_text, update_caption, adaptive_ready = historical_comparison(
+                daily, matrix, details, history["flag"], index, day, config,
+            )
+            st.write(comparison_text)
+            if update_caption:
+                st.caption(update_caption)
             st.caption("This compares the recorded activity with your child’s earlier records.")
         with theme.card("f2-recent", "Recent Behavioral Pattern"):
             st.write(summary)
@@ -258,14 +319,21 @@ def render(source, bundle):
             st.write(explanation_text(result, flagged, daily_review))
             st.caption("This explains the AI’s assessment for the selected day.")
         with theme.card("f2-guidance", "How Can You Help?"):
-            advice, question = guidance(matrix.loc[index], result, active)
+            advice, question = guidance(matrix.loc[index], daily_review, active, selected_urgent)
             st.write(advice)
-            st.markdown(f"**Try Asking** · “{question}”")
+            if question:
+                st.markdown(f"**Try Asking** · “{question}”")
 
     with theme.card("f2-safety", "Safety Alerts"):
         st.write("Safety alerts are checked separately from the AI activity assessment.")
-        if not alerts["date"].eq(day).any():
+        if selected_coverage["urgent_incomplete"]:
+            st.warning("Safety monitoring was incomplete for the selected day.")
+            if not selected_urgent:
+                st.write("No urgent alert was found in the available records for this day.")
+        elif not selected_urgent:
             st.write("No urgent safety alert was recorded for the selected day.")
+        if urgent_report["urgent_incomplete"] and not selected_coverage["urgent_incomplete"]:
+            st.warning("Safety monitoring was incomplete on other recorded days.")
         older = alerts.loc[alerts["date"].lt(day) & alerts["date"].ne(latest)]
         if not older.empty:
             with st.expander("Earlier safety alerts"):
@@ -273,8 +341,17 @@ def render(source, bundle):
                     st.write(f"**{alert.date}** · {safety_text(alert.reasons)}")
     with theme.card("f2-availability", "Data Availability"):
         baseline_counts = details.loc[index, "n"].reindex(ANCHORS)
-        st.write("Enough historical records are available." if baseline_counts.ge(config.minimum).all()
-                 else "Historical records are limited.")
+        st.write("Earlier activity records are available." if baseline_counts.ge(config.minimum).all()
+                 else "Earlier activity records are limited.")
+        selected_assessable = assessable_days(selected_rows, matrix.loc[[index]]).at[index]
+        st.write("This day has enough recorded activity for the model to assess."
+                 if selected_assessable else "This day is missing activity records needed for a model assessment.")
+        if adaptive_ready is None:
+            st.write("The usual activity profile could not be checked.")
+        elif adaptive_ready:
+            st.write("The usual activity profile has enough eligible earlier records.")
+        else:
+            st.write("The usual activity profile has too few eligible earlier records for a reliable comparison.")
         start = max(daily["date"].iloc[0], day - timedelta(days=config.days))
         prior_dates = daily["date"].between(start, day)
         has_gaps = int(prior_dates.sum()) < (day - start).days + 1

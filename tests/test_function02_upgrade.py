@@ -116,6 +116,12 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     assert any("Urgent safety review" in text.value and "Images that may show self-harm" in text.value
                for text in page.warning)
     assert any("No unusual pattern was detected on this day" in item.value for item in page.markdown)
+    exclusion_text = "were kept out of updates to the usual activity pattern"
+    assert any(exclusion_text in item.value for item in page.caption)
+    assert all(exclusion_text not in item.value for item in page.markdown)
+    assert any(item.value.startswith(("This day’s recorded activity", "Your child’s usual recorded activity",
+                                      "There aren’t enough usable earlier records"))
+               for item in page.markdown)
     assert not page.metric and not page.dataframe and not page.get("plotly_chart")
     flagged_date = child.loc[scored.index[scored["flag"].eq(True).fillna(False)][-1], "date"]
     page.selectbox(key="f2_activity_C001").set_value(flagged_date).run()
@@ -135,6 +141,8 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     page.selectbox(key="f2_activity_C001").set_value(missing_date).run()
     assert any("Not enough information to assess activity" in item.value for item in page.markdown)
     assert any("Some activity records are missing" in item.value for item in page.markdown)
+    assert any("isn’t enough recorded activity on this day to make a reliable comparison" in item.value
+               for item in page.markdown)
     assert any("too few usable records to explain changes" in item.value for item in page.caption)
     page.selectbox(key="f2_child").set_value("C009").run()
     assert not page.exception
@@ -176,6 +184,7 @@ def test_qualitative_temporal_summary_distinguishes_c014_carryover_and_active_ch
 
 
 def test_qualitative_explanations_distinguish_counts_from_attributions():
+    from component4_profiling_xai.src.behavioral_explanation_reliability import Review
     from component4_profiling_xai.src.behavioral_profile import ANCHORS
     from ui.pages._behavioral_upgrade import explanation_text, guidance, observed_summary
 
@@ -186,9 +195,67 @@ def test_qualitative_explanations_distinguish_counts_from_attributions():
     assert "screen activity records" in message and "second explanation" in message
     assert "incidents" not in message and "0.8" not in message
     assert "less unusual" in explanation_text(result, flagged=False)
-    assert "online evenings" not in guidance(row, result, False)[0]
+    supported = Review("supported", "Screen activity")
+    assert "online evenings" not in guidance(row, supported, False)[0]
     assert "similar" in observed_summary(row, {"median": row.copy()})
     assert "enough earlier activity" in observed_summary(row, {"median": row * np.nan})
     row["screen_night_incidents"] = 1
     assert observed_summary(row, {"median": row * 0}) == "More nighttime screen incidents were recorded than usual."
-    assert "online evenings" in guidance(row, result, False)[0]
+    assert "online evenings" in guidance(row, supported, False)[0]
+    assert "AI explanation" in guidance(row, supported, False)[0]
+    assert "Keep an open conversation" in guidance(row, Review("limited", "Screen activity"), False)[0]
+    row["language_bullying_flags"] = 1
+    assert "records include language flagged" in guidance(row, Review("invalid"), False)[0]
+    assert "AI explanation" not in guidance(row, Review("invalid"), False)[0]
+    advice, question = guidance(row, Review("invalid"), False, urgent=True)
+    assert "seek appropriate human support" in advice and question is None
+
+
+def test_dashboard_distinguishes_safety_coverage_and_adaptive_history(monkeypatch):
+    from component4_profiling_xai.src.urgent_alerts import URGENT_RULE_COLUMNS
+
+    source = services.behavioral_daily_source()
+    child = source["child_ids"][0]
+    rows = services._behavioral_child_rows(source["daily"], child).head(16).copy()
+    for column in URGENT_RULE_COLUMNS:
+        rows[column] = 0
+    for column in ("screen_monitor_observed", "language_monitor_observed"):
+        rows[column] = 1
+    rows["screen_escalated_incidents"] = 1
+    partial_without_hit, partial_with_hit, complete = rows.index[-3:]
+    rows.loc[[partial_without_hit, partial_with_hit], "screen_monitor_observed"] = 0
+    rows.at[partial_with_hit, "screen_self_harm_imagery_incidents"] = 1
+    monkeypatch.setattr(services, "behavioral_daily_source",
+                        lambda: {"source": "demo", "daily": rows, "child_ids": [child]})
+    app = AppTest.from_string(
+        "from ui import services\n"
+        "from ui.pages._behavioral_upgrade import render\n"
+        "render(services.behavioral_daily_source(), None)"
+    ).run()
+    assert not app.exception
+    selector = f"f2_activity_{child}"
+
+    def texts(elements):
+        return "\n".join(item.value for item in elements)
+
+    assert app.selectbox(key=selector).value == rows.at[complete, "date"]
+    assert "No urgent safety alert was recorded for the selected day." in texts(app.markdown)
+    assert "Safety monitoring was incomplete for the selected day." not in texts(app.warning)
+    assert "Safety monitoring was incomplete on other recorded days." in texts(app.warning)
+    assert "Earlier activity records are available." in texts(app.markdown)
+    assert "This day has enough recorded activity for the model to assess." in texts(app.markdown)
+    assert "too few eligible earlier records for a reliable comparison" in texts(app.markdown)
+
+    app.selectbox(key=selector).set_value(rows.at[partial_without_hit, "date"]).run()
+    assert not app.exception
+    assert "Safety monitoring was incomplete for the selected day." in texts(app.warning)
+    assert "No urgent alert was found in the available records" in texts(app.markdown)
+    assert "missing activity records needed for a model assessment" in texts(app.markdown)
+
+    app.selectbox(key=selector).set_value(rows.at[partial_with_hit, "date"]).run()
+    assert not app.exception
+    assert "Safety monitoring was incomplete for the selected day." in texts(app.warning)
+    assert f"Selected day ({rows.at[partial_with_hit, 'date']})" in texts(app.warning)
+    assert "Images that may show self-harm" in texts(app.warning)
+    assert "seek appropriate human support" in texts(app.markdown)
+    assert "No urgent alert was found" not in texts(app.markdown)

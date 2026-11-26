@@ -534,17 +534,19 @@ F2_FEATURE_LABELS = {
 }
 
 def _clean_daily(df, what):
-    """Validate daily rows: keys, the 27 model features and the urgent-rule
-    columns. Every other column (synthetic labels included) is dropped.
-    Raises ValueError with a readable message."""
+    """Validate daily keys, model features, coverage and recorded safety counters.
+
+    Other columns, including synthetic labels, are dropped.
+    """
     data = _behavioral_data_module()
     features = data.DAILY_MODEL_FEATURES
     urgent_cols = list(_urgent_module().URGENT_RULE_COLUMNS)
+    from component4_profiling_xai.src.behavioral_adaptive_profile import OPTIONAL_CONCERN_COLUMNS
     missing = [c for c in ["child_id", "date"] + features if c not in df.columns]
     if missing:
         raise ValueError(f"{what} is missing required columns: {', '.join(missing)}")
     keep = (["child_id", "date"] + features + [c for c in urgent_cols if c not in features]
-            + list(data.COVERAGE_COLUMNS))
+            + list(data.COVERAGE_COLUMNS) + list(OPTIONAL_CONCERN_COLUMNS))
     out = df[[c for c in keep if c in df.columns]].copy()
     if out["child_id"].isna().any():
         raise ValueError(f"{what} has rows without a child_id")
@@ -567,6 +569,11 @@ def _clean_daily(df, what):
         for col in urgent_cols:
             if col not in features:
                 out[col] = data.daily_numeric(out[col], count=True) if col in out else float("nan")
+        for col in OPTIONAL_CONCERN_COLUMNS:
+            if col in out:
+                # An unusable optional annotation is unavailable; it cannot change model inputs.
+                numeric = pd.to_numeric(out[col], errors="coerce")
+                out[col] = numeric.where(numeric.ge(0) & numeric.mod(1).eq(0))
     except ValueError as exc:
         raise ValueError(f"{what}: {exc}") from exc
     return out.sort_values(["child_id", "date"]).reset_index(drop=True)
