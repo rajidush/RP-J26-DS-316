@@ -35,7 +35,7 @@ PAGES_DIR = Path(__file__).resolve().parent / "pages"
 MAIN_PAGES = [
     ("emotional_pattern.py", "Emotional Pattern", ":material/bar_chart:", "emotional-pattern"),
     ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitoring:", "behavioral-anomaly"),
-    ("child_profile.py", "Child Profile", ":material/person:", "child-profile"),
+    ("child_profile.py", "Child Profiles", ":material/person:", "child-profile"),
 ]
 
 
