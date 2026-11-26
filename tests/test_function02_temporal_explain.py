@@ -78,7 +78,7 @@ def test_only_current_overlapping_detector_evidence(contributions):
     rows.loc[11:, "ewma_active"] = True
     rows.loc[11, "ewma_alert"] = True
     assert compare(rows, values).detectors == ("ewma",)
-    assert "also active" in temporal_text(compare(rows, values), True)
+    assert "also active" in temporal_text(compare(rows, values), False)
 
 
 def test_tied_and_unverified_results_have_neutral_wording(contributions):

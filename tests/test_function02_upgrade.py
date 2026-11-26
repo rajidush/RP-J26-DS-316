@@ -115,12 +115,12 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     assert not page.exception
     assert any("Urgent safety review" in text.value and "Images that may show self-harm" in text.value
                for text in page.warning)
-    assert any("No unusual pattern was detected on this day" in item.value for item in page.markdown)
-    exclusion_text = "were kept out of updates to the usual activity pattern"
+    assert any("The AI detected no unusual pattern" in item.value for item in page.markdown)
+    exclusion_text = "were set aside when updating the usual pattern"
     assert any(exclusion_text in item.value for item in page.caption)
     assert all(exclusion_text not in item.value for item in page.markdown)
-    assert any(item.value.startswith(("This day’s recorded activity", "Your child’s usual recorded activity",
-                                      "There aren’t enough usable earlier records"))
+    assert any(item.value.startswith(("This day’s recorded activity", "Your child’s usual recorded pattern", "More ", "Fewer ",
+                                      "There are too few usable earlier records"))
                for item in page.markdown)
     assert not page.metric and not page.dataframe and not page.get("plotly_chart")
     flagged_date = child.loc[scored.index[scored["flag"].eq(True).fillna(False)][-1], "date"]
@@ -128,22 +128,22 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     full_text = " ".join(
         [item.value for item in page.markdown] + [item.value for item in page.caption]
     )
-    assert "made this day look more unusual" in full_text
-    assert "compares the recorded activity" in full_text
-    assert "An unusual activity pattern was detected on this day" in full_text
+    assert "made the recorded activity look more unusual" in full_text
+    assert "uses your child’s own earlier records" in full_text
+    assert "The AI detected an unusual pattern in this day’s records" in full_text
     recent = recent_behavior(scored, flagged_date, model["profile"]["minimum"])
     temporal, probes = temporal_evidence(scored, matrix, model, "C001", flagged_date)
     expected = temporal_text(temporal, recent[1], assess_temporal(temporal, probes))
     assert any(item.value == expected for item in page.caption)
-    assert "No detected anomaly does not guarantee safety." in full_text
+    assert "cannot tell you whether your child is safe." in full_text
     for research_metric in ("F1-score", "Precision", "Recall", "confusion matrix", "weighted R²"):
         assert research_metric not in full_text
     page.selectbox(key="f2_activity_C001").set_value(missing_date).run()
-    assert any("Not enough information to assess activity" in item.value for item in page.markdown)
-    assert any("Some activity records are missing" in item.value for item in page.markdown)
-    assert any("isn’t enough recorded activity on this day to make a reliable comparison" in item.value
+    assert any("couldn’t assess this day" in item.value for item in page.markdown)
+    assert any("This day is missing records needed for an AI check" in item.value for item in page.markdown)
+    assert any("too little activity recorded for this day" in item.value
                for item in page.markdown)
-    assert any("too few usable records to explain changes" in item.value for item in page.caption)
+    assert any("too few usable records to explain the AI’s assessments" in item.value for item in page.caption)
     page.selectbox(key="f2_child").set_value("C009").run()
     assert not page.exception
     assert page.selectbox(key="f2_activity_C009").value == daily.loc[daily.child_id.eq("C009"), "date"].max()
@@ -175,7 +175,7 @@ def test_qualitative_temporal_summary_distinguishes_c014_carryover_and_active_ch
     assert not history.tail(30)["flag"].any()
     summary, active, earlier = recent_behavior(history, latest, 5)
     assert not active and earlier < latest - timedelta(days=29)
-    assert "No unusual patterns" in summary
+    assert "No continuing change" in summary
 
     onset = history.loc[history["cusum_alert"], "date"].iloc[0]
     summary, active, earlier = recent_behavior(history, onset, 5)
@@ -191,10 +191,10 @@ def test_qualitative_explanations_distinguish_counts_from_attributions():
     row = pd.Series(0.0, index=ANCHORS)
     result = {"shap": {"Screen activity": 0.8, "Language activity": -0.1},
               "lime": {"Screen activity": 0.2, "Language activity": -0.2}}
-    message = explanation_text(result, flagged=True)
-    assert "screen activity records" in message and "second explanation" in message
+    message = explanation_text(result, True, Review("supported", "Screen activity", True))
+    assert "screen activity records" in message and "Both explanation checks" in message
     assert "incidents" not in message and "0.8" not in message
-    assert "less unusual" in explanation_text(result, flagged=False)
+    assert "less unusual" in explanation_text(result, False, Review("supported", "Language activity"))
     supported = Review("supported", "Screen activity")
     assert "online evenings" not in guidance(row, supported, False)[0]
     assert "similar" in observed_summary(row, {"median": row.copy()})
@@ -203,7 +203,7 @@ def test_qualitative_explanations_distinguish_counts_from_attributions():
     assert observed_summary(row, {"median": row * 0}) == "More nighttime screen incidents were recorded than usual."
     assert "online evenings" in guidance(row, supported, False)[0]
     assert "AI explanation" in guidance(row, supported, False)[0]
-    assert "Keep an open conversation" in guidance(row, Review("limited", "Screen activity"), False)[0]
+    assert "Pick a calm moment" in guidance(row, Review("limited", "Screen activity"), False)[0]
     row["language_bullying_flags"] = 1
     assert "records include language flagged" in guidance(row, Review("invalid"), False)[0]
     assert "AI explanation" not in guidance(row, Review("invalid"), False)[0]
@@ -239,18 +239,18 @@ def test_dashboard_distinguishes_safety_coverage_and_adaptive_history(monkeypatc
         return "\n".join(item.value for item in elements)
 
     assert app.selectbox(key=selector).value == rows.at[complete, "date"]
-    assert "No urgent safety alert was recorded for the selected day." in texts(app.markdown)
+    assert "No urgent alert was recorded for this day." in texts(app.markdown)
     assert "Safety monitoring was incomplete for the selected day." not in texts(app.warning)
     assert "Safety monitoring was incomplete on other recorded days." in texts(app.warning)
     assert "Earlier activity records are available." in texts(app.markdown)
-    assert "This day has enough recorded activity for the model to assess." in texts(app.markdown)
-    assert "too few eligible earlier records for a reliable comparison" in texts(app.markdown)
+    assert "The activity records needed for an AI check are available." in texts(app.markdown)
+    assert "Too few earlier records could be used to establish the usual pattern." in texts(app.markdown)
 
     app.selectbox(key=selector).set_value(rows.at[partial_without_hit, "date"]).run()
     assert not app.exception
     assert "Safety monitoring was incomplete for the selected day." in texts(app.warning)
-    assert "No urgent alert was found in the available records" in texts(app.markdown)
-    assert "missing activity records needed for a model assessment" in texts(app.markdown)
+    assert "The available records contained no urgent alert" in texts(app.markdown)
+    assert "missing records needed for an AI check" in texts(app.markdown)
 
     app.selectbox(key=selector).set_value(rows.at[partial_with_hit, "date"]).run()
     assert not app.exception
@@ -258,4 +258,4 @@ def test_dashboard_distinguishes_safety_coverage_and_adaptive_history(monkeypatc
     assert f"Selected day ({rows.at[partial_with_hit, 'date']})" in texts(app.warning)
     assert "Images that may show self-harm" in texts(app.warning)
     assert "seek appropriate human support" in texts(app.markdown)
-    assert "No urgent alert was found" not in texts(app.markdown)
+    assert "The available records contained no urgent alert" not in texts(app.markdown)

@@ -70,7 +70,7 @@ def test_lime_quality_and_disagreement_do_not_veto_stable_shap(daily):
         decision = assess_daily(variant, score, True, bundle, probes, Policy(1, 0.7))
         assert decision.status == "supported"
         assert decision.group == group and decision.corroborated == agreement
-        assert ("second explanation" in explanation_text(variant, True, decision)) == agreement
+        assert ("Both explanation checks" in explanation_text(variant, True, decision)) == agreement
 
 
 def test_unstable_rank_and_near_boundary_are_neutral(daily):
@@ -115,10 +115,10 @@ def test_temporal_fallback_and_current_detector_wording():
     raw = TemporalExplanation("sustained", "Language activity", reconstruction_error=0.0, detectors=("ewma",))
     review = assess_temporal(raw, [raw, raw])
     assert review.status == "supported"
-    assert "also active on the selected day" in temporal_text(raw, True, review)
+    assert "also active on the selected day" in temporal_text(raw, False, review)
     changed = replace(raw, status="isolated")
     review = assess_temporal(raw, [raw, changed], Policy(1, 0.7))
-    assert review.status == "limited" and "clear contributing factor" in temporal_text(raw, True, review)
+    assert review.status == "limited" and "clear factor" in temporal_text(raw, True, review)
     assert assess_temporal(replace(raw, reconstruction_error=1), [raw]).status == "invalid"
     assert assess_temporal(TemporalExplanation("insufficient"), []).status == "insufficient_data"
 

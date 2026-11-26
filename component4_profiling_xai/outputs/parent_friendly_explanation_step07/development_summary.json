@@ -1,0 +1,32 @@
+{
+  "before": {
+    "cases": 17,
+    "issues": 0,
+    "words": 206.7058823529412,
+    "words_per_sentence": 10.834421260764367,
+    "jargon_hits": 4.529411764705882,
+    "duplicated_trend": 11,
+    "guided_topic": 8,
+    "directional_personal": 0,
+    "opposite_evidence_explicit": 0,
+    "median_ms": 192.33039999380708,
+    "p95_ms": 306.40775999054307,
+    "median_peak_bytes": 864265,
+    "total_prediction_calls": 176
+  },
+  "after": {
+    "cases": 17,
+    "issues": 0,
+    "words": 176.05882352941177,
+    "words_per_sentence": 11.152432443565662,
+    "jargon_hits": 0.0,
+    "duplicated_trend": 0,
+    "guided_topic": 8,
+    "directional_personal": 3,
+    "opposite_evidence_explicit": 1,
+    "median_ms": 192.343400005484,
+    "p95_ms": 282.83452000468964,
+    "median_peak_bytes": 881461,
+    "total_prediction_calls": 176
+  }
+}

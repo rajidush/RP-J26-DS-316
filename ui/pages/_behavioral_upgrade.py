@@ -81,17 +81,17 @@ def recent_behavior(history, day, minimum):
         run = run.loc[run["date"].ge(start) & run[f"{method}_active"].eq(True)]
         supported |= bool(run[f"{method}_alert"].any() or run["flag"].sum() >= 2)
 
-    flags = recent["flag"].fillna(False).sum()
     if supported:
         summary = "A change in recorded activity continued across recent days."
-    elif flags >= 2:
-        summary = "Unusual activity was detected on more than one recent day."
-    elif flags:
-        summary = "An unusual pattern was detected on one recent day."
     elif recent["flag"].count() < minimum:
-        summary = "There are too few recent records to describe a pattern."
+        summary = "There are too few recent records to tell whether a change continued."
     else:
-        summary = "No unusual patterns were detected in the recent records that could be checked."
+        earlier_flags = recent.loc[recent["date"].lt(day), "flag"].fillna(False).sum()
+        if earlier_flags:
+            earlier_days = "One earlier day stood out" if earlier_flags == 1 else "Several earlier days stood out"
+            summary = f"{earlier_days} to the AI. No continuing change was detected."
+        else:
+            summary = "No continuing change was detected in the recent records."
     return summary, supported, earlier
 
 
@@ -113,13 +113,16 @@ def observed_summary(row, details):
 
 def adaptive_summary(profile):
     if not profile["available"]:
-        return "There isn’t enough recorded activity on this day to make a reliable comparison."
+        return "There’s too little activity recorded for this day to compare it with earlier days."
     if not adaptive_history_ready(profile):
-        return "There aren’t enough usable earlier records to make a reliable comparison."
+        return "There are too few usable earlier records for a reliable comparison."
     if profile["abrupt"]:
-        return "This day’s recorded activity differs from your child’s established pattern."
+        deviations = dict(zip(ANCHORS, profile["robust_z"], strict=True))
+        largest = max(deviations, key=lambda key: abs(deviations[key]))
+        direction = "More" if deviations[largest] > 0 else "Fewer"
+        return f"{direction} {OBSERVED_LABELS[largest]} were recorded than usual for your child."
     if profile["shift"]:
-        return "Your child’s usual recorded activity has changed over recent days."
+        return "Your child’s usual recorded pattern shifted over recent days."
     return "This day’s recorded activity was similar to your child’s recent usual pattern."
 
 
@@ -129,11 +132,11 @@ def adaptive_history_ready(profile):
 
 def adaptive_update_caption(profile):
     if profile["recent_exclusion"]:
-        return "Recent records that raised a concern were kept out of updates to the usual activity pattern."
+        return "Records that raised a concern were set aside when updating the usual pattern."
     if profile["decision"] == "confirmed_update" and profile["admitted_indices"]:
         return "Recent suitable records were included in the usual activity profile."
     if profile["decision"] == "probation":
-        return "This record will only inform future comparisons if later records show a similar pattern."
+        return "This record was set aside while the system checks for a similar pattern on later days."
     return None
 
 
@@ -158,53 +161,34 @@ def historical_comparison(daily, matrix, details, flags, index, day, config):
 
 def temporal_text(result, active, review=None):
     if result is None or result.status == "unsupported":
-        return "An AI explanation of changes across days is unavailable."
+        return "An AI explanation across days is unavailable."
     if result.status == "insufficient":
-        return "There are too few usable records to explain changes across days."
+        return "There are too few usable records to explain the AI’s assessments across days."
     if review is not None and review.status == "invalid":
-        return "An AI explanation of changes across days is unavailable."
+        return "An AI explanation across days is unavailable."
     if review is not None and review.status != "supported":
-        return ("A recent change was detected, but the AI could not identify a clear contributing factor."
-                if active else "The AI could not identify a clear factor that contributed more strongly across days.")
+        return "The AI couldn’t identify a clear factor in its recent assessments."
     if result.status == "stable":
-        return ("The recent change alert has no clear accompanying change in the AI’s activity factors."
-                if active else "The factors the AI used to assess activity were similar across recent and earlier records.")
+        return "The factors in the AI’s assessments were similar across recent and earlier days."
     if result.status == "unclear":
-        return "The AI could not identify a clear factor that contributed more strongly across days."
+        return "The AI couldn’t identify a clear factor in its recent assessments."
     activity = GROUPS[result.group]
     if result.status == "isolated":
-        return f"On one recent recorded day, {activity} contributed more strongly to the AI’s unusual-activity assessment."
-    message = f"Across several consecutive days, {activity} contributed more strongly to the AI’s unusual-activity assessment."
-    if result.detectors:
+        return f"On one recent day, {activity} made the activity look more unusual to the AI than before."
+    message = f"Across several days, {activity} made the activity look more unusual to the AI than before."
+    if result.detectors and not active:
         message += " A change alert was also active on the selected day."
     return message
 
 
-def explanation_text(result, flagged, review=None):
-    if review is not None:
-        if review.status in {"invalid", "insufficient_data"}:
-            return "An AI explanation is unavailable for this day."
-        if review.status != "supported":
-            return ("The AI identified an unusual pattern, but the available information "
-                    "does not clearly explain which activity contributed most."
-                    if flagged else "The AI could not identify a clear factor behind this day’s assessment.")
-        direction = "more unusual" if flagged else "less unusual"
-        text = f"The AI assessment found that {GROUPS[review.group]} made this day look {direction}."
-        return text + " A second explanation also pointed in that direction." if review.corroborated else text
-    if result is None:
+def explanation_text(_result, flagged, review=None):
+    if review is None or review.status in {"invalid", "insufficient_data"}:
         return "An AI explanation is unavailable for this day."
-    sign = 1 if flagged else -1
-    shap = result["shap"]
-    lime = result["lime"]
-    supporting = [group for group, value in shap.items() if sign * value > 1e-8]
-    if not supporting:
-        return "The explanation did not identify a clear factor behind this day’s result."
-    strongest = max(supporting, key=lambda group: abs(shap[group]))
+    if review.status != "supported":
+        return "The AI couldn’t identify a clear factor in this day’s assessment."
     direction = "more unusual" if flagged else "less unusual"
-    text = f"The AI assessment found that {GROUPS[strongest]} made this day look {direction}."
-    if sign * lime.get(strongest, 0) > 1e-8:
-        return text + " A second explanation also pointed in that direction."
-    return text
+    text = f"In the AI’s assessment, {GROUPS[review.group]} made the recorded activity look {direction}."
+    return text + " Both explanation checks pointed to that factor." if review.corroborated else text
 
 
 def guidance(row, review, sustained, urgent=False):
@@ -213,15 +197,15 @@ def guidance(row, review, sustained, urgent=False):
         return pd.notna(value) and value > 0
 
     if urgent:
-        return ("A safety alert was recorded for this day. Review it promptly and seek appropriate human support.",
+        return ("Review the safety alert above and seek appropriate human support.",
                 None)
     focus = review.group if review is not None and review.status == "supported" else None
     if focus == "Screen activity" and recorded("screen_night_incidents"):
-        return ("The AI explanation highlighted screen activity. Find a calm time to talk about online evenings.",
-                "How have your online evenings been feeling lately?")
+        return ("The AI explanation highlighted screen activity. Ask about online evenings at a calm moment.",
+                "What have your evenings online been like?")
     if focus == "Language activity" and recorded("language_flags"):
-        return ("The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
-                "Was there anything someone said online that you’d like to talk about?")
+        return ("The AI explanation highlighted language activity. Ask about recent online conversations.",
+                "How have your conversations online been going?")
     if focus == "Screen activity" and recorded("screen_incidents"):
         return ("The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
                 "Did anything you saw online surprise you or make you uncomfortable?")
@@ -232,10 +216,10 @@ def guidance(row, review, sustained, urgent=False):
         return ("A screen activity record was marked for review. Offer to look at it together.",
                 "Is there anything you saw online that you’d like to talk about?")
     if sustained:
-        return ("Make time for regular, supportive check-ins.",
-                "Has anything changed about how it feels to spend time online lately?")
-    return ("Keep an open conversation about your child’s digital experiences.",
-            "What did you enjoy online, and was there anything you’d like help with?")
+        return ("Set aside time for a check-in about the recent change.",
+                "Has anything felt different online lately?")
+    return ("Pick a calm moment to check in about time spent online.",
+            "What’s been good or difficult about being online lately?")
 
 
 def safety_text(reasons):
@@ -302,13 +286,11 @@ def render(source, bundle):
 
     with theme.card("f2-overview", "Behavior Overview"):
         if flagged:
-            st.markdown("**An unusual activity pattern was detected on this day.**")
+            st.markdown("**The AI detected an unusual pattern in this day’s records.**")
         elif assessed:
-            st.markdown("**No unusual pattern was detected on this day.**")
+            st.markdown("**The AI detected no unusual pattern in this day’s records.**")
         else:
-            st.markdown("**Not enough information to assess activity on this day.**")
-        if active:
-            st.caption("The recent records also show a change that continued across days.")
+            st.markdown("**The AI couldn’t assess this day with the records available.**")
 
     first, second = st.columns(2)
     with first:
@@ -319,7 +301,7 @@ def render(source, bundle):
             st.write(comparison_text)
             if update_caption:
                 st.caption(update_caption)
-            st.caption("This compares the recorded activity with your child’s earlier records.")
+            st.caption("The comparison uses your child’s own earlier records.")
         with theme.card("f2-recent", "Recent Behavioral Pattern"):
             st.write(summary)
             st.caption(temporal_text(temporal_result, active, temporal_review))
@@ -329,7 +311,6 @@ def render(source, bundle):
     with second:
         with theme.card("f2-xai", "Why Did the AI Say This?"):
             st.write(explanation_text(result, flagged, daily_review))
-            st.caption("This explains the AI’s assessment for the selected day.")
         with theme.card("f2-guidance", "How Can You Help?"):
             advice, question = guidance(matrix.loc[index], daily_review, active, selected_urgent)
             st.write(advice)
@@ -337,13 +318,13 @@ def render(source, bundle):
                 st.markdown(f"**Try Asking** · “{question}”")
 
     with theme.card("f2-safety", "Safety Alerts"):
-        st.write("Safety alerts are checked separately from the AI activity assessment.")
+        st.write("Safety checks use the available records and run separately from the AI assessment.")
         if selected_coverage["urgent_incomplete"]:
             st.warning("Safety monitoring was incomplete for the selected day.")
             if not selected_urgent:
-                st.write("No urgent alert was found in the available records for this day.")
+                st.write("The available records contained no urgent alert for this day.")
         elif not selected_urgent:
-            st.write("No urgent safety alert was recorded for the selected day.")
+            st.write("No urgent alert was recorded for this day.")
         if urgent_report["urgent_incomplete"] and not selected_coverage["urgent_incomplete"]:
             st.warning("Safety monitoring was incomplete on other recorded days.")
         older = alerts.loc[alerts["date"].lt(day) & alerts["date"].ne(latest)]
@@ -354,21 +335,21 @@ def render(source, bundle):
     with theme.card("f2-availability", "Data Availability"):
         baseline_counts = details.loc[index, "n"].reindex(ANCHORS)
         st.write("Earlier activity records are available." if baseline_counts.ge(config.minimum).all()
-                 else "Earlier activity records are limited.")
+                 else "There are few earlier activity records.")
         selected_assessable = assessable_days(selected_rows, matrix.loc[[index]]).at[index]
-        st.write("This day has enough recorded activity for the model to assess."
-                 if selected_assessable else "This day is missing activity records needed for a model assessment.")
+        st.write("The activity records needed for an AI check are available."
+                 if selected_assessable else "This day is missing records needed for an AI check.")
         if adaptive_ready is None:
-            st.write("The usual activity profile could not be checked.")
+            st.write("The usual-pattern history could not be checked.")
         elif adaptive_ready:
-            st.write("The usual activity profile has enough eligible earlier records.")
+            st.write("Enough earlier records could be used to establish the usual pattern.")
         else:
-            st.write("The usual activity profile has too few eligible earlier records for a reliable comparison.")
+            st.write("Too few earlier records could be used to establish the usual pattern.")
         start = max(daily["date"].iloc[0], day - timedelta(days=config.days))
         prior_dates = daily["date"].between(start, day)
         has_gaps = int(prior_dates.sum()) < (day - start).days + 1
-        available = assessable_days(daily.loc[prior_dates], matrix.loc[prior_dates]).all()
+        earlier_dates = prior_dates & daily["date"].lt(day)
+        available = assessable_days(daily.loc[earlier_dates], matrix.loc[earlier_dates]).all()
         if has_gaps or not available:
-            st.write("Some activity records are missing.")
-        st.caption("An unusual pattern does not necessarily indicate harm. "
-                   "No detected anomaly does not guarantee safety.")
+            st.write("There are gaps in the recent activity records.")
+        st.caption("The AI’s activity assessment cannot tell you whether your child is safe.")

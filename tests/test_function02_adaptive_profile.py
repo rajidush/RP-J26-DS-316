@@ -48,10 +48,10 @@ def test_persistent_concern_and_incoherent_anomalies_are_excluded(anchor, scenar
     assert not affected & {i for items in result["admitted_indices"] for i in items}
     if scenario != "repeated_anomaly":
         assert result.loc[list(affected), "frozen_after"].all()
-        assert "differs from" in adaptive_summary(result.loc[ONSET])
-        assert "kept out" in adaptive_update_caption(result.loc[ONSET])
+        assert adaptive_summary(result.loc[ONSET]).startswith("More ")
+        assert "set aside" in adaptive_update_caption(result.loc[ONSET])
         assert "reliable comparison" in adaptive_summary(result.iloc[-1])
-        assert "kept out" in adaptive_update_caption(result.iloc[-1])
+        assert "set aside" in adaptive_update_caption(result.iloc[-1])
 
 
 def test_urgent_freeze_recovers_without_admitting_concerning_days(anchor):
@@ -69,7 +69,7 @@ def test_false_positive_flags_can_be_followed_by_a_confirmed_update(anchor):
     assert result.loc[ONSET, "decision"] == "probation"
     assert result.loc[max(start), "admitted_indices"] == tuple(start)
     assert "similar to" in adaptive_summary(result.loc[ONSET])
-    assert "later records" in adaptive_update_caption(result.loc[ONSET])
+    assert "similar pattern on later days" in adaptive_update_caption(result.loc[ONSET])
     admitted = result.loc[max(start)]
     assert adaptive_update_caption(admitted) == "Recent suitable records were included in the usual activity profile."
     assert adaptive_update_caption({**admitted.to_dict(), "admitted_indices": ()}) is None
@@ -84,7 +84,7 @@ def test_missing_days_are_excluded_but_observed_zeros_and_cold_start_are_retaine
     assert result.iloc[-1]["median"][0] == 0
     _, _, _, cold, _ = replay(anchor, "cold_start")
     assert all(pd.isna(value) for value in cold.iloc[-1]["median"])
-    assert "aren’t enough usable earlier records" in adaptive_summary(cold.iloc[-1])
+    assert "too few usable earlier records" in adaptive_summary(cold.iloc[-1])
     assert adaptive_update_caption(cold.iloc[-1]) is None
 
 
@@ -114,8 +114,8 @@ def test_deployed_scores_and_urgent_rules_are_independent(anchor):
     wording, caption, ready = historical_comparison(data, matrix, detail, before["flag"], ONSET,
                                                     data.loc[ONSET, "date"], ProfileConfig())
     assert ready
-    assert "differs from" in wording
-    assert "kept out" in caption
+    assert wording.startswith("More ")
+    assert "set aside" in caption
     pd.testing.assert_frame_equal(before, score_history(data, matrix, bundle))
     pd.testing.assert_frame_equal(urgent_before,
                                   services.behavioral_urgent_report(data, data["child_id"].iloc[0])["urgent"])

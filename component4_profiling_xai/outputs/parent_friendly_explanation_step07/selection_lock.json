@@ -1,0 +1,10 @@
+{
+  "seed": 2026112641,
+  "baseline_ref": "d19f9edf13acea6685e6e5237cb633d493dc915e",
+  "sha256": {
+    "evaluate_parent_explanations.py": "3eccdc471a1a70aa7ed947b6772b4e50ac781db9fee81d08502c518d9f32ae1a",
+    "_behavioral_upgrade.py": "16308baf75a4a5afda66123fe612e16965a38136bfa4ce7e6962d92a2842a8ae",
+    "selected.joblib": "61a5e67700d1a6e499ec610bc23d95b6db318d3b79e1c189d18781d0b85d2ec5"
+  },
+  "criteria": "Trace daily directions, corroboration, guidance, baseline, urgent labels and coverage to evidence. Count repeated trend claims, fixed jargon phrases, words and words per sentence. Compare identical prediction counts and paired runtime and traced Python memory. Report observed results without tuning on holdout."
+}
