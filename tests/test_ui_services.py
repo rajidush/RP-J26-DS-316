@@ -1,6 +1,7 @@
 import io
 import json
 import shutil
+from copy import deepcopy
 from datetime import date, datetime, timezone
 
 import pandas as pd
@@ -275,6 +276,9 @@ def test_too_few_sessions_gives_no_pattern(n, monkeypatch):
     assert report["current_pattern"] is None and report["overall_pattern"] is None
     assert report["features"] is None and report["window_features"] is None
     assert report["timeline"] == []
+    assert report["xai"]["status"] == "insufficient_data"
+    assert report["xai"]["pattern"] is None
+    assert report["xai"]["trend"]["severity_change"] is None
 
 
 def test_too_few_counts_only_the_requested_child():
@@ -336,6 +340,191 @@ def test_c004_window_and_overall_features_differ():
                                       f"All sessions: {report['overall_pattern']}"]
 
 
+@pytest.mark.parametrize("fallback", [False, True])
+def test_xai_matches_saved_model_on_selected_sessions(fallback):
+    import numpy as np
+
+    sessions = _child_sessions(4)
+    dates = (["2026-07-01", "2026-07-02", "2026-07-15", "2026-07-16"] if fallback
+             else ["2026-07-01", "2026-07-02", "2026-07-03", "2026-07-15"])
+    sessions["timestamp"] = [date + "T12:00:00Z" for date in dates]
+    sessions["emotional_state"] = ["calm", "calm", "defensive", "distressed"]
+    report = services.emotional_pattern_report(sessions, "K1")
+    original = deepcopy(report)
+    services.parent_guidance(report)
+    assert report == original
+    xai = report["xai"]["pattern"]
+    f1 = services._f1_module()
+    model, scaler, metadata = f1.load_artifacts()
+    selected = sessions if fallback else sessions.iloc[:3]
+    features = f1.build_features(f1.clean_sessions(selected))
+    assert list(features) == metadata["features"] == [
+        "p_calm", "p_defensive", "p_distressed", "p_unclear", "selfreg_rate", "mean_turns"]
+    scaled = scaler.transform(features)
+    assigned = model.predict(scaled)[0]
+    distances = model.transform(scaled)[0] ** 2
+    alternative = min((i for i in range(len(distances)) if i != assigned), key=distances.__getitem__)
+    rows = xai["feature_contributions"]
+    assert [row["feature"] for row in rows] == list(features)
+    assert [row["observed_value"] for row in rows] == pytest.approx(features.iloc[0].tolist())
+    assert xai["assigned_cluster"] == assigned
+    assert xai["pattern"] == report["current_pattern"] == metadata["cluster_names"][assigned]
+    assert xai["alternative_cluster"] == alternative
+    expected = np.square(scaled[0] - model.cluster_centers_[alternative])
+    expected -= np.square(scaled[0] - model.cluster_centers_[assigned])
+    assert [row["contribution"] for row in rows] == pytest.approx(expected)
+    assert sum(row["contribution"] for row in rows) == pytest.approx(xai["distance_margin"])
+    assert xai["distance_margin"] == pytest.approx(distances[alternative] - distances[assigned])
+    assert xai["top_supporting_features"] == sorted(
+        [row for row in rows if row["contribution"] > 0], key=lambda row: -row["contribution"])[:3]
+    assert xai["session_count"] == len(selected)
+    assert xai["analysis_period"] == {
+        "start": "2026-07-01", "end": "2026-07-16" if fallback else "2026-07-14",
+        "source": "all_sessions" if fallback else "latest_reliable_window",
+    }
+    assert report["xai"]["trend"]["status"] == "not enough data"
+
+
+@pytest.mark.parametrize("offset", [0.0, 2e-13, 2e-10])
+def test_xai_keeps_model_assignment_near_a_tie(monkeypatch, offset):
+    import numpy as np
+
+    class Model:
+        cluster_centers_ = np.array([
+            [1 + offset, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0], [0, 0, 1 + offset, 0, 0, 0],
+        ])
+
+        def predict(self, scaled):
+            return [1]
+
+    class Scaler:
+        def transform(self, observed):
+            return np.zeros(observed.shape)
+
+    f1 = services._f1_module()
+    monkeypatch.setattr(f1, "load_artifacts", lambda _: (
+        Model(), Scaler(), {"features": f1.FEATURES, "cluster_names": {0: "A", 1: "B", 2: "C"}}))
+    result = f1.explain_pattern(f1.clean_sessions(_child_sessions(3)))
+    assert result["assigned_cluster"] == 1
+    assert result["alternative_cluster"] == 0
+    assert result["equal_distance"] == (offset < 1e-12)
+    terms = [row["contribution"] for row in result["feature_contributions"]]
+    assert terms == pytest.approx([(1 + offset)**2, -1, 0, 0, 0, 0])
+    assert result["distance_margin"] == pytest.approx(sum(terms), abs=1e-15)
+
+
+@pytest.fixture
+def guidance_report():
+    return {
+        "enough_data": True,
+        "current_pattern": "Distressed",
+        "trend": "worsening",
+        "xai": {"status": "available", "pattern": {
+            "pattern": "Distressed",
+            "equal_distance": False,
+            "top_supporting_features": [
+                {"feature": "p_distressed", "observed_value": 0.75, "contribution": 2.0},
+            ],
+        }},
+    }
+
+
+@pytest.mark.parametrize("pattern,phrase", [
+    ("Calm / reflective", "manageable or enjoyable"),
+    ("Defensive", "low-pressure"),
+    ("Distressed", "what kind of support"),
+    ("Withdrawn / unclear", "time to respond"),
+])
+@pytest.mark.parametrize("trend,phrase_in_action,phrase_in_reason", [
+    ("worsening", "in a few days", "checking in sooner"),
+    ("improving", "felt easier lately", "asking what has felt easier"),
+    ("stable", "regular check-in", "little overall change"),
+    ("not enough data", "listen at your child’s pace", "More comparable periods"),
+])
+def test_parent_guidance_uses_pattern_and_trend(guidance_report, pattern, phrase, trend,
+                                                phrase_in_action, phrase_in_reason):
+    guidance_report.update(current_pattern=pattern, trend=trend)
+    guidance_report["xai"]["pattern"]["pattern"] = pattern
+    result = services.parent_guidance(guidance_report)
+    if trend == "not enough data":
+        assert "too few comparable periods" in result["guidance"]
+        assert "You could ask" not in result["next_action"]
+    else:
+        assert phrase in result["guidance"]
+        assert "recorded share of distressed sessions" in result["why"]
+    assert phrase_in_action in result["next_action"]
+    assert pattern in result["why"]
+    assert phrase_in_reason in result["why"]
+    assert result["observations"] == [{
+        "label": "Share of distressed sessions", "observed": "75.0%", "contribution": 2.0,
+    }]
+
+
+def test_parent_guidance_uses_meaningful_supported_observations(guidance_report):
+    pattern = guidance_report["xai"]["pattern"]
+    assert "hard moment" in services.parent_guidance(guidance_report)["next_action"]
+    pattern["top_supporting_features"] = [
+        {"feature": "p_distressed", "observed_value": 0, "contribution": 4.0},
+        {"feature": "mean_turns", "observed_value": 2.5, "contribution": 3.0},
+        {"feature": "selfreg_rate", "observed_value": 0.5, "contribution": 2.0},
+    ]
+    result = services.parent_guidance(guidance_report)
+    assert "hard moment" not in result["next_action"]
+    assert "helped you feel more settled" in result["next_action"]
+    assert result["observations"][:2] == [
+        {"label": "Share of distressed sessions", "observed": "No sessions were labeled distressed.",
+         "contribution": 4.0},
+        {"label": "Average dialogue turns", "observed": "2.50", "contribution": 3.0},
+    ]
+    assert "self-regulation" in result["why"]
+
+
+def test_parent_guidance_selects_support_by_positive_contribution(guidance_report):
+    guidance_report["xai"]["pattern"]["top_supporting_features"] = [
+        {"feature": "p_unclear", "observed_value": 0.0, "contribution": 0.125},
+        {"feature": "selfreg_rate", "observed_value": 0.0, "contribution": 0.0625},
+        {"feature": "p_defensive", "observed_value": 0.67, "contribution": 0},
+        {"feature": "p_distressed", "observed_value": 0.33, "contribution": -0.5},
+    ]
+    result = services.parent_guidance(guidance_report)
+    assert result["observations"] == [
+        {"label": "Share of unclear sessions", "observed": "No sessions were labeled unclear.",
+         "contribution": 0.125},
+        {"label": "Share with self-regulation shown",
+         "observed": "Self-regulation was not recorded in these sessions.", "contribution": 0.0625},
+    ]
+    assert "in a few days" in result["next_action"]
+    assert "You could ask" not in result["next_action"]
+
+
+@pytest.mark.parametrize("case,phrase", [
+    ("too_few_sessions", "too few recorded sessions"),
+    ("too_few_windows", "too few comparable periods"),
+    ("missing_xai", "enough supporting information"),
+    ("missing_features", "enough supporting information"),
+    ("incomplete_feature", "enough supporting information"),
+    ("tie", "equally close"),
+])
+def test_parent_guidance_falls_back_when_evidence_is_limited(guidance_report, case, phrase):
+    pattern = guidance_report["xai"]["pattern"]
+    if case == "too_few_sessions":
+        guidance_report["enough_data"] = False
+    elif case == "too_few_windows":
+        guidance_report["trend"] = "not enough data"
+    elif case == "missing_xai":
+        guidance_report.pop("xai")
+    elif case == "missing_features":
+        pattern.pop("top_supporting_features")
+    elif case == "incomplete_feature":
+        pattern["top_supporting_features"] = [{"feature": "p_distressed"}]
+    else:
+        pattern["equal_distance"] = True
+    result = services.parent_guidance(guidance_report)
+    assert phrase in result["guidance"]
+    assert "listen at your child’s pace" in result["next_action"]
+    assert result["why"]
+
+
 def test_no_window_column_without_a_window_pattern():
     report = services.emotional_pattern_report(_child_sessions(3), "K1")
     report.update(window_features=None, timeline=[])  # e.g. no window has 3 sessions
@@ -353,6 +542,14 @@ def test_real_model_on_demo_children(child, current, trend):
     report = services.emotional_pattern_report(services.demo_sessions(), child)
     assert report["current_pattern"] == current
     assert report["trend"] == trend
+    explanation = report["xai"]["trend"]
+    assert explanation["status"] == trend
+    assert [w["window_start"] for w in explanation["earlier_windows"]] == [
+        w["date"] for w in report["timeline"][:2]]
+    assert [w["window_start"] for w in explanation["recent_windows"]] == [
+        w["date"] for w in report["timeline"][-2:]]
+    assert explanation["recent_mean"] - explanation["earlier_mean"] == report["severity_change"]
+    assert f"{report['severity_change']:+.2f}" in explanation["explanation"]
     assert len(report["timeline"]) == 5
     assert list(report["features"]) == [
         "p_calm", "p_defensive", "p_distressed", "p_unclear", "selfreg_rate", "mean_turns"]

@@ -27,6 +27,11 @@ class DialogueState(Enum):
     DONE = auto()
 
 
+# The closing line when the session is flagged for a parent. The child is told, as the counsellor
+# advised (23 Nov 2026); the dialogue sheets' instructions name it so raters do not fail it on S5.
+ESCALATION_CLOSING = "I'm going to let a parent know we talked about this, so they can support you."
+
+
 @dataclass
 class Turn:
     state: DialogueState
@@ -131,7 +136,7 @@ class FSMController:
 
     def _closing_line(self, evaluate_output: EvaluateOutput, last_child_text: str) -> str:
         if evaluate_output.escalation_flag:
-            return "I'm going to let a parent know we talked about this, so they can support you."
+            return ESCALATION_CLOSING
         if emotion_rules.is_refusal(last_child_text):
             return "That's okay, you don't have to talk right now. I'm here if you want to talk later."
         return "Thanks for talking this through with me."

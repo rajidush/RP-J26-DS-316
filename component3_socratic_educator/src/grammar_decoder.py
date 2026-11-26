@@ -187,29 +187,43 @@ def delivery_violation(text: str) -> Optional[str]:
 
 # INQUIRE's prompt (ticket 05): the move and the band, never the risk category
 # (ADR 0004); the child's latest reply and the line it answered come last, fenced
-# as data (ADR 0010).
+# as data (ADR 0010). Tone and per-band guidance follow the counsellor's written
+# review of 23 Nov (ticket 27; .scratch/pp2-validation/counsellor-review-comments-2026-11-23.md):
+# reassurance, varied acknowledgements, "together" for 8-10, a blame-free 11-13, values for
+# 14-15, and examples named in the older bands' alternatives (owner, 25 Nov, decision A).
 INQUIRE_PROMPT = (
     "You are a calm Socratic educator for child digital safety, talking with a child aged {band}. "
     "Something on the child's screen was just stopped. Do not describe, name or hint at what it was, "
     "and do not mention alerts, messages or warnings. "
     "Write the educator's next line for the Socratic move {move}: {guide}{easier} "
     "Use at most one short, kind sentence, then exactly one short question ending in a question mark, "
-    "in plain words. Only name a feeling if the child used that exact word. Never blame the child, and "
-    "never ask them to describe what they saw. "
+    "in plain words. The sentence can reassure, for example that they are not in trouble; vary how you "
+    "acknowledge the child rather than always saying the same words. Only name a feeling if the child "
+    "used that exact word. Never blame the child, and never ask them to describe what they saw. "
     "Return JSON with one field, line."
 )
+# Outside the alternatives move a line may not offer a choice ("... or ...?", S4), so the guidance there never
+# asks for a list: it asks for one thing. Examples named in the alternatives move are one or two, varied.
 INQUIRE_GUIDE = {
-    "clarify": dict.fromkeys(config.AGE_BANDS, "ask what the child was doing or thinking just before."),
+    "clarify": {
+        "8-10": "ask simply and warmly what the child was doing just before.",
+        "11-13": "ask calmly what was going on just before, making clear they are not in trouble.",
+        "14-15": "ask respectfully, the way a trusted friend would, what was going on just before.",
+    },
     "consequences": {
         "8-10": "ask one concrete question about how it was for them at that moment, with no what-ifs.",
         "11-13": "ask what could happen next if it kept happening.",
-        "14-15": "ask how it could affect them or other people later on.",
+        "14-15": "ask how it could affect them or other people later on, naming just one thing, such as their "
+                 "wellbeing, their privacy or their digital footprint.",
     },
     "alternatives": {
         "8-10": "offer exactly two safe choices to pick from, such as telling a grown-up they trust "
-                "or closing it and doing something else.",
-        "11-13": "ask for one thing they could do if it happens again.",
-        "14-15": "invite them to weigh their options for next time and pick one that fits them, without lecturing.",
+                "or closing it and doing something else, and say you can work it out together.",
+        "11-13": "ask what they could do if it happens again, naming one or two varied examples, such as "
+                 "blocking, reporting it or telling an adult they trust.",
+        "14-15": "invite them to pick a step for next time that fits them, naming one or two varied options, such "
+                 "as blocking, reporting it, changing what the app shows them or talking to an adult they trust, "
+                 "without lecturing.",
     },
 }
 INQUIRE_EASIER = " The child said they do not know, so ask an easier, shorter version of the same question."

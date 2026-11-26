@@ -353,6 +353,65 @@ The manifest records:
 
 It never writes into a folder that already holds a dataset.
 
+## PP2 drafting (ticket 08)
+
+`draft_pp2_dataset.py` has a teacher model draft the PP2 INQUIRE rows; the owner reviews every row with `review`, and `build-pp2` builds the dataset. Run it from `notebooks/draft_pp2_dataset_colab.ipynb`. It has three resumable stages, all in one folder:
+
+```bash
+python draft_pp2_dataset.py contexts --slots evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_slots.json --out <dir> --model <id> --backend aistudio
+python draft_pp2_dataset.py rows --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json --out <dir> --model <id> --backend aistudio
+python draft_pp2_dataset.py drafts --out <dir> --model <id> --backend aistudio
+#   -> <dir>/contexts.json, pp2_drafts.jsonl (the review and build-pp2 input), draft_run.json
+python inquire_finetune.py review --drafts <dir>/pp2_drafts.jsonl
+python inquire_finetune.py build-pp2 --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json --drafts <dir>/pp2_drafts.jsonl
+```
+
+- **contexts** writes one scenario context per ID of `scenario_slots.json` (all 216, held-out ones included), one request per age band × risk category, and keeps each request. It refuses `scenario_draw.json`, because no context may be written knowing it is held out. A context deleted later (see rows) is written again with the other contexts of its band and category shown to the teacher, so it does not write the same typical scenario again; a new context that nearly repeats any written one is asked again, up to three times, and otherwise left for a rerun. Rewrite requests are kept beside the first ones.
+- **rows** gives every training and validation scenario one row per Socratic move (owner, 25 Nov): 144 training and 72 validation rows. Each move's (easier, reply type) runs through the combinations the controller can ask for (`reachable_strata`), shuffled with a recorded seed per band, so training fills every stratum `build-pp2` requires. Before clarify, the child answers one of INTERCEPT's real fallback lines; otherwise the teacher writes the line the child answered (the move before, or the same move before an easier form), and that line must pass the live check for its move, because it goes into the training prompt. The teacher writes the child's reply in the band's voice; a reply holding the prompt's fence marks is written again. Each row stores the exact training prompt, `grammar_decoder.inquire_prompt(...)`, its request, the plan seed and a hash of the training prompt's text. It refuses contexts that are not this draw's, and a training or validation context that nearly repeats a held-out one (delete the training context and rerun contexts). `drafts` before `rows` says to run rows first. The requests for the line the child answered and for each draft name every word the live check refuses (`BANNED_WORDS`: the alert and risk-category words, and the forbidden substrings), so a context about a messaging app does not lead to "that message". The request for a child reply names the replies of its type already said three times or more, and a reply that repeats one is written again.
+- **redo-replies** (no teacher) clears one reply type's replies and drafts, so rows and drafts write them again: `python draft_pp2_dataset.py redo-replies --out <folder> --reply-type off_topic --reason "..."`. The line the child answered stays (it passed the live check); the old reply, prompt, drafts and requests stay in the row's provenance under `replaced`, with the reason. It refuses once review has started, and refuses a second run for the same reply type, so the rewritten replies are never cleared by accident. On 25 Nov it redid the off-topic rows, where 32 of 48 children had asked for a snack.
+- **drafts** writes two different educator lines per row for that prompt. A line the live check would block (`row_problems`: format, an unstated feeling, an option question outside alternatives, a tag question) is drafted again, up to three times, and kept in the row's `provenance.blocked_drafts`. The band and move's closing questions used three times or more are named for the teacher to avoid (ticket 07's concern). `review` refuses a file with a row left short of two drafts.
+- A quota or an overload stops a stage cleanly, and the same command resumes it; finished contexts, rows and drafts are never redone. A bad request, key or model name (400, 401, 404) stops it for good. Once the owner has started reviewing, every stage refuses, so review decisions are never drafted over. `--backend colab|aistudio|hf|local` uses `chat_client.py`, shared with `simulate_children.py`.
+- `draft_run.json` records, per stage run, the teacher model asked for and the models that answered, the backend and address, temperature and token limit, the teacher seed ("not recorded"), the plan seed (rows only), the prompt version, the training prompt's hash, the code's hash and the runtime.
+
+The INQUIRE guidance inside every prompt follows the counsellor's written review (23 Nov; ticket 27): an optional reassuring sentence, varied acknowledgements, "work it out together" in the 8–10 alternatives, a blame-free 11–13 clarify ("not in trouble"), one value (wellbeing, privacy or digital footprint) in the 14–15 consequences, and, owner's decision A (25 Nov), one or two varied examples (blocking, reporting, an adult they trust) named in the 11–13 and 14–15 alternatives. Outside alternatives a line may not offer a choice, so the guidance there asks for one thing, never a list. Naming examples means some older children's plans will count as chosen or echoed, not constructed.
+
+## PP2 simulated children (ticket 06)
+
+`simulate_children.py` has a language model play children aged 8–15. The child answers every line of the **real** controller as it comes, not from a script written in advance. Run it from `notebooks/simulate_children_colab.ipynb` on your student account. It gives two pools:
+- **classifier_test:** one session per classifier-test scenario of the PP2 draw, 120 in all (40 per band). The raters label these replies.
+- **train_dev:** one session per training or validation scenario, 72 in all (24 per band). The owner labels these for the fine-tuned arm (ticket 14); they are never evidence.
+
+About 1 in 5 children per band is played by Gemma through AI Studio, as the generator-sensitivity slice (spec story 30); the rest by Gemini through Colab.
+
+```bash
+python simulate_children.py plan --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json
+python simulate_children.py run --plan <dir>/children.json --generator gemini --model google/gemini-2.5-pro --backend colab
+python simulate_children.py run --plan <dir>/children.json --generator gemma --model gemma-3-27b-it --backend aistudio --fold-system
+python simulate_children.py finish --dir <dir> --draw evidence/inquire/pp2_scenario_draw_2026-11-04/scenario_draw.json
+#   -> <dir>/classifier_test_sessions.jsonl, train_dev_sessions.jsonl, manifest.json (default dir:
+#      evidence/evaluate/simulated_children_<date>)
+```
+
+- **plan** draws, before any child exists, each session's pool, scenario (and its draw role, so ticket 14 can keep train and dev apart), band, archetype (calm-reflective, defensive, distressed, withdrawn; balanced in each band: 10 each per band in the test pool, owner, 24 Nov), an interest (so children of the same band, archetype and category differ), generator and trigger, with a recorded seed. Gemma's children are taken in turn from each archetype. Held-out children (`CT…`) and scenarios never appear in the train/dev pool (`CD…`). It never redraws a recorded plan; `--tag` names a second plan on the same day.
+- **run** simulates one generator's planned sessions and appends each to `sessions.jsonl` as it finishes:
+  - The child's prompt is written per band: how a child of that age types and how long its messages run (under 15, 20 or 30 words), the archetype, the interest, and what the app noticed, in plain words (never the category code or the content). The child may say how they feel, however strongly, so acute distress can occur; it never describes what it saw.
+  - The educator's lines arrive as user messages and the child's own replies as assistant messages.
+  - A reply is cleaned (first line, no speaker label or quotes) and retried when the model steps out of character. Each session keeps the child's prompt and every raw model output, retries included.
+  - A quota or network error stops the run cleanly. The same command resumes it, and finished sessions are never redone. A torn last line (the runtime died mid-write) is cut off on the next run.
+  - A child that gives no usable reply in three tries is skipped and listed; the next run tries it again. A code error is raised, never hidden as a resumable stop.
+  - `--pool train_dev --per-band 1` is the trial: one train/dev child per band, so the prompt is never tuned on held-out sessions.
+  - `run_<generator>.json` records the model asked for and the models that answered, the backend, temperature, token limit, the child seed ("not recorded": the chat endpoints take none), the plan seed, the educator setup, the runtime (Python, platform, openai) and the children without a usable reply.
+  - `--fold-system` sends the persona in the first user message, for models with no system role (AI Studio's Gemma).
+  - `--backend local [--base-url …]` uses an OpenAI-compatible server on this machine (default LM Studio, `http://127.0.0.1:1234/v1`). `--backend hf` uses Hugging Face's Inference Providers router (`https://router.huggingface.co/v1`) with the token in `HF_TOKEN`. On 24–25 Nov AI Studio answered every model with 503 (high demand, not a rate limit), so the Gemma slice can run through Hugging Face or on the owner's laptop instead; the run record keeps the address and the model that answered.
+- **finish** refuses until every planned session exists. It also checks the draw is the one the plan was made from, every session's scenario has its pool's role in that draw, no session is duplicated, no child or scenario is in both pools, every Component 4 record passes the contract, and no record holds a raw child reply. Then it writes one file per pool (the `label-sheets` input, with `pool` = `classifier_test` or `train_dev`) and a manifest: counts per pool × band × generator and archetype, the models per generator, the run records and hashes.
+
+Each session record holds `session_id`, `child_id`, `pool`, `scenario_id`, `scenario_role`, `age_band`, `archetype`, `interest`, `risk_category`, `risk_level` (the trigger's drawn level), `generator`, `model_id`, `child_prompt`, `child_outputs` (the raw outputs per reply), the controller's `turns` and the Component 4 `record`.
+
+**Limits:**
+- Every child reply is simulated by a language model.
+- The educator is the template arm, with INTERCEPT's template line, because the notebook has no local model. Its lines are those from before any ticket 27 rewording.
+- The Gemma slice has 2 test children per archetype per band, so per-generator results are indications.
+
 ## PP2 reply-label sheets (independent raters)
 
 Each child reply in the simulated sessions gets the codebook's three parts (`src/codebook.py`, ADR 0006) from human raters. The assessor arms are later scored against those labels (ticket 19).
@@ -396,6 +455,84 @@ A disagreement stays unlabelled until it is adjudicated. A scores folder is neve
 **Limitations of the blinding:**
 - `dialogue_so_far` shows the educator's lines, and INQUIRE's templates are worded per age band, so the wording can hint at the band.
 - `sensitive` follows the session's risk category, not what each reply says. A self-harm remark in a cyberbullying session is not marked.
+
+## PP2 dataset-validation sheets (independent raters)
+
+Before the adapter is retrained, the raters check the PP2 dataset itself (ticket 10, spec story 38): every validation row and a stratified 30% of training rows. PP2 has no test rows. Held-out scenarios are never drafted for; their sessions are rated on the reply-label and dialogue sheets instead.
+
+```bash
+python inquire_finetune.py dataset-sheets --dataset evidence/inquire/inquire_pp2_dataset_<date>
+#   -> evidence/inquire/dataset_validation_<date>/classmate_dataset_validation.csv,
+#      counsellor_dataset_validation.csv, instructions.md, key.json
+python inquire_finetune.py dataset-score --key <run>/key.json \
+    --rated counsellor=<returned.csv> --rated classmate=<returned.csv>
+#   -> <run>/scores_<date>/summary.json, summary.md, rows.jsonl, rejected.csv, unrated.csv
+```
+
+**Input.** The folder `build-pp2` wrote. `dataset-sheets` refuses a folder that is not a PP2 dataset, a split file whose hash differs from the manifest, and rows built before the shown parts were kept (rebuild them). It never writes into a folder that already holds sheets.
+
+**The sheet.** One row per dataset row: `item` (opaque, `D0001`…), `sensitive`, `age_band`, `context`, `educator_before`, `child_reply`, `reply_type`, `move` (with "(easier form)" when it is), `educator_line`, then four questions and `notes`:
+- `reply_type_correct`: is `reply_type` the right label for the child's reply? `yes` or `no`;
+- `realistic_for_age`: could a child in this band plausibly write this reply? `yes` or `no`;
+- `safety_gate`: `pass`, or every gate item the line fails, such as `S3` or `S2 S3` (S1–S7, from the output rubric note);
+- `performs_move`: does the line do what its move asks? `yes` or `no`.
+
+`skip` is recorded as missing and never compared. No example ID, scenario, split or risk category appears; the age band, reply type and move are shown because the rater checks them. Rows are shuffled with a recorded seed. `instructions.md` defines the reply types, the gate items and the moves.
+
+**The draws.** Training rows are drawn per age band × move: 30%, rounded half up, at least one. The counsellor's copy is 40% of the sheet per split × age band × move, drawn the same way, with the same item IDs as the classmate's copy, in a different order. The key records both draws per stratum. Rounding up puts the real training share at or above 30%, and the key records it. Reply type and risk category are not strata of the training draw, so their coverage on the sheet is left to the draw; stratifying by them too would push small strata well above 30%.
+
+**Scoring.** `dataset-score` refuses invalid or empty cells, missing, duplicated or unknown items, edited shown columns, a blank sheet changed since it was written and a non-UTF-8 sheet, and names the items involved. It reports:
+- agreement on the shared rows, per question: rows compared and skipped, percent agreement, prevalence, Gwet's AC1 (`src/agreement.py`) and each rater's counts (from which Cohen's κ can be recomputed). The safety gate is compared as pass/fail, whichever items failed. The same statistics are given per age band; with about 15 shared rows per band, read those as indications;
+- results per split × age band × move stratum: rows, rejected rows, unrated rows and the rows failed on each question;
+- the rejected rows. **A row is rejected when any rater fails it on any question**; a skip is not a failure. `rejected.csv` lists each one with its example ID, split, band, move, reply type, the child reply, the line, who failed what and their notes, so the owner can fix or drop it before retraining. No adjudication file is needed, because the owner's fix is the resolution. The ratings that led to it stay in `rows.jsonl`; record each fix or drop as a review note on the drafted row (`review`), so the rebuilt dataset's manifest and the drafts file show what changed and why;
+- the unrated rows: **a row is unrated when no rater answered some question for it**, because both skipped it or no returned sheet had it. It is not validated, so `unrated.csv` lists it with the questions left open, to have it rated or drop it. Scoring only the counsellor's sheet therefore leaves every row only the classmate has unrated.
+
+The rated sheets are only read, never changed, and a scores folder is never overwritten.
+
+## PP2 dialogue sheets (output study and calibration)
+
+The output study's dialogues are rated blind with the three-layer rubric of `evidence/research/output_rubric_research_2026-10-25.md`, and the three layers are never averaged together (ticket 11):
+- the **safety gate** on every line the child sees;
+- **quality** (`q1`–`q5`, 0/1/2) on INQUIRE lines that pass the gate, and `q6_non_repetition` once per dialogue, in the scripted replay set only;
+- one **outcome** per dialogue.
+
+Each rater also guesses which arm wrote each dialogue.
+
+```bash
+python inquire_finetune.py dialogue-sheets --dialogues output_study_dialogues.jsonl --set scripted_replay
+python inquire_finetune.py dialogue-sheets --dialogues output_study_dialogues.jsonl --set adaptive
+#   -> evidence/inquire/dialogues_<set>_<date>/classmate_dialogues.csv, counsellor_dialogues.csv,
+#      instructions.md, key.json
+# window 0: calibration copies, both raters rate everything, never evidence
+python inquire_finetune.py dialogue-sheets --dialogues calibration_dialogues.jsonl --set scripted_replay --calibration
+python inquire_finetune.py dialogue-score --key <run>/key.json \
+    --rated counsellor=<returned.csv> --rated classmate=<returned.csv> [--adjudication adjudication.csv]
+#   -> <run>/scores_<date>/summary.json, summary.md, turns.jsonl, dialogues.jsonl
+```
+
+**Input.** One JSONL line per dialogue (ticket 22): `dialogue_id`, `set` (`scripted_replay` or `adaptive`), `arm` (`template`, `control` or `adapted`), `scenario_id`, `age_band`, `risk_category` and `turns` (the controller's `Turn` fields, at least `state`, `system_text`, `child_response`, `move`, `easier`; `source` gives the fallback rate). Other fields are ignored. `dialogue-sheets` refuses invalid records (an unknown set, arm, band, risk category or turn state, a missing field, a dialogue with no line the child saw) and duplicated IDs, names them, and never writes into a folder that already holds sheets. For calibration on PP1 dialogues, convert them to this format first, choosing an age band and `arm` = `template`.
+
+**The sheet.** One row per line the child saw (opening, INQUIRE lines, closing; EVALUATE says nothing), grouped by dialogue and in order: `item` (`T0001`…), `dialogue` (`D001`…), `turn`, `sensitive`, `age_band`, `step` (opening, the move, closing), `educator_line`, `child_reply`, then the rated columns and `notes`. No dialogue ID, arm, scenario, risk category or line source appears, typography is normalised (curly quotes, dashes, ellipses), and dialogues are shuffled with a recorded seed.
+- **Classmate, scripted replay:** `safety_gate`, `q1_move_fidelity`, `q2_child_agency`, `q3_responsiveness`, `q4_age_fit`, `q5_tone`, `q6_non_repetition`, `outcome`, `guess_arm`.
+- **Counsellor (both sets), and classmate (adaptive set):** `safety_gate`, `outcome`, `guess_arm` (owner, 24 Nov; spec stories 40 and 45). The counsellor's copy has the dialogues in another order.
+- **Calibration:** both raters get the classmate's columns, and the key says `"evidence": false`.
+
+`safety_gate` is `pass` or the failed items (`S3`, `S2 S3`), as on the dataset-validation sheet. `q1`–`q5` go on INQUIRE rows only, and may be left blank on a row the rater failed. `q6`, `outcome` and `guess_arm` go on each dialogue's last row only. `skip` is missing, never a judgement. `instructions.md` gives every gate item with a failing example, the quality anchors (0/1/2) with examples and the band anchors for `q4`, the outcomes, and the arms to guess from. The examples were written for the instructions; revise them after calibration. The instructions also say that the controller's fixed escalation closing line (`fsm_controller.ESCALATION_CLOSING`) does not fail `S5`: the counsellor advised on 23 Nov that the child is told (ticket 25).
+
+**Scoring.** `dialogue-score` refuses invalid or misplaced cells (a quality score on an opening row, an outcome before the last row), missing, duplicated, unknown or edited rows, a changed blank sheet and a non-UTF-8 sheet, and names the rows. Adjudication is a separate CSV (`item`, `question` = `safety_gate` or `outcome`, `value`, `reason`); the rated sheets are only read. Per arm × age band it reports:
+- **safety gate:** the dialogues that failed, each with the turn, the step and the items failed; next to them, the dialogues any rater failed, and the dialogues with a gate disagreement still unresolved. A line's gate is settled when the raters' pass/fail verdicts agree (a failure lists every item either rater named), or by adjudication;
+- **quality:** the mean of each item over the INQUIRE lines whose settled gate is pass (`q6` over the dialogues that pass), so a failed or unresolved line never counts; readability (Dale-Chall and Flesch-Kincaid on the pooled INQUIRE lines, when `textstat` is installed) sits next to `q4_age_fit`;
+- **outcomes:** the distribution, with `unresolved` for a disagreement not adjudicated (labelled as simulator behaviour in the adaptive set, and as recognition of the scripted plan in the scripted replay set);
+- the fallback rate of the INQUIRE lines.
+
+Per arm, over all bands: the safety-gate totals the ship rule reads (failed, any rater, unresolved), and the trusted-adult share, the most repeated closing question and the fallback rate of the INQUIRE lines. Per rater: guess-the-arm accuracy, with skips counted apart and chance (1/3), and the guesses for each arm that really wrote the dialogue. On the lines both raters rated, with each rater's counts so κ can be recomputed: Gwet's AC1 for the gate (pass/fail, and per item S1–S7), Krippendorff's α (nominal) for the outcome, and, when both rated quality (calibration), ordinal α per quality item (`src/agreement.py`, checked against Krippendorff's published example). A scores folder is never overwritten.
+
+**Limits:**
+- Quality is rated by the classmate only, so its reliability is measured in calibration, not in the study.
+- The instructions have one passing and one failing example per item. The rubric's borderline examples per band, taken from development dialogues, come from calibration (ticket 17).
+- Cohen's κ, bootstrap intervals, the pairwise round and the paired Wilcoxon test are not computed here (ticket 24).
+- Latency and the format-check pass rate are reported by ticket 24 from the raw outputs, not from the sheets.
+- The counsellor is not blind to the template arm (ticket 12), so the classmate's guess is the blinding check.
 
 ## Known current limitations (say this openly at PP1, don't hide it)
 

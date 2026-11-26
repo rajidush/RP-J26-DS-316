@@ -314,7 +314,7 @@ def _base_layout(fig, height):
     return fig
 
 
-def pattern_timeline_figure(timeline):
+def pattern_timeline_figure(timeline, labels=None):
     """Line chart of Function 1 patterns over the trend windows.
 
     timeline: [{"date": "YYYY-MM-DD", "pattern": <PATTERN_ORDER name>, "sessions": n}, ...].
@@ -322,6 +322,8 @@ def pattern_timeline_figure(timeline):
     colour of the pattern it moves into; the legend lists all four patterns.
     """
     order = {p: i for i, p in enumerate(PATTERN_ORDER)}
+    labels = labels or {}
+    display_labels = {p: labels.get(p, pattern_style(p).label) for p in PATTERN_ORDER}
     points = [t for t in timeline if t["pattern"] in order]
     fig = go.Figure()
 
@@ -336,9 +338,10 @@ def pattern_timeline_figure(timeline):
         mine = [t for t in points if t["pattern"] == pattern]
         fig.add_trace(go.Scatter(
             x=[t["date"] for t in mine] or [None], y=[order[pattern]] * len(mine) or [None],
-            mode="markers", name=style.label,
+            mode="markers", name=display_labels[pattern],
             marker=dict(color=style.color, size=12, line=dict(color="#fff", width=1.5)),
-            customdata=[[pattern, plural(t["sessions"], "session")] for t in mine] or None,
+            customdata=[[labels.get(pattern, pattern), plural(t["sessions"], "session")]
+                        for t in mine] or None,
             hovertemplate="<b>%{customdata[0]}</b><br>2 weeks from %{x|%Y-%m-%d}"
                           "<br>%{customdata[1]}<extra></extra>"))
 
@@ -346,7 +349,7 @@ def pattern_timeline_figure(timeline):
                 linecolor="#C9D3E3", showline=True, ticks="")
     fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d", tickfont=dict(size=15))
     fig.update_yaxes(**axis, tickmode="array", tickvals=list(range(len(PATTERN_ORDER))),
-                     ticktext=[pattern_style(p).label for p in PATTERN_ORDER],
+                     ticktext=[display_labels[p] for p in PATTERN_ORDER], automargin=True,
                      range=[-0.4, len(PATTERN_ORDER) - 0.6], fixedrange=True,
                      tickfont=dict(size=16, color=COLORS["text"]))
     fig.update_layout(legend=dict(orientation="h", x=0.5, xanchor="center", y=-0.18,

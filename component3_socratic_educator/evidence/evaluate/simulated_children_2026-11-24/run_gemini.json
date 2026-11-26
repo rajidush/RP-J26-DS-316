@@ -1,0 +1,108 @@
+{
+  "generator": "gemini",
+  "model": "google/gemini-3.8-flash",
+  "served_models": [
+    "google/gemini-3.8-flash"
+  ],
+  "backend": "colab",
+  "base_url": "fixed by the backend",
+  "settings": {
+    "temperature": 0.9,
+    "max_tokens": 1024
+  },
+  "child_seed": "not recorded (the chat endpoints take no seed)",
+  "fold_system": false,
+  "plan_seed": 20261124,
+  "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+  "runtime": {
+    "python": "3.13.18",
+    "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+    "openai": "2.54.0"
+  },
+  "started": "2026-11-25T16:44:20+00:00",
+  "finished": "2026-11-25T16:44:47+00:00",
+  "sessions_written": 1,
+  "children_without_a_usable_reply": [],
+  "stopped_by": null,
+  "earlier_runs": [
+    {
+      "generator": "gemini",
+      "model": "gemini-3.8-flash",
+      "served_models": [
+        "gemini-3.8-flash"
+      ],
+      "backend": "aistudio",
+      "base_url": "fixed by the backend",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": false,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-25T11:21:23+00:00",
+      "finished": "2026-11-25T11:23:46+00:00",
+      "sessions_written": 0,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CD072: InternalServerError: Error code: 503 - [{'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}]"
+    },
+    {
+      "generator": "gemini",
+      "model": "google/gemini-3.8-flash",
+      "served_models": [
+        "google/gemini-3.8-flash"
+      ],
+      "backend": "colab",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": false,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T14:18:21+00:00",
+      "finished": "2026-11-24T15:07:47+00:00",
+      "sessions_written": 149,
+      "children_without_a_usable_reply": [],
+      "stopped_by": "SIM-CD072: PermissionDeniedError: Error code: 403 - {'code': '', 'message': 'The max estimated cost of operation ($0.0040815) exceeds your available quota (based on max_output_tokens). Set max_output_tokens in your request to lower th"
+    },
+    {
+      "generator": "gemini",
+      "model": "google/gemini-3.8-flash",
+      "served_models": [
+        "google/gemini-3.8-flash"
+      ],
+      "backend": "colab",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 1024
+      },
+      "child_seed": "not recorded (the chat endpoints take no seed)",
+      "fold_system": false,
+      "plan_seed": 20261124,
+      "educator": "FSMController with the rules assessor; INQUIRE template arm; INTERCEPT template line (StubInterceptGenerator: no local model in the notebook)",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "started": "2026-11-24T13:57:53+00:00",
+      "finished": "2026-11-24T13:58:50+00:00",
+      "sessions_written": 3,
+      "children_without_a_usable_reply": [],
+      "stopped_by": null
+    }
+  ]
+}
