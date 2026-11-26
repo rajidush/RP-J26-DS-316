@@ -1,0 +1,5 @@
+name,episodes,detected,missed,episode_precision,episode_recall,episode_f1,normal_days,false_alerts,false_alert_rate,false_alerts_per_child,alert_onsets,repeat_on_episode_alerts,mean_delay,median_delay,within_1_day,within_3_days,within_7_days,recovered,median_recovery,episodes_without_assessable_labels
+deployed_ewma,24,4,20,0.8,0.16666666666666666,0.27586206896551724,631,1,0.001584786053882726,0.025,5,0,1.75,2.0,1,4,4,4,3.0,0
+deployed_cusum,24,3,21,0.3333333333333333,0.125,0.18181818181818182,631,6,0.009508716323296355,0.15,9,0,0.6666666666666666,1.0,3,3,3,0,,0
+deployed_union,24,5,19,0.35714285714285715,0.20833333333333334,0.2631578947368421,631,7,0.011093502377179081,0.175,14,2,1.2,1.0,3,5,5,0,,0
+daily_svm,24,16,8,0.42105263157894735,0.6666666666666666,0.5161290322580645,631,11,0.017432646592709985,0.275,38,11,0.0625,0.0,16,16,16,15,1.0,0
