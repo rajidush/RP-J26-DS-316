@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from ui import services, theme  # noqa: E402
+from ui import child_selection, services, theme  # noqa: E402
 
 st.set_page_config(page_title="Child Behavior Monitoring", page_icon=":material/groups:",
                    layout="wide")
@@ -52,6 +52,7 @@ main = make_pages(MAIN_PAGES, default_first=True)
 current = st.navigation([p for p, _ in main], position="hidden")
 
 theme.sidebar_brand()
+child_selection.render_sidebar()
 for page, key in main:
     with st.sidebar.container(key=f"nav-{key}"):
         st.page_link(page)

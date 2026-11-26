@@ -2,9 +2,11 @@ from datetime import timedelta
 
 import streamlit as st
 
-from ui import services, theme
+from ui import child_selection, services, theme
 
+child_selection.show_assessment_context("Behavioral Anomaly Detection")
 theme.page_header("Behavioral Anomaly Detection")
+st.caption("Demo Mode · Fictional data for this assessment.")
 
 
 def show_model_error(status):
@@ -30,7 +32,8 @@ ids = source["child_ids"]
 
 with theme.card("select-child", "Select Child"):
     child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
-                         key="f2_child")
+                         key=child_selection.F2_DEMO_CHILD,
+                         on_change=child_selection.clear_behavioral_dates)
 
 try:
     report = services.behavioral_report(source["daily"], child)

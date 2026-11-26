@@ -3,7 +3,8 @@ a viewer would see when the trained models load or fail to load."""
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from ui import services
+from db.child_profiles import PROFILE_DB_ENV
+from ui import child_selection, services
 
 APP = str(services.ROOT / "ui" / "app.py")
 F1_ERROR = "The emotional wellbeing summary is temporarily unavailable."
@@ -15,11 +16,18 @@ def html_of(at, area):
     return " ".join(str(h.proto) for h in area.get("html"))
 
 
-def run_page(page=None):
+@pytest.fixture(autouse=True)
+def isolated_profiles(tmp_path, monkeypatch):
+    monkeypatch.setenv(PROFILE_DB_ENV, str(tmp_path / "profiles.db"))
+
+
+def run_page(page=None, *, demo=True):
     at = AppTest.from_file(APP, default_timeout=120)
-    at.run()
+    if demo:
+        at.session_state[child_selection.DEMO_WIDGET] = True
     if page:
-        at.switch_page(f"pages/{page}.py").run()
+        at.switch_page(f"pages/{page}.py")
+    at.run()
     assert not at.exception, [e.value for e in at.exception]
     return at
 
@@ -35,12 +43,14 @@ def emotional_expanders(at):
 
 
 @pytest.fixture
-def child_with_sessions(temp_db):
+def child_with_sessions(temp_db, monkeypatch):
     for i, emo in enumerate(["calm", "calm", "defensive", "calm", "calm"]):
         services.save_record({
             "child_id": "K1", "session_id": f"K1-{i}", "timestamp": f"2026-07-0{i + 1}T10:00:00Z",
             "risk_level": "low", "emotional_state": emo, "self_regulation_shown": False,
             "escalation_flag": False, "dialogue_turns": 2})
+    sessions = services.sessions_for_child(services.child_session_source(), "K1")
+    monkeypatch.setattr(services, "demo_sessions", lambda: sessions)
 
 
 def test_emotional_pattern_page_with_real_model(child_with_sessions):
@@ -73,7 +83,7 @@ def test_emotional_pattern_page_keeps_prediction_when_xai_is_missing(child_with_
 
 def test_emotional_pattern_page_labels_synthetic_guidance(temp_db):
     at = run_page()
-    at.selectbox[0].set_value("C004").run()
+    at.selectbox(key=child_selection.F1_DEMO_CHILD).set_value("C004").run()
     assert not at.exception
     text = visible_main_text(at)
     assert "SYNTHETIC DEMO DATA" in text
@@ -135,8 +145,8 @@ def test_emotional_pattern_page_has_no_upload_label_or_contract_notice(child_wit
     assert not at.get("file_uploader")
     assert "pending a contract update" not in main
     assert "from the database" not in main                 # no child-count note
-    assert at.selectbox[0].label == "Select Child"
-    assert at.selectbox[0].value == "K1"                   # database children still loaded
+    assert at.main.selectbox[0].label == "Select Child"
+    assert at.main.selectbox[0].value == "K1"              # fixture demo sessions
 
 
 def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_sessions,
@@ -149,7 +159,7 @@ def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_se
     assert "Emotional Wellbeing" not in main
     assert not at.get("plotly_chart")                      # no chart
     assert not emotional_expanders(at)
-    assert not at.selectbox                                # nothing to select
+    assert not at.main.selectbox                           # no assessment selector
     assert "not loaded" in sidebar
 
 
@@ -187,7 +197,7 @@ def visible_main_text(at):
 def test_emotional_pattern_is_still_the_default_page(temp_db):
     at = run_page()
     main = html_of(at, at.main)
-    assert at.selectbox[0].label == "Select Child"
+    assert at.main.selectbox[0].label == "Select Child"
     assert "Emotional Wellbeing" in main
     assert "Behavioral Anomaly Detection" not in main
 
@@ -269,7 +279,7 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp
     assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
     assert "c4-flag" not in main
     assert not at.get("plotly_chart")
-    assert not at.selectbox and not at.dataframe
+    assert not at.main.selectbox and not at.dataframe
     assert F2_URGENT_TITLE not in main
 
 
@@ -284,7 +294,7 @@ def test_function2_failure_leaves_function1_page_working(child_with_sessions, tm
 
 @pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile"])
 def test_every_page_renders(temp_db, page):
-    run_page(page)
+    run_page(page, demo=False)
 
 
 def test_sidebar_has_no_data_and_admin_section(temp_db):
@@ -322,10 +332,10 @@ def test_stale_upload_state_does_not_change_demo_source(temp_db):
     at = AppTest.from_file(APP, default_timeout=120)
     # An upload left over from the old UI must not override the bundled source.
     at.session_state["f2_csv"] = "invalid stale CSV"
-    at.run()
+    at.session_state[child_selection.DEMO_WIDGET] = True
     at.switch_page("pages/behavioral_anomaly.py").run()
     assert not at.exception
     assert not at.error
     assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]
-    assert "Demo" not in " ".join(c.value for c in at.caption)
+    assert "Demo Mode · Fictional data" in " ".join(c.value for c in at.main.caption)
     assert not at.expander and not at.get("file_uploader")

@@ -225,20 +225,22 @@ def load_sessions_csv(file):
     return df[[c for c in F1_COLUMNS if c in df.columns]]
 
 
-def child_session_source(uploaded_csv=None):
+def child_session_source(uploaded_csv=None, *, demo_only=False):
     """Where Function 1's per-child data comes from, in priority order:
     an uploaded CSV, else database records that carry child_id (from
-    Component 3's data harness), else the demo dataset.
+    Component 3's data harness), else the demo dataset. The dashboard's explicit
+    Demo Mode uses demo_only to bypass uploaded and database records.
 
     Returns {"source": "upload" | "database" | "demo", "child_ids": [...],
     "sessions": DataFrame, or None for "database" (queried per child)}.
     """
-    if uploaded_csv is not None:
-        sessions = load_sessions_csv(uploaded_csv)
-        return {"source": "upload", "child_ids": child_ids(sessions), "sessions": sessions}
-    ids = comp3.list_child_ids()
-    if ids:
-        return {"source": "database", "child_ids": ids, "sessions": None}
+    if not demo_only:
+        if uploaded_csv is not None:
+            sessions = load_sessions_csv(uploaded_csv)
+            return {"source": "upload", "child_ids": child_ids(sessions), "sessions": sessions}
+        ids = comp3.list_child_ids()
+        if ids:
+            return {"source": "database", "child_ids": ids, "sessions": None}
     sessions = demo_sessions()
     return {"source": "demo", "child_ids": child_ids(sessions), "sessions": sessions}
 

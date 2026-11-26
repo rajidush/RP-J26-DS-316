@@ -1,6 +1,6 @@
 import streamlit as st
 
-from ui import services, theme
+from ui import child_selection, services, theme
 from ui.parent_guidance_view import (
     PARENT_PATTERN_LABELS,
     emotional_change_view,
@@ -16,12 +16,14 @@ def show_model_error():
     st.stop()
 
 
+child_selection.show_assessment_context("Emotional Pattern")
+
 f1_status = services.function1_status()
 if not f1_status["available"]:
     show_model_error()
 
-source = services.child_session_source()
-child = st.selectbox("Select Child", source["child_ids"])
+source = services.child_session_source(demo_only=True)
+child = st.selectbox("Select Child", source["child_ids"], key=child_selection.F1_DEMO_CHILD)
 if source["source"] == "demo":
     st.caption("SYNTHETIC DEMO DATA · These sessions are fictional.")
 
