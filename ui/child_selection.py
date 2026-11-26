@@ -17,6 +17,7 @@ _PROFILE_SNAPSHOT = "dashboard_profile_snapshot"
 _HAS_ACTIVE_PROFILES = "dashboard_has_active_profiles"
 F1_DEMO_CHILD = "f1_demo_child"
 F2_DEMO_CHILD = "f2_child"
+OVERVIEW_DEMO_RESULTS = "overview_demo_results"
 
 
 def _profile_labels(profiles):
@@ -48,7 +49,7 @@ def clear_behavioral_dates():
 
 
 def _change_mode():
-    for key in (F1_DEMO_CHILD, F2_DEMO_CHILD):
+    for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS):
         st.session_state.pop(key, None)
     clear_behavioral_dates()
 
@@ -62,10 +63,15 @@ def has_active_profiles():
     return st.session_state.get(_HAS_ACTIVE_PROFILES)
 
 
-def selected_profile_label(*, include_avatar=False):
+def selected_profile():
+    """Return the revalidated local profile only in local mode."""
     if demo_mode_active():
         return None
-    profile = st.session_state.get(_PROFILE_SNAPSHOT)
+    return st.session_state.get(_PROFILE_SNAPSHOT)
+
+
+def selected_profile_label(*, include_avatar=False):
+    profile = selected_profile()
     if profile is None:
         return None
     avatar = AVATARS.get(profile.avatar, "").split(" ", 1)[0] if include_avatar else ""

@@ -41,7 +41,6 @@ MAIN_PAGES = [
     ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitoring:", "behavioral-anomaly"),
     ("safety_notifications.py", "Safety Notifications", ":material/notifications:", "safety-notifications"),
     ("activity_summary.py", "Activity Summary", ":material/insights:", "activity-summary"),
-    ("parent_settings.py", "Settings", ":material/settings:", "settings"),
 ]
 
 
