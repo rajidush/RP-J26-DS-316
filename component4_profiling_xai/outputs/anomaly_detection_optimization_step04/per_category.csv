@@ -1,0 +1,11 @@
+arm,category,days,detected
+deployed,bullying_run,39,1
+deployed,grooming_burst,52,49
+deployed,late_night_violence,19,18
+deployed,self_harm_day,11,11
+deployed,volume_spike,6,2
+candidate,bullying_run,39,0
+candidate,grooming_burst,52,44
+candidate,late_night_violence,19,17
+candidate,self_harm_day,11,11
+candidate,volume_spike,6,1
