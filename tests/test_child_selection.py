@@ -48,23 +48,25 @@ def forbid_assessments(monkeypatch):
         monkeypatch.setattr(services, name, unexpected)
 
 
-def test_empty_profiles_and_invalid_selection(profiles, monkeypatch):
+def test_empty_profiles_and_invalid_selection(profiles, monkeypatch, navigate_dashboard):
     forbid_assessments(monkeypatch)
     at = app().run()
     assert not selector(at).options
     assert selector(at).proto.disabled
     assert not at.toggle(key=selection.DEMO_WIDGET).value
     assert any("Child Profiles page" in item.value for item in at.sidebar.caption)
+    navigate_dashboard(at, EMOTIONAL)
     assert_no_assessments(at, "Select a child profile")
 
 
 @pytest.mark.parametrize("invalid", ["invalid UUID", str(uuid4())])
-def test_invalid_selection_is_not_replaced_with_active_profile(profiles, monkeypatch, invalid):
+def test_invalid_selection_is_not_replaced_with_active_profile(profiles, monkeypatch, invalid, navigate_dashboard):
     forbid_assessments(monkeypatch)
     profiles.create("Available", submission_token=uuid4())
     at = app()
     at.session_state[selection.SELECTED_PROFILE] = invalid
     at.run()
+    navigate_dashboard(at, EMOTIONAL)
     assert selector(at).value is None
     assert at.session_state[selection.SELECTED_PROFILE] is None
     assert_no_assessments(at, "Select a child profile")
@@ -75,6 +77,7 @@ def test_navigation_rename_switch_archive_restore_and_clear(profiles, monkeypatc
     first = profiles.create("Alex", avatar="owl", submission_token=uuid4())
     second = profiles.create("Alex", avatar="owl", submission_token=uuid4())
     at = app().run()
+    navigate_dashboard(at, EMOTIONAL)
     assert selector(at).options == ["🦉 Alex · Profile 1", "🦉 Alex · Profile 2"]
     assert at.session_state[selection.SELECTED_PROFILE] is None
     selector(at).set_value(first.id).run()
@@ -119,6 +122,7 @@ def test_demo_mode_is_explicit_and_does_not_reuse_monitoring_or_demo_results(
 
     monkeypatch.setattr(services.comp3, "list_child_ids", unexpected_database_read)
     at = app().run()
+    navigate_dashboard(at, EMOTIONAL)
     selector(at).set_value(first.id).run()
     assert_no_assessments(at, "Monitoring data has not been connected")
     at.toggle(key=selection.DEMO_WIDGET).set_value(True).run()

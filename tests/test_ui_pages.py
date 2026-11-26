@@ -3,6 +3,7 @@ a viewer would see when the trained models load or fail to load."""
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from conftest import follow_page_link
 from db.child_profiles import PROFILE_DB_ENV
 from ui import child_selection, services
 
@@ -21,13 +22,15 @@ def isolated_profiles(tmp_path, monkeypatch):
     monkeypatch.setenv(PROFILE_DB_ENV, str(tmp_path / "profiles.db"))
 
 
-def run_page(page=None, *, demo=True):
+def run_page(page="emotional_pattern", *, demo=True):
     at = AppTest.from_file(APP, default_timeout=120)
     if demo:
         at.session_state[child_selection.DEMO_WIDGET] = True
-    if page:
-        at.switch_page(f"pages/{page}.py")
     at.run()
+    if page:
+        title = {"emotional_pattern": "Emotional Pattern", "behavioral_anomaly": "Behavioral Anomaly",
+                 "child_profile": "Child Profiles"}[page]
+        follow_page_link(at, at.sidebar, title)
     assert not at.exception, [e.value for e in at.exception]
     return at
 
@@ -55,11 +58,9 @@ def child_with_sessions(temp_db, monkeypatch):
 
 def test_emotional_pattern_page_with_real_model(child_with_sessions):
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
     assert len(at.get("plotly_chart")) == 1
     assert [e.label for e in emotional_expanders(at)] == [HISTORY, AI_DETAILS]
     assert not at.info
-    assert "Function 1 model" in sidebar and "not loaded" not in sidebar
     card = wellbeing_card(at)
     assert "Your Child&#x27;s Emotional Wellbeing" in html_of(at, card)
     lines = [item.value for item in card.markdown]
@@ -153,14 +154,14 @@ def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_se
                                                                   tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F1_ARTIFACT_DIR", str(tmp_path))  # empty folder
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
+    main = html_of(at, at.main)
     assert [notice.value for notice in at.info] == [F1_ERROR]
     assert "emotional_pattern_kmeans.pkl" not in visible_main_text(at)
     assert "Emotional Wellbeing" not in main
     assert not at.get("plotly_chart")                      # no chart
     assert not emotional_expanders(at)
     assert not at.main.selectbox                           # no assessment selector
-    assert "not loaded" in sidebar
+    assert "SYNTHETIC DEMO DATA" in visible_main_text(at)
 
 
 def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, monkeypatch):
@@ -194,17 +195,17 @@ def visible_main_text(at):
     return text
 
 
-def test_emotional_pattern_is_still_the_default_page(temp_db):
-    at = run_page()
+def test_overview_is_the_default_page(temp_db):
+    at = run_page(None, demo=False)
     main = html_of(at, at.main)
-    assert at.main.selectbox[0].label == "Select Child"
-    assert "Emotional Wellbeing" in main
-    assert "Behavioral Anomaly Detection" not in main
+    assert "Overview" in main
+    assert not at.main.selectbox
+    assert "Emotional Wellbeing" not in main
 
 
-def test_sidebar_shows_both_model_statuses(temp_db):
+def test_sidebar_omits_both_routine_model_statuses(temp_db):
     sidebar = html_of(at := run_page(), at.sidebar)
-    assert "Function 1 model" in sidebar and "Function 2 model" in sidebar
+    assert "Function 1 model" not in sidebar and "Function 2 model" not in sidebar
     assert "not loaded" not in sidebar
 
 
@@ -286,10 +287,10 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp
 def test_function2_failure_leaves_function1_page_working(child_with_sessions, tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
+    main = html_of(at, at.main)
     assert F1_ERROR not in main
     assert "**Calm and reflective**" in [item.value for item in wellbeing_card(at).markdown]
-    assert "Function 2 model" in sidebar and "not loaded" in sidebar
+    assert F2_ERROR not in main
 
 
 @pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile"])
@@ -333,7 +334,8 @@ def test_stale_upload_state_does_not_change_demo_source(temp_db):
     # An upload left over from the old UI must not override the bundled source.
     at.session_state["f2_csv"] = "invalid stale CSV"
     at.session_state[child_selection.DEMO_WIDGET] = True
-    at.switch_page("pages/behavioral_anomaly.py").run()
+    at.run()
+    follow_page_link(at, at.sidebar, "Behavioral Anomaly")
     assert not at.exception
     assert not at.error
     assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]

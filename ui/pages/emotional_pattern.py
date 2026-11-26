@@ -17,6 +17,7 @@ def show_model_error():
 
 
 child_selection.show_assessment_context("Emotional Pattern")
+st.caption("SYNTHETIC DEMO DATA · These sessions are fictional.")
 
 f1_status = services.function1_status()
 if not f1_status["available"]:
@@ -24,8 +25,6 @@ if not f1_status["available"]:
 
 source = services.child_session_source(demo_only=True)
 child = st.selectbox("Select Child", source["child_ids"], key=child_selection.F1_DEMO_CHILD)
-if source["source"] == "demo":
-    st.caption("SYNTHETIC DEMO DATA · These sessions are fictional.")
 
 try:
     report = services.emotional_pattern_report(services.sessions_for_child(source, child), child)

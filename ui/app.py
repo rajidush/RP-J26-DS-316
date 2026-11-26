@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 from ui import child_selection, services, theme  # noqa: E402
 
-st.set_page_config(page_title="Child Behavior Monitoring", page_icon=":material/groups:",
+st.set_page_config(page_title="Parent Dashboard", page_icon=":material/groups:",
                    layout="wide")
 
 
@@ -32,10 +32,16 @@ theme.apply_style()
 PAGES_DIR = Path(__file__).resolve().parent / "pages"
 
 # (file, title, icon, key) -- key also names the sidebar link's container.
+# Keep filenames distinct from route keys so legacy pages-directory discovery
+# cannot resolve a route directly to a page script before the shell runs.
 MAIN_PAGES = [
+    ("parent_overview.py", "Overview", ":material/home:", "overview"),
+    ("child_profile.py", "Child Profiles", ":material/person:", "child-profile"),
     ("emotional_pattern.py", "Emotional Pattern", ":material/bar_chart:", "emotional-pattern"),
     ("behavioral_anomaly.py", "Behavioral Anomaly", ":material/monitoring:", "behavioral-anomaly"),
-    ("child_profile.py", "Child Profiles", ":material/person:", "child-profile"),
+    ("safety_notifications.py", "Safety Notifications", ":material/notifications:", "safety-notifications"),
+    ("activity_summary.py", "Activity Summary", ":material/insights:", "activity-summary"),
+    ("parent_settings.py", "Settings", ":material/settings:", "settings"),
 ]
 
 
@@ -52,12 +58,11 @@ main = make_pages(MAIN_PAGES, default_first=True)
 current = st.navigation([p for p, _ in main], position="hidden")
 
 theme.sidebar_brand()
-child_selection.render_sidebar()
+child_selection.render_profile_selector()
 for page, key in main:
     with st.sidebar.container(key=f"nav-{key}"):
         st.page_link(page)
-theme.sidebar_model_status("Function 1 model", services.function1_status()["available"])
-theme.sidebar_model_status("Function 2 model", services.function2_status()["available"])
+child_selection.render_demo_control()
 
 active_key = next(k for p, k in main if p.url_path == current.url_path)
 theme.active_nav_css(f"nav-{active_key}")
