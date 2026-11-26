@@ -12,6 +12,7 @@ from component4_profiling_xai.src.behavioral_explain import explain
 from component4_profiling_xai.src.behavioral_profile import (
     ANCHORS, BUNDLE, ProfileConfig, profiles, score_history,
 )
+from component4_profiling_xai.src.behavioral_temporal_explain import explain_temporal
 from ui import services, theme
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,25 @@ def observed_summary(row, details):
     return f"{direction} {OBSERVED_LABELS[largest]} were recorded than usual."
 
 
+def temporal_text(result, active):
+    if result is None or result.status == "unsupported":
+        return "An AI explanation of changes across days is unavailable."
+    if result.status == "insufficient":
+        return "There are too few usable records to explain changes across days."
+    if result.status == "stable":
+        return ("The recent change alert has no clear accompanying change in the AI’s activity factors."
+                if active else "The factors the AI used to assess activity were similar across recent and earlier records.")
+    if result.status == "unclear":
+        return "The AI could not identify a clear factor that contributed more strongly across days."
+    activity = GROUPS[result.group]
+    if result.status == "isolated":
+        return f"On one recent recorded day, {activity} contributed more strongly to the AI’s unusual-activity assessment."
+    message = f"Across several consecutive days, {activity} contributed more strongly to the AI’s unusual-activity assessment."
+    if result.detectors:
+        message += " A change alert was also active on the selected day."
+    return message
+
+
 def explanation_text(result, flagged):
     if result is None:
         return "An AI explanation is unavailable for this day."
@@ -185,6 +205,7 @@ def render(source, bundle):
     assessed = pd.notna(flag)
     flagged = assessed and bool(flag)
     summary, active, earlier = recent_behavior(history, day, config.minimum)
+    temporal_result = explain_temporal(history, matrix, bundle, child, day) if bundle else None
     result = None
     if assessed:
         try:
@@ -209,13 +230,14 @@ def render(source, bundle):
             st.caption("This compares the recorded activity with your child’s earlier records.")
         with theme.card("f2-recent", "Recent Behavioral Pattern"):
             st.write(summary)
+            st.caption(temporal_text(temporal_result, active))
             if earlier is not None and not active:
                 st.caption(f"An earlier change was detected on {earlier}. "
                            "Recent records do not establish that it is still continuing.")
     with second:
         with theme.card("f2-xai", "Why Did the AI Say This?"):
             st.write(explanation_text(result, flagged))
-            st.caption("This explains the AI’s assessment of the available records.")
+            st.caption("This explains the AI’s assessment for the selected day.")
         with theme.card("f2-guidance", "How Can You Help?"):
             advice, question = guidance(matrix.loc[index], result, active)
             st.write(advice)

@@ -77,6 +77,9 @@ def test_group_explanations_match_actual_scoring(sample):
 
 
 def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_path):
+    from component4_profiling_xai.src.behavioral_temporal_explain import explain_temporal
+    from ui.pages._behavioral_upgrade import recent_behavior, temporal_text
+
     def blocked(*args, **kwargs):
         raise AssertionError("Outbound connection attempted during local inference")
 
@@ -122,16 +125,27 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     assert "made this day look more unusual" in full_text
     assert "compares the recorded activity" in full_text
     assert "An unusual activity pattern was detected on this day" in full_text
+    recent = recent_behavior(scored, flagged_date, model["profile"]["minimum"])
+    expected = temporal_text(explain_temporal(scored, matrix, model, "C001", flagged_date), recent[1])
+    assert any(item.value == expected for item in page.caption)
     assert "No detected anomaly does not guarantee safety." in full_text
     for research_metric in ("F1-score", "Precision", "Recall", "confusion matrix", "weighted R²"):
         assert research_metric not in full_text
     page.selectbox(key="f2_activity_C001").set_value(missing_date).run()
     assert any("Not enough information to assess activity" in item.value for item in page.markdown)
     assert any("Some activity records are missing" in item.value for item in page.markdown)
+    assert any("too few usable records to explain changes" in item.value for item in page.caption)
     page.selectbox(key="f2_child").set_value("C009").run()
     assert not page.exception
     assert page.selectbox(key="f2_activity_C009").value == daily.loc[daily.child_id.eq("C009"), "date"].max()
     assert page.selectbox(key="f2_activity_C009").value != urgent_date
+    other_child = daily[daily.child_id.eq("C009")]
+    other_date = page.selectbox(key="f2_activity_C009").value
+    other_matrix, _ = profiles(other_child)
+    other_scores = score_history(other_child, other_matrix, model)
+    recent = recent_behavior(other_scores, other_date, model["profile"]["minimum"])
+    expected = temporal_text(explain_temporal(other_scores, other_matrix, model, "C009", other_date), recent[1])
+    assert any(item.value == expected for item in page.caption)
 
 def test_local_research_interface():
     page = AppTest.from_file(str(services.ROOT / "component4_profiling_xai/experiments/archived_research_function02.py"), default_timeout=45).run()
