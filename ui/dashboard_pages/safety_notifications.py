@@ -9,7 +9,7 @@ def local_safety():
         theme.card("safety-child", child, "Monitoring data has not been connected for this child.")
     elif child_selection.has_active_profiles() is False:
         st.info("There are no active child profiles.")
-        st.page_link("pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
     elif child_selection.has_active_profiles() is None:
         st.info("Child profiles are temporarily unavailable.")
     else:
@@ -46,7 +46,7 @@ def show_notifications(summary):
             notification_details(behavioral[0])
         else:
             st.caption("There are no behavioral observations to show for this selection.")
-        st.page_link("pages/behavioral_anomaly.py", label="Open Behavioral Anomaly", icon=":material/monitoring:")
+        st.page_link("dashboard_pages/behavioral_anomaly.py", label="Open Behavioral Anomaly", icon=":material/monitoring:")
 
     with theme.card("safety-history", "Notification History"):
         category = st.selectbox("Notification category", (
@@ -69,7 +69,8 @@ def demo_safety():
     st.info("Demo Mode is on. All notifications on this page are fictional.")
     try:
         source = services.behavioral_daily_source()
-    except (ImportError, OSError, ValueError, RuntimeError):
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("safety", "record loading", error)
         st.error("Fictional monitoring records could not be loaded.")
         return
     if source["source"] != "demo" or not source["child_ids"]:

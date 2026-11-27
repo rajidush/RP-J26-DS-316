@@ -139,7 +139,7 @@ def test_research_db_path_is_rejected(tmp_path, monkeypatch):
 def test_profile_page_create_edit_archive_restore(tmp_path, monkeypatch):
     path = tmp_path / "profiles.db"
     monkeypatch.setenv(PROFILE_DB_ENV, str(path))
-    page = Path(__file__).resolve().parents[1] / "ui" / "pages" / "child_profile.py"
+    page = Path(__file__).resolve().parents[1] / "ui" / "dashboard_pages" / "child_profile.py"
     at = AppTest.from_file(str(page), default_timeout=20).run()
     assert not at.exception
     assert "No active child profiles" in at.info[0].value
@@ -156,6 +156,10 @@ def test_profile_page_create_edit_archive_restore(tmp_path, monkeypatch):
     with closing(ChildProfileRepository(path)) as repository:
         profile = repository.list_profiles()[0]
         assert profile.display_name == "Alex"
+        ui_key = at.session_state["dashboard_profile_ui_keys"][profile.id]
+        assert profile.id != ui_key
+        assert any(ui_key in str(item.proto) for item in at.get("flex_container"))
+        assert all(profile.id not in str(item.proto) for item in [*at.get("flex_container"), *at.button])
         assert profile.age_group == AGE_GROUPS[1]
         assert profile.avatar == "owl"
         at.text_input[1].set_value("New name")
@@ -172,12 +176,29 @@ def test_profile_page_create_edit_archive_restore(tmp_path, monkeypatch):
         next(button for button in at.button if button.label == "Restore Profile").click().run()
         assert at.success[0].value == "Child profile restored."
         assert repository.list_profiles()[0].id == profile.id
+        assert at.session_state["dashboard_profile_ui_keys"][profile.id] == ui_key
     assert not at.exception
 
 
 def test_profile_page_handles_unavailable_database(tmp_path, monkeypatch):
     monkeypatch.setenv(PROFILE_DB_ENV, str(tmp_path))
-    page = Path(__file__).resolve().parents[1] / "ui" / "pages" / "child_profile.py"
+    page = Path(__file__).resolve().parents[1] / "ui" / "dashboard_pages" / "child_profile.py"
     at = AppTest.from_file(str(page), default_timeout=20).run()
     assert not at.exception
     assert "Child profiles are unavailable" in at.error[0].value
+
+
+def test_profile_widget_keys_are_distinct_for_duplicate_names(tmp_path, monkeypatch):
+    path = tmp_path / "profiles.db"
+    monkeypatch.setenv(PROFILE_DB_ENV, str(path))
+    with closing(ChildProfileRepository(path)) as repository:
+        first = repository.create("Same name", submission_token=uuid4())
+        second = repository.create("Same name", submission_token=uuid4())
+    page = Path(__file__).resolve().parents[1] / "ui" / "dashboard_pages" / "child_profile.py"
+    at = AppTest.from_file(str(page), default_timeout=30).run()
+    keys = dict(at.session_state["dashboard_profile_ui_keys"])
+    assert set(keys) == {first.id, second.id}
+    assert len(set(keys.values())) == 2 and not set(keys).intersection(keys.values())
+    at.run()
+    assert dict(at.session_state["dashboard_profile_ui_keys"]) == keys
+    assert not at.exception

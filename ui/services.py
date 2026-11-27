@@ -10,6 +10,7 @@ Only contract fields are ever read or shown -- never raw conversation content.
 import importlib
 import importlib.util
 import json
+import logging
 import os
 import random
 import sys
@@ -30,6 +31,13 @@ C4_DIR = ROOT / "component4_profiling_xai"
 F1_MODULE_PATH = C4_DIR / "src" / "emotional_pattern.py"
 F1_ARTIFACT_FILES = ("emotional_pattern_kmeans.pkl", "emotional_pattern_scaler.pkl",
                      "emotional_pattern_metadata.json")
+_LOGGER = logging.getLogger(__name__)
+
+
+def log_assessment_failure(assessment, stage, error=None):
+    """Record the failure stage without logging records or exception text."""
+    _LOGGER.warning("%s: %s (%s)", assessment, stage,
+                    type(error).__name__ if error is not None else "unavailable")
 
 # Contract columns shown in tables, in this order. dialogue_summary is the
 # contract's parent-safe summary, shown only in the detail view.
@@ -717,7 +725,7 @@ def load_daily_csv(file):
 
 
 @lru_cache(maxsize=2)
-def _demo_daily(path, mtime):
+def _demo_daily(path, revision):
     return _clean_daily(pd.read_csv(path), f"The bundled dataset {Path(path).name}",
                         include_coverage=True)
 
@@ -755,7 +763,9 @@ def behavioral_daily_source(uploaded_csv=None):
     if uploaded_csv is not None:
         daily, source = load_daily_csv(uploaded_csv), "upload"
     else:
-        daily = _demo_daily(str(F2_DEMO_DATA), F2_DEMO_DATA.stat().st_mtime).copy()
+        stat = F2_DEMO_DATA.stat()
+        revision = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size, stat.st_ino)
+        daily = _demo_daily(str(F2_DEMO_DATA), revision).copy()
         source = "demo"
     return {"source": source, "daily": daily, "child_ids": child_ids(daily)}
 

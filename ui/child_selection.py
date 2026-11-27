@@ -2,6 +2,8 @@
 
 from collections import Counter
 from contextlib import closing
+from hashlib import sha256
+from uuid import uuid4
 
 import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
@@ -15,6 +17,7 @@ PROFILE_WIDGET = "dashboard_profile_widget"
 DEMO_WIDGET = "dashboard_demo_mode"
 _PROFILE_SNAPSHOT = "dashboard_profile_snapshot"
 _HAS_ACTIVE_PROFILES = "dashboard_has_active_profiles"
+_PROFILE_UI_KEYS = "dashboard_profile_ui_keys"
 F1_DEMO_CHILD = "f1_demo_child"
 F2_DEMO_CHILD = "f2_child"
 OVERVIEW_DEMO_RESULTS = "overview_demo_results"
@@ -91,11 +94,13 @@ def behavioral_date_picker(label, dates, key):
     stored_date = st.session_state.get(F2_SAFETY_DATE)
     default_date = stored_date if stored_date in dates else dates[0]
     through = st.selectbox(label, dates, index=dates.index(default_date), key=key, format_func=str)
-    if through != stored_date:
-        st.session_state[F2_SAFETY_DATE] = through
-        if through != dates[0] or stored_date is not None:
-            st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
+    st.session_state[F2_SAFETY_DATE] = through
     return through
+
+
+def _assessment_date(rows):
+    through = st.session_state.get(F2_SAFETY_DATE)
+    return through if through in set(rows["date"]) else rows["date"].max()
 
 
 def activity_demo_summary(source, child):
@@ -104,9 +109,7 @@ def activity_demo_summary(source, child):
         return None
     period = st.session_state.get(ACTIVITY_PERIOD, activity_summary.DEFAULT_PERIOD)
     days = activity_summary.PERIODS[period]
-    through = st.session_state.get(F2_SAFETY_DATE)
-    if through not in set(rows["date"]):
-        through = rows["date"].max()
+    through = _assessment_date(rows)
     cached = st.session_state.get(_ACTIVITY_RESULT)
     if cached and cached[:2] == (through, days) and cached[2].equals(rows):
         return cached[3]
@@ -115,25 +118,35 @@ def activity_demo_summary(source, child):
     return result
 
 
+def artifact_revisions(directory, names):
+    versions = []
+    for name in names:
+        path = (directory / name).absolute()
+        try:
+            versions.append((path, sha256(path.read_bytes()).digest()))
+        except OSError:
+            versions.append((path, None))
+    return tuple(versions)
+
+
 def safety_demo_summary(source, child, through=None):
     rows = safety_summary.records_for(source, child)
-    through = through or st.session_state.get(F2_SAFETY_DATE)
-    if through is not None:
-        rows = rows[rows["date"] <= through]
-    artifacts = tuple(services.f2_artifact_dir() / name for name in services.F2_ARTIFACT_FILES)
-    versions = []
-    for path in artifacts:
-        try:
-            stat = path.stat()
-            versions.append((path, stat.st_mtime_ns, stat.st_size))
-        except OSError:
-            versions.append((path, None, None))
+    if rows.empty:
+        return safety_summary.SafetySummary()
+    through = through or _assessment_date(rows)
+    rows = rows[rows["date"] <= through]
+    context = (source["source"], child, through, demo_mode_active(),
+               artifact_revisions(services.f2_artifact_dir(), services.F2_ARTIFACT_FILES),
+               services.F2_CONTEXT_DAYS, services.F2_TOP_FEATURES)
     cached = st.session_state.get(_SAFETY_RESULT)
-    if cached and cached[0] == versions and cached[1].equals(rows):
+    if cached and cached[0] == context and cached[1].equals(rows):
         return cached[2]
     result = safety_summary.summarize(rows)
-    if result.behavioral_message != safety_summary.BEHAVIOR_FAILED:
-        st.session_state[_SAFETY_RESULT] = (versions, rows.copy(), result)
+    if (result.behavioral_message != safety_summary.BEHAVIOR_FAILED
+            and result.urgent_message != safety_summary.URGENT_FAILED):
+        st.session_state[_SAFETY_RESULT] = (context, rows.copy(), result)
+    else:
+        st.session_state.pop(_SAFETY_RESULT, None)
     return result
 
 
@@ -155,6 +168,13 @@ def selected_profile_label(*, include_avatar=False):
         return None
     avatar = AVATARS.get(profile.avatar, "").split(" ", 1)[0] if include_avatar else ""
     return f"{avatar} {profile.display_name}" if avatar else profile.display_name
+
+
+def profile_ui_key(profile_id):
+    keys = st.session_state.setdefault(_PROFILE_UI_KEYS, {})
+    if profile_id not in keys:
+        keys[profile_id] = uuid4().hex
+    return keys[profile_id]
 
 
 def render_profile_selector():

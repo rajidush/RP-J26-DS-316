@@ -71,7 +71,8 @@ def _observed_difference(explanation):
 def _urgent_notifications(rows):
     try:
         alerts, available, complete = services.behavioral_urgent_review(rows)
-    except (ImportError, OSError, ValueError, RuntimeError):
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("safety", "urgent rule review", error)
         return [], URGENT_FAILED, "", frozenset(), frozenset()
 
     items = [
@@ -99,7 +100,8 @@ def _behavioral_notifications(rows):
         if not observed.any():
             return [], "There is insufficient monitoring information to assess unusual activity.", None, frozenset()
         report = services.behavioral_report(rows, rows.iloc[0]["child_id"])
-    except (ImportError, OSError, ValueError, RuntimeError):
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("behavioral", "safety assessment", error)
         return [], BEHAVIOR_FAILED, None, frozenset()
 
     assessed_dates = rows.loc[observed, "date"]

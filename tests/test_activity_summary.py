@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from conftest import follow_page_link
+from parent_dashboard_test_helpers import follow_page_link
 from test_dashboard_navigation import APP, main_text, profiles  # noqa: F401
 from test_safety_notifications import (  # noqa: F401
     FIRST, LAST, MIDDLE, daily, isolated_app_database, predictions, source_for,

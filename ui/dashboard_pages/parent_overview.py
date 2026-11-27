@@ -5,7 +5,28 @@ from ui import child_selection, overview_summary, services, theme
 
 def linked_card(key, title, message, page, label, icon):
     with theme.card(key, title, message):
-        st.page_link(f"pages/{page}.py", label=label, icon=f":material/{icon}:")
+        st.page_link(f"dashboard_pages/{page}.py", label=label, icon=f":material/{icon}:")
+
+
+def evaluated_summary(key, source, child, summarize, clicked, results):
+    if key == "behavioral":
+        results[key] = (child,)
+        return summarize(source, child)
+
+    sessions = services.sessions_for_child(source, child)
+    revisions = child_selection.artifact_revisions(services.f1_artifact_dir(), services.F1_ARTIFACT_FILES)
+    context = (child, source["source"], child_selection.demo_mode_active(),
+               revisions, services.MIN_SESSIONS_FOR_PATTERN)
+    previous = results.get(key)
+    if not clicked and previous and previous[1] == context and previous[2].equals(sessions):
+        return previous[3]
+    try:
+        summary = summarize(sessions, child)
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("emotional", "overview assessment", error)
+        summary = overview_summary.Summary("This fictional assessment could not be generated.")
+    results[key] = (child, context, sessions.copy(), summary)
+    return summary
 
 
 def demo_card(key, title, source_label, load_source, summarize, page, link, icon):
@@ -14,13 +35,16 @@ def demo_card(key, title, source_label, load_source, summarize, page, link, icon
         st.caption(source_label)
         try:
             source = load_source()
-        except (OSError, ValueError):
+        except (ImportError, OSError, ValueError, RuntimeError) as error:
+            services.log_assessment_failure(key, "overview record loading", error)
             source = None
+            st.error("Fictional records for this example could not be loaded.")
         child = None
         summary = None
         if not source or source["source"] != "demo" or not source["child_ids"]:
             results.pop(key, None)
-            st.info("Fictional records for this example are unavailable.")
+            if source is not None:
+                st.info("Fictional records for this example are unavailable.")
         else:
             if key == "behavioral":
                 child = child_selection.behavioral_demo_picker(
@@ -32,23 +56,19 @@ def demo_card(key, title, source_label, load_source, summarize, page, link, icon
                     f"{title} demo child", source["child_ids"], index=None,
                     key=f"overview-demo-{key}", placeholder="Select a fictional child",
                 )
-            previous_child, summary = results.get(key, (None, None))
+            previous_child = results.get(key, (None,))[0]
             if previous_child != child:
                 results.pop(key, None)
-                summary = None
-            if st.button(f"Show {title.lower()} summary", key=f"overview-run-{key}", disabled=child is None):
-                try:
-                    summary = summarize(source, child)
-                except (OSError, ValueError, services.ModelUnavailableError):
-                    summary = overview_summary.Summary("This fictional assessment could not be generated.")
-                results[key] = (child, summary)
+            clicked = st.button(f"Show {title.lower()} summary", key=f"overview-run-{key}", disabled=child is None)
+            if child is not None and (clicked or key in results):
+                summary = evaluated_summary(key, source, child, summarize, clicked, results)
             if summary:
                 st.write(summary.message)
                 if summary.period:
                     st.caption(summary.period)
                 if summary.change:
                     st.write(summary.change)
-        st.page_link(f"pages/{page}.py", label=link, icon=f":material/{icon}:")
+        st.page_link(f"dashboard_pages/{page}.py", label=link, icon=f":material/{icon}:")
     return child, summary, source
 
 
@@ -67,7 +87,7 @@ def local_overview():
         st.info("Select a child profile in the sidebar.")
     else:
         st.info("There are no active child profiles.")
-        st.page_link("pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
 
     if profile is None:
         return
@@ -90,12 +110,12 @@ def supporting_cards(safety, guidance, *, safety_caption=None, guidance_caption=
     with left, theme.card("overview-safety", "Safety Alerts", safety):
         if safety_caption:
             st.caption(safety_caption)
-        st.page_link("pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
+        st.page_link("dashboard_pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
     with right, theme.card("overview-activity", "Activity Summary",
                            activity or "Activity summary data is unavailable."):
         if activity_caption:
             st.caption(activity_caption)
-        st.page_link("pages/activity_summary.py", label="Open Activity Summary", icon=":material/insights:")
+        st.page_link("dashboard_pages/activity_summary.py", label="Open Activity Summary", icon=":material/insights:")
     with theme.card("overview-guidance", "Parent Guidance", guidance):
         if guidance_caption:
             st.caption(guidance_caption)
@@ -143,6 +163,6 @@ theme.page_header("Overview", "A quick look at your child’s digital wellbeing.
 if child_selection.demo_mode_active():
     demo_overview()
     if child_selection.has_active_profiles() is False:
-        st.page_link("pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
 else:
     local_overview()

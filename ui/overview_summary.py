@@ -14,8 +14,8 @@ class Summary:
     related: str = ""
 
 
-def emotional_summary(source, child):
-    report = services.emotional_pattern_report(services.sessions_for_child(source, child), child)
+def emotional_summary(sessions, child):
+    report = services.emotional_pattern_report(sessions, child)
     if not report["enough_data"]:
         return Summary("There are too few fictional sessions to describe an emotional pattern.")
 

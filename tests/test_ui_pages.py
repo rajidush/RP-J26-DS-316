@@ -3,7 +3,7 @@ a viewer would see when the trained models load or fail to load."""
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from conftest import follow_page_link
+from parent_dashboard_test_helpers import follow_page_link
 from db.child_profiles import PROFILE_DB_ENV
 from ui import child_selection, services
 
@@ -176,7 +176,7 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
 
 # --- Function 2: Behavioral Anomaly page ----------------------------------------------
 
-F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
+F2_ERROR = "Behavioral assessment is temporarily unavailable. Please try again later."
 F2_URGENT_TITLE = "Urgent Alerts (rule-based)"
 F2_BANNED = ("threshold", "score", "Days shown", "Weekly Summary")   # never visible on the main page
 
@@ -276,12 +276,39 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error(temp_db, tmp
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))   # empty folder
     at = run_page("behavioral_anomaly")
     main = html_of(at, at.main)
-    assert F2_ERROR in main
-    assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
+    assert [item.value for item in at.main.error] == [F2_ERROR]
+    assert "behavioral_anomaly_pipeline.pkl" not in main and "scikit-learn==1.6.1" not in main
+    assert str(tmp_path) not in main and str(tmp_path) not in at.main.error[0].value
+    assert any(link.proto.label == "Open Safety Notifications" for link in at.main.get("page_link"))
     assert "c4-flag" not in main
     assert not at.get("plotly_chart")
     assert not at.main.selectbox and not at.dataframe
     assert F2_URGENT_TITLE not in main
+
+
+def test_behavioral_parent_messages_distinguish_records_coverage_and_failure(temp_db, monkeypatch, caplog):
+    source = services.behavioral_daily_source()
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: dict(source, child_ids=[]))
+    at = run_page("behavioral_anomaly")
+    assert [item.value for item in at.main.info] == ["No fictional monitoring records are available."]
+    assert not at.main.error
+
+    daily = source["daily"].assign(screen_monitor_observed=0, language_monitor_observed=0)
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: dict(source, daily=daily))
+    at.run()
+    assert "insufficient monitoring information" in at.main.info[0].value
+    assert not at.main.error and not at.get("plotly_chart")
+
+    def fail(*args):
+        raise ValueError("private source detail at E:/private/child-record.csv")
+
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: source)
+    monkeypatch.setattr(services, "behavioral_report", fail)
+    at.run()
+    assert not at.exception and not at.get("plotly_chart")
+    assert [item.value for item in at.main.error] == ["Behavioral activity could not be assessed. Please try again later."]
+    assert "private" not in visible_main_text(at) and "private" not in caplog.text
+    assert "assessment execution (ValueError)" in caplog.text
 
 
 def test_function2_failure_leaves_function1_page_working(child_with_sessions, tmp_path, monkeypatch):

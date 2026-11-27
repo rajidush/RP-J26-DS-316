@@ -9,7 +9,7 @@ def local_activity():
         theme.card("activity-child", child, "Monitoring data has not been connected for this child.")
     elif child_selection.has_active_profiles() is False:
         st.info("There are no active child profiles.")
-        st.page_link("pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
     elif child_selection.has_active_profiles() is None:
         st.info("Child profiles are temporarily unavailable.")
     else:
@@ -38,7 +38,7 @@ def show_summary(summary, safety):
                            else "Urgent safety information is unavailable for this period.")
             else:
                 st.caption("A day can contain several flags.")
-            st.page_link("pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
+            st.page_link("dashboard_pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
 
     with theme.card("activity-history", "Activity History"):
         if summary.language_flags is None:
@@ -64,7 +64,8 @@ def demo_activity():
     st.info("Demo Mode is on. All activity results on this page are fictional.")
     try:
         source = services.behavioral_daily_source()
-    except (ImportError, OSError, ValueError, RuntimeError):
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("activity", "record loading", error)
         st.error("Fictional activity records could not be loaded.")
         return
     if source["source"] != "demo" or not source["child_ids"]:
@@ -96,7 +97,8 @@ def demo_activity():
         st.session_state[child_selection.ACTIVITY_PERIOD] = selected
         try:
             summary = child_selection.activity_demo_summary(source, child)
-        except ValueError:
+        except ValueError as error:
+            services.log_assessment_failure("activity", "record summary", error)
             st.error("The fictional activity records could not be summarized.")
             return
         st.caption(f"{summary.period} · Function 02 demo · Fictional child {child}")

@@ -1,3 +1,4 @@
+import os
 from datetime import date
 from uuid import uuid4
 
@@ -5,7 +6,7 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from conftest import follow_page_link
+from parent_dashboard_test_helpers import follow_page_link
 from test_dashboard_navigation import APP, main_text, profiles  # noqa: F401
 from ui import child_selection as selection, safety_summary as safety, services
 
@@ -216,3 +217,59 @@ def test_failed_model_keeps_urgent_cards_and_overview_summary(
     assert urgent_message in main_text(at)
     assert len(at.get("status")) == 3
     assert all(safety.URGENT in item.label for item in at.get("status"))
+
+
+@pytest.mark.usefixtures("isolated_app_database")
+def test_overview_refreshes_for_source_date_and_artifact_revisions(
+    profiles, daily, predictions, tmp_path, monkeypatch, navigate_dashboard,
+):
+    source = source_for(daily)
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: source)
+    monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
+    artifact = tmp_path / services.F2_ARTIFACT_FILES[0]
+    artifact.write_text("first revision")
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.toggle(key=selection.DEMO_WIDGET).set_value(True).run()
+    at.selectbox(key="overview-demo-behavioral").set_value("demo-a").run()
+    at.button(key="overview-run-behavioral").click().run()
+    assert f"Most recent urgent safety concern: {LAST}." in main_text(at)
+    assert len(predictions) == 1
+
+    child_rows = daily["child_id"] == "demo-a"
+    rule_columns = list(services._urgent_module().URGENT_RULE_COLUMNS)
+    daily.loc[child_rows, rule_columns] = 0
+    daily.loc[child_rows & daily["date"].eq(LAST), "language_flags"] = 6
+    at.run()
+    assert "No urgent safety concerns were identified" in main_text(at)
+    assert "Recorded language flags: 6" in main_text(at)
+    assert len(predictions) == 2
+    follow_page_link(at, at.main, "Open Safety Notifications")
+    assert "No urgent safety concerns were identified" in main_text(at)
+    assert len(predictions) == 2
+
+    daily.loc[child_rows & daily["date"].eq(MIDDLE), "language_urgent_flags"] = 1
+    navigate_dashboard(at, "Overview")
+    assert f"Most recent urgent safety concern: {MIDDLE}." in main_text(at)
+    assert len(predictions) == 3
+    follow_page_link(at, at.main, "Open Activity Summary")
+    assert [item.value for item in at.main.metric] == ["6", "1", "1"]
+    assert len(predictions) == 3
+
+    at.selectbox(key="activity-assessment-date-demo-a").set_value(FIRST).run()
+    navigate_dashboard(at, "Overview")
+    assert f"Assessment date: {FIRST}" in main_text(at)
+    assert f"Most recent urgent safety concern: {MIDDLE}." not in main_text(at)
+    assert "Recorded language flags: 0" in main_text(at)
+    assert len(predictions) == 4
+    stamp = artifact.stat()
+    artifact.write_text("other revision")
+    os.utime(artifact, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert artifact.stat().st_size == stamp.st_size
+    at.run()
+    assert len(predictions) == 5
+    at.run()
+    assert len(predictions) == 5
+
+    at.toggle(key=selection.DEMO_WIDGET).set_value(False).run()
+    assert "Recorded language flags" not in main_text(at)
+    assert selection.OVERVIEW_DEMO_RESULTS not in at.session_state

@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from conftest import follow_page_link
+from parent_dashboard_test_helpers import follow_page_link
 from db.child_profiles import PROFILE_DB_ENV, ChildProfileRepository
 from ui import child_selection as selection, services, theme
 
@@ -51,6 +51,11 @@ def test_default_overview_and_empty_profiles_link(profiles):
     follow_page_link(at, at.main, "Go to Child Profiles")
     assert not at.exception
     assert "Child Profiles" in main_text(at)
+
+
+def test_streamlit_cold_discovery_has_no_legacy_pages():
+    assert not list((services.ROOT / "ui" / "pages").glob("*.py"))
+    assert (services.ROOT / "ui" / "legacy_pages" / "add_record.py").is_file()
 
 
 def test_all_pages_keep_local_selection_and_use_only_profile_context(profiles, navigate_dashboard, monkeypatch):

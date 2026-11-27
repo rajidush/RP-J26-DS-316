@@ -29,11 +29,10 @@ def _startup():
 database_url = _startup()
 theme.apply_style()
 
-PAGES_DIR = Path(__file__).resolve().parent / "pages"
+PAGES_DIR = Path(__file__).resolve().parent / "dashboard_pages"
 
 # (file, title, icon, key) -- key also names the sidebar link's container.
-# Keep filenames distinct from route keys so legacy pages-directory discovery
-# cannot resolve a route directly to a page script before the shell runs.
+# Keep scripts outside Streamlit's automatically discovered pages directory.
 MAIN_PAGES = [
     ("parent_overview.py", "Overview", ":material/home:", "overview"),
     ("child_profile.py", "Child Profiles", ":material/person:", "child-profile"),

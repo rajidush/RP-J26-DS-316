@@ -9,25 +9,32 @@ theme.page_header("Behavioral Anomaly Detection")
 st.caption("Demo Mode · Fictional data for this assessment.")
 
 
-def show_model_error(status):
-    """No prediction, chart or explanation without the saved model -- only this card."""
-    theme.error_card(
-        "f2", "Function 2 model could not be loaded. No anomaly prediction is shown.",
-        status["reason"],
-        ["Put `behavioral_anomaly_pipeline.pkl` and `behavioral_anomaly_metadata.json` "
-         "(the saved Step 3 model) in `component4_profiling_xai/models/`, "
-         "or set `C4_F2_ARTIFACT_DIR` to the folder that has them.",
-         "Install the scikit-learn version the model was trained with: "
-         "`pip install scikit-learn==1.6.1`.",
-         "Then restart the app."])
+def show_unavailable(message):
+    st.error(message)
+    st.page_link("dashboard_pages/safety_notifications.py", label="Open Safety Notifications",
+                 icon=":material/notifications:")
     st.stop()
 
+
+def show_model_error(status):
+    stage = "required assessment files missing" if status.get("missing") else "assessment files could not load"
+    services.log_assessment_failure("behavioral", stage)
+    show_unavailable("Behavioral assessment is temporarily unavailable. Please try again later.")
+
+
+try:
+    source = services.behavioral_daily_source()
+except (ImportError, OSError, ValueError, RuntimeError) as error:
+    services.log_assessment_failure("behavioral", "record loading", error)
+    show_unavailable("Fictional monitoring records could not be loaded. Please try again later.")
+if not source["child_ids"]:
+    st.info("No fictional monitoring records are available.")
+    st.stop()
 
 f2_status = services.function2_status()
 if not f2_status["available"]:
     show_model_error(f2_status)
 
-source = services.behavioral_daily_source()
 ids = source["child_ids"]
 
 with theme.card("select-child", "Select Child"):
@@ -36,13 +43,21 @@ with theme.card("select-child", "Select Child"):
         label_visibility="collapsed", width=440,
     )
 
+rows = source["daily"]
+rows = rows[rows["child_id"] == child]
+if rows.empty:
+    st.info("No fictional monitoring records are available for this selection.")
+    st.stop()
 try:
-    report = services.behavioral_report(source["daily"], child)
+    if not services.behavioral_observed_days(rows).any():
+        st.info("There is insufficient monitoring information to assess unusual activity.")
+        st.stop()
+    report = services.behavioral_report(rows, child)
 except services.ModelUnavailableError as exc:
     show_model_error(exc.status)
-except ValueError as exc:
-    st.error(f"Function 2 could not run on this data: {exc}")
-    st.stop()
+except (ImportError, OSError, ValueError, RuntimeError) as error:
+    services.log_assessment_failure("behavioral", "assessment execution", error)
+    show_unavailable("Behavioral activity could not be assessed. Please try again later.")
 
 table = report["daily"]
 latest = table.iloc[-1]

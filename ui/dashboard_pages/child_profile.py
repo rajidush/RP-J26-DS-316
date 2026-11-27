@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db.child_profiles import (
     AGE_GROUPS, AVATARS, ChildProfileRepository, ProfileError, ProfileStorageError,
 )
-from ui import theme
+from ui import child_selection, theme
 
 
 def profile_fields(profile=None):
@@ -57,7 +57,7 @@ def add_profile(repository):
 
 
 def profile_card(repository, profile):
-    key = profile.id
+    key = child_selection.profile_ui_key(profile.id)
     title = " ".join(filter(None, (AVATARS.get(profile.avatar), profile.display_name)))
     details = "Archived" if profile.archived else "Active"
     if profile.age_group:
@@ -65,7 +65,7 @@ def profile_card(repository, profile):
     with theme.card(f"profile-{key}", title, details):
         if profile.archived:
             if st.button("Restore Profile", key=f"restore-{key}"):
-                save(lambda: repository.restore(key), "Child profile restored.")
+                save(lambda: repository.restore(profile.id), "Child profile restored.")
             return
         st.caption("Monitoring data has not been connected.")
         with st.expander("Edit Profile"):
@@ -73,7 +73,7 @@ def profile_card(repository, profile):
                 name, age_group, avatar = profile_fields(profile)
                 if st.form_submit_button("Save changes"):
                     save(
-                        lambda: repository.edit(key, name, age_group=age_group, avatar=avatar),
+                        lambda: repository.edit(profile.id, name, age_group=age_group, avatar=avatar),
                         "Child profile updated.",
                     )
         with st.expander("Archive Profile"):
@@ -81,7 +81,7 @@ def profile_card(repository, profile):
                 confirmed = st.checkbox("I confirm that I want to archive this profile.")
                 if st.form_submit_button("Archive profile"):
                     if confirmed:
-                        save(lambda: repository.archive(key), "Child profile archived.")
+                        save(lambda: repository.archive(profile.id), "Child profile archived.")
                     else:
                         st.error("Confirm that you want to archive this profile.")
 
