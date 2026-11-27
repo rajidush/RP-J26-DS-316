@@ -89,14 +89,7 @@ def demo_safety():
         st.info(safety_summary.NO_RECORDS)
         return
     dates = sorted(rows["date"].unique(), reverse=True)
-    stored_date = st.session_state.get(child_selection.F2_SAFETY_DATE)
-    default_date = stored_date if stored_date in dates else dates[0]
-    through = st.selectbox("Assessment date", dates, index=dates.index(default_date),
-                           key=f"safety-assessment-date-{child}", format_func=str)
-    if through != stored_date:
-        st.session_state[child_selection.F2_SAFETY_DATE] = through
-        if through != dates[0] or stored_date is not None:
-            st.session_state.get(child_selection.OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
+    through = child_selection.behavioral_date_picker("Assessment date", dates, f"safety-assessment-date-{child}")
     show_notifications(child_selection.safety_demo_summary(source, child, through))
 
 

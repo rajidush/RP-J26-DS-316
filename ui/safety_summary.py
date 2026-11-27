@@ -11,6 +11,7 @@ URGENT = "Urgent safety concern"
 BEHAVIORAL = "Behavioral observation"
 NO_RECORDS = "No fictional monitoring records are available for this selection."
 BEHAVIOR_FAILED = "The behavioral assessment could not be generated."
+URGENT_FAILED = "The urgent safety review could not be completed."
 
 # Present observed deviations using everyday terms. Omit scores and imputed values.
 _OBSERVATIONS = {
@@ -41,6 +42,9 @@ class SafetySummary:
     behavioral_message: str = NO_RECORDS
     coverage: str = ""
     latest_unusual: bool | None = None
+    assessed_dates: frozenset[date] = frozenset()
+    urgent_review_dates: frozenset[date] = frozenset()
+    complete_urgent_dates: frozenset[date] = frozenset()
 
     @property
     def period(self):
@@ -68,7 +72,7 @@ def _urgent_notifications(rows):
     try:
         alerts, available, complete = services.behavioral_urgent_review(rows)
     except (ImportError, OSError, ValueError, RuntimeError):
-        return [], "The urgent safety review could not be completed.", ""
+        return [], URGENT_FAILED, "", frozenset(), frozenset()
 
     items = [
         Notification(day.date, URGENT, "Function 02 · Urgent safety rules",
@@ -85,17 +89,18 @@ def _urgent_notifications(rows):
     else:
         message = "There is insufficient monitoring information to check for urgent safety concerns."
     coverage = "" if complete.all() else "Some days are missing information used in the urgent safety review."
-    return items, message, coverage
+    return (items, message, coverage, frozenset(rows.loc[available, "date"]),
+            frozenset(rows.loc[complete, "date"]))
 
 
 def _behavioral_notifications(rows):
     try:
         observed = services.behavioral_observed_days(rows)
         if not observed.any():
-            return [], "There is insufficient monitoring information to assess unusual activity.", None
+            return [], "There is insufficient monitoring information to assess unusual activity.", None, frozenset()
         report = services.behavioral_report(rows, rows.iloc[0]["child_id"])
     except (ImportError, OSError, ValueError, RuntimeError):
-        return [], BEHAVIOR_FAILED, None
+        return [], BEHAVIOR_FAILED, None, frozenset()
 
     assessed_dates = rows.loc[observed, "date"]
     predictions = report["daily"]
@@ -117,7 +122,8 @@ def _behavioral_notifications(rows):
         message += " Some recorded days had too little information to assess."
     if assessed["imputed"].any():
         message += " Some assessed days had missing activity measurements."
-    return items, message, bool(latest.iloc[0]["unusual"]) if not latest.empty else None
+    latest_unusual = bool(latest.iloc[0]["unusual"]) if not latest.empty else None
+    return items, message, latest_unusual, frozenset(assessed["date"])
 
 
 def summarize(rows):
@@ -127,8 +133,8 @@ def summarize(rows):
     if rows["child_id"].nunique() != 1:
         raise ValueError("Safety notifications require records for one child")
     rows = rows.sort_values("date").reset_index(drop=True)
-    urgent, urgent_message, urgent_coverage = _urgent_notifications(rows)
-    behavioral, behavioral_message, latest = _behavioral_notifications(rows)
+    urgent, urgent_message, urgent_coverage, reviewed, complete = _urgent_notifications(rows)
+    behavioral, behavioral_message, latest, assessed = _behavioral_notifications(rows)
     start, end = rows["date"].iloc[[0, -1]]
     coverage = []
     if rows["date"].nunique() < (end - start).days + 1:
@@ -136,7 +142,8 @@ def summarize(rows):
     if urgent_coverage:
         coverage.append(urgent_coverage)
     notifications = tuple(sorted(dict.fromkeys(urgent + behavioral), key=lambda item: item.date, reverse=True))
-    return SafetySummary(start, end, notifications, urgent_message, behavioral_message, " ".join(coverage), latest)
+    return SafetySummary(start, end, notifications, urgent_message, behavioral_message,
+                         " ".join(coverage), latest, assessed, reviewed, complete)
 
 
 def records_for(source, child):

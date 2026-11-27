@@ -7,7 +7,7 @@ import streamlit as st
 from sqlalchemy.exc import SQLAlchemyError
 
 from db.child_profiles import AVATARS, ChildProfileRepository, ProfileStorageError
-from ui import theme
+from ui import activity_summary, safety_summary, services, theme
 
 
 SELECTED_PROFILE = "dashboard_selected_profile_id"
@@ -21,6 +21,8 @@ OVERVIEW_DEMO_RESULTS = "overview_demo_results"
 _F2_DEMO_CONTEXT = "dashboard_f2_demo_context"
 F2_SAFETY_DATE = "dashboard_f2_safety_date"
 _SAFETY_RESULT = "dashboard_safety_result"
+ACTIVITY_PERIOD = "dashboard_activity_period"
+_ACTIVITY_RESULT = "dashboard_activity_result"
 
 
 def _profile_labels(profiles):
@@ -53,7 +55,7 @@ def clear_behavioral_dates():
 
 def _change_mode():
     for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS, _F2_DEMO_CONTEXT,
-                F2_SAFETY_DATE, _SAFETY_RESULT):
+                F2_SAFETY_DATE, _SAFETY_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT):
         st.session_state.pop(key, None)
     clear_behavioral_dates()
 
@@ -68,6 +70,7 @@ def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
         st.session_state[_F2_DEMO_CONTEXT] = child
         st.session_state.pop(F2_SAFETY_DATE, None)
         st.session_state.pop(_SAFETY_RESULT, None)
+        st.session_state.pop(_ACTIVITY_RESULT, None)
         clear_behavioral_dates()
         st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
 
@@ -84,9 +87,35 @@ def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
                         on_change=lambda: select(st.session_state[key]), **kwargs)
 
 
-def safety_demo_summary(source, child, through=None):
-    from ui import safety_summary, services
+def behavioral_date_picker(label, dates, key):
+    stored_date = st.session_state.get(F2_SAFETY_DATE)
+    default_date = stored_date if stored_date in dates else dates[0]
+    through = st.selectbox(label, dates, index=dates.index(default_date), key=key, format_func=str)
+    if through != stored_date:
+        st.session_state[F2_SAFETY_DATE] = through
+        if through != dates[0] or stored_date is not None:
+            st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
+    return through
 
+
+def activity_demo_summary(source, child):
+    rows = safety_summary.records_for(source, child)
+    if rows.empty:
+        return None
+    period = st.session_state.get(ACTIVITY_PERIOD, activity_summary.DEFAULT_PERIOD)
+    days = activity_summary.PERIODS[period]
+    through = st.session_state.get(F2_SAFETY_DATE)
+    if through not in set(rows["date"]):
+        through = rows["date"].max()
+    cached = st.session_state.get(_ACTIVITY_RESULT)
+    if cached and cached[:2] == (through, days) and cached[2].equals(rows):
+        return cached[3]
+    result = activity_summary.summarize(rows, through, days)
+    st.session_state[_ACTIVITY_RESULT] = (through, days, rows.copy(), result)
+    return result
+
+
+def safety_demo_summary(source, child, through=None):
     rows = safety_summary.records_for(source, child)
     through = through or st.session_state.get(F2_SAFETY_DATE)
     if through is not None:

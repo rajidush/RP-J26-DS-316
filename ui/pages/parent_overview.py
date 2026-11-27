@@ -49,7 +49,7 @@ def demo_card(key, title, source_label, load_source, summarize, page, link, icon
                 if summary.change:
                     st.write(summary.change)
         st.page_link(f"pages/{page}.py", label=link, icon=f":material/{icon}:")
-    return child, summary
+    return child, summary, source
 
 
 def local_overview():
@@ -84,15 +84,18 @@ def local_overview():
     )
 
 
-def supporting_cards(safety, guidance, *, safety_caption=None, guidance_caption=None):
+def supporting_cards(safety, guidance, *, safety_caption=None, guidance_caption=None,
+                     activity=None, activity_caption=None):
     left, right = st.columns(2)
     with left, theme.card("overview-safety", "Safety Alerts", safety):
         if safety_caption:
             st.caption(safety_caption)
         st.page_link("pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
-    with right:
-        linked_card("overview-activity", "Activity Summary", "Activity summary data is unavailable.",
-                    "activity_summary", "Open Activity Summary", "insights")
+    with right, theme.card("overview-activity", "Activity Summary",
+                           activity or "Activity summary data is unavailable."):
+        if activity_caption:
+            st.caption(activity_caption)
+        st.page_link("pages/activity_summary.py", label="Open Activity Summary", icon=":material/insights:")
     with theme.card("overview-guidance", "Parent Guidance", guidance):
         if guidance_caption:
             st.caption(guidance_caption)
@@ -102,24 +105,37 @@ def demo_overview():
     st.info("Demo Mode is on. The two assessments use separate fictional records.")
     emotional, behavioral = st.columns(2)
     with emotional:
-        emotional_child, emotional_result = demo_card(
+        emotional_child, emotional_result, _ = demo_card(
             "emotional", "Emotional Wellbeing", "Fictional data · Emotional Pattern demo",
             lambda: services.child_session_source(demo_only=True), overview_summary.emotional_summary,
             "emotional_pattern", "Open Emotional Pattern", "bar_chart",
         )
     with behavioral:
-        behavioral_child, behavioral_result = demo_card(
+        behavioral_child, behavioral_result, source = demo_card(
             "behavioral", "Behavioral Activity", "Fictional data · Behavioral Anomaly demo",
             services.behavioral_daily_source, overview_summary.behavioral_summary,
             "behavioral_anomaly", "Open Behavioral Anomaly", "monitoring",
         )
     safety = behavioral_result.related if behavioral_result else ""
     guidance = emotional_result.related if emotional_result else ""
+    activity = activity_caption = None
+    if behavioral_child is not None:
+        try:
+            summary = child_selection.activity_demo_summary(source, behavioral_child)
+        except ValueError:
+            summary = None
+        if summary:
+            activity = (f"Recorded language flags: {summary.language_flags} across {summary.language_days} "
+                        f"of {summary.days} days." if summary.language_flags is not None else
+                        "Language flag counts are unavailable for this period.")
+            activity_caption = f"Function 02 demo · Fictional child {behavioral_child} · {summary.period}"
     supporting_cards(
         safety or "Fictional safety information is unavailable until a behavioral example is evaluated.",
         guidance or "There is no supported guidance for the current fictional emotional example.",
         safety_caption=f"Behavioral Anomaly demo · Fictional child {behavioral_child}" if safety else None,
         guidance_caption=f"Emotional Pattern demo · Fictional child {emotional_child}" if guidance else None,
+        activity=activity,
+        activity_caption=activity_caption,
     )
 
 
