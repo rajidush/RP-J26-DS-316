@@ -31,9 +31,10 @@ source = services.behavioral_daily_source()
 ids = source["child_ids"]
 
 with theme.card("select-child", "Select Child"):
-    child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
-                         key=child_selection.F2_DEMO_CHILD,
-                         on_change=child_selection.clear_behavioral_dates)
+    child = child_selection.behavioral_demo_picker(
+        "Select child", ids, child_selection.F2_DEMO_CHILD, index=0,
+        label_visibility="collapsed", width=440,
+    )
 
 try:
     report = services.behavioral_report(source["daily"], child)

@@ -22,10 +22,16 @@ def demo_card(key, title, source_label, load_source, summarize, page, link, icon
             results.pop(key, None)
             st.info("Fictional records for this example are unavailable.")
         else:
-            child = st.selectbox(
-                f"{title} demo child", source["child_ids"], index=None,
-                key=f"overview-demo-{key}", placeholder="Select a fictional child",
-            )
+            if key == "behavioral":
+                child = child_selection.behavioral_demo_picker(
+                    f"{title} demo child", source["child_ids"], f"overview-demo-{key}",
+                    placeholder="Select a fictional child",
+                )
+            else:
+                child = st.selectbox(
+                    f"{title} demo child", source["child_ids"], index=None,
+                    key=f"overview-demo-{key}", placeholder="Select a fictional child",
+                )
             previous_child, summary = results.get(key, (None, None))
             if previous_child != child:
                 results.pop(key, None)

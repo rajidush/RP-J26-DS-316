@@ -560,6 +560,7 @@ F2_EXPECTED_MODEL = {"algorithm": "one_class_svm", "feature_set": "A_daily", "n_
 F2_DEMO_DATA = C4_DIR / "data" / "behavioral_daily.csv"
 F2_CONTEXT_DAYS = 14                      # the child's own previous days shown for context
 F2_TOP_FEATURES = 5
+F2_COVERAGE_COLUMNS = ("screen_monitor_observed", "language_monitor_observed")
 
 
 def _c4_package():
@@ -660,7 +661,7 @@ F2_FEATURE_LABELS = {
 _BOOL_TEXT = {"true": 1.0, "false": 0.0, "1": 1.0, "0": 0.0, "1.0": 1.0, "0.0": 0.0}
 
 
-def _clean_daily(df, what):
+def _clean_daily(df, what, *, include_coverage=False):
     """Validate daily rows: keys, the 27 model features and the urgent-rule
     columns. Every other column (synthetic labels included) is dropped.
     Raises ValueError with a readable message."""
@@ -701,6 +702,10 @@ def _clean_daily(df, what):
     for col in urgent_cols:
         if col not in out.columns:
             out[col] = float("nan")
+    if include_coverage:
+        for col in F2_COVERAGE_COLUMNS:
+            if col in df:
+                out[col] = df[col].astype(str).str.strip().str.lower().map(_BOOL_TEXT)
     return out.sort_values(["child_id", "date"]).reset_index(drop=True)
 
 
@@ -713,7 +718,35 @@ def load_daily_csv(file):
 
 @lru_cache(maxsize=2)
 def _demo_daily(path, mtime):
-    return _clean_daily(pd.read_csv(path), f"The bundled dataset {Path(path).name}")
+    return _clean_daily(pd.read_csv(path), f"The bundled dataset {Path(path).name}",
+                        include_coverage=True)
+
+
+def behavioral_urgent_review(rows):
+    """Run the existing urgent rule without loading the anomaly model."""
+    rules = _urgent_module()
+    evidence = rows.reindex(columns=list(rules.URGENT_RULE_COLUMNS))
+    alerts = rules.urgent_alerts(rows[["child_id", "date"]].join(evidence))
+    complete = evidence.notna().all(axis=1)
+    for prefix, column in zip(("screen_", "language_"), F2_COVERAGE_COLUMNS):
+        if column in rows:
+            covered = rows[column].eq(1)
+            complete &= covered
+            evidence.loc[~covered, evidence.columns.str.startswith(prefix)] = float("nan")
+    return alerts, evidence.notna().any(axis=1), complete
+
+
+def behavioral_observed_days(rows):
+    """Identify days with at least one observed activity input."""
+    features = [name for name in _f2_module().FEATURE_SET_A if name != "is_weekend"]
+    observed = rows.reindex(columns=features).notna()
+    for prefix, column in zip(("screen_", "language_"), F2_COVERAGE_COLUMNS):
+        if column in rows:
+            observed.loc[~rows[column].eq(1), observed.columns.str.startswith(prefix)] = False
+    covered = rows.reindex(columns=F2_COVERAGE_COLUMNS)
+    if any(column in rows for column in F2_COVERAGE_COLUMNS):
+        observed.loc[~covered.eq(1).any(axis=1), :] = False
+    return observed.any(axis=1)
 
 
 def behavioral_daily_source(uploaded_csv=None):

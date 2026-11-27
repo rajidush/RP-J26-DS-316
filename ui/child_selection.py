@@ -18,6 +18,9 @@ _HAS_ACTIVE_PROFILES = "dashboard_has_active_profiles"
 F1_DEMO_CHILD = "f1_demo_child"
 F2_DEMO_CHILD = "f2_child"
 OVERVIEW_DEMO_RESULTS = "overview_demo_results"
+_F2_DEMO_CONTEXT = "dashboard_f2_demo_context"
+F2_SAFETY_DATE = "dashboard_f2_safety_date"
+_SAFETY_RESULT = "dashboard_safety_result"
 
 
 def _profile_labels(profiles):
@@ -49,13 +52,60 @@ def clear_behavioral_dates():
 
 
 def _change_mode():
-    for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS):
+    for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS, _F2_DEMO_CONTEXT,
+                F2_SAFETY_DATE, _SAFETY_RESULT):
         st.session_state.pop(key, None)
     clear_behavioral_dates()
 
 
 def demo_mode_active():
     return st.session_state.get(DEMO_WIDGET, False)
+
+
+def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
+    """Retain the Function 02 identity across page-specific widgets."""
+    def select(child):
+        st.session_state[_F2_DEMO_CONTEXT] = child
+        st.session_state.pop(F2_SAFETY_DATE, None)
+        st.session_state.pop(_SAFETY_RESULT, None)
+        clear_behavioral_dates()
+        st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
+
+    child = st.session_state.get(_F2_DEMO_CONTEXT)
+    if child not in ids:
+        default = None if index is None or not ids else ids[index]
+        if child != default:
+            select(default)
+        child = default
+    if st.session_state.get(key) != child:
+        st.session_state[key] = child
+
+    return st.selectbox(label, ids, index=None, key=key,
+                        on_change=lambda: select(st.session_state[key]), **kwargs)
+
+
+def safety_demo_summary(source, child, through=None):
+    from ui import safety_summary, services
+
+    rows = safety_summary.records_for(source, child)
+    through = through or st.session_state.get(F2_SAFETY_DATE)
+    if through is not None:
+        rows = rows[rows["date"] <= through]
+    artifacts = tuple(services.f2_artifact_dir() / name for name in services.F2_ARTIFACT_FILES)
+    versions = []
+    for path in artifacts:
+        try:
+            stat = path.stat()
+            versions.append((path, stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            versions.append((path, None, None))
+    cached = st.session_state.get(_SAFETY_RESULT)
+    if cached and cached[0] == versions and cached[1].equals(rows):
+        return cached[2]
+    result = safety_summary.summarize(rows)
+    if result.behavioral_message != safety_summary.BEHAVIOR_FAILED:
+        st.session_state[_SAFETY_RESULT] = (versions, rows.copy(), result)
+    return result
 
 
 def has_active_profiles():

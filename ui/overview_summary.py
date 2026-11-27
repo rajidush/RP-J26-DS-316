@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from ui import services
+from ui import child_selection, services
 from ui.parent_guidance_view import emotional_change_view, parent_guidance_view
 
 
@@ -37,16 +37,14 @@ def emotional_summary(source, child):
 
 
 def behavioral_summary(source, child):
-    report = services.behavioral_report(source["daily"], child)
-    latest = report["latest"]
-    urgent = report["urgent"]
-    if urgent.empty:
-        safety = "No urgent rules matched the available fictional records."
-    else:
-        safety = f"Most recent urgent rule match: {urgent['date'].max()}."
+    safety = child_selection.safety_demo_summary(source, child)
+    latest = safety.latest_unusual
+    message = safety.behavioral_message
+    if latest is not None:
+        message = ("The latest recorded day was flagged for unusual activity." if latest else
+                   "The latest recorded day was not flagged for unusual activity.")
     return Summary(
-        "The latest recorded day was flagged for unusual activity."
-        if latest["unusual"] else "The latest recorded day was not flagged for unusual activity.",
-        f"Assessment date: {latest['date']}",
-        related=safety,
+        message,
+        f"Assessment date: {safety.end}" if safety.end else "",
+        related=" ".join(filter(None, (safety.urgent_message, safety.period, safety.coverage))),
     )
