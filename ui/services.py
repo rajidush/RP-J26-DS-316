@@ -735,12 +735,14 @@ def _demo_daily(path, revision):
 def behavioral_urgent_review(rows):
     """Run the existing urgent rule without loading the anomaly model."""
     rules = _urgent_module()
-    evidence = rows.reindex(columns=list(rules.URGENT_RULE_COLUMNS))
+    numeric = _behavioral_data_module().daily_numeric
+    evidence = rows.reindex(columns=list(rules.URGENT_RULE_COLUMNS)).apply(numeric, count=True)
+    # Recorded positive counters remain rule evidence even if monitoring was incomplete.
     alerts = rules.urgent_alerts(rows[["child_id", "date"]].join(evidence))
     complete = evidence.notna().all(axis=1)
     for prefix, column in zip(("screen_", "language_"), F2_COVERAGE_COLUMNS):
         if column in rows:
-            covered = rows[column].eq(1)
+            covered = numeric(rows[column], indicator=True).eq(1)
             complete &= covered
             evidence.loc[~covered, evidence.columns.str.startswith(prefix)] = float("nan")
     return alerts, evidence.notna().any(axis=1), complete

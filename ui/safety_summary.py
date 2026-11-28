@@ -10,6 +10,8 @@ NO_RECORDS = "No fictional monitoring records are available for this selection."
 BEHAVIOR_FAILED = "The behavioral assessment could not be generated."
 MODEL_UNAVAILABLE = "The behavioral assessment is temporarily unavailable."
 URGENT_FAILED = "The urgent safety review could not be completed."
+URGENT_INSUFFICIENT = "There is insufficient monitoring information to check for urgent safety concerns."
+LATEST_UNASSESSED = "The latest recorded day had too little information to assess unusual activity."
 
 
 @dataclass(frozen=True)
@@ -63,8 +65,10 @@ def _urgent_notifications(rows, review):
         message = f"Most recent urgent safety concern: {latest_date}."
     elif available.any():
         message = "No urgent safety concerns were identified in the available records."
+        if not complete.all():
+            message += " The review was incomplete."
     else:
-        message = "There is insufficient monitoring information to check for urgent safety concerns."
+        message = URGENT_INSUFFICIENT
     coverage = "" if complete.all() else "Some days are missing information used in the urgent safety review."
     return (items, message, coverage, frozenset(rows.loc[available, "date"]),
             frozenset(rows.loc[complete, "date"]))
@@ -88,12 +92,14 @@ def _behavioral_notifications(assessment):
             "Activity on this day differed from typical patterns.",
             "Some activity measurements were missing that day." if imputed.at[day.Index] else "",
         )
-        for day in assessed.loc[assessed["flag"]].itertuples()
+        for day in assessed.loc[assessed["flag"].eq(True)].itertuples()
     ]
     latest = history["flag"].iloc[-1]
     message = ("The available assessment identified days with unusual activity." if items
                else "No unusual activity was identified on the assessed days.")
-    if len(assessed) < len(history):
+    if not observed.iloc[-1]:
+        message = f"{LATEST_UNASSESSED} {message}"
+    if not observed.iloc[:-1].all():
         message += " Some recorded days had too little information to assess."
     if imputed.loc[assessed.index].any():
         message += " Some assessed days had missing activity measurements."

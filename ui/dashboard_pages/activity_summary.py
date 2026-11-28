@@ -39,6 +39,8 @@ def show_summary(summary, safety):
                            else "Urgent safety information is unavailable for this period.")
             else:
                 st.caption("A day can contain several flags.")
+                if counts.complete_urgent_days < summary.days:
+                    st.caption("This count uses the available safety records. Some days had missing or incomplete information.")
             st.page_link("dashboard_pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
 
     with theme.card("activity-history", "Activity History"):

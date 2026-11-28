@@ -58,14 +58,14 @@ def recent_behavior(history, day, minimum):
         breaks = ~active | pd.to_datetime(through["date"]).diff().dt.days.ne(1)
         run = through.iloc[breaks.to_numpy().nonzero()[0][-1]:]
         run = run.loc[run["date"].ge(start) & run[f"{method}_active"].eq(True)]
-        supported |= bool(run[f"{method}_alert"].any() or run["flag"].sum() >= 2)
+        supported |= bool(run[f"{method}_alert"].any() or run["flag"].eq(True).sum() >= 2)
 
     if supported:
         summary = "A change in recorded activity continued across recent days."
     elif recent["flag"].count() < minimum:
         summary = "There are too few recent records to tell whether a change continued."
     else:
-        earlier_flags = recent.loc[recent["date"].lt(day), "flag"].fillna(False).sum()
+        earlier_flags = recent.loc[recent["date"].lt(day), "flag"].eq(True).sum()
         if earlier_flags:
             earlier_days = "One earlier day stood out" if earlier_flags == 1 else "Several earlier days stood out"
             summary = f"{earlier_days} to the AI. No continuing change was detected."
@@ -218,11 +218,11 @@ def render(source, child=None):
         with dates:
             day = st.selectbox("Activity date", daily["date"].tolist()[::-1], key=f"f2_activity_{child}")
     latest = daily["date"].iloc[-1]
-    urgent_report = services.behavioral_urgent_report(daily, child)
-    alerts = urgent_report["urgent"]
     selected_rows = daily.loc[daily["date"].eq(day)]
+    selected_index = selected_rows.index[0]
+    alerts, urgent_available, urgent_complete = services.behavioral_urgent_review(daily)
+    alerts = alerts.loc[alerts["is_urgent"]]
     selected_urgent = bool(alerts["date"].eq(day).any())
-    selected_coverage = services.behavioral_urgent_report(selected_rows, child)
     for alert in alerts[alerts["date"].isin({day, latest})].itertuples(index=False):
         label = "Latest recorded day" if alert.date == latest else "Selected day"
         st.warning(f"**Urgent safety review · {label} ({alert.date})**  \n"
@@ -243,7 +243,8 @@ def render(source, child=None):
     summary, active, earlier = recent_behavior(history, day, config.minimum)
     temporal_result = temporal_review = None
     request = None
-    if bundle:
+    # Temporal explanation requires a scored endpoint in the selected window.
+    if assessed:
         try:
             request = ExplanationRequest(bundle)
         except EXPLANATION_ERRORS:
@@ -288,7 +289,10 @@ def render(source, child=None):
             st.caption("The comparison uses your child’s own earlier records.")
         with theme.card("f2-recent", "Recent Behavioral Pattern"):
             st.write(summary)
-            st.caption(temporal_text(temporal_result, active, temporal_review))
+            if bundle is not None and not assessed:
+                st.caption("There are too few usable records to explain the AI’s assessments across days.")
+            else:
+                st.caption(temporal_text(temporal_result, active, temporal_review))
             if earlier is not None and not active:
                 st.caption(f"An earlier change was detected on {earlier}. "
                            "Recent records do not establish that it is still continuing.")
@@ -304,13 +308,14 @@ def render(source, child=None):
 
     with theme.card("f2-safety", "Safety Alerts"):
         st.write("Safety checks use the available records and run separately from the AI assessment.")
-        if selected_coverage["urgent_incomplete"]:
+        if not urgent_complete.at[selected_index]:
             st.warning("Safety monitoring was incomplete for the selected day.")
             if not selected_urgent:
-                st.write("The available records contained no urgent alert for this day.")
+                st.write("The available records contained no urgent alert for this day."
+                         if urgent_available.at[selected_index] else safety_summary.URGENT_INSUFFICIENT)
         elif not selected_urgent:
             st.write("No urgent alert was recorded for this day.")
-        if urgent_report["urgent_incomplete"] and not selected_coverage["urgent_incomplete"]:
+        if urgent_complete.at[selected_index] and not urgent_complete.all():
             st.warning("Safety monitoring was incomplete on other recorded days.")
         older = alerts.loc[alerts["date"].lt(day) & alerts["date"].ne(latest)]
         if not older.empty:
