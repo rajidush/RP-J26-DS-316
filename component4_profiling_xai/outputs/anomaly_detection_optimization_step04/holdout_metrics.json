@@ -1,0 +1,100 @@
+{
+  "deployed": {
+    "precision": 0.7431192660550459,
+    "recall": 0.6377952755905512,
+    "f1": 0.6864406779661016,
+    "tp": 81,
+    "fp": 28,
+    "fn": 46,
+    "tn": 1205,
+    "fpr": 0.0227088402270884,
+    "fnr": 0.36220472440944884,
+    "pr_auc_ap": 0.6728746509041443,
+    "roc_auc": 0.7270724371132441,
+    "runtime": {
+      "rows": 40,
+      "median_ms": 4.194299996015616,
+      "p95_ms": 7.3122149973642045,
+      "peak_traced_bytes": 28816
+    },
+    "single_row_runtime": {
+      "rows": 1,
+      "median_ms": 4.12399998458568,
+      "p95_ms": 6.463459989754482,
+      "peak_traced_bytes": 7046
+    },
+    "artifact_bytes": 6209,
+    "xai": {
+      "daily_cases": 16,
+      "supported": 14,
+      "corroborated": 8,
+      "max_shap_reconstruction_error": 1.7763568394002505e-15,
+      "mean_lime_r2": 0.4948484205232675,
+      "mean_shap_top_agreement": 0.8625,
+      "mean_shap_sign_agreement": 0.875,
+      "mean_lime_top_agreement": 0.7875,
+      "median_daily_review_ms": 80.8621000032872,
+      "temporal_supported": 1,
+      "max_temporal_error": 2.7755575615628914e-15,
+      "median_temporal_review_ms": 289.79165000782814
+    },
+    "false_positive_urgent_overlap": 9
+  },
+  "candidate": {
+    "precision": 0.8488372093023255,
+    "recall": 0.5748031496062992,
+    "f1": 0.6854460093896714,
+    "tp": 73,
+    "fp": 13,
+    "fn": 54,
+    "tn": 1220,
+    "fpr": 0.010543390105433901,
+    "fnr": 0.4251968503937008,
+    "pr_auc_ap": 0.6471071437116329,
+    "roc_auc": 0.7287647438230805,
+    "runtime": {
+      "rows": 40,
+      "median_ms": 1.5615000011166558,
+      "p95_ms": 1.7918400102644227,
+      "peak_traced_bytes": 28720
+    },
+    "single_row_runtime": {
+      "rows": 1,
+      "median_ms": 1.4233499969122931,
+      "p95_ms": 3.009654989000409,
+      "peak_traced_bytes": 7046
+    },
+    "artifact_bytes": 23855,
+    "xai": {
+      "daily_cases": 16,
+      "supported": 13,
+      "corroborated": 7,
+      "max_shap_reconstruction_error": 4.718447854656915e-16,
+      "mean_lime_r2": 0.5392815573311318,
+      "mean_shap_top_agreement": 0.975,
+      "mean_shap_sign_agreement": 0.8583333333333334,
+      "mean_lime_top_agreement": 0.8500000000000001,
+      "median_daily_review_ms": 91.15074999863282,
+      "temporal_supported": 2,
+      "max_temporal_error": 5.551115123125783e-16,
+      "median_temporal_review_ms": 340.1979000045685
+    },
+    "false_positive_urgent_overlap": 3
+  },
+  "paired_child_bootstrap": {
+    "delta_f1_95": [
+      -0.062356171418836204,
+      0.04797638139043833
+    ],
+    "delta_fpr_95": [
+      -0.01809291531873419,
+      -0.006449939500038625
+    ]
+  },
+  "cohort": {
+    "rows": 1360,
+    "positives": 127,
+    "children": 40,
+    "dataset_sha256": "9699445cdcd57af22340bd8d507774030f808d7c3430f2aa4e9eff1edeac8756"
+  }
+}

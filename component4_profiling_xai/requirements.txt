@@ -12,3 +12,5 @@ tzdata                    # Asia/Colombo for zoneinfo on Windows (behavioral_dat
 
 # Testing
 pytest>=8.0
+psutil>=7.1  # local Function 02 resource measurements
+matplotlib>=3.8  # saved research charts

@@ -1,0 +1,2320 @@
+[
+  {
+    "case": "native_0",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.32417926923390117,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "Unusual activity was detected on more than one recent day.",
+        "There are too few usable records to explain changes across days."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day.",
+        "2026-07-08 · Language that needs urgent review, Language about self-harm"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 195,
+      "words_per_sentence": 10.833333333333334,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 673110
+  },
+  {
+    "case": "native_0",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.32417926923390117,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "Several earlier days stood out to the AI. No continuing change was detected.",
+        "There are too few usable records to explain the AI’s assessments across days."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day.",
+        "2026-07-08 · Language that needs urgent review, Language about self-harm"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 175,
+      "words_per_sentence": 10.294117647058824,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 598958
+  },
+  {
+    "case": "native_1",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9988067365039797,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nLanguage that needs urgent review, Language about self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "An unusual activity pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "An unusual pattern was detected on one recent day.",
+        "On one recent recorded day, the language monitoring records contributed more strongly to the AI’s unusual-activity assessment."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look more unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "A safety alert was recorded for this day. Review it promptly and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "2026-08-24 · Language that needs urgent review, Language about self-harm",
+        "2026-07-31 · Language that needs urgent review",
+        "2026-07-27 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 236,
+      "words_per_sentence": 12.421052631578947,
+      "jargon_hits": 5,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 21,
+    "peak_bytes": 865591
+  },
+  {
+    "case": "native_1",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9988067365039797,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nLanguage that needs urgent review, Language about self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "The AI detected an unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "On one recent day, the language monitoring records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look more unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "Review the safety alert above and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "2026-08-24 · Language that needs urgent review, Language about self-harm",
+        "2026-07-31 · Language that needs urgent review",
+        "2026-07-27 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 214,
+      "words_per_sentence": 13.375,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 21,
+    "peak_bytes": 884523
+  },
+  {
+    "case": "native_2",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.5994628162853142,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": true,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity differs from your child’s established pattern.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The AI could not identify a clear factor that contributed more strongly across days."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 191,
+      "words_per_sentence": 10.052631578947368,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 732741
+  },
+  {
+    "case": "native_2",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.5994628162853142,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": true,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "More language-related concerns were recorded than usual for your child.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The AI couldn’t identify a clear factor in its recent assessments."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 163,
+      "words_per_sentence": 9.588235294117647,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": true,
+      "opposite_evidence_explicit": true
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 736805
+  },
+  {
+    "case": "native_3",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": true,
+      "lime_r2": 0.9982298983101017,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "An unusual activity pattern was detected on this day.",
+        "The recent records also show a change that continued across days."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "On one recent recorded day, the screen activity records contributed more strongly to the AI’s unusual-activity assessment."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the screen activity records made this day look more unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Find a calm time to talk about online evenings.",
+        "Try Asking · “How have your online evenings been feeling lately?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day.",
+        "2026-09-01 · Language that needs urgent review, Language about self-harm",
+        "2026-08-28 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-08-21 · Language that needs urgent review",
+        "2026-07-30 · Language that needs urgent review, Language about self-harm"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 251,
+      "words_per_sentence": 12.55,
+      "jargon_hits": 5,
+      "duplicated_trend": 1,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 18,
+    "peak_bytes": 858202
+  },
+  {
+    "case": "native_3",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": true,
+      "lime_r2": 0.9982298983101017,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected an unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "On one recent day, the screen activity records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the screen activity records made the recorded activity look more unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Ask about online evenings at a calm moment.",
+        "Try Asking · “What have your evenings online been like?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day.",
+        "2026-09-01 · Language that needs urgent review, Language about self-harm",
+        "2026-08-28 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-08-21 · Language that needs urgent review",
+        "2026-07-30 · Language that needs urgent review, Language about self-harm"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 220,
+      "words_per_sentence": 12.941176470588236,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 18,
+    "peak_bytes": 804812
+  },
+  {
+    "case": "native_4",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": false,
+      "lime_r2": 0.2341589950097398,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "An unusual pattern was detected on one recent day.",
+        "The AI could not identify a clear factor that contributed more strongly across days.",
+        "An earlier change was detected on 2026-07-22. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the screen activity records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
+        "Try Asking · “Did anything you saw online surprise you or make you uncomfortable?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day.",
+        "2026-09-19 · Language that needs urgent review",
+        "2026-09-07 · Language that needs urgent review, Language about self-harm",
+        "2026-07-23 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-22 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-21 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 261,
+      "words_per_sentence": 13.05,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 764105
+  },
+  {
+    "case": "native_4",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": false,
+      "lime_r2": 0.2341589950097398,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "One earlier day stood out to the AI. No continuing change was detected.",
+        "The AI couldn’t identify a clear factor in its recent assessments.",
+        "An earlier change was detected on 2026-07-22. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the screen activity records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
+        "Try Asking · “Did anything you saw online surprise you or make you uncomfortable?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day.",
+        "2026-09-19 · Language that needs urgent review",
+        "2026-09-07 · Language that needs urgent review, Language about self-harm",
+        "2026-07-23 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-22 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-21 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 245,
+      "words_per_sentence": 12.894736842105264,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 739577
+  },
+  {
+    "case": "native_5",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.2334524209421388,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "An unusual pattern was detected on one recent day.",
+        "On one recent recorded day, the screen activity records contributed more strongly to the AI’s unusual-activity assessment.",
+        "An earlier change was detected on 2026-09-16. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day.",
+        "2026-07-09 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 221,
+      "words_per_sentence": 11.05,
+      "jargon_hits": 5,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 24,
+    "peak_bytes": 995263
+  },
+  {
+    "case": "native_5",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.2334524209421388,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "One earlier day stood out to the AI. No continuing change was detected.",
+        "On one recent day, the screen activity records made the activity look more unusual to the AI than before.",
+        "An earlier change was detected on 2026-09-16. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day.",
+        "2026-07-09 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 201,
+      "words_per_sentence": 10.578947368421053,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 24,
+    "peak_bytes": 845879
+  },
+  {
+    "case": "native_6",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9987908276144137,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nLanguage that needs urgent review, Language about self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "An unusual activity pattern was detected on this day.",
+        "The recent records also show a change that continued across days."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity differs from your child’s established pattern.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "On one recent recorded day, the language monitoring records contributed more strongly to the AI’s unusual-activity assessment."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look more unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "A safety alert was recorded for this day. Review it promptly and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "2026-08-16 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-29 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-28 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-27 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 260,
+      "words_per_sentence": 13.0,
+      "jargon_hits": 5,
+      "duplicated_trend": 1,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 15,
+    "peak_bytes": 861708
+  },
+  {
+    "case": "native_6",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9987908276144137,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nLanguage that needs urgent review, Language about self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "The AI detected an unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "More language-related concerns were recorded than usual for your child.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "On one recent day, the language monitoring records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look more unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "Review the safety alert above and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "2026-08-16 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-29 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-28 · Language that needs urgent review, Language that may indicate grooming",
+        "2026-07-27 · Language that needs urgent review, Language that may indicate grooming"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 232,
+      "words_per_sentence": 14.5,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": true,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 15,
+    "peak_bytes": 868319
+  },
+  {
+    "case": "native_7",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "limited",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": 0.4067049690327853,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The AI could not identify a clear factor that contributed more strongly across days.",
+        "An earlier change was detected on 2026-08-19. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "The AI could not identify a clear factor behind this day’s assessment.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "Keep an open conversation about your child’s digital experiences.",
+        "Try Asking · “What did you enjoy online, and was there anything you’d like help with?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day.",
+        "2026-07-31 · Language that needs urgent review, Language about self-harm",
+        "2026-07-30 · Language that needs urgent review, Language about self-harm",
+        "2026-07-16 · Language that needs urgent review, Language about self-harm",
+        "2026-07-09 · Language that needs urgent review"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 241,
+      "words_per_sentence": 12.68421052631579,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 6,
+    "peak_bytes": 822700
+  },
+  {
+    "case": "native_7",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "limited",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": 0.4067049690327853,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The AI couldn’t identify a clear factor in its recent assessments.",
+        "An earlier change was detected on 2026-08-19. Recent records do not establish that it is still continuing."
+      ],
+      "f2-xai": [
+        "The AI couldn’t identify a clear factor in this day’s assessment."
+      ],
+      "f2-guidance": [
+        "Pick a calm moment to check in about time spent online.",
+        "Try Asking · “What’s been good or difficult about being online lately?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day.",
+        "2026-07-31 · Language that needs urgent review, Language about self-harm",
+        "2026-07-30 · Language that needs urgent review, Language about self-harm",
+        "2026-07-16 · Language that needs urgent review, Language about self-harm",
+        "2026-07-09 · Language that needs urgent review"
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 218,
+      "words_per_sentence": 12.823529411764707,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 6,
+    "peak_bytes": 761893
+  },
+  {
+    "case": "controlled_stable",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": false,
+      "lime_r2": 0.18315773144240954,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The factors the AI used to assess activity were similar across recent and earlier records."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the screen activity records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
+        "Try Asking · “Did anything you saw online surprise you or make you uncomfortable?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 168,
+      "words_per_sentence": 9.882352941176471,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 843451
+  },
+  {
+    "case": "controlled_stable",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Screen activity",
+      "corroborated": false,
+      "lime_r2": 0.18315773144240954,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The factors in the AI’s assessments were similar across recent and earlier days."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the screen activity records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted screen activity. Offer to talk through online experiences together.",
+        "Try Asking · “Did anything you saw online surprise you or make you uncomfortable?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 152,
+      "words_per_sentence": 10.133333333333333,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 875462
+  },
+  {
+    "case": "controlled_gradual",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.10479632771256597,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The factors the AI used to assess activity were similar across recent and earlier records."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 170,
+      "words_per_sentence": 10.0,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 843438
+  },
+  {
+    "case": "controlled_gradual",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.10479632771256597,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity was similar to your child’s recent usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The factors in the AI’s assessments were similar across recent and earlier days."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 146,
+      "words_per_sentence": 9.733333333333333,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 871273
+  },
+  {
+    "case": "controlled_missing",
+    "arm": "before",
+    "evidence": {
+      "assessed": false,
+      "flagged": false,
+      "daily": "insufficient_data",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": null,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": true,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "Not enough information to assess activity on this day."
+      ],
+      "f2-observed": [
+        "There isn’t enough recorded activity on this day to make a reliable comparison.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "There are too few usable records to explain changes across days."
+      ],
+      "f2-xai": [
+        "An AI explanation is unavailable for this day.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "Keep an open conversation about your child’s digital experiences.",
+        "Try Asking · “What did you enjoy online, and was there anything you’d like help with?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "Safety monitoring was incomplete for the selected day.",
+        "No urgent alert was found in the available records for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day is missing activity records needed for a model assessment.",
+        "The usual activity profile has enough eligible earlier records.",
+        "Some activity records are missing.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 172,
+      "words_per_sentence": 9.555555555555555,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 3,
+    "peak_bytes": 790718
+  },
+  {
+    "case": "controlled_missing",
+    "arm": "after",
+    "evidence": {
+      "assessed": false,
+      "flagged": false,
+      "daily": "insufficient_data",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": null,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": true,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI couldn’t assess this day with the records available."
+      ],
+      "f2-observed": [
+        "There’s too little activity recorded for this day to compare it with earlier days.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "There are too few usable records to explain the AI’s assessments across days."
+      ],
+      "f2-xai": [
+        "An AI explanation is unavailable for this day."
+      ],
+      "f2-guidance": [
+        "Pick a calm moment to check in about time spent online.",
+        "Try Asking · “What’s been good or difficult about being online lately?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "Safety monitoring was incomplete for the selected day.",
+        "The available records contained no urgent alert for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day is missing records needed for an AI check.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 153,
+      "words_per_sentence": 10.2,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 3,
+    "peak_bytes": 825614
+  },
+  {
+    "case": "sustained",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9985503102275115,
+      "temporal": "sustained",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "An unusual activity pattern was detected on this day.",
+        "The recent records also show a change that continued across days."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "Across several consecutive days, the language monitoring records contributed more strongly to the AI’s unusual-activity assessment. A change alert was also active on the selected day."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look more unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 218,
+      "words_per_sentence": 10.380952380952381,
+      "jargon_hits": 5,
+      "duplicated_trend": 1,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 689958
+  },
+  {
+    "case": "sustained",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9985503102275115,
+      "temporal": "sustained",
+      "temporal_review": "supported",
+      "sustained": true,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected an unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "A change in recorded activity continued across recent days.",
+        "Across several days, the language monitoring records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look more unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 171,
+      "words_per_sentence": 10.058823529411764,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 703696
+  },
+  {
+    "case": "spike",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9985503102275115,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "An unusual activity pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "An unusual pattern was detected on one recent day.",
+        "On one recent recorded day, the language monitoring records contributed more strongly to the AI’s unusual-activity assessment."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look more unusual. A second explanation also pointed in that direction.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 198,
+      "words_per_sentence": 10.421052631578947,
+      "jargon_hits": 5,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 673497
+  },
+  {
+    "case": "spike",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": true,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": true,
+      "lime_r2": 0.9985503102275115,
+      "temporal": "isolated",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected an unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "On one recent day, the language monitoring records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look more unusual. Both explanation checks pointed to that factor."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 172,
+      "words_per_sentence": 10.117647058823529,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 691551
+  },
+  {
+    "case": "screen_concern",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.47098170510531123,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "There aren’t enough usable earlier records to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The factors the AI used to assess activity were similar across recent and earlier records."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has too few eligible earlier records for a reliable comparison.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 190,
+      "words_per_sentence": 10.555555555555555,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 842410
+  },
+  {
+    "case": "screen_concern",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.47098170510531123,
+      "temporal": "stable",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "There are too few usable earlier records for a reliable comparison.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The factors in the AI’s assessments were similar across recent and earlier days."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Too few earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 159,
+      "words_per_sentence": 9.9375,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 8,
+    "peak_bytes": 872119
+  },
+  {
+    "case": "abrupt",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.4735691274409122,
+      "temporal": "sustained",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": true,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "Your child’s usual recorded activity has changed over recent days.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "Across several consecutive days, the screen activity records contributed more strongly to the AI’s unusual-activity assessment."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 170,
+      "words_per_sentence": 10.0,
+      "jargon_hits": 5,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 833532
+  },
+  {
+    "case": "abrupt",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.4735691274409122,
+      "temporal": "sustained",
+      "temporal_review": "supported",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": true,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": false
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "Your child’s usual recorded pattern shifted over recent days.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "Across several days, the screen activity records made the activity look more unusual to the AI than before."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 148,
+      "words_per_sentence": 9.866666666666667,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 11,
+    "peak_bytes": 804930
+  },
+  {
+    "case": "urgent_gap",
+    "arm": "before",
+    "evidence": {
+      "assessed": false,
+      "flagged": false,
+      "daily": "insufficient_data",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": null,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": true,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nImages that may show self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "Not enough information to assess activity on this day."
+      ],
+      "f2-observed": [
+        "There isn’t enough recorded activity on this day to make a reliable comparison.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "There are too few usable records to explain changes across days."
+      ],
+      "f2-xai": [
+        "An AI explanation is unavailable for this day.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "A safety alert was recorded for this day. Review it promptly and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "Safety monitoring was incomplete for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day is missing activity records needed for a model assessment.",
+        "The usual activity profile has enough eligible earlier records.",
+        "Some activity records are missing.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 192,
+      "words_per_sentence": 9.6,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 3,
+    "peak_bytes": 818732
+  },
+  {
+    "case": "urgent_gap",
+    "arm": "after",
+    "evidence": {
+      "assessed": false,
+      "flagged": false,
+      "daily": "insufficient_data",
+      "group": null,
+      "corroborated": false,
+      "lime_r2": null,
+      "temporal": "insufficient",
+      "temporal_review": "insufficient_data",
+      "sustained": false,
+      "baseline_usable": false,
+      "baseline_shift": false,
+      "baseline_feature": null,
+      "baseline_direction": 0,
+      "opposite": false,
+      "urgent": true,
+      "safety_incomplete": true,
+      "recorded_observation": false
+    },
+    "messages": {
+      "alerts": [
+        "Urgent safety review · Latest recorded day (2026-09-28)  \nImages that may show self-harm. Review the record promptly and seek appropriate human support."
+      ],
+      "f2-overview": [
+        "The AI couldn’t assess this day with the records available."
+      ],
+      "f2-observed": [
+        "There’s too little activity recorded for this day to compare it with earlier days.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "There are too few usable records to explain the AI’s assessments across days."
+      ],
+      "f2-xai": [
+        "An AI explanation is unavailable for this day."
+      ],
+      "f2-guidance": [
+        "Review the safety alert above and seek appropriate human support."
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "Safety monitoring was incomplete for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day is missing records needed for an AI check.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 168,
+      "words_per_sentence": 10.5,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": false,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 3,
+    "peak_bytes": 833848
+  },
+  {
+    "case": "opposite_evidence",
+    "arm": "before",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.33586395763541954,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": true,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "No unusual pattern was detected on this day."
+      ],
+      "f2-observed": [
+        "This day’s recorded activity differs from your child’s established pattern.",
+        "Recent records that raised a concern were kept out of updates to the usual activity pattern.",
+        "This compares the recorded activity with your child’s earlier records."
+      ],
+      "f2-recent": [
+        "No unusual patterns were detected in the recent records that could be checked.",
+        "The AI could not identify a clear factor that contributed more strongly across days."
+      ],
+      "f2-xai": [
+        "The AI assessment found that the language monitoring records made this day look less unusual.",
+        "This explains the AI’s assessment for the selected day."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Invite your child to talk about online conversations.",
+        "Try Asking · “Was there anything someone said online that you’d like to talk about?”"
+      ],
+      "f2-safety": [
+        "Safety alerts are checked separately from the AI activity assessment.",
+        "No urgent safety alert was recorded for the selected day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "This day has enough recorded activity for the model to assess.",
+        "The usual activity profile has enough eligible earlier records.",
+        "An unusual pattern does not necessarily indicate harm. No detected anomaly does not guarantee safety."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 183,
+      "words_per_sentence": 10.166666666666666,
+      "jargon_hits": 4,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": false,
+      "opposite_evidence_explicit": false
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 842241
+  },
+  {
+    "case": "opposite_evidence",
+    "arm": "after",
+    "evidence": {
+      "assessed": true,
+      "flagged": false,
+      "daily": "supported",
+      "group": "Language activity",
+      "corroborated": false,
+      "lime_r2": 0.33586395763541954,
+      "temporal": "unclear",
+      "temporal_review": "limited",
+      "sustained": false,
+      "baseline_usable": true,
+      "baseline_shift": false,
+      "baseline_feature": "language_flags",
+      "baseline_direction": 1,
+      "opposite": true,
+      "urgent": false,
+      "safety_incomplete": false,
+      "recorded_observation": true
+    },
+    "messages": {
+      "f2-overview": [
+        "The AI detected no unusual pattern in this day’s records."
+      ],
+      "f2-observed": [
+        "More language-related concerns were recorded than usual for your child.",
+        "Records that raised a concern were set aside when updating the usual pattern.",
+        "The comparison uses your child’s own earlier records."
+      ],
+      "f2-recent": [
+        "No continuing change was detected in the recent records.",
+        "The AI couldn’t identify a clear factor in its recent assessments."
+      ],
+      "f2-xai": [
+        "In the AI’s assessment, the language monitoring records made the recorded activity look less unusual."
+      ],
+      "f2-guidance": [
+        "The AI explanation highlighted language activity. Ask about recent online conversations.",
+        "Try Asking · “How have your conversations online been going?”"
+      ],
+      "f2-safety": [
+        "Safety checks use the available records and run separately from the AI assessment.",
+        "No urgent alert was recorded for this day."
+      ],
+      "f2-availability": [
+        "Earlier activity records are available.",
+        "The activity records needed for an AI check are available.",
+        "Enough earlier records could be used to establish the usual pattern.",
+        "The AI’s activity assessment cannot tell you whether your child is safe."
+      ]
+    },
+    "checks": {
+      "issues": [],
+      "words": 156,
+      "words_per_sentence": 9.75,
+      "jargon_hits": 0,
+      "duplicated_trend": 0,
+      "guided_topic": true,
+      "directional_personal": true,
+      "opposite_evidence_explicit": true
+    },
+    "prediction_calls": 10,
+    "peak_bytes": 732605
+  }
+]

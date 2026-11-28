@@ -1,0 +1,282 @@
+{
+  "protocol": "model_comparison_v1",
+  "status": "preregistered_only",
+  "synthetic_only": true,
+  "dependencies": {
+    "scikit-learn": "1.6.1"
+  },
+  "training": {
+    "dataset": {
+      "path": "component4_profiling_xai/data/behavioral_daily.csv",
+      "sha256": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563"
+    },
+    "dataset_generator_seed": 42,
+    "selector": "normal_training_rows",
+    "split": "train",
+    "baseline_ready": true,
+    "is_anomaly": 0,
+    "require_existing_coverage_gate": true,
+    "expected_rows": 1894,
+    "expected_children": 40,
+    "sorted_child_date_csv_sha256": "dde2ba0ac9ea157078901bdf0a1a2125c597cf2f6a80e6dd3f1620d54352d7f8"
+  },
+  "features": {
+    "set": "A_daily",
+    "ordered_names": [
+      "screen_incidents",
+      "screen_flagged_frames",
+      "screen_flagged_seconds",
+      "screen_max_confidence",
+      "screen_mean_confidence",
+      "screen_night_incidents",
+      "screen_blocked_incidents",
+      "screen_escalated_incidents",
+      "screen_dismissed_incidents",
+      "language_flags",
+      "language_threat_flags",
+      "language_hate_identity_flags",
+      "language_bullying_flags",
+      "language_self_harm_flags",
+      "language_grooming_flags",
+      "language_profanity_flags",
+      "language_urgent_flags",
+      "language_block_rung_flags",
+      "language_max_risk",
+      "language_mean_risk",
+      "language_night_flags",
+      "language_audio_flags",
+      "language_distinct_apps",
+      "language_distinct_app_categories",
+      "total_risk_events",
+      "night_risk_events",
+      "is_weekend"
+    ],
+    "preprocessing": [
+      "median_imputer",
+      "standard_scaler"
+    ]
+  },
+  "score": {
+    "function": "-pipeline.score_samples(X)",
+    "flag_operator": ">",
+    "quantile_method": "linear"
+  },
+  "arms": {
+    "A": {
+      "algorithm": "one_class_svm",
+      "frozen": true,
+      "model": {
+        "path": "component4_profiling_xai/models/behavioral_anomaly_pipeline.pkl",
+        "sha256": "25634fbafabd133495bc66b9ced5921f27ddaac222902d72f38a5fe1515774b7"
+      },
+      "metadata": {
+        "path": "component4_profiling_xai/models/behavioral_anomaly_metadata.json",
+        "sha256": "3f5f0fa72eb5ac1cb19644c36d9a96e063a4aa2855515028c97293b406f375a4"
+      },
+      "threshold": -12.515804087687126,
+      "historical_threshold_quantile": 0.97,
+      "parameters": {
+        "nu": 0.01,
+        "gamma": 0.001
+      }
+    },
+    "B": {
+      "algorithm": "isolation_forest",
+      "fixed": {
+        "n_estimators": 300,
+        "contamination": "auto",
+        "random_state": 1729,
+        "n_jobs": 1
+      },
+      "grid": {
+        "max_samples": [
+          128,
+          256,
+          512
+        ],
+        "max_features": [
+          0.75,
+          1.0
+        ]
+      }
+    },
+    "C": {
+      "algorithm": "one_class_svm",
+      "fixed": {
+        "kernel": "rbf"
+      },
+      "grid": {
+        "nu": [
+          0.005,
+          0.01,
+          0.025,
+          0.05
+        ],
+        "gamma": [
+          0.0003,
+          0.001,
+          0.003,
+          0.01,
+          0.03
+        ]
+      }
+    }
+  },
+  "cohorts": {
+    "days_per_child": 28,
+    "day_key_timezone": "Asia/Colombo",
+    "validation": {
+      "seed": 2026112401,
+      "children": 60,
+      "children_per_scenario": 20,
+      "child_namespace": "MC1-VAL-",
+      "start_date": "2027-01-04",
+      "expected_days": 1680,
+      "expected_assessed_days": 1500,
+      "expected_assessed_positives_per_category": 100
+    },
+    "final_test": {
+      "seed": 2026112402,
+      "children": 90,
+      "children_per_scenario": 30,
+      "child_namespace": "MC1-FINAL-",
+      "start_date": "2027-03-01",
+      "expected_days": 2520,
+      "expected_assessed_days": 2250,
+      "expected_assessed_positives_per_category": 150
+    },
+    "normal_days_per_child": 22,
+    "anomaly_labels": [
+      "screen_only",
+      "language_only",
+      "mixed"
+    ],
+    "days_per_child_per_anomaly_category": 2,
+    "additional_events_per_affected_channel_by_intensity": {
+      "low": 1,
+      "high": 4
+    },
+    "scenario_profiles": {
+      "reference_like": {
+        "screen_poisson_rate": 0.45,
+        "language_poisson_rate": 1.1,
+        "weekend_multiplier_screen": 1.15,
+        "weekend_multiplier_language": 1.4,
+        "ordinary_night_probability_screen": 0.07,
+        "ordinary_night_probability_language": 0.07
+      },
+      "screen_heavy_weekend": {
+        "screen_poisson_rate": 1.4,
+        "language_poisson_rate": 0.65,
+        "weekend_multiplier_screen": 2.2,
+        "weekend_multiplier_language": 2.2,
+        "ordinary_night_probability_screen": 0.22,
+        "ordinary_night_probability_language": 0.22
+      },
+      "language_night_shift": {
+        "screen_poisson_rate": 0.45,
+        "language_poisson_rate": 2.3,
+        "weekend_multiplier_screen": 0.7,
+        "weekend_multiplier_language": 0.7,
+        "ordinary_night_probability_screen": 0.35,
+        "ordinary_night_probability_language": 0.35
+      }
+    },
+    "activity": {
+      "daily_shared_gamma_shape": 2,
+      "daily_shared_gamma_scale": 0.5,
+      "profile_lognormal_mu": 0,
+      "profile_lognormal_sigma": 0.42,
+      "profile_multipliers": [
+        0.6,
+        1.0,
+        1.35
+      ],
+      "language_category_names": [
+        "profanity",
+        "bullying",
+        "threat",
+        "hate_identity"
+      ],
+      "language_category_dirichlet_alpha": [
+        3.5,
+        4.5,
+        1.4,
+        2.1
+      ],
+      "injected_night_probability": 0.1,
+      "event_sampler": "component4_profiling_xai.behavioral_shap_independent_synthetic"
+    },
+    "coverage": {
+      "outage_days_per_child": 3,
+      "outage_types": [
+        "screen_only",
+        "language_only",
+        "both"
+      ],
+      "normal_outage_days_per_child": 2,
+      "positive_outage_days_per_child": 1,
+      "positive_outages_balanced_by_scenario_category_intensity": true
+    }
+  },
+  "selection": {
+    "training_score_quantiles": [
+      0.95,
+      0.97,
+      0.98,
+      0.99,
+      0.995
+    ],
+    "validation_overall_fpr_max": 0.05,
+    "validation_scenario_fpr_delta_vs_A_max": 0.03,
+    "rank": [
+      "screen_only_recall_desc",
+      "f1_desc",
+      "fpr_asc",
+      "family_B_before_C",
+      "grid_and_quantile_order"
+    ],
+    "no_feasible_candidate": "report_family_infeasible_no_fallback_to_relaxed_criteria",
+    "refit_after_selection": false
+  },
+  "metrics": {
+    "assessable": [
+      "precision",
+      "recall",
+      "f1",
+      "fpr",
+      "fnr",
+      "screen_only_recall",
+      "language_only_recall",
+      "mixed_recall"
+    ],
+    "coverage": [
+      "assessment_coverage",
+      "monitoring_abstention",
+      "unassessed_positive_days",
+      "detection_among_all_scheduled_positives",
+      "false_alerts_per_100_assessable_normal_days"
+    ],
+    "report_by_scenario": true,
+    "uncertainty": {
+      "method": "paired_percentile_child_cluster_bootstrap_stratified_by_scenario",
+      "seed": 2026112403,
+      "replicates": 10000,
+      "family_alpha": 0.05,
+      "primary_endpoints": 8,
+      "multiplicity": "bonferroni_two_sided_primary_challenger_only"
+    }
+  },
+  "acceptance": {
+    "minimum_screen_recall_delta_point": 0.1,
+    "screen_recall_delta_lower_bound_strictly_above": 0,
+    "overall_fpr_max": 0.05,
+    "overall_fpr_delta_upper_bound_max": 0.01,
+    "scenario_fpr_delta_upper_bound_max": 0.03,
+    "f1_delta_lower_bound_min": -0.02,
+    "language_only_recall_delta_lower_bound_min": -0.05,
+    "mixed_recall_delta_lower_bound_min": -0.05,
+    "require_identical_assessability_and_frozen_baseline_parity": true,
+    "advancement": "offline_candidate_xai_review_only"
+  }
+}

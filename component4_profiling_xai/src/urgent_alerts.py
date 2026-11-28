@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from .behavioral_dataset import daily_numeric
+
 URGENT_RULE_COLUMNS = {
     "language_urgent_flags": "urgent language flag",
     "language_grooming_flags": "grooming language flag",
@@ -36,13 +38,13 @@ def urgent_alerts(daily: pd.DataFrame) -> pd.DataFrame:
     missing = [c for c in URGENT_RULE_COLUMNS if c not in daily.columns]
     if missing:
         raise ValueError(f"missing urgent-rule columns: {missing}")
-    counts = daily[list(URGENT_RULE_COLUMNS)].apply(pd.to_numeric, errors="raise")
-    hits = counts.fillna(0) > 0
+    counts = daily[list(URGENT_RULE_COLUMNS)].apply(daily_numeric, count=True)
+    hits = counts.gt(0)
     out = daily[[c for c in ("child_id", "date") if c in daily.columns]].copy()
     out["is_urgent"] = hits.any(axis=1)
     out["reasons"] = [
-        "; ".join(f"{URGENT_RULE_COLUMNS[c]} ({int(counts.at[i, c])})"
-                  for c in URGENT_RULE_COLUMNS if hits.at[i, c])
-        for i in daily.index
+        "; ".join(f"{URGENT_RULE_COLUMNS[c]} ({int(value)})"
+                  for c, value in zip(URGENT_RULE_COLUMNS, row) if value > 0)
+        for row in counts.itertuples(index=False, name=None)
     ]
     return out

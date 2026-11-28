@@ -2,7 +2,9 @@
 
 **Owner:** IT23135116
 **Status:** Function 1 complete — Component 3 session records → per-child emotional pattern (K-Means) + 2-week trend.
-Function 2 integrated in the dashboard — daily C1/C2 risk features → Normal / Unusual day (One-Class SVM), on **synthetic** data only ([details](#function-2--behavioral-anomaly-detection)).
+[Function 02 PP2 upgrade](PP2_FUNCTION02.md) covers the current parent dashboard, training, research experiments and Windows commands. The original Function 02 pipeline and evaluation remain described below.
+
+The [Function 02 optimization report](PP2_FUNCTION02_OPTIMIZATION.md) documents the separate validation search, sealed synthetic holdout, error analysis and PP2 conclusions.
 
 ## What it does
 
@@ -284,7 +286,16 @@ never reads anomaly scores or labels, and the model never reads its output.
 Grooming and self-harm counts are also model inputs, so urgent days are often
 Unusual too; the dashboard shows the two side by side and never merges them.
 
-### Dashboard
+### Parent Dashboard
+
+Launch both functions from [the single local Streamlit app](PP2_FUNCTION02.md#windows-command-prompt).
+Behavioral Anomaly shows the selected day's activity, changes from prior records, a plain-language
+explanation of the AI assessment, next steps, and independent safety alerts. PP2 results are in the
+[optimization report](PP2_FUNCTION02_OPTIMIZATION.md) and its saved output files.
+
+### Original Function 02 view and model reference
+
+The following notes document the historical fallback view.
 
 `streamlit run ui/app.py` from the repository root, then open **Behavioral
 Anomaly** in the sidebar (Emotional Pattern stays the default page). The page
@@ -292,7 +303,7 @@ heading is **Behavioral Anomaly Detection**. These are synthetic demo prediction
 not findings about real children; the data source is documented below. The page
 shows, for the selected child:
 
-- a child selector and latest prediction with an accessible icon and text (Flagged / Not flagged);
+- a child selector and latest status (Flagged / Not flagged / Insufficient data);
 - the number of flagged days in the latest 30 calendar days, ending on the selected child's latest recorded date;
 - one daily behavioral anomaly history chart showing saved decisions, with no raw scores or threshold line;
 - the top 3 observed feature deviations for a selected flagged day;
@@ -312,9 +323,20 @@ synthetic children, C001–C040, over 90 days). No real child is involved, and t
 predictions are not findings about real children. These IDs are not the Function 1
 demo children with the same names. Components 1 and 2 have no database storage
 yet (`db/comp1.py` and `db/comp2.py` are placeholders), so this page does not read
-live behavioral events or import data into the database. Missing feature values
-are imputed by the saved pipeline and marked on the latest prediction if present.
-Synthetic labels and other extra columns are dropped before inference.
+live behavioral events or import data into the database. The page visibly labels
+the synthetic source. Synthetic labels and unrelated columns are dropped before
+inference.
+
+The saved model was fitted on fully monitored synthetic data. A day is assessed
+only with both sources observed and all daily count inputs, flagged duration,
+and the weekend indicator recorded. When coverage columns are supplied, both
+must be true. Older exports without those columns establish coverage from the
+required observations. An observed zero is valid. A missing required observation
+or unavailable source means **Insufficient data**, with no score or binary
+decision. The existing imputer still handles missing confidence and risk
+statistics on otherwise assessable days. Daily inputs reject non-finite or
+nonnumeric values, negative or fractional counts, negative flagged durations,
+and weekend or coverage indicators other than true/false or 1/0.
 
 The CSV-loading service functions (`ui.services.load_daily_csv` and
 `behavioral_daily_source(uploaded_csv=...)`) remain available for programmatic
@@ -329,7 +351,8 @@ The amber diamond with an exclamation mark means **Flagged**; the grey circle
 with a dash means **Not flagged**. Shape, text and accessible descriptions convey
 the status independently of color. **Not flagged is not proof that a child is safe.**
 The flagged-day count covers recorded days in the latest 30-calendar-day window,
-not the last 30 rows or the current wall-clock month. History and urgent alerts
+not the last 30 rows or the current wall-clock month. Insufficient days are
+shown separately and excluded from decision counts. History and urgent alerts
 cover the selected child's complete available record.
 
 The top deviations compare observed features with typical normal training values,
@@ -356,7 +379,10 @@ because `behavioral_anomaly.py` uses relative imports. `src` itself is never
 imported, so it cannot clash with other components' `src` packages. Set
 `C4_F2_ARTIFACT_DIR` to load the model files from another folder. If they are
 missing, unreadable, from another scikit-learn version, or not the Step 3
-model, the page shows only an error card.
+model, the page shows a model error and still evaluates and displays urgent
+rule matches from valid recorded counts. Unavailable urgent inputs are reported
+as incomplete coverage. A valid rule match remains visible even when the model
+cannot assess the day.
 
 ### Function 2 tests
 

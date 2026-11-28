@@ -1,0 +1,32 @@
+{
+  "version": "controlled-robustness-v1",
+  "stage": "before generating or scoring any replication data",
+  "sha256": {
+    "component4_profiling_xai/behavioral_shap_robustness_synthetic.py": "510fcb2af24b91463e9e0062804363d881389773e933c87cdf1f128ac4d6b4f3",
+    "component4_profiling_xai/evaluate_behavioral_shap_robustness.py": "f3e6c503b6647408892ce66c8c25dd6b3802950e5dc716b9907e7a7bd6b7402a",
+    "component4_profiling_xai/outputs/behavioral_robustness_preregistration_v1.md": "0e4714ca71d5170ac09cfbb0f8134d2aa460d3912071a76903bdab985cd46c9b",
+    "component4_profiling_xai/outputs/behavioral_shap_policy_freeze_manifest_v1.json": "1cf7c508b2fe513417784c478ef965e72bc8a3ab99070031256ffe5e798c3676",
+    "component4_profiling_xai/outputs/shap_independent_v1/synthetic_daily.csv": "d1b0c041f91bdf3c288b17979b13e7408ae151dc105dd3cc1d3c014d56f81c40"
+  },
+  "plotting_dependency": "3.10.7",
+  "configuration": {
+    "arms": [
+      "reference",
+      "screen_plus_two",
+      "language_plus_two",
+      "night_40pct",
+      "balance_to_screen",
+      "weekend",
+      "unseen_profile",
+      "coverage_loss"
+    ],
+    "profile_pairs": 20,
+    "days_per_profile": 12,
+    "event_seed": 2026112302,
+    "seen_seed": 42,
+    "unseen_seed": 2026112303,
+    "match_seed": 2026112304,
+    "bootstrap_seed": 2026112305,
+    "first_monday": "2026-11-02"
+  }
+}

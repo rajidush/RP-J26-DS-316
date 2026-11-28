@@ -1,0 +1,7 @@
+feature_1,feature_2,abs_r
+screen_flagged_frames,screen_flagged_seconds,0.9967699819306205
+screen_max_confidence,screen_mean_confidence,0.9962388509392358
+language_max_risk,language_mean_risk,0.9955699807597375
+language_distinct_apps,language_distinct_app_categories,0.973406019874612
+screen_incidents,screen_flagged_frames,0.9638913091300544
+screen_incidents,screen_flagged_seconds,0.9599551258944891

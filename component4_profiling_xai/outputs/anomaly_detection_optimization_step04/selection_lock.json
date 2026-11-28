@@ -1,0 +1,32 @@
+{
+  "seed": 2026112619,
+  "fit_data_sha256": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+  "deployed_sha256": "61a5e67700d1a6e499ec610bc23d95b6db318d3b79e1c189d18781d0b85d2ec5",
+  "script_sha256": "2750a73f79ae448707daffc5b5909fdb36b91e8f2d03b3e1aa273a5a44f3e7ed",
+  "candidate_sha256": "4058723a2816a943821e14980980e852b5fb897ca2eae2c0b7b07380530be718",
+  "donors_sha256": "b7c6b851ffd45e800102925623936c6854bb55e1e0a0bbb716b8ffa21c19d292",
+  "candidate": {
+    "name": "global_004",
+    "design": "global",
+    "algorithm": "one_class_svm",
+    "preprocessing": "asinh",
+    "parameters": "{\"gamma\": 0.01, \"nu\": 0.01}",
+    "features": "[\"screen_incidents\", \"screen_flagged_frames\", \"screen_flagged_seconds\", \"screen_max_confidence\", \"screen_mean_confidence\", \"screen_night_incidents\", \"screen_blocked_incidents\", \"screen_escalated_incidents\", \"screen_dismissed_incidents\", \"language_flags\", \"language_threat_flags\", \"language_hate_identity_flags\", \"language_bullying_flags\", \"language_self_harm_flags\", \"language_grooming_flags\", \"language_profanity_flags\", \"language_urgent_flags\", \"language_block_rung_flags\", \"language_max_risk\", \"language_mean_risk\", \"language_night_flags\", \"language_audio_flags\", \"language_distinct_apps\", \"language_distinct_app_categories\", \"total_risk_events\", \"night_risk_events\", \"is_weekend\"]",
+    "threshold": -2.574410180807367,
+    "precision": 0.8387096774193549,
+    "recall": 0.5306122448979592,
+    "f1": 0.65,
+    "tp": 26,
+    "fp": 5,
+    "fn": 23,
+    "tn": 626,
+    "fpr": 0.00792393026941363,
+    "fnr": 0.46938775510204084,
+    "pr_auc_ap": 0.5784483055946279,
+    "roc_auc": 0.7032245544810634
+  },
+  "validation_fpr_limit": 0.022432646592709986,
+  "selection": "Best validation F1 within deployed validation FPR + 0.005, then lower FPR, higher AP, name.",
+  "holdout": "Fresh cohort, last 34 dates, both arms on common assessable rows. Earlier dates supply history only.",
+  "recommendation_gate": "Paired child-bootstrap lower delta F1 > 0; FPR increase no more than 0.005; review XAI fidelity, reliability and runtime before proposing deployment."
+}

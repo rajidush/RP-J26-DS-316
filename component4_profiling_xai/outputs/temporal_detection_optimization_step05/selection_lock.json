@@ -1,0 +1,58 @@
+{
+  "candidate": {
+    "name": "combined_persistence_1.5_2",
+    "signal": "combined",
+    "rule": "persistence",
+    "cutoff": 1.5,
+    "parameter": 0.3,
+    "persistence": 2
+  },
+  "validation_summary": {
+    "name": "combined_persistence_1.5_2",
+    "signal": "combined",
+    "rule": "persistence",
+    "cutoff": 1.5,
+    "parameter": 0.3,
+    "persistence": 2,
+    "episodes": 24,
+    "detected": 7,
+    "missed": 17,
+    "episode_precision": 0.4666666666666667,
+    "episode_recall": 0.2916666666666667,
+    "episode_f1": 0.358974358974359,
+    "normal_days": 631,
+    "false_alerts": 8,
+    "false_alert_rate": 0.012678288431061807,
+    "false_alerts_per_child": 0.2,
+    "alert_onsets": 15,
+    "repeat_on_episode_alerts": 0,
+    "mean_delay": 0.8571428571428571,
+    "median_delay": 1.0,
+    "within_1_day": 6,
+    "within_3_days": 7,
+    "within_7_days": 7,
+    "recovered": 6,
+    "median_recovery": 2.5,
+    "episodes_without_assessable_labels": 0,
+    "signal_coverage": 1.0
+  },
+  "seed": 2026112627,
+  "alert_budget": 0.02,
+  "selection": "Highest validation episode recall within 2% normal-day onsets, then episode F1, FPR, name.",
+  "matching": "One onset per episode on an assessable labeled injected day. No carry-in or date grace.",
+  "recovery": "First assessable inactive normal date after end before next episode, among detected episodes.",
+  "horizons": [
+    1,
+    3,
+    7
+  ],
+  "holdout": "Final 34 days of new draw plus separate controlled cases from earlier normal donors.",
+  "deployment_gate": "Positive lower 95% paired child recall bound vs deployed union, FPR \u2264 2%, no more than 0.75 points above union, with reviewed delay, reset and XAI.",
+  "sha256": {
+    "behavioral_daily.csv": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+    "behavioral_episodes.csv": "c472f2b2114850152732ce147abcff5ab86737953f86d2f434260baa0122306d",
+    "selected.joblib": "61a5e67700d1a6e499ec610bc23d95b6db318d3b79e1c189d18781d0b85d2ec5",
+    "evaluate_temporal_detection.py": "2dc1e9d494993408c245ad9af4e04f074b797981cc4f33c677d0199850b14da6",
+    "behavioral_temporal_challengers.py": "c0b2bd38b05140273b5eb0c3852a53321e97d6a28875cb0748beb7cb5e706f64"
+  }
+}

@@ -1,0 +1,1321 @@
+{
+  "protocol_version": "independent-synthetic-v1",
+  "policy_version": "v3",
+  "freeze_stage": "before generation and scoring of independent-synthetic-v1",
+  "branch": "c4/behavioral-anomaly-xai",
+  "tracked_base_commit": "8162776e69c7c970be7868050347b820c4b43044",
+  "fingerprint_basis": "SHA-256 of exact file bytes in the frozen workspace",
+  "sha256": {
+    "component4_profiling_xai/src/behavioral_anomaly.py": "91ea7360add463a5fbe3d7feba3559b975adc6f8a47f21b5a7f673e0aa04b77e",
+    "component4_profiling_xai/src/behavioral_dataset.py": "2fda4119e6d26b2c0cbf5650728230df8944b76dd2d66173474ba15bec1c8590",
+    "component4_profiling_xai/src/behavioral_synthetic.py": "c7d7ae408c6ac62fafa3380aa70ebd133a7f7f3580ffbbc9e3155aa18b990885",
+    "component4_profiling_xai/src/behavioral_shap.py": "f104ac0c6c6f58c8edd24978be60fe533230e4f1a2c76541600b9e864b6c75d7",
+    "component4_profiling_xai/src/behavioral_shap_reliability.py": "4884efef296312612ab87edb8b18524e419d74c4dafaeb902a44ebfa206b451a",
+    "component4_profiling_xai/evaluate_behavioral_shap.py": "10d3dce5559afa61e58c87d636e01233e2b07691e36eb02d64608937e08938b3",
+    "component4_profiling_xai/evaluate_behavioral_shap_expanded.py": "b71565d510d7ce1c5faca27458f2b5b1ffb3b3840dceefda0ffd97bf3afd6e5f",
+    "component4_profiling_xai/evaluate_behavioral_shap_reliability.py": "ee63d007082f446aca464dfa4dd34f3ce2f2e84f48fa373e6912477cc045f784",
+    "component4_profiling_xai/evaluate_behavioral_shap_independent.py": "f5399fcd157853229833d358884d920eab0b405f24d1cf8be1bf596a94a26136",
+    "component4_profiling_xai/behavioral_shap_independent_synthetic.py": "3217a702ea95eb6c01c8adebe5476c4d51f1b8b26444109cd77f855e9bc29acf",
+    "component4_profiling_xai/requirements-shap.txt": "8e4f8afe1d9b8b2cc3d2b8cee354c1f1e86f61b89bacaad75ed39a293822ce6b",
+    "component4_profiling_xai/requirements.txt": "9e44a54c99f12b99736bc9507afa97f8776c187f8fb34d115eb177c61289b1d4",
+    "component4_profiling_xai/tests/test_behavioral_shap.py": "a43b91936c699f269cdc8b4e3091f082ce03d4f1ef777d063f2d4e5e84d9fa13",
+    "component4_profiling_xai/tests/test_behavioral_shap_reliability.py": "6029561ef97c71df16310e644cbad4f8950d5d9d86db9053401f53f68e96f3e7",
+    "component4_profiling_xai/tests/test_behavioral_shap_independent.py": "bda9d99bfd6b02e46c3c3250c5aa110cb2a5380a91a02e9bcd71d7ccf4b73c15",
+    "component4_profiling_xai/models/behavioral_anomaly_pipeline.pkl": "25634fbafabd133495bc66b9ced5921f27ddaac222902d72f38a5fe1515774b7",
+    "component4_profiling_xai/models/behavioral_anomaly_metadata.json": "3f5f0fa72eb5ac1cb19644c36d9a96e063a4aa2855515028c97293b406f375a4",
+    "component4_profiling_xai/data/behavioral_daily.csv": "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+    "component4_profiling_xai/data/behavioral_daily_metadata.json": "386b36b926fe6b8eb83efd43ebf5996aeee7dc7f517e36925f4980de12777631",
+    "component4_profiling_xai/data/step4a_heldout_seed20261020/behavioral_daily.csv": "cc67cdc3fb1acb6b4f93261c40fe899b2c63a2751c0b9432118cab278367d00f",
+    "component4_profiling_xai/data/step4a_heldout_seed20261020/freeze_manifest.json": "ac04556911f86e016191611f637a63cb837b0fa31254e4ce5e64b61b3fe890b1",
+    "component4_profiling_xai/outputs/behavioral_shap_report_v1.md": "e222436012bc7d8868c9777f0e835d04c94df698084dd4ae5167e78664ddef94",
+    "component4_profiling_xai/outputs/behavioral_shap_pilot_v1.json": "f21e983b122432ed92f15e06ef0711cbf4c6f222126b11b271462d48a9a9b06b",
+    "component4_profiling_xai/outputs/behavioral_shap_expanded_report_v2.md": "e055c9afc53ce138b8279d0ded67e962edbc7a7e7b052d5d30cfdfd7316a18b7",
+    "component4_profiling_xai/outputs/behavioral_shap_expanded_v2.json": "3404b37a800fdb354ec52cb017e4c463d49fda79c8dc006cd2fcc4025a31baf3",
+    "component4_profiling_xai/outputs/behavioral_shap_reliability_report_v3.md": "5466e9b3747ec9ed8442bfa5f6345ea1d7cc5a25ca11594395a9f79da1d5a71f",
+    "component4_profiling_xai/outputs/behavioral_shap_reliability_v3.json": "4633280e193de05efc8c19c359043d7ff57641ebf44e7462f8ddb6f1a79cf348",
+    "component4_profiling_xai/outputs/behavioral_shap_independent_protocol_v1.md": "7e9b90e1b88a1e2edc4b12b9e06c92a27dba64e969b4915ef78a4d86ecb18d1f"
+  },
+  "environment": {
+    "python": "3.13.7",
+    "packages": {
+      "numpy": "2.4.6",
+      "pandas": "3.0.3",
+      "scipy": "1.17.1",
+      "scikit-learn": "1.6.1",
+      "joblib": "1.5.3",
+      "psutil": "7.1.3",
+      "tzdata": "2025.2",
+      "threadpoolctl": "3.6.0",
+      "shap": "0.49.1",
+      "slicer": "0.0.8",
+      "numba": "0.65.1",
+      "llvmlite": "0.47.0",
+      "cloudpickle": "3.1.2",
+      "tqdm": "4.70.0",
+      "packaging": "26.2",
+      "typing-extensions": "4.15.0",
+      "python-dateutil": "2.9.0.post0",
+      "six": "1.17.0",
+      "colorama": "0.4.6"
+    },
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1"
+    },
+    "freeze_platform": "Windows-11-10.0.26200-SP0",
+    "note": "The independent runner uses exact grouped attribution. SHAP and its transitive dependencies are recorded for historical Kernel SHAP and regression reproduction."
+  },
+  "datasets": {
+    "training_and_original_development": {
+      "generator_version": "1.0.0",
+      "seed": 42,
+      "normal_training_rows": 1894
+    },
+    "step4a_development": {
+      "generator_version": "1.0.0",
+      "seed": 20261020,
+      "lf_sha256": "48cd869e4b5ee08c69a1a0008a532d2481125e961f9c9a9f3c17461aa41115bc"
+    },
+    "independent_validation": {
+      "simulator": "normalized-event independent synthetic v1",
+      "seed": 2026112301,
+      "first_local_date": "2026-10-05",
+      "days": 28,
+      "children_per_scenario": 12,
+      "scenarios": {
+        "screen_weekend": {
+          "screen_rate": 1.4,
+          "language_rate": 0.65,
+          "weekend": 2.2,
+          "night": 0.22,
+          "anomaly_chance": 0.07,
+          "types": [
+            0.65,
+            0.1,
+            0.25
+          ],
+          "extra_screen_outage": 0.05,
+          "extra_language_outage": 0.02
+        },
+        "language_bursts": {
+          "screen_rate": 0.45,
+          "language_rate": 2.3,
+          "weekend": 0.7,
+          "night": 0.35,
+          "anomaly_chance": 0.16,
+          "types": [
+            0.15,
+            0.55,
+            0.3
+          ],
+          "extra_screen_outage": 0.02,
+          "extra_language_outage": 0.07
+        }
+      },
+      "anomaly_type_order": [
+        "screen_cluster",
+        "language_cluster",
+        "mixed_cluster"
+      ],
+      "nearest_per_side": 8,
+      "data_digest_location": "shap_independent_v1/metrics.json"
+    }
+  },
+  "model": {
+    "score": "anomaly_score = -pipeline.score_samples(X); higher = more anomalous",
+    "threshold": -12.515804087687126,
+    "threshold_comparison": "strictly greater",
+    "feature_order": [
+      "screen_incidents",
+      "screen_flagged_frames",
+      "screen_flagged_seconds",
+      "screen_max_confidence",
+      "screen_mean_confidence",
+      "screen_night_incidents",
+      "screen_blocked_incidents",
+      "screen_escalated_incidents",
+      "screen_dismissed_incidents",
+      "language_flags",
+      "language_threat_flags",
+      "language_hate_identity_flags",
+      "language_bullying_flags",
+      "language_self_harm_flags",
+      "language_grooming_flags",
+      "language_profanity_flags",
+      "language_urgent_flags",
+      "language_block_rung_flags",
+      "language_max_risk",
+      "language_mean_risk",
+      "language_night_flags",
+      "language_audio_flags",
+      "language_distinct_apps",
+      "language_distinct_app_categories",
+      "total_risk_events",
+      "night_risk_events",
+      "is_weekend"
+    ]
+  },
+  "explanation": {
+    "groups": {
+      "screen-related recorded activity": [
+        "screen_incidents",
+        "screen_flagged_frames",
+        "screen_flagged_seconds",
+        "screen_max_confidence",
+        "screen_mean_confidence",
+        "screen_night_incidents",
+        "screen_blocked_incidents",
+        "screen_escalated_incidents",
+        "screen_dismissed_incidents"
+      ],
+      "language-related recorded signals": [
+        "language_flags",
+        "language_threat_flags",
+        "language_hate_identity_flags",
+        "language_bullying_flags",
+        "language_self_harm_flags",
+        "language_grooming_flags",
+        "language_profanity_flags",
+        "language_urgent_flags",
+        "language_block_rung_flags",
+        "language_max_risk",
+        "language_mean_risk",
+        "language_night_flags",
+        "language_audio_flags",
+        "language_distinct_apps",
+        "language_distinct_app_categories"
+      ],
+      "weekday or weekend context": [
+        "is_weekend"
+      ]
+    },
+    "derived_totals": {
+      "total_risk_events": [
+        "screen_incidents",
+        "language_flags"
+      ],
+      "night_risk_events": [
+        "screen_night_incidents",
+        "language_night_flags"
+      ]
+    },
+    "attribution": "exact three-player Shapley; eight coalitions",
+    "background_settings": [
+      [
+        32,
+        17
+      ],
+      [
+        32,
+        29
+      ],
+      [
+        64,
+        17
+      ],
+      [
+        64,
+        29
+      ]
+    ],
+    "background_identifiers": [
+      {
+        "identifiers": [
+          [
+            "C003",
+            "2026-07-08"
+          ],
+          [
+            "C004",
+            "2026-08-08"
+          ],
+          [
+            "C010",
+            "2026-07-17"
+          ],
+          [
+            "C011",
+            "2026-08-21"
+          ],
+          [
+            "C037",
+            "2026-08-14"
+          ],
+          [
+            "C005",
+            "2026-07-22"
+          ],
+          [
+            "C028",
+            "2026-07-31"
+          ],
+          [
+            "C001",
+            "2026-08-15"
+          ],
+          [
+            "C024",
+            "2026-07-16"
+          ],
+          [
+            "C014",
+            "2026-07-27"
+          ],
+          [
+            "C030",
+            "2026-07-10"
+          ],
+          [
+            "C022",
+            "2026-07-26"
+          ],
+          [
+            "C036",
+            "2026-07-31"
+          ],
+          [
+            "C035",
+            "2026-08-12"
+          ],
+          [
+            "C032",
+            "2026-07-17"
+          ],
+          [
+            "C020",
+            "2026-07-30"
+          ],
+          [
+            "C040",
+            "2026-08-23"
+          ],
+          [
+            "C008",
+            "2026-07-16"
+          ],
+          [
+            "C009",
+            "2026-07-14"
+          ],
+          [
+            "C038",
+            "2026-08-08"
+          ],
+          [
+            "C034",
+            "2026-08-15"
+          ],
+          [
+            "C031",
+            "2026-07-22"
+          ],
+          [
+            "C006",
+            "2026-07-22"
+          ],
+          [
+            "C002",
+            "2026-07-19"
+          ],
+          [
+            "C033",
+            "2026-07-17"
+          ],
+          [
+            "C019",
+            "2026-07-12"
+          ],
+          [
+            "C016",
+            "2026-07-09"
+          ],
+          [
+            "C017",
+            "2026-07-30"
+          ],
+          [
+            "C026",
+            "2026-07-27"
+          ],
+          [
+            "C013",
+            "2026-07-10"
+          ],
+          [
+            "C027",
+            "2026-07-15"
+          ],
+          [
+            "C025",
+            "2026-07-25"
+          ]
+        ],
+        "seed": 17,
+        "size": 32,
+        "strategy": "round robin across children and within-child event-volume terciles",
+        "source": "eligible baseline-ready normal training days"
+      },
+      {
+        "identifiers": [
+          [
+            "C003",
+            "2026-07-25"
+          ],
+          [
+            "C039",
+            "2026-07-23"
+          ],
+          [
+            "C031",
+            "2026-08-18"
+          ],
+          [
+            "C020",
+            "2026-07-31"
+          ],
+          [
+            "C040",
+            "2026-08-03"
+          ],
+          [
+            "C011",
+            "2026-07-29"
+          ],
+          [
+            "C009",
+            "2026-07-26"
+          ],
+          [
+            "C015",
+            "2026-07-30"
+          ],
+          [
+            "C026",
+            "2026-07-12"
+          ],
+          [
+            "C007",
+            "2026-08-08"
+          ],
+          [
+            "C005",
+            "2026-08-25"
+          ],
+          [
+            "C033",
+            "2026-08-16"
+          ],
+          [
+            "C022",
+            "2026-07-26"
+          ],
+          [
+            "C038",
+            "2026-08-22"
+          ],
+          [
+            "C036",
+            "2026-07-29"
+          ],
+          [
+            "C028",
+            "2026-07-27"
+          ],
+          [
+            "C034",
+            "2026-08-16"
+          ],
+          [
+            "C001",
+            "2026-07-09"
+          ],
+          [
+            "C014",
+            "2026-08-03"
+          ],
+          [
+            "C030",
+            "2026-07-31"
+          ],
+          [
+            "C018",
+            "2026-07-12"
+          ],
+          [
+            "C021",
+            "2026-08-20"
+          ],
+          [
+            "C024",
+            "2026-07-10"
+          ],
+          [
+            "C023",
+            "2026-07-08"
+          ],
+          [
+            "C004",
+            "2026-07-13"
+          ],
+          [
+            "C016",
+            "2026-08-10"
+          ],
+          [
+            "C035",
+            "2026-07-27"
+          ],
+          [
+            "C027",
+            "2026-07-14"
+          ],
+          [
+            "C029",
+            "2026-08-16"
+          ],
+          [
+            "C025",
+            "2026-07-14"
+          ],
+          [
+            "C032",
+            "2026-07-25"
+          ],
+          [
+            "C019",
+            "2026-08-17"
+          ]
+        ],
+        "seed": 29,
+        "size": 32,
+        "strategy": "round robin across children and within-child event-volume terciles",
+        "source": "eligible baseline-ready normal training days"
+      },
+      {
+        "identifiers": [
+          [
+            "C003",
+            "2026-07-08"
+          ],
+          [
+            "C004",
+            "2026-08-08"
+          ],
+          [
+            "C010",
+            "2026-07-17"
+          ],
+          [
+            "C011",
+            "2026-08-21"
+          ],
+          [
+            "C037",
+            "2026-08-14"
+          ],
+          [
+            "C005",
+            "2026-07-22"
+          ],
+          [
+            "C028",
+            "2026-07-31"
+          ],
+          [
+            "C001",
+            "2026-08-15"
+          ],
+          [
+            "C024",
+            "2026-07-16"
+          ],
+          [
+            "C014",
+            "2026-07-27"
+          ],
+          [
+            "C030",
+            "2026-07-10"
+          ],
+          [
+            "C022",
+            "2026-07-26"
+          ],
+          [
+            "C036",
+            "2026-07-31"
+          ],
+          [
+            "C035",
+            "2026-08-12"
+          ],
+          [
+            "C032",
+            "2026-07-17"
+          ],
+          [
+            "C020",
+            "2026-07-30"
+          ],
+          [
+            "C040",
+            "2026-08-23"
+          ],
+          [
+            "C008",
+            "2026-07-16"
+          ],
+          [
+            "C009",
+            "2026-07-14"
+          ],
+          [
+            "C038",
+            "2026-08-08"
+          ],
+          [
+            "C034",
+            "2026-08-15"
+          ],
+          [
+            "C031",
+            "2026-07-22"
+          ],
+          [
+            "C006",
+            "2026-07-22"
+          ],
+          [
+            "C002",
+            "2026-07-19"
+          ],
+          [
+            "C033",
+            "2026-07-17"
+          ],
+          [
+            "C019",
+            "2026-07-12"
+          ],
+          [
+            "C016",
+            "2026-07-09"
+          ],
+          [
+            "C017",
+            "2026-07-30"
+          ],
+          [
+            "C026",
+            "2026-07-27"
+          ],
+          [
+            "C013",
+            "2026-07-10"
+          ],
+          [
+            "C027",
+            "2026-07-15"
+          ],
+          [
+            "C025",
+            "2026-07-25"
+          ],
+          [
+            "C023",
+            "2026-08-25"
+          ],
+          [
+            "C021",
+            "2026-07-10"
+          ],
+          [
+            "C039",
+            "2026-08-07"
+          ],
+          [
+            "C012",
+            "2026-07-30"
+          ],
+          [
+            "C007",
+            "2026-07-09"
+          ],
+          [
+            "C015",
+            "2026-07-27"
+          ],
+          [
+            "C029",
+            "2026-07-23"
+          ],
+          [
+            "C018",
+            "2026-08-16"
+          ],
+          [
+            "C035",
+            "2026-08-10"
+          ],
+          [
+            "C036",
+            "2026-07-26"
+          ],
+          [
+            "C023",
+            "2026-08-18"
+          ],
+          [
+            "C028",
+            "2026-08-10"
+          ],
+          [
+            "C006",
+            "2026-08-21"
+          ],
+          [
+            "C016",
+            "2026-07-12"
+          ],
+          [
+            "C001",
+            "2026-08-14"
+          ],
+          [
+            "C027",
+            "2026-08-14"
+          ],
+          [
+            "C015",
+            "2026-08-06"
+          ],
+          [
+            "C032",
+            "2026-08-15"
+          ],
+          [
+            "C034",
+            "2026-08-01"
+          ],
+          [
+            "C010",
+            "2026-07-27"
+          ],
+          [
+            "C031",
+            "2026-08-10"
+          ],
+          [
+            "C022",
+            "2026-07-24"
+          ],
+          [
+            "C008",
+            "2026-07-27"
+          ],
+          [
+            "C037",
+            "2026-07-10"
+          ],
+          [
+            "C011",
+            "2026-07-21"
+          ],
+          [
+            "C014",
+            "2026-08-21"
+          ],
+          [
+            "C012",
+            "2026-08-14"
+          ],
+          [
+            "C038",
+            "2026-07-28"
+          ],
+          [
+            "C040",
+            "2026-07-18"
+          ],
+          [
+            "C025",
+            "2026-07-08"
+          ],
+          [
+            "C030",
+            "2026-07-19"
+          ],
+          [
+            "C039",
+            "2026-08-14"
+          ]
+        ],
+        "seed": 17,
+        "size": 64,
+        "strategy": "round robin across children and within-child event-volume terciles",
+        "source": "eligible baseline-ready normal training days"
+      },
+      {
+        "identifiers": [
+          [
+            "C003",
+            "2026-07-25"
+          ],
+          [
+            "C039",
+            "2026-07-23"
+          ],
+          [
+            "C031",
+            "2026-08-18"
+          ],
+          [
+            "C020",
+            "2026-07-31"
+          ],
+          [
+            "C040",
+            "2026-08-03"
+          ],
+          [
+            "C011",
+            "2026-07-29"
+          ],
+          [
+            "C009",
+            "2026-07-26"
+          ],
+          [
+            "C015",
+            "2026-07-30"
+          ],
+          [
+            "C026",
+            "2026-07-12"
+          ],
+          [
+            "C007",
+            "2026-08-08"
+          ],
+          [
+            "C005",
+            "2026-08-25"
+          ],
+          [
+            "C033",
+            "2026-08-16"
+          ],
+          [
+            "C022",
+            "2026-07-26"
+          ],
+          [
+            "C038",
+            "2026-08-22"
+          ],
+          [
+            "C036",
+            "2026-07-29"
+          ],
+          [
+            "C028",
+            "2026-07-27"
+          ],
+          [
+            "C034",
+            "2026-08-16"
+          ],
+          [
+            "C001",
+            "2026-07-09"
+          ],
+          [
+            "C014",
+            "2026-08-03"
+          ],
+          [
+            "C030",
+            "2026-07-31"
+          ],
+          [
+            "C018",
+            "2026-07-12"
+          ],
+          [
+            "C021",
+            "2026-08-20"
+          ],
+          [
+            "C024",
+            "2026-07-10"
+          ],
+          [
+            "C023",
+            "2026-07-08"
+          ],
+          [
+            "C004",
+            "2026-07-13"
+          ],
+          [
+            "C016",
+            "2026-08-10"
+          ],
+          [
+            "C035",
+            "2026-07-27"
+          ],
+          [
+            "C027",
+            "2026-07-14"
+          ],
+          [
+            "C029",
+            "2026-08-16"
+          ],
+          [
+            "C025",
+            "2026-07-14"
+          ],
+          [
+            "C032",
+            "2026-07-25"
+          ],
+          [
+            "C019",
+            "2026-08-17"
+          ],
+          [
+            "C006",
+            "2026-07-12"
+          ],
+          [
+            "C013",
+            "2026-08-09"
+          ],
+          [
+            "C012",
+            "2026-08-20"
+          ],
+          [
+            "C002",
+            "2026-08-19"
+          ],
+          [
+            "C008",
+            "2026-08-06"
+          ],
+          [
+            "C010",
+            "2026-07-19"
+          ],
+          [
+            "C037",
+            "2026-07-13"
+          ],
+          [
+            "C017",
+            "2026-07-18"
+          ],
+          [
+            "C014",
+            "2026-07-10"
+          ],
+          [
+            "C023",
+            "2026-08-24"
+          ],
+          [
+            "C004",
+            "2026-08-12"
+          ],
+          [
+            "C030",
+            "2026-07-29"
+          ],
+          [
+            "C031",
+            "2026-08-03"
+          ],
+          [
+            "C009",
+            "2026-08-21"
+          ],
+          [
+            "C028",
+            "2026-07-10"
+          ],
+          [
+            "C005",
+            "2026-07-25"
+          ],
+          [
+            "C012",
+            "2026-07-24"
+          ],
+          [
+            "C007",
+            "2026-08-25"
+          ],
+          [
+            "C037",
+            "2026-08-03"
+          ],
+          [
+            "C015",
+            "2026-07-21"
+          ],
+          [
+            "C011",
+            "2026-07-25"
+          ],
+          [
+            "C026",
+            "2026-08-19"
+          ],
+          [
+            "C008",
+            "2026-08-04"
+          ],
+          [
+            "C019",
+            "2026-07-26"
+          ],
+          [
+            "C024",
+            "2026-08-05"
+          ],
+          [
+            "C001",
+            "2026-07-10"
+          ],
+          [
+            "C025",
+            "2026-07-26"
+          ],
+          [
+            "C038",
+            "2026-08-10"
+          ],
+          [
+            "C040",
+            "2026-08-17"
+          ],
+          [
+            "C036",
+            "2026-08-20"
+          ],
+          [
+            "C010",
+            "2026-07-24"
+          ],
+          [
+            "C003",
+            "2026-08-25"
+          ]
+        ],
+        "seed": 29,
+        "size": 64,
+        "strategy": "round robin across children and within-child event-volume terciles",
+        "source": "eligible baseline-ready normal training days"
+      }
+    ],
+    "deletion_setting": [
+      64,
+      101
+    ],
+    "deletion_identifiers": {
+      "identifiers": [
+        [
+          "C015",
+          "2026-08-09"
+        ],
+        [
+          "C029",
+          "2026-07-13"
+        ],
+        [
+          "C034",
+          "2026-08-08"
+        ],
+        [
+          "C005",
+          "2026-08-16"
+        ],
+        [
+          "C030",
+          "2026-08-21"
+        ],
+        [
+          "C017",
+          "2026-08-09"
+        ],
+        [
+          "C014",
+          "2026-08-24"
+        ],
+        [
+          "C023",
+          "2026-08-22"
+        ],
+        [
+          "C012",
+          "2026-07-22"
+        ],
+        [
+          "C009",
+          "2026-08-16"
+        ],
+        [
+          "C002",
+          "2026-08-05"
+        ],
+        [
+          "C006",
+          "2026-07-24"
+        ],
+        [
+          "C040",
+          "2026-07-16"
+        ],
+        [
+          "C013",
+          "2026-07-16"
+        ],
+        [
+          "C035",
+          "2026-08-14"
+        ],
+        [
+          "C010",
+          "2026-08-03"
+        ],
+        [
+          "C016",
+          "2026-07-27"
+        ],
+        [
+          "C039",
+          "2026-08-05"
+        ],
+        [
+          "C020",
+          "2026-08-03"
+        ],
+        [
+          "C008",
+          "2026-08-21"
+        ],
+        [
+          "C038",
+          "2026-08-04"
+        ],
+        [
+          "C019",
+          "2026-08-24"
+        ],
+        [
+          "C003",
+          "2026-08-03"
+        ],
+        [
+          "C028",
+          "2026-08-11"
+        ],
+        [
+          "C024",
+          "2026-07-17"
+        ],
+        [
+          "C037",
+          "2026-08-19"
+        ],
+        [
+          "C004",
+          "2026-07-20"
+        ],
+        [
+          "C036",
+          "2026-08-16"
+        ],
+        [
+          "C018",
+          "2026-07-24"
+        ],
+        [
+          "C031",
+          "2026-08-07"
+        ],
+        [
+          "C021",
+          "2026-08-13"
+        ],
+        [
+          "C025",
+          "2026-08-13"
+        ],
+        [
+          "C033",
+          "2026-07-19"
+        ],
+        [
+          "C022",
+          "2026-08-17"
+        ],
+        [
+          "C032",
+          "2026-08-06"
+        ],
+        [
+          "C001",
+          "2026-08-11"
+        ],
+        [
+          "C007",
+          "2026-07-25"
+        ],
+        [
+          "C011",
+          "2026-07-14"
+        ],
+        [
+          "C026",
+          "2026-07-22"
+        ],
+        [
+          "C027",
+          "2026-07-08"
+        ],
+        [
+          "C017",
+          "2026-08-12"
+        ],
+        [
+          "C019",
+          "2026-08-05"
+        ],
+        [
+          "C028",
+          "2026-07-13"
+        ],
+        [
+          "C035",
+          "2026-08-01"
+        ],
+        [
+          "C036",
+          "2026-08-17"
+        ],
+        [
+          "C009",
+          "2026-07-23"
+        ],
+        [
+          "C002",
+          "2026-08-23"
+        ],
+        [
+          "C015",
+          "2026-07-26"
+        ],
+        [
+          "C022",
+          "2026-08-02"
+        ],
+        [
+          "C031",
+          "2026-07-12"
+        ],
+        [
+          "C038",
+          "2026-07-26"
+        ],
+        [
+          "C029",
+          "2026-07-11"
+        ],
+        [
+          "C024",
+          "2026-07-12"
+        ],
+        [
+          "C018",
+          "2026-08-05"
+        ],
+        [
+          "C010",
+          "2026-07-30"
+        ],
+        [
+          "C034",
+          "2026-08-03"
+        ],
+        [
+          "C005",
+          "2026-07-24"
+        ],
+        [
+          "C012",
+          "2026-07-21"
+        ],
+        [
+          "C037",
+          "2026-07-28"
+        ],
+        [
+          "C025",
+          "2026-07-31"
+        ],
+        [
+          "C003",
+          "2026-07-18"
+        ],
+        [
+          "C020",
+          "2026-08-01"
+        ],
+        [
+          "C030",
+          "2026-07-17"
+        ],
+        [
+          "C039",
+          "2026-08-09"
+        ]
+      ],
+      "seed": 101,
+      "size": 64,
+      "strategy": "round robin across children and within-child event-volume terciles",
+      "source": "eligible baseline-ready normal training days"
+    },
+    "support_keys": {
+      "joint_event_counts_and_calendar": [
+        "screen_incidents",
+        "language_flags",
+        "is_weekend"
+      ],
+      "screen_night_counts_and_calendar": [
+        "screen_incidents",
+        "screen_night_incidents",
+        "is_weekend"
+      ],
+      "language_night_counts_and_calendar": [
+        "language_flags",
+        "language_night_flags",
+        "is_weekend"
+      ]
+    },
+    "minimum_distinct_training_children": 2,
+    "minimum_distinct_retained_donor_children": 2,
+    "reconstruction_and_comparison_tolerance": 1e-08,
+    "near_threshold": "flag stays unchanged; neutral wording when margin <= full-reference expected-score range + tolerance",
+    "fallback": "The system identified an unusual pattern in the available recorded activity, but cannot reliably identify which recorded factors contributed most."
+  },
+  "previous_evaluation_seeds": {
+    "pilot_case_seed": 42,
+    "pilot_kernel_mask_seed": 137,
+    "expanded_case_seed": 22026,
+    "expanded_challenge_seed": 22027,
+    "expanded_matched_seed": 22028
+  }
+}

@@ -104,7 +104,6 @@ def face_svg(face, color, size=92):
 # --- CSS ------------------------------------------------------------------------------
 
 CSS = f"""
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 html, body, .stApp, [class*="css"] {{ font-family: {FONT_FAMILY}; }}
 .stApp {{ background: {COLORS["page_bg"]}; color: {COLORS["text"]}; }}
@@ -132,6 +131,14 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
 }}
 .c4-card-title {{ color: {COLORS["navy"]}; font-size: 1.35rem; font-weight: 700; margin: 0 0 .2rem; overflow-wrap: anywhere; }}
 .c4-card-text {{ color: {COLORS["muted"]}; margin: 0; }}
+
+/* Compact cards on the qualitative Function 02 page. */
+[class*="st-key-card-f2-"] {{
+    padding: .55rem .8rem;
+    margin-bottom: 0;
+}}
+[class*="st-key-card-f2-"] .c4-card-title {{ font-size: 1.1rem; margin: 0; }}
+[class*="st-key-card-f2-"] [data-testid="stVerticalBlock"] {{ gap: .35rem; }}
 
 /* Error cards: containers created with key="card-error-..." */
 [class*="st-key-card-error-"] {{
@@ -434,8 +441,10 @@ def anomaly_history_figure(daily):
     Uses the existing unusual flags unchanged. Urgent rules remain separate.
     """
     fig = go.Figure()
-    for flagged in (False, True):
-        mine = daily[daily["unusual"] == flagged]
+    missing = daily.loc[daily["unusual"].isna(), "date"]
+    assessed_statuses = () if len(missing) and len(missing) == len(daily) else (False, True)
+    for flagged in assessed_statuses:
+        mine = daily[daily["unusual"].eq(flagged).fillna(False)]
         style = FLAG_STYLES[flagged]
         fig.add_trace(go.Scatter(
             x=mine["date"] if len(mine) else [None],
@@ -447,6 +456,15 @@ def anomaly_history_figure(daily):
     axis = dict(showgrid=True, gridcolor=COLORS["grid"], griddash="dash", zeroline=False,
                 linecolor="#C9D3E3", showline=True)
     fig.update_xaxes(**axis, type="date", tickformat="%Y-%m-%d")
-    fig.update_yaxes(**axis, tickvals=[0, 1], ticktext=["Not flagged", "Flagged"],
-                     range=[-0.3, 1.3], fixedrange=True)
+    ticks = [int(flagged) for flagged in assessed_statuses]
+    labels = [FLAG_STYLES[flagged].name for flagged in assessed_statuses]
+    if not missing.empty:
+        fig.add_trace(go.Scatter(
+            x=missing, y=[-1] * len(missing), mode="markers", showlegend=False,
+            marker=dict(color="#65748B", symbol="square-open", size=9),
+            hovertemplate="<b>Insufficient data</b><br>%{x|%Y-%m-%d}<extra></extra>"))
+        ticks.insert(0, -1)
+        labels.insert(0, "Insufficient data")
+    fig.update_yaxes(**axis, tickvals=ticks, ticktext=labels,
+                     range=[ticks[0] - 0.3, 1.3], fixedrange=True)
     return _base_layout(fig, height=300)
