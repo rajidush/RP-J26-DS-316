@@ -2,6 +2,7 @@
 
 from collections import Counter
 from contextlib import closing
+from datetime import date
 from hashlib import sha256
 from uuid import uuid4
 
@@ -70,6 +71,8 @@ def demo_mode_active():
 def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
     """Retain the Function 02 identity across page-specific widgets."""
     def select(child):
+        if child == st.session_state.get(_F2_DEMO_CONTEXT):
+            return
         st.session_state[_F2_DEMO_CONTEXT] = child
         st.session_state.pop(F2_SAFETY_DATE, None)
         st.session_state.pop(_ENHANCED_RESULT, None)
@@ -91,16 +94,28 @@ def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
 
 
 def behavioral_date_picker(label, dates, key):
-    stored_date = st.session_state.get(F2_SAFETY_DATE)
-    default_date = stored_date if stored_date in dates else dates[0]
-    through = st.selectbox(label, dates, index=dates.index(default_date), key=key, format_func=str)
-    st.session_state[F2_SAFETY_DATE] = through
-    return through
+    """Display the shared date and update it only on a user selection."""
+    child = st.session_state.get(_F2_DEMO_CONTEXT)
+
+    def select_date():
+        selected = st.session_state[key]
+        # A rerun can deliver a date event from the outgoing child's widget.
+        if child == st.session_state.get(_F2_DEMO_CONTEXT) and type(selected) is date and selected in dates:
+            st.session_state[F2_SAFETY_DATE] = selected
+
+    through = _assessment_date(dates)
+    widget_date = st.session_state.get(key)
+    if type(widget_date) is not date or widget_date != through:
+        st.session_state[key] = through
+    return st.selectbox(label, dates, index=None, key=key, format_func=str, on_change=select_date)
 
 
-def _assessment_date(rows):
+def _assessment_date(dates):
     through = st.session_state.get(F2_SAFETY_DATE)
-    return through if through in set(rows["date"]) else rows["date"].max()
+    if type(through) is not date or through not in dates:
+        through = max(dates, default=None)
+        st.session_state[F2_SAFETY_DATE] = through
+    return through
 
 
 def activity_demo_summary(source, child):
@@ -109,7 +124,7 @@ def activity_demo_summary(source, child):
         return None
     period = st.session_state.get(ACTIVITY_PERIOD, activity_summary.DEFAULT_PERIOD)
     days = activity_summary.PERIODS[period]
-    through = _assessment_date(rows)
+    through = _assessment_date(rows["date"].unique())
     cached = st.session_state.get(_ACTIVITY_RESULT)
     if cached and cached[:2] == (through, days) and cached[2].equals(rows):
         return cached[3]
@@ -133,7 +148,7 @@ def safety_demo_summary(source, child, through=None):
     rows = safety_summary.records_for(source, child)
     if rows.empty:
         return safety_summary.SafetySummary()
-    through = through or _assessment_date(rows)
+    through = through or _assessment_date(rows["date"].unique())
     return safety_summary.summarize(enhanced_demo_assessment(source, child, through))
 
 

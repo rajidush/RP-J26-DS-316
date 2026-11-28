@@ -14,6 +14,7 @@ from test_safety_notifications import isolated_app_database  # noqa: F401
 @pytest.mark.usefixtures("isolated_app_database")
 @pytest.mark.parametrize(("child", "day"), [
     ("C003", date(2026, 8, 21)),
+    ("C003", date(2026, 9, 21)),
     ("C004", date(2026, 9, 1)),
     ("C004", date(2026, 9, 8)),
 ])
@@ -52,23 +53,41 @@ def test_enhanced_classifications_agree_across_dashboard(child, day, profiles, m
     assert ("detected an unusual pattern" if flagged else "detected no unusual pattern") in main_text(at)
     assert len(calls) == 1
 
-    navigate_dashboard(at, "Safety Notifications")
-    at.selectbox(key=f"safety-assessment-date-{child}").set_value(day).run()
-    at.selectbox(key="safety-history-category").set_value(safety.BEHAVIORAL).run()
-    assert not at.exception
-    assert (f"{day} · {safety.BEHAVIORAL}" in [event.label for event in at.get("status")]) == flagged
-    assert len(calls) == 2  # The initial Safety date differed, replacing the single cached context.
-
     navigate_dashboard(at, "Overview")
+    start = day - timedelta(days=6)
+    observed = rows.loc[
+        rows["date"].between(start, day) & rows["language_monitor_observed"].eq(1), "language_flags",
+    ].dropna()
+    activity_copy = f"Recorded language flags: {int(observed.sum())} across {len(observed)} of 7 days."
+    assert f"{start} to {day}" in main_text(at)
+    assert activity_copy in main_text(at)
+    assert "Assessment date:" not in main_text(at)
     at.button(key="overview-run-behavioral").click().run()
     wording = "was flagged" if flagged else "was not flagged"
     assert f"The latest recorded day {wording} for unusual activity." in main_text(at)
     assert f"Assessment date: {day}" in main_text(at)
+    assert activity_copy in main_text(at)
+    assert len(calls) == 1
+
+    navigate_dashboard(at, "Safety Notifications")
+    assert at.selectbox(key=f"safety-assessment-date-{child}").value == day
+    at.selectbox(key="safety-history-category").set_value(safety.BEHAVIORAL).run()
+    assert not at.exception
+    assert (f"{day} · {safety.BEHAVIORAL}" in [event.label for event in at.get("status")]) == flagged
+    assert len(calls) == 1
+
+    navigate_dashboard(at, "Overview")
+    at.button(key="overview-run-behavioral").click().run()
+    assert f"The latest recorded day {wording} for unusual activity." in main_text(at)
+    assert f"Assessment date: {day}" in main_text(at)
 
     navigate_dashboard(at, "Activity Summary")
+    assert at.selectbox(key=f"activity-assessment-date-{child}").value == day
     for period, days in (("Last 7 days", 7), ("Last 30 days", 30)):
         at.radio(key="activity-period-widget").set_value(period).run()
         window = expected["date"].between(day - timedelta(days=days - 1), day)
         metric = next(item for item in at.metric if item.label == "Days with unusual activity")
         assert metric.value == str(expected.loc[window, "flag"].sum())
-    assert not at.exception and len(calls) == 2
+    navigate_dashboard(at, "Behavioral Anomaly")
+    assert at.selectbox(key=f"f2_activity_{child}").value == day
+    assert not at.exception and len(calls) == 1

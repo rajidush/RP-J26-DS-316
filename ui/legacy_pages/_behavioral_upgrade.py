@@ -211,12 +211,16 @@ def render(source, child=None):
         children, dates = st.columns(2)
         with children:
             if child is None:
-                child = st.selectbox("Child", source["child_ids"], key="f2_child")
+                child = child_selection.behavioral_demo_picker(
+                    "Child", source["child_ids"], child_selection.F2_DEMO_CHILD, index=0,
+                )
             else:
                 st.write(f"Child: {child}")
         daily = services._behavioral_child_rows(source["daily"], child)
         with dates:
-            day = st.selectbox("Activity date", daily["date"].tolist()[::-1], key=f"f2_activity_{child}")
+            day = child_selection.behavioral_date_picker(
+                "Activity date", daily["date"].tolist()[::-1], f"f2_activity_{child}",
+            )
     latest = daily["date"].iloc[-1]
     selected_rows = daily.loc[daily["date"].eq(day)]
     selected_index = selected_rows.index[0]
