@@ -7,7 +7,7 @@ import streamlit as st
 from component4_profiling_xai.src.behavioral_anomaly import assessable_days
 from component4_profiling_xai.src.behavioral_adaptive_profile import adaptive_profiles, admission_evidence
 from component4_profiling_xai.src.behavioral_explanation_reliability import (
-    EXPLANATION_ERRORS, assess_daily, assess_temporal, daily_evidence, temporal_evidence,
+    EXPLANATION_ERRORS, assess_temporal,
 )
 from component4_profiling_xai.src.behavioral_profile import ANCHORS, ProfileConfig
 from component4_profiling_xai.src.behavioral_xai_runtime import ExplanationRequest
@@ -242,27 +242,31 @@ def render(source, child=None):
     flagged = assessed and bool(flag)
     summary, active, earlier = recent_behavior(history, day, config.minimum)
     temporal_result = temporal_review = None
+    result = daily_review = None
     request = None
     # Temporal explanation requires a scored endpoint in the selected window.
     if assessed:
         try:
             request = ExplanationRequest(bundle)
-        except EXPLANATION_ERRORS:
-            services.log_assessment_failure("behavioral", "activity explanation", exc)
-        temporal_result, variants = (request.temporal(history, matrix, child, day) if request is not None else
-                                     temporal_evidence(history, matrix, bundle, child, day))
-        temporal_review = assess_temporal(temporal_result, variants)
-    result = None
-    daily_review = None
-    if assessed:
+        except (RuntimeError, *EXPLANATION_ERRORS) as exc:
+            services.log_assessment_failure("behavioral", "activity explanation setup", exc)
+
+    if request is not None:
+        try:
+            temporal_candidate, variants = request.temporal(history, matrix, child, day)
+            temporal_review = assess_temporal(temporal_candidate, variants)
+            temporal_result = temporal_candidate
+        except (RuntimeError, *EXPLANATION_ERRORS) as exc:
+            services.log_assessment_failure("behavioral", "activity explanation across days", exc)
+
         score = history.at[index, "score"]
         row = matrix.loc[[index], bundle["features"]]
-        if request is not None:
-            result, variants = request.daily(row, score)
-            daily_review = request.review_daily(result, score, flagged, variants)
-        else:
-            result, variants = daily_evidence(row, score, bundle)
-            daily_review = assess_daily(result, score, flagged, bundle, variants)
+        try:
+            daily_candidate, variants = request.daily(row, score)
+            daily_review = request.review_daily(daily_candidate, score, flagged, variants)
+            result = daily_candidate
+        except (RuntimeError, *EXPLANATION_ERRORS) as exc:
+            services.log_assessment_failure("behavioral", "daily activity explanation", exc)
 
     with theme.card("f2-overview", "Behavior Overview"):
         if flagged:
