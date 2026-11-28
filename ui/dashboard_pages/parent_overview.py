@@ -1,0 +1,168 @@
+import streamlit as st
+
+from ui import child_selection, overview_summary, services, theme
+
+
+def linked_card(key, title, message, page, label, icon):
+    with theme.card(key, title, message):
+        st.page_link(f"dashboard_pages/{page}.py", label=label, icon=f":material/{icon}:")
+
+
+def evaluated_summary(key, source, child, summarize, clicked, results):
+    if key == "behavioral":
+        results[key] = (child,)
+        return summarize(source, child)
+
+    sessions = services.sessions_for_child(source, child)
+    revisions = child_selection.artifact_revisions(services.f1_artifact_dir(), services.F1_ARTIFACT_FILES)
+    context = (child, source["source"], child_selection.demo_mode_active(),
+               revisions, services.MIN_SESSIONS_FOR_PATTERN)
+    previous = results.get(key)
+    if not clicked and previous and previous[1] == context and previous[2].equals(sessions):
+        return previous[3]
+    try:
+        summary = summarize(sessions, child)
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("emotional", "overview assessment", error)
+        summary = overview_summary.Summary("This fictional assessment could not be generated.")
+    results[key] = (child, context, sessions.copy(), summary)
+    return summary
+
+
+def demo_card(key, title, source_label, load_source, summarize, page, link, icon):
+    results = st.session_state.setdefault(child_selection.OVERVIEW_DEMO_RESULTS, {})
+    with theme.card(f"overview-{key}", title):
+        st.caption(source_label)
+        try:
+            source = load_source()
+        except (ImportError, OSError, ValueError, RuntimeError) as error:
+            services.log_assessment_failure(key, "overview record loading", error)
+            source = None
+            st.error("Fictional records for this example could not be loaded.")
+        child = None
+        summary = None
+        if not source or source["source"] != "demo" or not source["child_ids"]:
+            results.pop(key, None)
+            if source is not None:
+                st.info("Fictional records for this example are unavailable.")
+        else:
+            if key == "behavioral":
+                child = child_selection.behavioral_demo_picker(
+                    f"{title} demo child", source["child_ids"], f"overview-demo-{key}",
+                    placeholder="Select a fictional child",
+                )
+            else:
+                child = st.selectbox(
+                    f"{title} demo child", source["child_ids"], index=None,
+                    key=f"overview-demo-{key}", placeholder="Select a fictional child",
+                )
+            previous_child = results.get(key, (None,))[0]
+            if previous_child != child:
+                results.pop(key, None)
+            clicked = st.button(f"Show {title.lower()} summary", key=f"overview-run-{key}", disabled=child is None)
+            if child is not None and (clicked or key in results):
+                summary = evaluated_summary(key, source, child, summarize, clicked, results)
+            if summary:
+                st.write(summary.message)
+                if summary.period:
+                    st.caption(summary.period)
+                if summary.change:
+                    st.write(summary.change)
+        st.page_link(f"dashboard_pages/{page}.py", label=link, icon=f":material/{icon}:")
+    return child, summary, source
+
+
+def local_overview():
+    profile = child_selection.selected_profile()
+    name = child_selection.selected_profile_label(include_avatar=True)
+    if profile:
+        with theme.card("overview-child", "Selected Child"):
+            st.text(name)
+            if profile.age_group:
+                st.text(f"Age group: {profile.age_group}")
+            st.caption("Monitoring data has not been connected for this child.")
+    elif child_selection.has_active_profiles() is None:
+        st.info("Child profiles are temporarily unavailable.")
+    elif child_selection.has_active_profiles():
+        st.info("Select a child profile in the sidebar.")
+    else:
+        st.info("There are no active child profiles.")
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+
+    if profile is None:
+        return
+    emotional, behavioral = st.columns(2)
+    with emotional:
+        linked_card("overview-emotional", "Emotional Wellbeing", "Emotional assessment data is unavailable.",
+                    "emotional_pattern", "Open Emotional Pattern", "bar_chart")
+    with behavioral:
+        linked_card("overview-behavioral", "Behavioral Activity", "Behavioral assessment data is unavailable.",
+                    "behavioral_anomaly", "Open Behavioral Anomaly", "monitoring")
+    supporting_cards(
+        "Safety information is unavailable without connected monitoring data.",
+        "Parent guidance is unavailable without a supported assessment.",
+    )
+
+
+def supporting_cards(safety, guidance, *, safety_caption=None, guidance_caption=None,
+                     activity=None, activity_caption=None):
+    left, right = st.columns(2)
+    with left, theme.card("overview-safety", "Safety Alerts", safety):
+        if safety_caption:
+            st.caption(safety_caption)
+        st.page_link("dashboard_pages/safety_notifications.py", label="Open Safety Notifications", icon=":material/notifications:")
+    with right, theme.card("overview-activity", "Activity Summary",
+                           activity or "Activity summary data is unavailable."):
+        if activity_caption:
+            st.caption(activity_caption)
+        st.page_link("dashboard_pages/activity_summary.py", label="Open Activity Summary", icon=":material/insights:")
+    with theme.card("overview-guidance", "Parent Guidance", guidance):
+        if guidance_caption:
+            st.caption(guidance_caption)
+
+
+def demo_overview():
+    st.info("Demo Mode is on. The two assessments use separate fictional records.")
+    emotional, behavioral = st.columns(2)
+    with emotional:
+        emotional_child, emotional_result, _ = demo_card(
+            "emotional", "Emotional Wellbeing", "Fictional data · Emotional Pattern demo",
+            lambda: services.child_session_source(demo_only=True), overview_summary.emotional_summary,
+            "emotional_pattern", "Open Emotional Pattern", "bar_chart",
+        )
+    with behavioral:
+        behavioral_child, behavioral_result, source = demo_card(
+            "behavioral", "Behavioral Activity", "Fictional data · Behavioral Anomaly demo",
+            services.behavioral_daily_source, overview_summary.behavioral_summary,
+            "behavioral_anomaly", "Open Behavioral Anomaly", "monitoring",
+        )
+    safety = behavioral_result.related if behavioral_result else ""
+    guidance = emotional_result.related if emotional_result else ""
+    activity = activity_caption = None
+    if behavioral_child is not None:
+        try:
+            summary = child_selection.activity_demo_summary(source, behavioral_child)
+        except ValueError:
+            summary = None
+        if summary:
+            activity = (f"Recorded language flags: {summary.language_flags} across {summary.language_days} "
+                        f"of {summary.days} days." if summary.language_flags is not None else
+                        "Language flag counts are unavailable for this period.")
+            activity_caption = f"Function 02 demo · Fictional child {behavioral_child} · {summary.period}"
+    supporting_cards(
+        safety or "Fictional safety information is unavailable until a behavioral example is evaluated.",
+        guidance or "There is no supported guidance for the current fictional emotional example.",
+        safety_caption=f"Behavioral Anomaly demo · Fictional child {behavioral_child}" if safety else None,
+        guidance_caption=f"Emotional Pattern demo · Fictional child {emotional_child}" if guidance else None,
+        activity=activity,
+        activity_caption=activity_caption,
+    )
+
+
+theme.page_header("Overview", "A quick look at your child’s digital wellbeing.")
+if child_selection.demo_mode_active():
+    demo_overview()
+    if child_selection.has_active_profiles() is False:
+        st.page_link("dashboard_pages/child_profile.py", label="Go to Child Profiles", icon=":material/person:")
+else:
+    local_overview()

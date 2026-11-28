@@ -26,7 +26,7 @@ from .src.behavioral_profile import ANCHORS, BUNDLE
 from .src.behavioral_synthetic import build_dataset
 from .src.behavioral_xai_runtime import ExplanationRequest
 from ui import services
-from ui.pages import _behavioral_upgrade as current
+from ui.legacy_pages import _behavioral_upgrade as current
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "outputs" / "parent_friendly_explanation_step07"

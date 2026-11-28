@@ -10,10 +10,12 @@ Only contract fields are ever read or shown -- never raw conversation content.
 import importlib
 import importlib.util
 import json
+import logging
 import os
 import random
 import sys
 import warnings
+from dataclasses import dataclass
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha256
@@ -32,6 +34,13 @@ C4_DIR = ROOT / "component4_profiling_xai"
 F1_MODULE_PATH = C4_DIR / "src" / "emotional_pattern.py"
 F1_ARTIFACT_FILES = ("emotional_pattern_kmeans.pkl", "emotional_pattern_scaler.pkl",
                      "emotional_pattern_metadata.json")
+_LOGGER = logging.getLogger(__name__)
+
+
+def log_assessment_failure(assessment, stage, error=None):
+    """Record the failure stage without logging records or exception text."""
+    _LOGGER.warning("%s: %s (%s)", assessment, stage,
+                    type(error).__name__ if error is not None else "unavailable")
 
 # Contract columns shown in tables, in this order. dialogue_summary is the
 # contract's parent-safe summary, shown only in the detail view.
@@ -227,20 +236,22 @@ def load_sessions_csv(file):
     return df[[c for c in F1_COLUMNS if c in df.columns]]
 
 
-def child_session_source(uploaded_csv=None):
+def child_session_source(uploaded_csv=None, *, demo_only=False):
     """Where Function 1's per-child data comes from, in priority order:
     an uploaded CSV, else database records that carry child_id (from
-    Component 3's data harness), else the demo dataset.
+    Component 3's data harness), else the demo dataset. The dashboard's explicit
+    Demo Mode uses demo_only to bypass uploaded and database records.
 
     Returns {"source": "upload" | "database" | "demo", "child_ids": [...],
     "sessions": DataFrame, or None for "database" (queried per child)}.
     """
-    if uploaded_csv is not None:
-        sessions = load_sessions_csv(uploaded_csv)
-        return {"source": "upload", "child_ids": child_ids(sessions), "sessions": sessions}
-    ids = comp3.list_child_ids()
-    if ids:
-        return {"source": "database", "child_ids": ids, "sessions": None}
+    if not demo_only:
+        if uploaded_csv is not None:
+            sessions = load_sessions_csv(uploaded_csv)
+            return {"source": "upload", "child_ids": child_ids(sessions), "sessions": sessions}
+        ids = comp3.list_child_ids()
+        if ids:
+            return {"source": "database", "child_ids": ids, "sessions": None}
     sessions = demo_sessions()
     return {"source": "demo", "child_ids": child_ids(sessions), "sessions": sessions}
 
@@ -560,6 +571,7 @@ F2_EXPECTED_MODEL = {"algorithm": "one_class_svm", "feature_set": "A_daily", "n_
 F2_DEMO_DATA = C4_DIR / "data" / "behavioral_daily.csv"
 F2_CONTEXT_DAYS = 14                      # the child's own previous days shown for context
 F2_TOP_FEATURES = 5
+F2_COVERAGE_COLUMNS = ("screen_monitor_observed", "language_monitor_observed")
 
 
 def _c4_package():
@@ -716,8 +728,37 @@ def load_daily_csv(file):
 
 
 @lru_cache(maxsize=2)
-def _demo_daily(path, mtime):
+def _demo_daily(path, revision):
     return _clean_daily(pd.read_csv(path), f"The bundled dataset {Path(path).name}")
+
+
+def behavioral_urgent_review(rows):
+    """Run the existing urgent rule without loading the anomaly model."""
+    rules = _urgent_module()
+    numeric = _behavioral_data_module().daily_numeric
+    evidence = rows.reindex(columns=list(rules.URGENT_RULE_COLUMNS)).apply(numeric, count=True)
+    # Recorded positive counters remain rule evidence even if monitoring was incomplete.
+    alerts = rules.urgent_alerts(rows[["child_id", "date"]].join(evidence))
+    complete = evidence.notna().all(axis=1)
+    for prefix, column in zip(("screen_", "language_"), F2_COVERAGE_COLUMNS):
+        if column in rows:
+            covered = numeric(rows[column], indicator=True).eq(1)
+            complete &= covered
+            evidence.loc[~covered, evidence.columns.str.startswith(prefix)] = float("nan")
+    return alerts, evidence.notna().any(axis=1), complete
+
+
+def behavioral_observed_days(rows):
+    """Identify days with at least one observed activity input."""
+    features = [name for name in _f2_module().FEATURE_SET_A if name != "is_weekend"]
+    observed = rows.reindex(columns=features).notna()
+    for prefix, column in zip(("screen_", "language_"), F2_COVERAGE_COLUMNS):
+        if column in rows:
+            observed.loc[~rows[column].eq(1), observed.columns.str.startswith(prefix)] = False
+    covered = rows.reindex(columns=F2_COVERAGE_COLUMNS)
+    if any(column in rows for column in F2_COVERAGE_COLUMNS):
+        observed.loc[~covered.eq(1).any(axis=1), :] = False
+    return observed.any(axis=1)
 
 
 def behavioral_daily_source(uploaded_csv=None):
@@ -726,9 +767,21 @@ def behavioral_daily_source(uploaded_csv=None):
     if uploaded_csv is not None:
         daily, source = load_daily_csv(uploaded_csv), "upload"
     else:
-        daily = _demo_daily(str(F2_DEMO_DATA), F2_DEMO_DATA.stat().st_mtime).copy()
+        stat = F2_DEMO_DATA.stat()
+        revision = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size, stat.st_ino)
+        daily = _demo_daily(str(F2_DEMO_DATA), revision).copy()
         source = "demo"
     return {"source": source, "daily": daily, "child_ids": child_ids(daily)}
+
+
+def behavioral_external_source(filename):
+    """Read and identify the exact local file snapshot used for assessment."""
+    path = Path(filename).expanduser().resolve()
+    contents = path.read_bytes()
+    source = behavioral_daily_source(BytesIO(contents))
+    source["identity"] = sha256(os.fsencode(path)).hexdigest()
+    source["revision"] = sha256(contents).digest()
+    return source
 
 
 def weekly_summary(table):
@@ -776,6 +829,77 @@ def behavioral_urgent_report(daily, child_id):
     """Evaluate recorded urgent signals without loading an anomaly model."""
     _, alerts, incomplete = _behavioral_urgent(_behavioral_child_rows(daily, child_id))
     return {"urgent": alerts, "urgent_incomplete": incomplete}
+
+
+@dataclass(frozen=True)
+class EnhancedBehavioralAssessment:
+    rows: pd.DataFrame
+    status: str
+    urgent_review: tuple | None
+    history: pd.DataFrame | None = None
+    matrix: pd.DataFrame | None = None
+    details: pd.DataFrame | None = None
+    bundle: dict | None = None
+
+
+def enhanced_bundle_bytes():
+    """Read the deployed bundle. Its bytes identify the exact model and configuration."""
+    try:
+        from component4_profiling_xai.src.behavioral_profile import BUNDLE
+
+        return BUNDLE.read_bytes()
+    except (ImportError, OSError) as error:
+        log_assessment_failure("behavioral", "deployed model loading", error)
+        return None
+
+
+@lru_cache(maxsize=2)
+def _load_enhanced_bundle(contents):
+    import joblib
+    import sklearn
+
+    bundle = joblib.load(BytesIO(contents))
+    if bundle["sklearn_version"] != sklearn.__version__:
+        raise ValueError("The detector needs the scikit-learn version recorded during training.")
+    return bundle
+
+
+def enhanced_behavioral_assessment(daily, child, through, bundle_bytes):
+    """Assess validated fictional daily records through an inclusive cutoff."""
+    from pickle import UnpicklingError
+
+    rows = daily.loc[daily["child_id"].eq(child) & daily["date"].le(through)]
+    rows = rows.sort_values("date").reset_index(drop=True)
+    if rows.empty:
+        return EnhancedBehavioralAssessment(rows, "missing_records", None)
+    try:
+        urgent = behavioral_urgent_review(rows)
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        log_assessment_failure("safety", "urgent rule review", error)
+        urgent = None
+
+    bundle = None
+    if bundle_bytes is not None:
+        try:
+            bundle = _load_enhanced_bundle(bundle_bytes)
+        except (EOFError, ImportError, KeyError, OSError, TypeError, ValueError, UnpicklingError) as error:
+            log_assessment_failure("behavioral", "deployed model loading", error)
+
+    matrix = details = None
+    try:
+        from component4_profiling_xai.src.behavioral_profile import ProfileConfig, profiles, score_history
+
+        config = ProfileConfig(**bundle["profile"]) if bundle is not None else ProfileConfig()
+        matrix, details = profiles(rows, config)
+        if bundle is not None:
+            history = score_history(rows, matrix, bundle)
+            return EnhancedBehavioralAssessment(
+                rows, "available", urgent, history=history, matrix=matrix, details=details, bundle=bundle,
+            )
+    except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError, FloatingPointError) as error:
+        log_assessment_failure("behavioral", "enhanced activity assessment", error)
+        return EnhancedBehavioralAssessment(rows, "failed", urgent, matrix=matrix, details=details)
+    return EnhancedBehavioralAssessment(rows, "model_unavailable", urgent, matrix=matrix, details=details)
 
 
 def behavioral_report(daily, child_id, artifact_dir=None):

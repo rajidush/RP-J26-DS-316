@@ -1,30 +1,35 @@
+"""Isolated offline comparison using the frozen legacy Function 02 model.
+
+From the repository root, run:
+    python -m streamlit run ui/legacy_pages/behavioral_comparison.py --server.address 127.0.0.1
+"""
 from datetime import timedelta
-import logging
-import os
 from math import isclose
+from pathlib import Path
+import sys
 
 import plotly.graph_objects as go
 import streamlit as st
 
-from ui import services, theme
-from ui.pages import _behavioral_upgrade
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-theme.page_header("Behavioral Anomaly Detection")
+from ui import services, theme  # noqa: E402
+
+
 RESEARCH_RESULT = "f2_research_shap_result"
 PARENT_ACTIVITY_RESULT = "f2_parent_activity_result"
-logger = logging.getLogger(__name__)
+
+
+def show_unavailable(message):
+    st.error(message)
 
 
 def show_model_error(status):
-    theme.error_card(
-        "f2", "Function 2 model could not be loaded. No anomaly prediction is shown.",
-        status["reason"],
-        ["Put `behavioral_anomaly_pipeline.pkl` and `behavioral_anomaly_metadata.json` "
-         "(the saved Step 3 model) in `component4_profiling_xai/models/`, "
-         "or set `C4_F2_ARTIFACT_DIR` to the folder that has them.",
-         "Install the scikit-learn version the model was trained with: "
-         "`pip install scikit-learn==1.6.1`.",
-         "Then restart the app."])
+    stage = "required assessment files missing" if status.get("missing") else "assessment files could not load"
+    services.log_assessment_failure("behavioral", stage)
+    show_unavailable("Behavioral assessment is temporarily unavailable. Please try again later.")
 
 
 def show_urgent(report):
@@ -113,12 +118,13 @@ def show_research_shap(source, child, table):
                 st.session_state[RESEARCH_RESULT] = stored
             if stored is not None:
                 show_shap_result(stored[1], child, day)
-        except (OSError, ValueError) as exc:
+        except (OSError, ValueError) as error:
             st.session_state.pop(RESEARCH_RESULT, None)
-            st.warning(f"Research SHAP preview unavailable: {exc}")
-        except Exception:
+            services.log_assessment_failure("behavioral", "research SHAP", error)
+            st.warning("Research SHAP preview is unavailable for the selected day.")
+        except Exception as error:
             st.session_state.pop(RESEARCH_RESULT, None)
-            logger.exception("Research SHAP preview failed")
+            services.log_assessment_failure("behavioral", "research SHAP", error)
             st.warning("Research SHAP preview could not run for the selected day.")
 
 
@@ -150,103 +156,114 @@ def show_parent_activity_demo(source, child, table):
                     st.write(stored[1])
                 else:
                     st.info("An activity update is unavailable for this day.")
-        except Exception:
+        except Exception as error:
             st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
-            logger.exception("Synthetic parent activity preview failed")
+            services.log_assessment_failure("behavioral", "parent activity preview", error)
             st.info("An activity update is unavailable for this day.")
 
 
-try:
-    local_csv = os.getenv("C4_F2_DAILY_CSV")
-    source = services.behavioral_daily_source(local_csv) if local_csv else services.behavioral_daily_source()
-except (OSError, ValueError) as exc:
-    st.session_state.pop(RESEARCH_RESULT, None)
-    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
-    st.error(f"Behavioral records could not be loaded: {exc}")
-    st.stop()
-if source["source"] == "demo":
-    st.caption("Research demonstration using synthetic data")
-ids = source["child_ids"]
-if not ids:
-    st.session_state.pop(RESEARCH_RESULT, None)
-    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
-    st.info("Insufficient recorded information to assess behavior for this period.")
-    st.stop()
-
-if os.getenv("C4_F2_LEGACY_VIEW") != "1":
+def render(source, child):
+    st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
+               "It does not guarantee that the child is safe.")
+    rows = source["daily"]
+    rows = rows[rows["child_id"] == child]
+    if rows.empty:
+        st.info("No fictional monitoring records are available for this selection.")
+        st.stop()
+    if not services.behavioral_observed_days(rows).any():
+        st.info("There is insufficient monitoring information to assess unusual activity.")
+        try:
+            show_urgent(services.behavioral_urgent_report(source["daily"], child))
+        except (ImportError, OSError, ValueError, RuntimeError) as error:
+            services.log_assessment_failure("behavioral", "urgent records", error)
+            st.error("Urgent records could not be checked.")
+        st.stop()
+    report = None
     try:
-        upgrade = _behavioral_upgrade.selected_bundle()
-    except (OSError, ValueError, KeyError):
-        logger.exception("Could not load deployed Function 2 detector")
-        upgrade = None
-    _behavioral_upgrade.render(source, upgrade)
-    st.stop()
+        report = services.behavioral_report(rows, child)
+    except services.ModelUnavailableError as exc:
+        show_model_error(exc.status)
+        report = None
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("behavioral", "assessment execution", error)
+        show_unavailable("Behavioral assessment is temporarily unavailable. Please try again later.")
+    if report is None:
+        st.session_state.pop(RESEARCH_RESULT, None)
+        st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
+        try:
+            show_urgent(services.behavioral_urgent_report(source["daily"], child))
+        except (ImportError, OSError, ValueError, RuntimeError) as error:
+            services.log_assessment_failure("behavioral", "urgent records", error)
+            st.error("Urgent records could not be checked.")
+        st.stop()
 
-st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
-           "It does not guarantee that the child is safe.")
-with theme.card("select-child", "Select Child"):
-    child = st.selectbox("Select child", ids, label_visibility="collapsed", width=440,
-                         key="f2_child")
+    table = report["daily"]
+    latest = table.iloc[-1]
+    last = latest["date"]
+    window_start = last - timedelta(days=29)
+    recent = table[table["date"].between(window_start, last)]
+    with theme.card("latest-day", "Latest Prediction"):
+        if latest["label"] == "Insufficient data":
+            st.write("**Insufficient data**")
+            st.write("Insufficient recorded information to assess behavior for this period.")
+        else:
+            theme.flag_status(bool(latest["unusual"]), latest["date"])
+        assessed = int(recent["unusual"].count())
+        if assessed:
+            st.metric("Flagged days · latest 30 days", int(recent["unusual"].sum()))
+        st.caption(f"{window_start} to {last} · ending on this child's latest recorded day")
+        if assessed < len(recent):
+            st.caption(f"{len(recent) - assessed} recorded days in this period could not be assessed.")
+        if latest["imputed"]:
+            theme.note("Some values were missing and were filled in.")
 
-report = None
-try:
-    report = services.behavioral_report(source["daily"], child)
-except services.ModelUnavailableError as exc:
-    show_model_error(exc.status)
-except ValueError as exc:
-    st.error(f"Function 2 could not run on this data: {exc}")
-if report is None:
-    st.session_state.pop(RESEARCH_RESULT, None)
-    st.session_state.pop(PARENT_ACTIVITY_RESULT, None)
-    try:
-        show_urgent(services.behavioral_urgent_report(source["daily"], child))
-    except ValueError as alert_error:
-        st.error(f"Urgent records could not be checked: {alert_error}")
-    st.stop()
+    with theme.card("anomaly-history", "Daily Behavioral Anomaly History"):
+        st.plotly_chart(theme.anomaly_history_figure(table),
+                        config=theme.PLOTLY_CONFIG, width="stretch")
+        theme.screen_reader_text(
+            f"Daily behavioral anomaly history for {child} from {table['date'].min()} to {last}. "
+            f"{int(table['unusual'].sum())} of {table['unusual'].count()} assessed days are flagged. "
+            "Flagged days are amber diamonds; days not flagged are grey circles. "
+            "Days with insufficient data are open squares. "
+            "Each chart point includes its date and status.")
 
-table = report["daily"]
-latest = table.iloc[-1]
-last = latest["date"]
-window_start = last - timedelta(days=29)
-recent = table[table["date"].between(window_start, last)]
-with theme.card("latest-day", "Latest Prediction"):
-    if latest["label"] == "Insufficient data":
-        st.write("**Insufficient data**")
-        st.write("Insufficient recorded information to assess behavior for this period.")
-    else:
-        theme.flag_status(bool(latest["unusual"]), latest["date"])
-    assessed = int(recent["unusual"].count())
-    if assessed:
-        st.metric("Flagged days · latest 30 days", int(recent["unusual"].sum()))
-    st.caption(f"{window_start} to {last} · ending on this child's latest recorded day")
-    if assessed < len(recent):
-        st.caption(f"{len(recent) - assessed} recorded days in this period could not be assessed.")
-    if latest["imputed"]:
-        theme.note("Some values were missing and were filled in.")
+    with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
+        st.caption("Observed differences from typical training values; these are not exact model attributions.")
+        flagged_dates = list(table.loc[table["unusual"], "date"])
+        if not table["unusual"].notna().any():
+            st.write("No days had enough recorded information for a prediction.")
+        elif not flagged_dates:
+            st.write("No flagged days for this child.")
+        else:
+            day = st.selectbox("Flagged day", flagged_dates[::-1], key=f"f2_day_{child}")
+            st.dataframe(services.explanation_table(report["explanations"][day]).head(3),
+                         hide_index=True, width="stretch")
 
-with theme.card("anomaly-history", "Daily Behavioral Anomaly History"):
-    st.plotly_chart(theme.anomaly_history_figure(table),
-                    config=theme.PLOTLY_CONFIG, width="stretch")
-    theme.screen_reader_text(
-        f"Daily behavioral anomaly history for {child} from {table['date'].min()} to {last}. "
-        f"{int(table['unusual'].sum())} of {table['unusual'].count()} assessed days are flagged. "
-        "Flagged days are amber diamonds; days not flagged are grey circles. "
-        "Days with insufficient data are open squares. "
-        "Each chart point includes its date and status.")
-
-with theme.card("flagged-days", "Top 3 Observed Feature Deviations"):
-    st.caption("Observed differences from typical training values; these are not exact model attributions.")
-    flagged_dates = list(table.loc[table["unusual"], "date"])
-    if not table["unusual"].notna().any():
-        st.write("No days had enough recorded information for a prediction.")
-    elif not flagged_dates:
-        st.write("No flagged days for this child.")
-    else:
-        day = st.selectbox("Flagged day", flagged_dates[::-1], key=f"f2_day_{child}")
-        st.dataframe(services.explanation_table(report["explanations"][day]).head(3),
-                     hide_index=True, width="stretch")
-
-show_parent_activity_demo(source, child, table)
-show_urgent(report)
-if os.getenv("C4_F2_LEGACY_VIEW") == "1":
+    show_parent_activity_demo(source, child, table)
+    show_urgent(report)
     show_research_shap(source, child, table)
+
+
+def main():
+    st.set_page_config(page_title="Offline Behavioral Comparison", layout="wide")
+    theme.apply_style()
+    theme.page_header("Behavioral Anomaly Detection")
+    st.caption("Offline legacy comparison · Bundled fictional records.")
+    try:
+        source = services.behavioral_daily_source()
+        if source["source"] != "demo":
+            raise ValueError("The comparison requires bundled fictional records")
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        services.log_assessment_failure("behavioral", "record loading", error)
+        show_unavailable("Fictional monitoring records could not be loaded. Please try again later.")
+        return
+    st.caption("Demo Mode · Fictional data for this assessment.")
+    if not source["child_ids"]:
+        st.info("No fictional monitoring records are available.")
+        return
+    child = st.selectbox("Select child", source["child_ids"], key="f2_child")
+    render(source, child)
+
+
+if __name__ == "__main__":
+    main()

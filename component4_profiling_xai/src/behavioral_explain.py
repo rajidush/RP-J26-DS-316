@@ -118,5 +118,3 @@ def fit_surrogate(scores, masks, groups, seed):
             "lime_rmse": float(np.sqrt(np.average(residual**2, weights=w_test))),
             "lime_mae": float(np.average(abs(residual), weights=w_test)),
             "lime_variance": float(variance)}
-
-

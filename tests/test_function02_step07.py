@@ -5,7 +5,7 @@ import pytest
 from component4_profiling_xai.src.behavioral_explanation_reliability import Review
 from component4_profiling_xai.src.behavioral_profile import ANCHORS
 from component4_profiling_xai.src.behavioral_temporal_explain import TemporalExplanation
-from ui.pages._behavioral_upgrade import adaptive_summary, explanation_text, guidance, recent_behavior, temporal_text
+from ui.legacy_pages._behavioral_upgrade import adaptive_summary, explanation_text, guidance, recent_behavior, temporal_text
 
 
 def profile(feature, deviation, *, available=True, ready=True):

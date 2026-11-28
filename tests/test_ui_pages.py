@@ -6,7 +6,9 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from ui import services
+from parent_dashboard_test_helpers import follow_page_link
+from db.child_profiles import PROFILE_DB_ENV
+from ui import child_selection, services
 
 APP = str(services.ROOT / "ui" / "app.py")
 F1_ERROR = "The emotional wellbeing summary is temporarily unavailable."
@@ -14,10 +16,11 @@ HISTORY = "View Emotional History"
 AI_DETAILS = "Why Did the AI Identify This Pattern?"
 
 
-@pytest.fixture(autouse=True)
-def original_behavioral_view(monkeypatch):
-    # Preserve regression coverage of the original dashboard and frozen model.
-    monkeypatch.setenv("C4_F2_LEGACY_VIEW", "1")
+def run_legacy_comparison():
+    entry = services.ROOT / "ui" / "legacy_pages" / "behavioral_comparison.py"
+    at = AppTest.from_file(str(entry), default_timeout=120).run()
+    assert not at.exception, [e.value for e in at.exception]
+    return at
 
 
 SHAP_PREVIEW = "Research SHAP preview · synthetic data"
@@ -27,11 +30,20 @@ def html_of(at, area):
     return " ".join(str(h.proto) for h in area.get("html"))
 
 
-def run_page(page=None):
+@pytest.fixture(autouse=True)
+def isolated_profiles(tmp_path, monkeypatch):
+    monkeypatch.setenv(PROFILE_DB_ENV, str(tmp_path / "profiles.db"))
+
+
+def run_page(page="emotional_pattern", *, demo=True):
     at = AppTest.from_file(APP, default_timeout=120)
+    if demo:
+        at.session_state[child_selection.DEMO_WIDGET] = True
     at.run()
     if page:
-        at.switch_page(f"pages/{page}.py").run()
+        title = {"emotional_pattern": "Emotional Pattern", "behavioral_anomaly": "Behavioral Anomaly",
+                 "child_profile": "Child Profiles"}[page]
+        follow_page_link(at, at.sidebar, title)
     assert not at.exception, [e.value for e in at.exception]
     return at
 
@@ -40,7 +52,7 @@ def test_research_shap_is_hidden_and_inactive_by_default(temp_db, monkeypatch):
     monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
     monkeypatch.setattr(services, "research_shap_context",
                         lambda *_: pytest.fail("Preview must be inactive"))
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
     assert not any(button.label == "Explain selected day" for button in at.button)
 
@@ -55,7 +67,7 @@ def test_research_shap_is_on_demand_and_clears_changed_selection(temp_db, monkey
         return original(*args)
 
     monkeypatch.setattr(services, "research_shap_report", record)
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert any(expander.label == SHAP_PREVIEW for expander in at.expander)
     assert not calls
     at.selectbox(key="f2_child").select("C033").run()
@@ -91,7 +103,7 @@ def test_research_shap_failure_keeps_existing_cards(temp_db, monkeypatch):
         raise RuntimeError("research-only failure")
 
     monkeypatch.setattr(services, "research_shap_report", unavailable)
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.button(key="f2_research_explain").click().run()
     assert not at.exception
     assert any("Research SHAP preview could not run" in warning.value for warning in at.warning)
@@ -114,7 +126,7 @@ def test_parent_demo_hides_without_local_opt_in(temp_db, monkeypatch, flag, addr
     parent_demo_address(monkeypatch, address)
     monkeypatch.setattr(services, "parent_xai_demo_context",
                         lambda *_: pytest.fail("Hidden demo must remain inactive"))
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert "Activity Update" not in html_of(at, at.main)
     assert not any(button.label == "Show activity update" for button in at.button)
 
@@ -123,7 +135,7 @@ def test_parent_demo_shows_plain_text_and_clears_stale_day(temp_db, monkeypatch)
     monkeypatch.setenv("C4_F2_PARENT_XAI_DEMO", "1")
     monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
     parent_demo_address(monkeypatch, "127.0.0.1")
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert "Activity Update" in html_of(at, at.main)
     assert any("SYNTHETIC DEMO PREVIEW" in item.value for item in at.caption)
     at.selectbox(key="f2_child").select("C008").run()
@@ -158,21 +170,21 @@ def emotional_expanders(at):
 
 
 @pytest.fixture
-def child_with_sessions(temp_db):
+def child_with_sessions(temp_db, monkeypatch):
     for i, emo in enumerate(["calm", "calm", "defensive", "calm", "calm"]):
         services.save_record({
             "child_id": "K1", "session_id": f"K1-{i}", "timestamp": f"2026-07-0{i + 1}T10:00:00Z",
             "risk_level": "low", "emotional_state": emo, "self_regulation_shown": False,
             "escalation_flag": False, "dialogue_turns": 2})
+    sessions = services.sessions_for_child(services.child_session_source(), "K1")
+    monkeypatch.setattr(services, "demo_sessions", lambda: sessions)
 
 
 def test_emotional_pattern_page_with_real_model(child_with_sessions):
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
     assert len(at.get("plotly_chart")) == 1
     assert [e.label for e in emotional_expanders(at)] == [HISTORY, AI_DETAILS]
     assert not at.info
-    assert "Function 1 model" in sidebar and "not loaded" not in sidebar
     card = wellbeing_card(at)
     assert "Your Child&#x27;s Emotional Wellbeing" in html_of(at, card)
     lines = [item.value for item in card.markdown]
@@ -196,7 +208,7 @@ def test_emotional_pattern_page_keeps_prediction_when_xai_is_missing(child_with_
 
 def test_emotional_pattern_page_labels_synthetic_guidance(temp_db):
     at = run_page()
-    at.selectbox[0].set_value("C004").run()
+    at.selectbox(key=child_selection.F1_DEMO_CHILD).set_value("C004").run()
     assert not at.exception
     text = visible_main_text(at)
     assert "SYNTHETIC DEMO DATA" in text
@@ -258,22 +270,22 @@ def test_emotional_pattern_page_has_no_upload_label_or_contract_notice(child_wit
     assert not at.get("file_uploader")
     assert "pending a contract update" not in main
     assert "from the database" not in main                 # no child-count note
-    assert at.selectbox[0].label == "Select Child"
-    assert at.selectbox[0].value == "K1"                   # database children still loaded
+    assert at.main.selectbox[0].label == "Select Child"
+    assert at.main.selectbox[0].value == "K1"              # fixture demo sessions
 
 
 def test_emotional_pattern_page_missing_model_shows_only_the_error(child_with_sessions,
                                                                   tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F1_ARTIFACT_DIR", str(tmp_path))  # empty folder
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
+    main = html_of(at, at.main)
     assert [notice.value for notice in at.info] == [F1_ERROR]
     assert "emotional_pattern_kmeans.pkl" not in visible_main_text(at)
     assert "Emotional Wellbeing" not in main
     assert not at.get("plotly_chart")                      # no chart
     assert not emotional_expanders(at)
-    assert not at.selectbox                                # nothing to select
-    assert "not loaded" in sidebar
+    assert not at.main.selectbox                           # no assessment selector
+    assert "SYNTHETIC DEMO DATA" in visible_main_text(at)
 
 
 def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, monkeypatch):
@@ -288,7 +300,7 @@ def test_emotional_pattern_page_unloadable_model(child_with_sessions, tmp_path, 
 
 # --- Function 2: Behavioral Anomaly page ----------------------------------------------
 
-F2_ERROR = "Function 2 model could not be loaded. No anomaly prediction is shown."
+F2_ERROR = "Behavioral assessment is temporarily unavailable. Please try again later."
 F2_URGENT_TITLE = "Urgent Alerts (rule-based)"
 F2_BANNED = ("threshold", "score", "Days shown", "Weekly Summary")   # never visible on the main page
 
@@ -307,26 +319,26 @@ def visible_main_text(at):
     return text
 
 
-def test_emotional_pattern_is_still_the_default_page(temp_db):
-    at = run_page()
+def test_overview_is_the_default_page(temp_db):
+    at = run_page(None, demo=False)
     main = html_of(at, at.main)
-    assert at.selectbox[0].label == "Select Child"
-    assert "Emotional Wellbeing" in main
-    assert "Behavioral Anomaly Detection" not in main
+    assert "Overview" in main
+    assert not at.main.selectbox
+    assert "Emotional Wellbeing" not in main
 
 
-def test_sidebar_shows_both_model_statuses(temp_db):
+def test_sidebar_omits_both_routine_model_statuses(temp_db):
     sidebar = html_of(at := run_page(), at.sidebar)
-    assert "Function 1 model" in sidebar and "Function 2 model" in sidebar
+    assert "Function 1 model" not in sidebar and "Function 2 model" not in sidebar
     assert "not loaded" not in sidebar
 
 
 def test_behavioral_anomaly_page_with_real_model(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert "Behavioral Anomaly Detection" in main
     assert "Behavioral Anomaly (Function 2)" not in main
-    assert "Research demonstration using synthetic data" in [c.value for c in at.caption]
+    assert "Demo Mode · Fictional data for this assessment." in [c.value for c in at.caption]
     assert at.selectbox(key="f2_child").options[0] == "C001"
     assert len(at.selectbox(key="f2_child").options) == 40
     assert "c4-flag" in main and "c4-badge" not in main
@@ -341,11 +353,11 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
 
 
 def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     text = visible_main_text(at).lower()
     # The helper sees real visible text (so the check below is not vacuous) ...
     assert "flagged days" in text and "behavioral anomaly detection" in text
-    assert "research demonstration using synthetic data" in text
+    assert "demo mode · fictional data for this assessment." in text
     assert "it does not guarantee that the child is safe" in text
     # ... but not the screen-reader-only chart description.
     assert "amber diamonds" not in text
@@ -359,7 +371,7 @@ def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
 
 def test_status_icon_has_a_text_description(temp_db):
     import re
-    at = run_page("behavioral_anomaly")                    # C001: latest day not flagged
+    at = run_legacy_comparison()                    # C001: latest day not flagged
     main = html_of(at, at.main)
     assert re.search(r'aria-label=\\?"2026-09-28: Not flagged: the model found no unusual pattern', main)
     assert re.search(r'alt=\\?"2026-09-28: Not flagged', main)
@@ -371,7 +383,7 @@ def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
     daily = services.behavioral_daily_source()["daily"]
     flagged_last = next(c for c in services.child_ids(daily)
                         if services.behavioral_report(daily, c)["latest"]["unusual"])
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.selectbox(key="f2_child").set_value(flagged_last).run()
     assert not at.exception
     assert "Flagged: the model found an unusual pattern" in html_of(at, at.main)
@@ -379,7 +391,7 @@ def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
 
 
 def test_behavioral_anomaly_page_switches_child(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.selectbox(key="f2_child").set_value("C009").run()
     assert not at.exception
     assert at.selectbox(key="f2_day_C009").value is not None   # C009 has flagged days
@@ -387,10 +399,12 @@ def test_behavioral_anomaly_page_switches_child(temp_db):
 
 def test_behavioral_anomaly_page_missing_model_keeps_urgent_alerts(temp_db, tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))   # empty folder
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
-    assert F2_ERROR in main
-    assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
+    assert [item.value for item in at.main.error] == [F2_ERROR]
+    assert "behavioral_anomaly_pipeline.pkl" not in main and "scikit-learn==1.6.1" not in main
+    assert str(tmp_path) not in main and str(tmp_path) not in at.main.error[0].value
+    assert not at.get("page_link")  # The offline comparison has no dashboard navigation.
     assert "c4-flag" not in main
     assert not at.get("plotly_chart")
     assert at.selectbox(key="f2_child").value == "C001"
@@ -411,10 +425,11 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error_and_safety_s
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {**source, "daily": daily, "child_ids": [child]})
 
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
-    assert F2_ERROR in main
-    assert "behavioral_anomaly_pipeline.pkl" in main and "scikit-learn==1.6.1" in main
+    assert [item.value for item in at.main.error] == [F2_ERROR]
+    assert "behavioral_anomaly_pipeline.pkl" not in main and "scikit-learn==1.6.1" not in main
+    assert str(tmp_path) not in main
     assert "c4-flag" not in main
     assert not at.get("plotly_chart") and not at.dataframe
     assert at.selectbox(key="f2_child").value == child
@@ -429,7 +444,7 @@ def test_behavioral_anomaly_page_shows_insufficient_data_instead_of_a_normal_sta
     daily.loc[:, "language_urgent_flags"] = 2
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {"daily": daily, "child_ids": ["C001"], "source": "demo"})
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert "Insufficient recorded information to assess behavior for this period." in visible_main_text(at)
     assert "c4-flag" not in main and not at.metric
@@ -437,18 +452,43 @@ def test_behavioral_anomaly_page_shows_insufficient_data_instead_of_a_normal_sta
     assert "urgent language flag (2)" in at.dataframe[0].value.iloc[0]["rule matched"]
 
 
+def test_behavioral_parent_messages_distinguish_records_coverage_and_failure(temp_db, monkeypatch, caplog):
+    source = services.behavioral_daily_source()
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: dict(source, child_ids=[]))
+    at = run_legacy_comparison()
+    assert [item.value for item in at.main.info] == ["No fictional monitoring records are available."]
+    assert not at.main.error
+
+    daily = source["daily"].assign(screen_monitor_observed=0, language_monitor_observed=0)
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: dict(source, daily=daily))
+    at.run()
+    assert "insufficient monitoring information" in at.main.info[0].value
+    assert not at.main.error and not at.get("plotly_chart")
+
+    def fail(*args):
+        raise ValueError("private source detail at E:/private/child-record.csv")
+
+    monkeypatch.setattr(services, "behavioral_daily_source", lambda: source)
+    monkeypatch.setattr(services, "behavioral_report", fail)
+    at.run()
+    assert not at.exception and not at.get("plotly_chart")
+    assert [item.value for item in at.main.error] == [F2_ERROR]
+    assert "private" not in visible_main_text(at) and "private" not in caplog.text
+    assert "assessment execution (ValueError)" in caplog.text
+
+
 def test_function2_failure_leaves_function1_page_working(child_with_sessions, tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
     at = run_page()
-    main, sidebar = html_of(at, at.main), html_of(at, at.sidebar)
+    main = html_of(at, at.main)
     assert F1_ERROR not in main
     assert "**Calm and reflective**" in [item.value for item in wellbeing_card(at).markdown]
-    assert "Function 2 model" in sidebar and "not loaded" in sidebar
+    assert F2_ERROR not in main
 
 
 @pytest.mark.parametrize("page", ["emotional_pattern", "behavioral_anomaly", "child_profile"])
 def test_every_page_renders(temp_db, page):
-    run_page(page)
+    run_page(page, demo=False)
 
 
 def test_sidebar_has_no_data_and_admin_section(temp_db):
@@ -463,7 +503,7 @@ def test_sidebar_has_no_data_and_admin_section(temp_db):
 
 def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_db):
     from datetime import timedelta
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     for child in ["C001", "C009"]:
         at.selectbox(key="f2_child").set_value(child).run()
         assert not at.exception
@@ -476,7 +516,7 @@ def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_
 
 
 def test_explanations_remain_descriptive_without_technical_expanders(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert not at.expander
     assert not at.get("file_uploader")
     assert "not exact model attributions" in " ".join(c.value for c in at.caption)
@@ -486,10 +526,13 @@ def test_stale_upload_state_does_not_change_demo_source(temp_db):
     at = AppTest.from_file(APP, default_timeout=120)
     # An upload left over from the old UI must not override the bundled source.
     at.session_state["f2_csv"] = "invalid stale CSV"
+    at.session_state[child_selection.DEMO_WIDGET] = True
     at.run()
-    at.switch_page("pages/behavioral_anomaly.py").run()
+    follow_page_link(at, at.sidebar, "Behavioral Anomaly")
     assert not at.exception
     assert not at.error
     assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]
-    assert "Demo" not in " ".join(c.value for c in at.caption)
-    assert not at.expander and not at.get("file_uploader")
+    assert "Demo Mode · Fictional data" in " ".join(c.value for c in at.main.caption)
+    assert at.selectbox(key="f2_activity_C001").label == "Activity date"
+    assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
+    assert not at.get("file_uploader")

@@ -1,6 +1,6 @@
 import streamlit as st
 
-from ui import services, theme
+from ui import child_selection, services, theme
 from ui.parent_guidance_view import (
     PARENT_PATTERN_LABELS,
     emotional_change_view,
@@ -12,24 +12,35 @@ MODEL_UNAVAILABLE = "The emotional wellbeing summary is temporarily unavailable.
 
 
 def show_model_error():
+    services.log_assessment_failure("emotional", "assessment files unavailable")
     st.info(MODEL_UNAVAILABLE)
     st.stop()
 
+
+child_selection.show_assessment_context("Emotional Pattern")
+st.caption("SYNTHETIC DEMO DATA · These sessions are fictional.")
 
 f1_status = services.function1_status()
 if not f1_status["available"]:
     show_model_error()
 
-source = services.child_session_source()
-child = st.selectbox("Select Child", source["child_ids"])
-if source["source"] == "demo":
-    st.caption("SYNTHETIC DEMO DATA · These sessions are fictional.")
+try:
+    source = services.child_session_source(demo_only=True)
+except (ImportError, OSError, ValueError, RuntimeError) as error:
+    services.log_assessment_failure("emotional", "record loading", error)
+    st.error("Fictional session records could not be loaded. Please try again later.")
+    st.stop()
+if not source["child_ids"]:
+    st.info("No fictional session records are available.")
+    st.stop()
+child = st.selectbox("Select Child", source["child_ids"], key=child_selection.F1_DEMO_CHILD)
 
 try:
     report = services.emotional_pattern_report(services.sessions_for_child(source, child), child)
 except services.ModelUnavailableError:
     show_model_error()
-except ValueError:
+except (ImportError, OSError, ValueError, RuntimeError) as error:
+    services.log_assessment_failure("emotional", "assessment execution", error)
     st.info("The recorded sessions could not be used to describe an emotional pattern.")
     st.stop()
 

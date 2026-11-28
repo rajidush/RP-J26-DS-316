@@ -129,7 +129,7 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
     padding: 1.4rem 2rem 1.5rem;
     margin-bottom: .6rem;
 }}
-.c4-card-title {{ color: {COLORS["navy"]}; font-size: 1.35rem; font-weight: 700; margin: 0 0 .2rem; }}
+.c4-card-title {{ color: {COLORS["navy"]}; font-size: 1.35rem; font-weight: 700; margin: 0 0 .2rem; overflow-wrap: anywhere; }}
 .c4-card-text {{ color: {COLORS["muted"]}; margin: 0; }}
 
 /* Compact cards on the qualitative Function 02 page. */
@@ -201,12 +201,18 @@ h1, h2, h3 {{ color: {COLORS["navy"]}; letter-spacing: -0.01em; }}
     text-transform: uppercase; margin: 1.6rem 0 .3rem .6rem;
 }}
 [class*="st-key-nav-"] a {{ border-radius: 10px; padding: .6rem .8rem; }}
-[class*="st-key-nav-"] a p {{ color: {COLORS["text"]}; font-size: 1.08rem; }}
+[class*="st-key-nav-"] a p {{ color: {COLORS["text"]}; font-size: 1.08rem; white-space: normal; overflow-wrap: anywhere; }}
 [class*="st-key-nav-"] a span {{ color: {COLORS["text"]}; }}
 [class*="st-key-nav-"] [data-testid="stIconMaterial"] {{ font-size: 1.6rem; margin-right: .35rem; }}
 [class*="st-key-navsm-"] [data-testid="stIconMaterial"] {{ font-size: 1.15rem; }}
 [class*="st-key-navsm-"] a {{ border-radius: 8px; padding: .3rem .8rem; }}
 [class*="st-key-navsm-"] a p, [class*="st-key-navsm-"] a span {{ color: {COLORS["muted"]}; font-size: .9rem; }}
+
+@media (max-width: 600px) {{
+    [data-testid="stMainBlockContainer"], .block-container {{ padding-inline: 1rem; }}
+    [class*="st-key-card-"] {{ padding-inline: 1rem; }}
+    .c4-title {{ font-size: 2rem; }}
+}}
 """
 
 _PEOPLE_ICON = (
@@ -231,7 +237,7 @@ def active_nav_css(key):
     </style>""")
 
 
-def sidebar_brand(name_lines=("Child Behavior", "Monitoring")):
+def sidebar_brand(name_lines=("Parent Dashboard",)):
     st.sidebar.html(
         f'<div class="c4-brand">{svg_img(_PEOPLE_ICON)}<div class="c4-brand-name">'
         f'{"<br>".join(escape(line) for line in name_lines)}</div></div>'

@@ -21,7 +21,7 @@ from .src.behavioral_explanation_reliability import assess_daily, assess_tempora
 from .src.behavioral_profile import BUNDLE, ProfileConfig, profiles, score_history
 from .src.behavioral_synthetic import build_dataset
 from .src.urgent_alerts import urgent_alerts
-from ui.pages._behavioral_upgrade import explanation_text, guidance, historical_comparison, recent_behavior, temporal_text
+from ui.legacy_pages._behavioral_upgrade import explanation_text, guidance, historical_comparison, recent_behavior, temporal_text
 
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt

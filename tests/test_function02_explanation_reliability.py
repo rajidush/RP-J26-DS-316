@@ -13,7 +13,7 @@ from component4_profiling_xai.src.behavioral_explanation_reliability import (
 from component4_profiling_xai.src.behavioral_profile import BUNDLE, profiles, score_history
 from component4_profiling_xai.src.behavioral_temporal_explain import TemporalExplanation
 from ui import services
-from ui.pages._behavioral_upgrade import explanation_text, temporal_text
+from ui.legacy_pages._behavioral_upgrade import explanation_text, temporal_text
 
 
 @pytest.fixture(scope="module")

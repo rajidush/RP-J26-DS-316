@@ -1,7 +1,7 @@
 import streamlit as st
 
 from ui import services, theme
-from ui.pages._shared import session_details, sessions_dataframe
+from ui.legacy_pages._shared import session_details, sessions_dataframe
 
 theme.page_header("Sessions", "All Component 3 sessions in the database, newest first.")
 

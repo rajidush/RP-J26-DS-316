@@ -9,7 +9,7 @@ from component4_profiling_xai.src.behavioral_temporal_explain import (
     SCORE_ATOL, compare_contributions, explain_temporal,
 )
 from ui import services
-from ui.pages._behavioral_upgrade import temporal_text
+from ui.legacy_pages._behavioral_upgrade import temporal_text
 
 
 @pytest.fixture

@@ -7,7 +7,7 @@ from component4_profiling_xai.evaluate_adaptive_profile import ONSET, RECOVERY, 
 from component4_profiling_xai.src.behavioral_adaptive_profile import AdaptiveConfig, adaptive_profiles
 from component4_profiling_xai.src.behavioral_profile import BUNDLE, ProfileConfig, profiles, score_history
 from ui import services
-from ui.pages._behavioral_upgrade import adaptive_summary, adaptive_update_caption, historical_comparison
+from ui.legacy_pages._behavioral_upgrade import adaptive_summary, adaptive_update_caption, historical_comparison
 
 
 @pytest.fixture(scope="module")

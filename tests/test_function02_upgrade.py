@@ -14,7 +14,8 @@ from component4_profiling_xai.src.behavioral_explain import explain
 from component4_profiling_xai.src.behavioral_profile import (
     BUNDLE, ProfileConfig, TrendConfig, priority, profiles, score_history, temporal,
 )
-from ui import services
+from parent_dashboard_test_helpers import follow_page_link
+from ui import child_selection, services
 
 
 @pytest.fixture
@@ -78,7 +79,7 @@ def test_group_explanations_match_actual_scoring(sample):
 
 def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_path):
     from component4_profiling_xai.src.behavioral_explanation_reliability import assess_temporal, temporal_evidence
-    from ui.pages._behavioral_upgrade import recent_behavior, temporal_text
+    from ui.legacy_pages._behavioral_upgrade import recent_behavior, temporal_text
 
     def blocked(*args, **kwargs):
         raise AssertionError("Outbound connection attempted during local inference")
@@ -102,13 +103,15 @@ def test_offline_parent_page_child_date_and_urgent_override(monkeypatch, tmp_pat
     missing_date = daily.at[missing_index, "date"]
     monkeypatch.setattr(services, "behavioral_daily_source", lambda: {**source, "daily": daily})
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'offline.db').as_posix()}")
-    page = AppTest.from_file(str(services.ROOT / "ui/app.py"), default_timeout=45).run()
+    page = AppTest.from_file(str(services.ROOT / "ui/app.py"), default_timeout=45)
+    page.session_state[child_selection.DEMO_WIDGET] = True
+    page.run()
     assert not page.exception
     navigation = " ".join(str(link.proto) for link in page.get("page_link"))
     assert 'label: "Emotional Pattern"' in navigation
     assert 'label: "Behavioral Anomaly"' in navigation
-    assert "Research" not in navigation and "Child Profile" not in navigation
-    page.switch_page("pages/behavioral_anomaly.py").run()
+    assert "Research" not in navigation and 'label: "Child Profile"' not in navigation
+    follow_page_link(page, page.sidebar, "Behavioral Anomaly")
     assert not page.exception
     date_input = page.selectbox(key="f2_activity_C001")
     date_input.set_value(urgent_date).run()
@@ -164,7 +167,7 @@ def test_local_research_interface():
     assert any("Synthetic benchmark" in message.value for message in page.warning)
 
 def test_qualitative_temporal_summary_distinguishes_c014_carryover_and_active_change():
-    from ui.pages._behavioral_upgrade import recent_behavior
+    from ui.legacy_pages._behavioral_upgrade import recent_behavior
 
     source = services.behavioral_daily_source()
     rows = services._behavioral_child_rows(source["daily"], "C014")
@@ -186,7 +189,7 @@ def test_qualitative_temporal_summary_distinguishes_c014_carryover_and_active_ch
 def test_qualitative_explanations_distinguish_counts_from_attributions():
     from component4_profiling_xai.src.behavioral_explanation_reliability import Review
     from component4_profiling_xai.src.behavioral_profile import ANCHORS
-    from ui.pages._behavioral_upgrade import explanation_text, guidance, observed_summary
+    from ui.legacy_pages._behavioral_upgrade import explanation_text, guidance, observed_summary
 
     row = pd.Series(0.0, index=ANCHORS)
     result = {"shap": {"Screen activity": 0.8, "Language activity": -0.1},
@@ -227,10 +230,11 @@ def test_dashboard_distinguishes_safety_coverage_and_adaptive_history(monkeypatc
     rows.at[partial_with_hit, "screen_self_harm_imagery_incidents"] = 1
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {"source": "demo", "daily": rows, "child_ids": [child]})
+    monkeypatch.setattr(services, "enhanced_bundle_bytes", lambda: None)
     app = AppTest.from_string(
         "from ui import services\n"
-        "from ui.pages._behavioral_upgrade import render\n"
-        "render(services.behavioral_daily_source(), None)"
+        "from ui.legacy_pages._behavioral_upgrade import render\n"
+        "render(services.behavioral_daily_source())"
     ).run()
     assert not app.exception
     selector = f"f2_activity_{child}"

@@ -8,6 +8,13 @@ venv/
 
 # Local databases (db/ defaults to project.db)
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
 
 # Local model weights - never commit these, too large for git
 *.gguf

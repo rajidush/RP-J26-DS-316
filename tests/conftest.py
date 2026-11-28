@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import db  # noqa: E402
+from parent_dashboard_test_helpers import follow_page_link  # noqa: E402
 
 
 @pytest.fixture
@@ -17,3 +18,8 @@ def temp_db(tmp_path):
     engine = db.init_db(f"sqlite:///{tmp_path / 'test.db'}")
     yield engine
     engine.dispose()
+
+
+@pytest.fixture
+def navigate_dashboard():
+    return lambda at, title: follow_page_link(at, at.sidebar, title)
