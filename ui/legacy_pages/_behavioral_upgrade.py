@@ -218,10 +218,15 @@ def render(source, child=None):
                 st.write(f"Child: {child}")
         daily = services._behavioral_child_rows(source["daily"], child)
         with dates:
-            day = child_selection.behavioral_date_picker(
-                "Activity date", daily["date"].tolist()[::-1], f"f2_activity_{child}",
-            )
-    assessment = child_selection.enhanced_demo_assessment(source, child, day)
+            dates = daily["date"].tolist()[::-1]
+            if source["source"] == "upload":
+                key = f"{child_selection.CSV_WIDGET_PREFIX}date_{source['identity']}_{child}"
+                if st.session_state.get(key) not in dates:
+                    st.session_state[key] = dates[0]
+                day = st.selectbox("Activity date", dates, index=None, key=key)
+            else:
+                day = child_selection.behavioral_date_picker("Activity date", dates, f"f2_activity_{child}")
+    assessment = child_selection.enhanced_assessment(source, child, day)
     daily = assessment.rows
     index = daily.index[-1]
     selected_rows = daily.loc[[index]]

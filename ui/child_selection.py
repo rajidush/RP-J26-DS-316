@@ -27,6 +27,8 @@ F2_SAFETY_DATE = "dashboard_f2_safety_date"
 _ENHANCED_RESULT = "dashboard_enhanced_result"
 ACTIVITY_PERIOD = "dashboard_activity_period"
 _ACTIVITY_RESULT = "dashboard_activity_result"
+CSV_ASSESSMENT_WIDGET = "dashboard_csv_assessment"
+CSV_WIDGET_PREFIX = "f2_csv_"
 
 
 def _profile_labels(profiles):
@@ -59,9 +61,18 @@ def clear_behavioral_dates():
 
 def _change_mode():
     for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS, _F2_DEMO_CONTEXT,
-                F2_SAFETY_DATE, _ENHANCED_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT):
+                F2_SAFETY_DATE, _ENHANCED_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT,
+                CSV_ASSESSMENT_WIDGET, "f2_research_shap_result", "f2_parent_activity_result"):
         st.session_state.pop(key, None)
     clear_behavioral_dates()
+    clear_csv_assessment()
+
+
+def clear_csv_assessment():
+    st.session_state.pop(_ENHANCED_RESULT, None)
+    for key in list(st.session_state.keys()):
+        if key.startswith(CSV_WIDGET_PREFIX):
+            del st.session_state[key]
 
 
 def demo_mode_active():
@@ -149,14 +160,19 @@ def safety_demo_summary(source, child, through=None):
     if rows.empty:
         return safety_summary.SafetySummary()
     through = through or _assessment_date(rows["date"].unique())
-    return safety_summary.summarize(enhanced_demo_assessment(source, child, through))
+    return safety_summary.summarize(enhanced_assessment(source, child, through))
 
 
-def enhanced_demo_assessment(source, child, through):
-    rows = safety_summary.records_for(source, child)
+def enhanced_assessment(source, child, through):
+    if source["source"] == "upload" and not demo_mode_active() and child in source["child_ids"]:
+        daily = source["daily"]
+        rows = daily.loc[daily["child_id"].eq(child)]
+    else:
+        rows = safety_summary.records_for(source, child)
     rows = rows.loc[rows["date"].le(through)].sort_values("date").reset_index(drop=True)
     bundle_bytes = services.enhanced_bundle_bytes()
-    context = (source["source"], child, through, demo_mode_active(), bundle_bytes)
+    context = (source["source"], source.get("identity"), source.get("revision"),
+               child, through, demo_mode_active(), bundle_bytes)
     cached = st.session_state.get(_ENHANCED_RESULT)
     if cached and cached[0] == context and cached[1].equals(rows):
         return cached[2]
@@ -233,12 +249,13 @@ def render_demo_control():
             st.caption("Demo Mode uses fictional data. Each assessment has its own demo child selector.")
 
 
-def show_assessment_context(title):
+def show_assessment_context(title, *, show_title=True):
     """Stop before scoring unless the parent explicitly enabled Demo Mode."""
     if demo_mode_active():
         return
 
-    theme.page_header(title)
+    if show_title:
+        theme.page_header(title)
     label = selected_profile_label()
     if label is None:
         st.info("Select a child profile in the sidebar, or turn on Demo Mode to explore fictional data.")

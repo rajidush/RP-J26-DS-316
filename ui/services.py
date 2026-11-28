@@ -774,6 +774,16 @@ def behavioral_daily_source(uploaded_csv=None):
     return {"source": source, "daily": daily, "child_ids": child_ids(daily)}
 
 
+def behavioral_external_source(filename):
+    """Read and identify the exact local file snapshot used for assessment."""
+    path = Path(filename).expanduser().resolve()
+    contents = path.read_bytes()
+    source = behavioral_daily_source(BytesIO(contents))
+    source["identity"] = sha256(os.fsencode(path)).hexdigest()
+    source["revision"] = sha256(contents).digest()
+    return source
+
+
 def weekly_summary(table):
     """Monday-to-Sunday weeks from a behavioral_report daily table."""
     week = pd.to_datetime(table["date"]).dt.to_period("W-SUN").dt.start_time.dt.date
