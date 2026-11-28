@@ -5,11 +5,12 @@ from uuid import uuid4
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
+from component4_profiling_xai.src import behavioral_profile
 
 from parent_dashboard_test_helpers import follow_page_link
 from test_dashboard_navigation import APP, main_text, profiles  # noqa: F401
 from test_safety_notifications import (  # noqa: F401
-    FIRST, LAST, MIDDLE, daily, isolated_app_database, predictions, source_for,
+    FIRST, LAST, MIDDLE, daily, isolated_app_database, predictions, source_for, summarize_rows,
 )
 from ui import activity_summary as activity, child_selection as selection, safety_summary as safety, services
 
@@ -63,7 +64,7 @@ def test_duplicate_days_and_mixed_identities_rejected(daily):
 
 def test_assessment_counts_use_unique_dates_and_coverage(daily, predictions):
     rows = safety.records_for(source_for(daily), "demo-a")
-    reviewed = safety.summarize(rows)
+    reviewed = summarize_rows(rows)
     duplicate = reviewed.history(safety.URGENT)[0]
     distinct = safety.Notification(duplicate.date, safety.URGENT, duplicate.context, "Another rule")
     reviewed = replace(reviewed, notifications=reviewed.notifications + (duplicate, distinct))
@@ -76,11 +77,11 @@ def test_assessment_counts_use_unique_dates_and_coverage(daily, predictions):
 
 
 def test_missing_model_preserves_safety_counts(daily, tmp_path, monkeypatch):
-    monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))
+    monkeypatch.setattr(behavioral_profile, "BUNDLE", tmp_path / "selected.joblib")
     rows = safety.records_for(source_for(daily), "demo-a")
-    reviewed = safety.summarize(rows)
+    reviewed = summarize_rows(rows)
     result = activity.summarize(rows, LAST, 7).assessment_counts(reviewed)
-    assert reviewed.behavioral_message == safety.BEHAVIOR_FAILED
+    assert reviewed.behavioral_message == safety.MODEL_UNAVAILABLE
     assert result.unusual_days is None and result.assessed_days == 0
     assert result.urgent_days == 3
 

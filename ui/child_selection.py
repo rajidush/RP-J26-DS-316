@@ -23,7 +23,7 @@ F2_DEMO_CHILD = "f2_child"
 OVERVIEW_DEMO_RESULTS = "overview_demo_results"
 _F2_DEMO_CONTEXT = "dashboard_f2_demo_context"
 F2_SAFETY_DATE = "dashboard_f2_safety_date"
-_SAFETY_RESULT = "dashboard_safety_result"
+_ENHANCED_RESULT = "dashboard_enhanced_result"
 ACTIVITY_PERIOD = "dashboard_activity_period"
 _ACTIVITY_RESULT = "dashboard_activity_result"
 
@@ -58,7 +58,7 @@ def clear_behavioral_dates():
 
 def _change_mode():
     for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS, _F2_DEMO_CONTEXT,
-                F2_SAFETY_DATE, _SAFETY_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT):
+                F2_SAFETY_DATE, _ENHANCED_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT):
         st.session_state.pop(key, None)
     clear_behavioral_dates()
 
@@ -72,7 +72,7 @@ def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
     def select(child):
         st.session_state[_F2_DEMO_CONTEXT] = child
         st.session_state.pop(F2_SAFETY_DATE, None)
-        st.session_state.pop(_SAFETY_RESULT, None)
+        st.session_state.pop(_ENHANCED_RESULT, None)
         st.session_state.pop(_ACTIVITY_RESULT, None)
         clear_behavioral_dates()
         st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
@@ -134,19 +134,22 @@ def safety_demo_summary(source, child, through=None):
     if rows.empty:
         return safety_summary.SafetySummary()
     through = through or _assessment_date(rows)
-    rows = rows[rows["date"] <= through]
-    context = (source["source"], child, through, demo_mode_active(),
-               artifact_revisions(services.f2_artifact_dir(), services.F2_ARTIFACT_FILES),
-               services.F2_CONTEXT_DAYS, services.F2_TOP_FEATURES)
-    cached = st.session_state.get(_SAFETY_RESULT)
+    return safety_summary.summarize(enhanced_demo_assessment(source, child, through))
+
+
+def enhanced_demo_assessment(source, child, through):
+    rows = safety_summary.records_for(source, child)
+    rows = rows.loc[rows["date"].le(through)].sort_values("date").reset_index(drop=True)
+    bundle_bytes = services.enhanced_bundle_bytes()
+    context = (source["source"], child, through, demo_mode_active(), bundle_bytes)
+    cached = st.session_state.get(_ENHANCED_RESULT)
     if cached and cached[0] == context and cached[1].equals(rows):
         return cached[2]
-    result = safety_summary.summarize(rows)
-    if (result.behavioral_message != safety_summary.BEHAVIOR_FAILED
-            and result.urgent_message != safety_summary.URGENT_FAILED):
-        st.session_state[_SAFETY_RESULT] = (context, rows.copy(), result)
+    result = services.enhanced_behavioral_assessment(rows, child, through, bundle_bytes)
+    if result.status == "available" and result.urgent_review is not None:
+        st.session_state[_ENHANCED_RESULT] = (context, rows.copy(), result)
     else:
-        st.session_state.pop(_SAFETY_RESULT, None)
+        st.session_state.pop(_ENHANCED_RESULT, None)
     return result
 
 

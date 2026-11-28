@@ -2,26 +2,14 @@
 
 from dataclasses import dataclass
 from datetime import date
-from math import isfinite
-
-from ui import services
 
 
 URGENT = "Urgent safety concern"
 BEHAVIORAL = "Behavioral observation"
 NO_RECORDS = "No fictional monitoring records are available for this selection."
 BEHAVIOR_FAILED = "The behavioral assessment could not be generated."
+MODEL_UNAVAILABLE = "The behavioral assessment is temporarily unavailable."
 URGENT_FAILED = "The urgent safety review could not be completed."
-
-# Present observed deviations using everyday terms. Omit scores and imputed values.
-_OBSERVATIONS = {
-    "screen_incidents": "screen activity flags",
-    "screen_night_incidents": "screen activity flags at night",
-    "language_flags": "language flags",
-    "language_night_flags": "language flags at night",
-    "total_risk_events": "screen and language flags",
-    "night_risk_events": "screen and language flags at night",
-}
 
 
 @dataclass(frozen=True)
@@ -58,22 +46,10 @@ class SafetySummary:
         return tuple(item for item in self.notifications if category is None or item.category == category)
 
 
-def _observed_difference(explanation):
-    if explanation is not None:
-        for row in explanation.itertuples():
-            label = _OBSERVATIONS.get(row.feature)
-            if label and isfinite(row.observed) and isfinite(row.typical) and row.observed != row.typical:
-                direction = "more" if row.direction == "higher than typical" else "fewer"
-                return f"The records show {direction} {label} than on typical comparison days."
-    return ""
-
-
-def _urgent_notifications(rows):
-    try:
-        alerts, available, complete = services.behavioral_urgent_review(rows)
-    except (ImportError, OSError, ValueError, RuntimeError) as error:
-        services.log_assessment_failure("safety", "urgent rule review", error)
+def _urgent_notifications(rows, review):
+    if review is None:
         return [], URGENT_FAILED, "", frozenset(), frozenset()
+    alerts, available, complete = review
 
     items = [
         Notification(day.date, URGENT, "Function 02 · Urgent safety rules",
@@ -94,49 +70,44 @@ def _urgent_notifications(rows):
             frozenset(rows.loc[complete, "date"]))
 
 
-def _behavioral_notifications(rows):
-    try:
-        observed = services.behavioral_observed_days(rows)
-        if not observed.any():
-            return [], "There is insufficient monitoring information to assess unusual activity.", None, frozenset()
-        report = services.behavioral_report(rows, rows.iloc[0]["child_id"])
-    except (ImportError, OSError, ValueError, RuntimeError) as error:
-        services.log_assessment_failure("behavioral", "safety assessment", error)
+def _behavioral_notifications(assessment):
+    if assessment.status == "model_unavailable":
+        return [], MODEL_UNAVAILABLE, None, frozenset()
+    if assessment.status == "failed":
         return [], BEHAVIOR_FAILED, None, frozenset()
 
-    assessed_dates = rows.loc[observed, "date"]
-    predictions = report["daily"]
-    assessed = predictions[predictions["date"].isin(assessed_dates)]
-    items = []
-    for day in assessed.loc[assessed["unusual"]].itertuples():
-        description = "Activity on this day differed from typical patterns."
-        difference = _observed_difference(report["explanations"].get(day.date))
-        if difference:
-            description = f"{description} {difference}"
-        items.append(Notification(
-            day.date, BEHAVIORAL, "Function 02 · Behavioral Anomaly assessment", description,
-            "Some activity measurements were missing that day." if day.imputed else "",
-        ))
-    latest = assessed[assessed["date"] == rows.iloc[-1]["date"]]
+    history = assessment.history
+    observed = history["flag"].notna()
+    assessed = history.loc[observed]
+    if assessed.empty:
+        return [], "There is insufficient monitoring information to assess unusual activity.", None, frozenset()
+    imputed = assessment.matrix.loc[:, assessment.bundle["features"]].isna().any(axis=1)
+    items = [
+        Notification(
+            day.date, BEHAVIORAL, "Function 02 · Behavioral Anomaly assessment",
+            "Activity on this day differed from typical patterns.",
+            "Some activity measurements were missing that day." if imputed.at[day.Index] else "",
+        )
+        for day in assessed.loc[assessed["flag"]].itertuples()
+    ]
+    latest = history["flag"].iloc[-1]
     message = ("The available assessment identified days with unusual activity." if items
                else "No unusual activity was identified on the assessed days.")
-    if not observed.all():
+    if len(assessed) < len(history):
         message += " Some recorded days had too little information to assess."
-    if assessed["imputed"].any():
+    if imputed.loc[assessed.index].any():
         message += " Some assessed days had missing activity measurements."
-    latest_unusual = bool(latest.iloc[0]["unusual"]) if not latest.empty else None
+    latest_unusual = bool(latest) if observed.iloc[-1] else None
     return items, message, latest_unusual, frozenset(assessed["date"])
 
 
-def summarize(rows):
-    """Summarize one child's records for the selected assessment period."""
+def summarize(assessment):
+    """Present the enhanced assessment and its independent urgent review."""
+    rows = assessment.rows
     if rows.empty:
         return SafetySummary()
-    if rows["child_id"].nunique() != 1:
-        raise ValueError("Safety notifications require records for one child")
-    rows = rows.sort_values("date").reset_index(drop=True)
-    urgent, urgent_message, urgent_coverage, reviewed, complete = _urgent_notifications(rows)
-    behavioral, behavioral_message, latest, assessed = _behavioral_notifications(rows)
+    urgent, urgent_message, urgent_coverage, reviewed, complete = _urgent_notifications(rows, assessment.urgent_review)
+    behavioral, behavioral_message, latest, assessed = _behavioral_notifications(assessment)
     start, end = rows["date"].iloc[[0, -1]]
     coverage = []
     if rows["date"].nunique() < (end - start).days + 1:

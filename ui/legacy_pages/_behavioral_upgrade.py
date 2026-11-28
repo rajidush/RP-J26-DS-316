@@ -1,9 +1,7 @@
 """Qualitative Function 02 view backed by the deployed local detector."""
 from datetime import timedelta
 
-import joblib
 import pandas as pd
-import sklearn
 import streamlit as st
 
 from component4_profiling_xai.src.behavioral_anomaly import assessable_days
@@ -11,11 +9,9 @@ from component4_profiling_xai.src.behavioral_adaptive_profile import adaptive_pr
 from component4_profiling_xai.src.behavioral_explanation_reliability import (
     EXPLANATION_ERRORS, assess_daily, assess_temporal, daily_evidence, temporal_evidence,
 )
-from component4_profiling_xai.src.behavioral_profile import (
-    ANCHORS, BUNDLE, ProfileConfig, profiles, score_history,
-)
+from component4_profiling_xai.src.behavioral_profile import ANCHORS, ProfileConfig
 from component4_profiling_xai.src.behavioral_xai_runtime import ExplanationRequest
-from ui import services, theme
+from ui import child_selection, safety_summary, services, theme
 
 GROUPS = {
     "Screen activity": "the screen activity records",
@@ -36,20 +32,6 @@ SAFETY_LABELS = {
     "self-harm language flag": "Language about self-harm",
     "self-harm imagery on screen": "Images that may show self-harm",
 }
-
-
-@st.cache_resource
-def load_bundle(path, modified):
-    bundle = joblib.load(path)
-    if bundle["sklearn_version"] != sklearn.__version__:
-        raise ValueError("The detector needs the scikit-learn version recorded during training.")
-    return bundle
-
-
-def selected_bundle():
-    if not BUNDLE.is_file():
-        return None
-    return load_bundle(BUNDLE, BUNDLE.stat().st_mtime_ns)
 
 
 def recent_behavior(history, day, minimum):
@@ -224,8 +206,7 @@ def safety_text(reasons):
                      for reason in reasons.split("; "))
 
 
-def render(source, bundle, child=None):
-    config = ProfileConfig(**bundle["profile"]) if bundle else ProfileConfig()
+def render(source, child=None):
     with theme.card("f2-selection"):
         children, dates = st.columns(2)
         with children:
@@ -247,15 +228,13 @@ def render(source, bundle, child=None):
         st.warning(f"**Urgent safety review · {label} ({alert.date})**  \n"
                    f"{safety_text(alert.reasons)}. Review the record promptly and seek appropriate human support.")
 
-    index = daily.index[daily["date"].eq(day)][0]
-    matrix, details = profiles(daily, config)
-    if bundle:
-        try:
-            history = score_history(daily, matrix, bundle)
-        except (ValueError, KeyError, FloatingPointError):
-            services.log_assessment_failure("behavioral", "adaptive activity assessment", exc)
-            bundle = None
-    if bundle is None:
+    assessment = child_selection.enhanced_demo_assessment(source, child, day)
+    daily = assessment.rows
+    index = daily.index[-1]
+    matrix, details, bundle = assessment.matrix, assessment.details, assessment.bundle
+    config = ProfileConfig(**bundle["profile"]) if bundle is not None else ProfileConfig()
+    history = assessment.history
+    if history is None:
         history = daily[["date"]].assign(flag=pd.NA, ewma_active=False, cusum_active=False,
                                          ewma_alert=False, cusum_alert=False)
     flag = history.at[index, "flag"]
@@ -289,14 +268,19 @@ def render(source, bundle, child=None):
             st.markdown("**The AI detected an unusual pattern in this day’s records.**")
         elif assessed:
             st.markdown("**The AI detected no unusual pattern in this day’s records.**")
+        elif assessment.status == "failed":
+            st.write(safety_summary.BEHAVIOR_FAILED)
+        elif assessment.status == "model_unavailable":
+            st.write(safety_summary.MODEL_UNAVAILABLE)
         else:
             st.markdown("**The AI couldn’t assess this day with the records available.**")
 
     first, second = st.columns(2)
     with first:
         with theme.card("f2-observed", "Has Anything Changed?"):
-            comparison_text, update_caption, adaptive_ready = historical_comparison(
-                daily, matrix, details, history["flag"], index, day, config,
+            comparison_text, update_caption, adaptive_ready = (
+                historical_comparison(daily, matrix, details, history["flag"], index, day, config)
+                if matrix is not None else ("A usual activity comparison is unavailable for this day.", None, None)
             )
             st.write(comparison_text)
             if update_caption:
@@ -312,7 +296,8 @@ def render(source, bundle, child=None):
         with theme.card("f2-xai", "Why Did the AI Say This?"):
             st.write(explanation_text(result, flagged, daily_review))
         with theme.card("f2-guidance", "How Can You Help?"):
-            advice, question = guidance(matrix.loc[index], daily_review, active, selected_urgent)
+            row = matrix.loc[index] if matrix is not None else pd.Series(dtype=float)
+            advice, question = guidance(row, daily_review, active, selected_urgent)
             st.write(advice)
             if question:
                 st.markdown(f"**Try Asking** · “{question}”")
@@ -333,6 +318,9 @@ def render(source, bundle, child=None):
                 for alert in older.sort_values("date", ascending=False).itertuples(index=False):
                     st.write(f"**{alert.date}** · {safety_text(alert.reasons)}")
     with theme.card("f2-availability", "Data Availability"):
+        if matrix is None:
+            st.write("Activity data availability could not be checked.")
+            return
         baseline_counts = details.loc[index, "n"].reindex(ANCHORS)
         st.write("Earlier activity records are available." if baseline_counts.ge(config.minimum).all()
                  else "There are few earlier activity records.")

@@ -27,7 +27,8 @@ def show_summary(summary, safety):
         with unusual:
             st.metric("Days with unusual activity", counts.unusual_days)
             if counts.unusual_days is None:
-                st.caption(safety.behavioral_message if safety.behavioral_message == safety_summary.BEHAVIOR_FAILED
+                st.caption(safety.behavioral_message if safety.behavioral_message in (
+                           safety_summary.BEHAVIOR_FAILED, safety_summary.MODEL_UNAVAILABLE)
                            else "No days could be assessed in this period.")
             else:
                 st.caption(f"Across {counts.assessed_days} assessed days.")

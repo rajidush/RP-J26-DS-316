@@ -15,6 +15,7 @@ import os
 import random
 import sys
 import warnings
+from dataclasses import dataclass
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
 from hashlib import sha256
@@ -816,6 +817,77 @@ def behavioral_urgent_report(daily, child_id):
     """Evaluate recorded urgent signals without loading an anomaly model."""
     _, alerts, incomplete = _behavioral_urgent(_behavioral_child_rows(daily, child_id))
     return {"urgent": alerts, "urgent_incomplete": incomplete}
+
+
+@dataclass(frozen=True)
+class EnhancedBehavioralAssessment:
+    rows: pd.DataFrame
+    status: str
+    urgent_review: tuple | None
+    history: pd.DataFrame | None = None
+    matrix: pd.DataFrame | None = None
+    details: pd.DataFrame | None = None
+    bundle: dict | None = None
+
+
+def enhanced_bundle_bytes():
+    """Read the deployed bundle. Its bytes identify the exact model and configuration."""
+    try:
+        from component4_profiling_xai.src.behavioral_profile import BUNDLE
+
+        return BUNDLE.read_bytes()
+    except (ImportError, OSError) as error:
+        log_assessment_failure("behavioral", "deployed model loading", error)
+        return None
+
+
+@lru_cache(maxsize=2)
+def _load_enhanced_bundle(contents):
+    import joblib
+    import sklearn
+
+    bundle = joblib.load(BytesIO(contents))
+    if bundle["sklearn_version"] != sklearn.__version__:
+        raise ValueError("The detector needs the scikit-learn version recorded during training.")
+    return bundle
+
+
+def enhanced_behavioral_assessment(daily, child, through, bundle_bytes):
+    """Assess validated fictional daily records through an inclusive cutoff."""
+    from pickle import UnpicklingError
+
+    rows = daily.loc[daily["child_id"].eq(child) & daily["date"].le(through)]
+    rows = rows.sort_values("date").reset_index(drop=True)
+    if rows.empty:
+        return EnhancedBehavioralAssessment(rows, "missing_records", None)
+    try:
+        urgent = behavioral_urgent_review(rows)
+    except (ImportError, OSError, ValueError, RuntimeError) as error:
+        log_assessment_failure("safety", "urgent rule review", error)
+        urgent = None
+
+    bundle = None
+    if bundle_bytes is not None:
+        try:
+            bundle = _load_enhanced_bundle(bundle_bytes)
+        except (EOFError, ImportError, KeyError, OSError, TypeError, ValueError, UnpicklingError) as error:
+            log_assessment_failure("behavioral", "deployed model loading", error)
+
+    matrix = details = None
+    try:
+        from component4_profiling_xai.src.behavioral_profile import ProfileConfig, profiles, score_history
+
+        config = ProfileConfig(**bundle["profile"]) if bundle is not None else ProfileConfig()
+        matrix, details = profiles(rows, config)
+        if bundle is not None:
+            history = score_history(rows, matrix, bundle)
+            return EnhancedBehavioralAssessment(
+                rows, "available", urgent, history=history, matrix=matrix, details=details, bundle=bundle,
+            )
+    except (ImportError, KeyError, OSError, RuntimeError, TypeError, ValueError, FloatingPointError) as error:
+        log_assessment_failure("behavioral", "enhanced activity assessment", error)
+        return EnhancedBehavioralAssessment(rows, "failed", urgent, matrix=matrix, details=details)
+    return EnhancedBehavioralAssessment(rows, "model_unavailable", urgent, matrix=matrix, details=details)
 
 
 def behavioral_report(daily, child_id, artifact_dir=None):

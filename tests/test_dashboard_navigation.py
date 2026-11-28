@@ -131,12 +131,12 @@ def test_demo_mode_persists_between_shells_without_attributing_data(profiles, na
 def test_overview_demo_summaries_use_independent_reports_and_clear_stale_results(profiles, monkeypatch):
     child = profiles.create("Local child", submission_token=uuid4())
     calls = []
-    for name in ("emotional_pattern_report", "behavioral_report"):
+    for name in ("emotional_pattern_report", "enhanced_behavioral_assessment"):
         report = getattr(services, name)
 
-        def record(data, child_id, *, report=report, name=name):
+        def record(data, child_id, *args, report=report, name=name):
             calls.append((name, child_id))
-            return report(data, child_id)
+            return report(data, child_id, *args)
 
         monkeypatch.setattr(services, name, record)
 
@@ -152,7 +152,7 @@ def test_overview_demo_summaries_use_independent_reports_and_clear_stale_results
     at.button(key="overview-run-emotional").click().run()
     at.button(key="overview-run-behavioral").click().run()
     assert not at.exception, [error.value for error in at.exception]
-    assert calls == [("emotional_pattern_report", "C004"), ("behavioral_report", "C009")]
+    assert calls == [("emotional_pattern_report", "C004"), ("enhanced_behavioral_assessment", "C009")]
     content = main_text(at)
     assert "Guarded responses" in content and "Assessment period" in content
     assert "The overall trend" in content

@@ -230,10 +230,11 @@ def test_dashboard_distinguishes_safety_coverage_and_adaptive_history(monkeypatc
     rows.at[partial_with_hit, "screen_self_harm_imagery_incidents"] = 1
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {"source": "demo", "daily": rows, "child_ids": [child]})
+    monkeypatch.setattr(services, "enhanced_bundle_bytes", lambda: None)
     app = AppTest.from_string(
         "from ui import services\n"
         "from ui.legacy_pages._behavioral_upgrade import render\n"
-        "render(services.behavioral_daily_source(), None)"
+        "render(services.behavioral_daily_source())"
     ).run()
     assert not app.exception
     selector = f"f2_activity_{child}"

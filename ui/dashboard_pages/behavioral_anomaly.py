@@ -179,12 +179,7 @@ with theme.card("select-child", "Select Child"):
     )
 
 if os.getenv("C4_F2_LEGACY_VIEW") != "1":
-    try:
-        upgrade = _behavioral_upgrade.selected_bundle()
-    except (OSError, ValueError, KeyError) as error:
-        services.log_assessment_failure("behavioral", "deployed model loading", error)
-        upgrade = None
-    _behavioral_upgrade.render(source, upgrade, child=child)
+    _behavioral_upgrade.render(source, child=child)
     st.stop()
 
 st.caption("Not flagged means the model did not detect an unusual pattern in the available records. "
