@@ -1,0 +1,11 @@
+{
+  "config": {
+    "horizon": 14,
+    "confirmation": 2,
+    "minimum": 5,
+    "recovery": 2,
+    "abrupt_z": 3.0,
+    "shift_counts": 2.0
+  },
+  "model_sha256": "61a5e67700d1a6e499ec610bc23d95b6db318d3b79e1c189d18781d0b85d2ec5"
+}

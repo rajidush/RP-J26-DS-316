@@ -1,0 +1,735 @@
+{
+  "synthetic": true,
+  "prediction_agreement_cases": 672,
+  "setup_seconds": 1.211652799975127,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "Intel64 Family 6 Model 140 Stepping 1, GenuineIntel",
+  "threshold": -12.515804087687126,
+  "background_expected_score_span": 0.04546399458817696,
+  "summaries": {
+    "overall": {
+      "gate": {
+        "n": 672,
+        "status_counts": {
+          "not_flagged": 448,
+          "insufficient_data": 160,
+          "uncertain": 61,
+          "reliable": 3
+        },
+        "assessment_coverage": 0.7619047619047619,
+        "insufficient_data_rate": 0.23809523809523808,
+        "flagged": 64,
+        "specific_rate_among_flagged": 0.046875,
+        "neutral_rate_among_flagged": 0.953125,
+        "specific_rate_over_all_days": 0.004464285714285714,
+        "neutral_rate_over_all_days": 0.09077380952380952,
+        "withhold_reasons_among_flagged": {
+          "target_context_sparse": 61,
+          "explanation_donors_sparse": 59,
+          "deletion_donors_sparse": 59,
+          "cutoff_margin_within_background_span": 3
+        }
+      },
+      "model": {
+        "tp": 25,
+        "fp": 39,
+        "fn": 33,
+        "tn": 415,
+        "assessed": 512,
+        "total_positive_labels": 74,
+        "missing_positive_labels": 16,
+        "precision_assessed": 0.390625,
+        "recall_assessed": 0.43103448275862066,
+        "f1_assessed": 0.4098360655737705,
+        "positive_detection_all_days": 0.33783783783783783
+      },
+      "evidence": {
+        "flagged_with_attribution_vectors": 64,
+        "unanimous_full_reference_leader": 64,
+        "mean_pairwise_full_leader_agreement": 1.0,
+        "mean_pairwise_full_group_direction_agreement": 0.9973958333333334,
+        "cases_with_supported_references": 3,
+        "unanimous_full_leader_changed_on_restriction": 0,
+        "full_reconstruction": {
+          "attempts": 256,
+          "returned": 256,
+          "score_matches": 256,
+          "threshold_matches": 256,
+          "within_tolerance": 256,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        },
+        "supported_reconstruction": {
+          "attempts": 12,
+          "returned": 12,
+          "score_matches": 12,
+          "threshold_matches": 12,
+          "within_tolerance": 12,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        }
+      },
+      "runtime": {
+        "all_days": {
+          "n": 672,
+          "median_seconds": 0.02577785006724298,
+          "p95_seconds": 0.7927916999906301,
+          "max_seconds": 2.596596200019121,
+          "peak_rss_bytes": 181125120,
+          "max_rss_increase_bytes": 53248
+        },
+        "flagged_days": {
+          "n": 64,
+          "median_seconds": 0.7953000501729548,
+          "p95_seconds": 1.2291757999919355,
+          "max_seconds": 2.596596200019121,
+          "peak_rss_bytes": 181121024,
+          "max_rss_increase_bytes": 53248
+        }
+      },
+      "cutoff_panel": {
+        "nearest_flagged": {
+          "n": 8,
+          "status_counts": {
+            "uncertain": 8
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 8,
+          "specific_rate_among_flagged": 0.0,
+          "neutral_rate_among_flagged": 1.0,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 1.0,
+          "withhold_reasons_among_flagged": {
+            "target_context_sparse": 8,
+            "cutoff_margin_within_background_span": 3,
+            "explanation_donors_sparse": 8,
+            "deletion_donors_sparse": 8
+          },
+          "requested": 8,
+          "absolute_margin_range": [
+            0.013836034549154164,
+            0.0828807735208894
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-2-06",
+              "2026-10-23"
+            ],
+            [
+              "XAI-IV1-2-02",
+              "2026-10-08"
+            ],
+            [
+              "XAI-IV1-2-01",
+              "2026-10-19"
+            ],
+            [
+              "XAI-IV1-2-02",
+              "2026-10-27"
+            ],
+            [
+              "XAI-IV1-2-03",
+              "2026-10-30"
+            ],
+            [
+              "XAI-IV1-1-02",
+              "2026-10-17"
+            ],
+            [
+              "XAI-IV1-2-06",
+              "2026-10-15"
+            ],
+            [
+              "XAI-IV1-2-11",
+              "2026-10-06"
+            ]
+          ]
+        },
+        "within_frozen_background_span_flagged": {
+          "n": 3,
+          "status_counts": {
+            "uncertain": 3
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 3,
+          "specific_rate_among_flagged": 0.0,
+          "neutral_rate_among_flagged": 1.0,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 1.0,
+          "withhold_reasons_among_flagged": {
+            "target_context_sparse": 3,
+            "cutoff_margin_within_background_span": 3,
+            "explanation_donors_sparse": 3,
+            "deletion_donors_sparse": 3
+          }
+        },
+        "nearest_unflagged": {
+          "n": 8,
+          "status_counts": {
+            "not_flagged": 8
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {},
+          "requested": 8,
+          "absolute_margin_range": [
+            0.010070088084605189,
+            0.04726553083656704
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-2-11",
+              "2026-10-23"
+            ],
+            [
+              "XAI-IV1-2-06",
+              "2026-10-09"
+            ],
+            [
+              "XAI-IV1-2-03",
+              "2026-10-25"
+            ],
+            [
+              "XAI-IV1-2-10",
+              "2026-10-25"
+            ],
+            [
+              "XAI-IV1-1-05",
+              "2026-10-18"
+            ],
+            [
+              "XAI-IV1-2-09",
+              "2026-10-24"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-06"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-08"
+            ]
+          ]
+        },
+        "within_frozen_background_span_unflagged": {
+          "n": 6,
+          "status_counts": {
+            "not_flagged": 6
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {}
+        }
+      },
+      "label_counts": {
+        "none": 598,
+        "screen_cluster": 15,
+        "language_cluster": 31,
+        "mixed_cluster": 28
+      },
+      "outages": {
+        "none": 512,
+        "screen_only": 62,
+        "language_only": 93,
+        "both": 5
+      },
+      "specific_by_label": {
+        "0": 1,
+        "1": 2
+      }
+    },
+    "screen_weekend": {
+      "gate": {
+        "n": 336,
+        "status_counts": {
+          "not_flagged": 245,
+          "insufficient_data": 75,
+          "uncertain": 15,
+          "reliable": 1
+        },
+        "assessment_coverage": 0.7767857142857143,
+        "insufficient_data_rate": 0.22321428571428573,
+        "flagged": 16,
+        "specific_rate_among_flagged": 0.0625,
+        "neutral_rate_among_flagged": 0.9375,
+        "specific_rate_over_all_days": 0.002976190476190476,
+        "neutral_rate_over_all_days": 0.044642857142857144,
+        "withhold_reasons_among_flagged": {
+          "target_context_sparse": 15,
+          "explanation_donors_sparse": 15,
+          "deletion_donors_sparse": 15
+        }
+      },
+      "model": {
+        "tp": 3,
+        "fp": 13,
+        "fn": 13,
+        "tn": 232,
+        "assessed": 261,
+        "total_positive_labels": 21,
+        "missing_positive_labels": 5,
+        "precision_assessed": 0.1875,
+        "recall_assessed": 0.1875,
+        "f1_assessed": 0.1875,
+        "positive_detection_all_days": 0.14285714285714285
+      },
+      "evidence": {
+        "flagged_with_attribution_vectors": 16,
+        "unanimous_full_reference_leader": 16,
+        "mean_pairwise_full_leader_agreement": 1.0,
+        "mean_pairwise_full_group_direction_agreement": 0.9895833333333334,
+        "cases_with_supported_references": 1,
+        "unanimous_full_leader_changed_on_restriction": 0,
+        "full_reconstruction": {
+          "attempts": 64,
+          "returned": 64,
+          "score_matches": 64,
+          "threshold_matches": 64,
+          "within_tolerance": 64,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        },
+        "supported_reconstruction": {
+          "attempts": 4,
+          "returned": 4,
+          "score_matches": 4,
+          "threshold_matches": 4,
+          "within_tolerance": 4,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        }
+      },
+      "runtime": {
+        "all_days": {
+          "n": 336,
+          "median_seconds": 0.026411800179630518,
+          "p95_seconds": 0.05969520006328821,
+          "max_seconds": 2.596596200019121,
+          "peak_rss_bytes": 180457472,
+          "max_rss_increase_bytes": 40960
+        },
+        "flagged_days": {
+          "n": 16,
+          "median_seconds": 0.9826817500870675,
+          "p95_seconds": 2.596596200019121,
+          "max_seconds": 2.596596200019121,
+          "peak_rss_bytes": 180436992,
+          "max_rss_increase_bytes": 40960
+        }
+      },
+      "cutoff_panel": {
+        "nearest_flagged": {
+          "n": 8,
+          "status_counts": {
+            "uncertain": 7,
+            "reliable": 1
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 8,
+          "specific_rate_among_flagged": 0.125,
+          "neutral_rate_among_flagged": 0.875,
+          "specific_rate_over_all_days": 0.125,
+          "neutral_rate_over_all_days": 0.875,
+          "withhold_reasons_among_flagged": {
+            "target_context_sparse": 7,
+            "explanation_donors_sparse": 7,
+            "deletion_donors_sparse": 7
+          },
+          "requested": 8,
+          "absolute_margin_range": [
+            0.05641465248013766,
+            0.6996958415656724
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-1-02",
+              "2026-10-17"
+            ],
+            [
+              "XAI-IV1-1-09",
+              "2026-10-20"
+            ],
+            [
+              "XAI-IV1-1-03",
+              "2026-10-17"
+            ],
+            [
+              "XAI-IV1-1-05",
+              "2026-11-01"
+            ],
+            [
+              "XAI-IV1-1-09",
+              "2026-10-13"
+            ],
+            [
+              "XAI-IV1-1-02",
+              "2026-10-29"
+            ],
+            [
+              "XAI-IV1-1-06",
+              "2026-10-05"
+            ],
+            [
+              "XAI-IV1-1-03",
+              "2026-10-19"
+            ]
+          ]
+        },
+        "within_frozen_background_span_flagged": {
+          "n": 0,
+          "status_counts": {},
+          "assessment_coverage": null,
+          "insufficient_data_rate": null,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": null,
+          "neutral_rate_over_all_days": null,
+          "withhold_reasons_among_flagged": {}
+        },
+        "nearest_unflagged": {
+          "n": 8,
+          "status_counts": {
+            "not_flagged": 8
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {},
+          "requested": 8,
+          "absolute_margin_range": [
+            0.0348536476697916,
+            0.04726553083656704
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-1-05",
+              "2026-10-18"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-06"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-08"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-09"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-12"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-21"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-26"
+            ],
+            [
+              "XAI-IV1-1-01",
+              "2026-10-27"
+            ]
+          ]
+        },
+        "within_frozen_background_span_unflagged": {
+          "n": 1,
+          "status_counts": {
+            "not_flagged": 1
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {}
+        }
+      },
+      "label_counts": {
+        "none": 315,
+        "screen_cluster": 8,
+        "language_cluster": 3,
+        "mixed_cluster": 10
+      },
+      "outages": {
+        "none": 261,
+        "screen_only": 35,
+        "language_only": 38,
+        "both": 2
+      },
+      "specific_by_label": {
+        "0": 1
+      }
+    },
+    "language_bursts": {
+      "gate": {
+        "n": 336,
+        "status_counts": {
+          "not_flagged": 203,
+          "uncertain": 46,
+          "insufficient_data": 85,
+          "reliable": 2
+        },
+        "assessment_coverage": 0.7470238095238095,
+        "insufficient_data_rate": 0.25297619047619047,
+        "flagged": 48,
+        "specific_rate_among_flagged": 0.041666666666666664,
+        "neutral_rate_among_flagged": 0.9583333333333334,
+        "specific_rate_over_all_days": 0.005952380952380952,
+        "neutral_rate_over_all_days": 0.13690476190476192,
+        "withhold_reasons_among_flagged": {
+          "target_context_sparse": 46,
+          "explanation_donors_sparse": 44,
+          "deletion_donors_sparse": 44,
+          "cutoff_margin_within_background_span": 3
+        }
+      },
+      "model": {
+        "tp": 22,
+        "fp": 26,
+        "fn": 20,
+        "tn": 183,
+        "assessed": 251,
+        "total_positive_labels": 53,
+        "missing_positive_labels": 11,
+        "precision_assessed": 0.4583333333333333,
+        "recall_assessed": 0.5238095238095238,
+        "f1_assessed": 0.4888888888888889,
+        "positive_detection_all_days": 0.41509433962264153
+      },
+      "evidence": {
+        "flagged_with_attribution_vectors": 48,
+        "unanimous_full_reference_leader": 48,
+        "mean_pairwise_full_leader_agreement": 1.0,
+        "mean_pairwise_full_group_direction_agreement": 1.0,
+        "cases_with_supported_references": 2,
+        "unanimous_full_leader_changed_on_restriction": 0,
+        "full_reconstruction": {
+          "attempts": 192,
+          "returned": 192,
+          "score_matches": 192,
+          "threshold_matches": 192,
+          "within_tolerance": 192,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        },
+        "supported_reconstruction": {
+          "attempts": 8,
+          "returned": 8,
+          "score_matches": 8,
+          "threshold_matches": 8,
+          "within_tolerance": 8,
+          "invalid_mask_rows": 0,
+          "maximum_absolute_error": 1.7763568394002505e-15
+        }
+      },
+      "runtime": {
+        "all_days": {
+          "n": 336,
+          "median_seconds": 0.025263450108468533,
+          "p95_seconds": 0.8007084997370839,
+          "max_seconds": 1.421710499562323,
+          "peak_rss_bytes": 181125120,
+          "max_rss_increase_bytes": 53248
+        },
+        "flagged_days": {
+          "n": 48,
+          "median_seconds": 0.7832798000890762,
+          "p95_seconds": 1.038466699887067,
+          "max_seconds": 1.421710499562323,
+          "peak_rss_bytes": 181121024,
+          "max_rss_increase_bytes": 53248
+        }
+      },
+      "cutoff_panel": {
+        "nearest_flagged": {
+          "n": 8,
+          "status_counts": {
+            "uncertain": 8
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 8,
+          "specific_rate_among_flagged": 0.0,
+          "neutral_rate_among_flagged": 1.0,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 1.0,
+          "withhold_reasons_among_flagged": {
+            "target_context_sparse": 8,
+            "cutoff_margin_within_background_span": 3,
+            "explanation_donors_sparse": 8,
+            "deletion_donors_sparse": 8
+          },
+          "requested": 8,
+          "absolute_margin_range": [
+            0.013836034549154164,
+            0.08348374704517703
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-2-06",
+              "2026-10-23"
+            ],
+            [
+              "XAI-IV1-2-02",
+              "2026-10-08"
+            ],
+            [
+              "XAI-IV1-2-01",
+              "2026-10-19"
+            ],
+            [
+              "XAI-IV1-2-02",
+              "2026-10-27"
+            ],
+            [
+              "XAI-IV1-2-03",
+              "2026-10-30"
+            ],
+            [
+              "XAI-IV1-2-06",
+              "2026-10-15"
+            ],
+            [
+              "XAI-IV1-2-11",
+              "2026-10-06"
+            ],
+            [
+              "XAI-IV1-2-05",
+              "2026-10-26"
+            ]
+          ]
+        },
+        "within_frozen_background_span_flagged": {
+          "n": 3,
+          "status_counts": {
+            "uncertain": 3
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 3,
+          "specific_rate_among_flagged": 0.0,
+          "neutral_rate_among_flagged": 1.0,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 1.0,
+          "withhold_reasons_among_flagged": {
+            "target_context_sparse": 3,
+            "cutoff_margin_within_background_span": 3,
+            "explanation_donors_sparse": 3,
+            "deletion_donors_sparse": 3
+          }
+        },
+        "nearest_unflagged": {
+          "n": 8,
+          "status_counts": {
+            "not_flagged": 8
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {},
+          "requested": 8,
+          "absolute_margin_range": [
+            0.010070088084605189,
+            0.04726553083656704
+          ],
+          "case_keys": [
+            [
+              "XAI-IV1-2-11",
+              "2026-10-23"
+            ],
+            [
+              "XAI-IV1-2-06",
+              "2026-10-09"
+            ],
+            [
+              "XAI-IV1-2-03",
+              "2026-10-25"
+            ],
+            [
+              "XAI-IV1-2-10",
+              "2026-10-25"
+            ],
+            [
+              "XAI-IV1-2-09",
+              "2026-10-24"
+            ],
+            [
+              "XAI-IV1-2-01",
+              "2026-10-06"
+            ],
+            [
+              "XAI-IV1-2-01",
+              "2026-10-08"
+            ],
+            [
+              "XAI-IV1-2-01",
+              "2026-10-09"
+            ]
+          ]
+        },
+        "within_frozen_background_span_unflagged": {
+          "n": 5,
+          "status_counts": {
+            "not_flagged": 5
+          },
+          "assessment_coverage": 1.0,
+          "insufficient_data_rate": 0.0,
+          "flagged": 0,
+          "specific_rate_among_flagged": null,
+          "neutral_rate_among_flagged": null,
+          "specific_rate_over_all_days": 0.0,
+          "neutral_rate_over_all_days": 0.0,
+          "withhold_reasons_among_flagged": {}
+        }
+      },
+      "label_counts": {
+        "none": 283,
+        "screen_cluster": 7,
+        "mixed_cluster": 18,
+        "language_cluster": 28
+      },
+      "outages": {
+        "none": 251,
+        "language_only": 55,
+        "screen_only": 27,
+        "both": 3
+      },
+      "specific_by_label": {
+        "1": 2
+      }
+    }
+  },
+  "provenance": {
+    "freeze_manifest_sha256": "1cf7c508b2fe513417784c478ef965e72bc8a3ab99070031256ffe5e798c3676",
+    "synthetic_daily_sha256": "d1b0c041f91bdf3c288b17979b13e7408ae151dc105dd3cc1d3c014d56f81c40",
+    "cases_sha256": "c1df0b9951e541ff05e581bbcc58d490e06acd6711a0ea270f611092041397f2"
+  }
+}

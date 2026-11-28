@@ -1,0 +1,18 @@
+{
+  "seed": 2026112633,
+  "model_sha256": "61a5e67700d1a6e499ec610bc23d95b6db318d3b79e1c189d18781d0b85d2ec5",
+  "benchmark_sha256": "b1806877ca385ba8dec6d812d3426bcfa59d74610218d97b6ac66ae519cc5f24",
+  "optimizer_sha256": "1f4ddb5c9ab346fc504942ef30cf62c5a51b6a43e7e828b8107f3a06c2ce24a7",
+  "baseline_sha256": "ad4bce55b556771279a736d8928ce6448d997196a2ce4eb26cd3ddc9d2253d49",
+  "source_sha256": {
+    "behavioral_explain.py": "6361bb96070382be5c615652d99661082568aecf9786c6f4bbf6f169a420b99f",
+    "behavioral_explanation_reliability.py": "91fdfcae3f44656b4d852318c8bae8c97494fbeaae2653aa331bee250781e7e8",
+    "behavioral_temporal_explain.py": "5cb05021a38068311650ddcb7449e3656d071576b2ba71cb7e328bebeb5a8ce1",
+    "behavioral_profile.py": "533677c00ca522cca3c4991a179ac6ae0326e69a87a765c88cdbc67a1035a998",
+    "behavioral_adaptive_profile.py": "3791c1c746d6228a4d3f535b3eeb718cb3372e1f938f44e2d879e35781b0008f",
+    "behavioral_anomaly.py": "91ea7360add463a5fbe3d7feba3559b975adc6f8a47f21b5a7f673e0aa04b77e",
+    "urgent_alerts.py": "de3557c78153d93c0edb03a442ea666fe571d617145a928195d1eebc64d90b9d"
+  },
+  "acceptance": "All cases exact categorical/message parity and numeric 1e-8 absolute parity; both temporal review and end-to-end warm medians lower; stage median peak traced memory no more than 1.50 times original on either temporal path.",
+  "target": "Temporal review under 500 ms on desktop, exploratory. No cross-request cache."
+}

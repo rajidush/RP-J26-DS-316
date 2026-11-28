@@ -43,6 +43,12 @@ def test_nan_means_not_available_and_does_not_trigger():
     assert not out["is_urgent"].iloc[0]
 
 
+@pytest.mark.parametrize("count", [-1, 0.5, np.inf, -np.inf, True, "many"])
+def test_invalid_urgent_counts_are_rejected_before_the_rule(count):
+    with pytest.raises(ValueError, match="language_urgent_flags"):
+        urgent_alerts(rows(language_urgent_flags=count))
+
+
 def test_missing_rule_column_is_an_error():
     with pytest.raises(ValueError, match="missing urgent-rule columns"):
         urgent_alerts(rows().drop(columns="language_grooming_flags"))

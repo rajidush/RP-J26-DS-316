@@ -1,0 +1,139 @@
+{
+  "selected": {
+    "id": "selected_personalized-one_class_svm-14-110",
+    "design": "selected_personalized",
+    "algorithm": "one_class_svm",
+    "window": 14,
+    "features": [
+      "screen_incidents",
+      "screen_flagged_frames",
+      "screen_flagged_seconds",
+      "screen_max_confidence",
+      "screen_mean_confidence",
+      "screen_night_incidents",
+      "screen_blocked_incidents",
+      "screen_escalated_incidents",
+      "screen_dismissed_incidents",
+      "language_flags",
+      "language_threat_flags",
+      "language_hate_identity_flags",
+      "language_bullying_flags",
+      "language_self_harm_flags",
+      "language_grooming_flags",
+      "language_profanity_flags",
+      "language_urgent_flags",
+      "language_block_rung_flags",
+      "language_max_risk",
+      "language_mean_risk",
+      "language_night_flags",
+      "language_audio_flags",
+      "language_distinct_apps",
+      "language_distinct_app_categories",
+      "is_weekend",
+      "language_bullying_flags__robust_z",
+      "screen_incidents__robust_z",
+      "language_flags__robust_z"
+    ],
+    "params": {
+      "nu": 0.01,
+      "gamma": 0.01
+    },
+    "threshold": -1.6224878478494749,
+    "validation_f1": 0.6744186046511628,
+    "validation_fpr": 0.012678288431061807,
+    "validation_ap": 0.6247199899663558
+  },
+  "holdout": {
+    "seed": 2026112607,
+    "daily_sha256": "569ff63238e7563ef26423e5e0ef4a3cbaea43c9b9e19dba3ae7c729815d725a",
+    "episodes_sha256": "2582124a045160b17944a5033467d7c55b4d273e2acd18c80802b39054e4d355",
+    "lock_sha256": "25146036e857b44a935dd59f9ba6841c815fdad2edf1973e6f369801a53aa317"
+  },
+  "test_rows": 1360,
+  "test_positive": 93,
+  "test_children": 40,
+  "first_test_date": "2026-08-26",
+  "last_test_date": "2026-09-28",
+  "intervals": {
+    "full_personalized": {
+      "delta_f1_95": [
+        -0.07400104865375584,
+        0.017464390312257702
+      ],
+      "delta_fpr_95": [
+        -0.0071714577098305355,
+        0.012628505095316643
+      ]
+    },
+    "selected_personalized": {
+      "delta_f1_95": [
+        -0.046516600367197035,
+        0.049448624645368165
+      ],
+      "delta_fpr_95": [
+        -0.00788022064617809,
+        0.005376654498497602
+      ]
+    },
+    "hybrid": {
+      "delta_f1_95": [
+        -0.07021363708632462,
+        0.016758460683776184
+      ],
+      "delta_fpr_95": [
+        -0.004819665446637476,
+        0.010450370951928871
+      ]
+    },
+    "deployed": {
+      "delta_f1_95": [
+        -0.019659111727747123,
+        0.0823791094171529
+      ],
+      "delta_fpr_95": [
+        0.0007968127490039847,
+        0.007794384261730562
+      ]
+    }
+  },
+  "temporal": {
+    "ewma": {
+      "episodes": 40,
+      "detected": 16,
+      "detection_rate": 0.4,
+      "delay_days_detected_only": 1.5625,
+      "false_alerts": 9,
+      "normal_scored_days": 1267,
+      "false_alert_rate": 0.007103393843725336
+    },
+    "cusum": {
+      "episodes": 40,
+      "detected": 15,
+      "detection_rate": 0.375,
+      "delay_days_detected_only": 1.6,
+      "false_alerts": 9,
+      "normal_scored_days": 1267,
+      "false_alert_rate": 0.007103393843725336
+    }
+  },
+  "xai_cases": 32,
+  "xai_means": {
+    "shap_additive_absolute_error": 1.568840543586525e-16,
+    "lime_weighted_r2": 0.6090342766037415,
+    "lime_original_score_absolute_error": 0.007269255882963729,
+    "shap_top_agreement": 0.98125,
+    "shap_sign_agreement": 0.8916666666666666,
+    "shap_rank_spearman": 0.83125,
+    "shap_top_drop": 0.7782401548170086,
+    "shap_signed_drop_advantage": 0.7684180237248369,
+    "shap_absolute_drop_advantage": 0.8515273836736248,
+    "shap_mean_ms": 15.448093125178275,
+    "lime_top_agreement": 1.0,
+    "lime_sign_agreement": 0.8500000000000001,
+    "lime_rank_spearman": 0.790625,
+    "lime_top_drop": 0.7782401548170086,
+    "lime_signed_drop_advantage": 0.7684180237248369,
+    "lime_absolute_drop_advantage": 0.8515273836736248,
+    "lime_mean_ms": 17.213723749318888
+  }
+}

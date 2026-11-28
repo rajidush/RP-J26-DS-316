@@ -26,7 +26,10 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
 
-from .behavioral_dataset import BASELINE_COLUMNS, DESCRIPTIVE_NAMES, LABEL_COLUMNS, MODEL_FEATURES
+from .behavioral_dataset import (
+    BASELINE_COLUMNS, COVERAGE_COLUMNS, DAILY_COUNTS, DAILY_MODEL_FEATURES,
+    DESCRIPTIVE_NAMES, LABEL_COLUMNS, MODEL_FEATURES, daily_feature_values, daily_numeric,
+)
 
 ARTIFACT_DIR = Path(__file__).resolve().parent.parent / "models"
 PIPELINE_FILE = "behavioral_anomaly_pipeline.pkl"
@@ -41,8 +44,9 @@ NON_FEATURE_COLUMNS = META_COLUMNS + LABEL_COLUMNS
 # per-child baselines (daily C1 + C2 + combined + calendar features only).
 BASELINE_FEATURES = [DESCRIPTIVE_NAMES[c] for c in BASELINE_COLUMNS if c != "baseline_ready"]
 FEATURE_SET_B = list(MODEL_FEATURES)
-FEATURE_SET_A = [f for f in FEATURE_SET_B if f not in BASELINE_FEATURES]
+FEATURE_SET_A = list(DAILY_MODEL_FEATURES)
 FEATURE_SETS = {"A_daily": FEATURE_SET_A, "B_full": FEATURE_SET_B}
+REQUIRED_OBSERVATIONS = DAILY_COUNTS | {"screen_flagged_seconds", "is_weekend"}
 
 ALGORITHMS = {"isolation_forest": IsolationForest, "one_class_svm": OneClassSVM}
 
@@ -57,7 +61,31 @@ def feature_matrix(df: pd.DataFrame, features: list[str]) -> pd.DataFrame:
     missing = [f for f in features if f not in df.columns]
     if missing:
         raise ValueError(f"missing feature columns: {missing}")
-    return df[features].astype(float)
+    return daily_feature_values(df, features)
+
+
+def assessable_days(daily, features):
+    """Require observed daily activity inputs from both sources before scoring.
+
+    The saved model was fitted on a fully monitored synthetic cohort. Missing
+    confidence/risk statistics may still be imputed. Missing counts, duration
+    or calendar inputs cannot be substituted for evidence of observed activity.
+    Older exports can establish coverage via their observed daily inputs.
+    """
+    observed = features[list(REQUIRED_OBSERVATIONS)].notna().all(axis=1)
+    for name in COVERAGE_COLUMNS:
+        if name in daily:
+            observed &= daily_numeric(daily[name], indicator=True).eq(1)
+    return observed
+
+
+def score_observed_days(pipeline, daily, features):
+    """Apply the saved scoring function only to days with enough observations."""
+    observed = assessable_days(daily, features)
+    scores = np.full(len(features), np.nan)
+    if observed.any():
+        scores[observed.to_numpy()] = anomaly_scores(pipeline, features.loc[observed])
+    return scores, observed
 
 
 def check_features(train: pd.DataFrame, features: list[str], *, corr_limit: float = 0.95) -> dict:
@@ -228,12 +256,15 @@ def explain_day(pipeline: Pipeline, row: pd.DataFrame, top_n: int = 5) -> pd.Dat
 def predict_anomalies(daily: pd.DataFrame, artifact_dir=ARTIFACT_DIR) -> pd.DataFrame:
     """Score daily rows with the saved model.
 
-    Returns child_id, date, anomaly_score and is_flagged (score > threshold),
-    in the input order.
+    Returns child_id, date, anomaly_score and is_flagged in input order.
+    Unassessable days have neither a score nor a flag decision.
     """
     pipeline, metadata = load_artifacts(artifact_dir)
-    scores = anomaly_scores(pipeline, feature_matrix(daily, metadata["features"]))
+    features = feature_matrix(daily, metadata["features"])
+    scores, observed = score_observed_days(pipeline, daily, features)
     out = daily[[c for c in ("child_id", "date") if c in daily.columns]].copy()
     out["anomaly_score"] = scores
-    out["is_flagged"] = scores > metadata["threshold"]
+    flags = pd.array(scores > metadata["threshold"], dtype="boolean")
+    flags[~observed.to_numpy()] = pd.NA
+    out["is_flagged"] = flags
     return out

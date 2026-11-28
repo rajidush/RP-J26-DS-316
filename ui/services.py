@@ -16,6 +16,8 @@ import sys
 import warnings
 from datetime import datetime, time, timedelta, timezone
 from functools import lru_cache
+from hashlib import sha256
+from io import BytesIO
 from math import isfinite
 from pathlib import Path
 
@@ -589,6 +591,11 @@ def _urgent_module():
     return importlib.import_module(f"{F2_PACKAGE}.urgent_alerts")
 
 
+def _behavioral_data_module():
+    _c4_package()
+    return importlib.import_module(f"{F2_PACKAGE}.behavioral_dataset")
+
+
 def f2_artifact_dir():
     """Where the trained Function 2 artifacts live; override with C4_F2_ARTIFACT_DIR."""
     return Path(os.environ.get("C4_F2_ARTIFACT_DIR", C4_DIR / "models"))
@@ -655,19 +662,20 @@ F2_FEATURE_LABELS = {
     "is_weekend": "Weekend day (1 = yes)",
 }
 
-_BOOL_TEXT = {"true": 1.0, "false": 0.0, "1": 1.0, "0": 0.0, "1.0": 1.0, "0.0": 0.0}
-
-
 def _clean_daily(df, what):
-    """Validate daily rows: keys, the 27 model features and the urgent-rule
-    columns. Every other column (synthetic labels included) is dropped.
-    Raises ValueError with a readable message."""
-    features = list(_f2_module().FEATURE_SET_A)
+    """Validate daily keys, model features, coverage and recorded safety counters.
+
+    Other columns, including synthetic labels, are dropped.
+    """
+    data = _behavioral_data_module()
+    features = data.DAILY_MODEL_FEATURES
     urgent_cols = list(_urgent_module().URGENT_RULE_COLUMNS)
+    from component4_profiling_xai.src.behavioral_adaptive_profile import OPTIONAL_CONCERN_COLUMNS
     missing = [c for c in ["child_id", "date"] + features if c not in df.columns]
     if missing:
         raise ValueError(f"{what} is missing required columns: {', '.join(missing)}")
-    keep = ["child_id", "date"] + features + [c for c in urgent_cols if c not in features]
+    keep = (["child_id", "date"] + features + [c for c in urgent_cols if c not in features]
+            + list(data.COVERAGE_COLUMNS) + list(OPTIONAL_CONCERN_COLUMNS))
     out = df[[c for c in keep if c in df.columns]].copy()
     if out["child_id"].isna().any():
         raise ValueError(f"{what} has rows without a child_id")
@@ -682,23 +690,21 @@ def _clean_daily(df, what):
     if out.duplicated(["child_id", "date"]).any():
         raise ValueError(f"{what} has more than one row for the same child and date")
 
-    weekend = out["is_weekend"]
-    if not (pd.api.types.is_bool_dtype(weekend) or pd.api.types.is_numeric_dtype(weekend)):
-        weekend = weekend.map(lambda v: v if pd.isna(v)
-                              else _BOOL_TEXT.get(str(v).strip().lower(), "bad"))
-        if (weekend == "bad").any():
-            raise ValueError(f"{what}: is_weekend must be True/False or 1/0")
-    out["is_weekend"] = pd.to_numeric(weekend).astype(float)
-    for col in [c for c in out.columns if c not in ("child_id", "date", "is_weekend")]:
-        try:
-            out[col] = pd.to_numeric(out[col], errors="raise").astype(float)
-        except (ValueError, TypeError):
-            raise ValueError(f"{what}: column {col} must be numeric") from None
-    # Not every export has C1's self-harm imagery count (C1 has no live
-    # self-harm model): NaN = not available, which never triggers the rule.
-    for col in urgent_cols:
-        if col not in out.columns:
-            out[col] = float("nan")
+    try:
+        out[features] = data.daily_feature_values(out, features)
+        for col in data.COVERAGE_COLUMNS:
+            if col in out:
+                out[col] = data.daily_numeric(out[col], indicator=True)
+        for col in urgent_cols:
+            if col not in features:
+                out[col] = data.daily_numeric(out[col], count=True) if col in out else float("nan")
+        for col in OPTIONAL_CONCERN_COLUMNS:
+            if col in out:
+                # An unusable optional annotation is unavailable; it cannot change model inputs.
+                numeric = pd.to_numeric(out[col], errors="coerce")
+                out[col] = numeric.where(numeric.ge(0) & numeric.mod(1).eq(0))
+    except ValueError as exc:
+        raise ValueError(f"{what}: {exc}") from exc
     return out.sort_values(["child_id", "date"]).reset_index(drop=True)
 
 
@@ -706,7 +712,7 @@ def load_daily_csv(file):
     """A daily-feature CSV (the columns of behavioral_daily.csv): child_id, date
     (YYYY-MM-DD local day) and the 27 model features. Extra columns, synthetic
     labels included, are dropped as soon as the file is read."""
-    return _clean_daily(pd.read_csv(file), "The CSV")
+    return _clean_daily(pd.read_csv(file, keep_default_na=False, na_values=[""]), "The CSV")
 
 
 @lru_cache(maxsize=2)
@@ -746,12 +752,38 @@ def _day_explanation(f2, pipeline, X, i):
     return table
 
 
+def _behavioral_child_rows(daily, child_id):
+    rows = daily[daily["child_id"].astype(str) == str(child_id)].sort_values("date")
+    if rows.empty:
+        raise ValueError(f"No daily rows for child {child_id}")
+    return rows.reset_index(drop=True)
+
+
+def _behavioral_urgent(rows):
+    rules = _urgent_module()
+    counts = rows.reindex(columns=["child_id", "date", *rules.URGENT_RULE_COLUMNS])
+    alerts = rules.urgent_alerts(counts)
+    hits = alerts["is_urgent"]
+    incomplete = counts[list(rules.URGENT_RULE_COLUMNS)].isna().any(axis=None)
+    data = _behavioral_data_module()
+    for col in data.COVERAGE_COLUMNS:
+        if col in rows:
+            incomplete = incomplete or bool(data.daily_numeric(rows[col], indicator=True).ne(1).any())
+    return hits, alerts.loc[hits, ["date", "reasons"]].reset_index(drop=True), incomplete
+
+
+def behavioral_urgent_report(daily, child_id):
+    """Evaluate recorded urgent signals without loading an anomaly model."""
+    _, alerts, incomplete = _behavioral_urgent(_behavioral_child_rows(daily, child_id))
+    return {"urgent": alerts, "urgent_incomplete": incomplete}
+
+
 def behavioral_report(daily, child_id, artifact_dir=None):
     """Everything the Behavioral Anomaly page shows for one child.
 
     daily: rows from behavioral_daily_source(). Raises ModelUnavailableError if
-    the saved model cannot be used -- checked first, so no result of any kind
-    is produced without it. Synthetic labels are never read.
+    the saved model cannot be used. The urgent-only report does not depend on
+    model availability. Synthetic labels are never read.
 
     Returns {"child_id", "status", "threshold", "daily" (date, label,
     anomaly_score, threshold, margin, unusual, imputed, urgent), "weekly",
@@ -762,34 +794,146 @@ def behavioral_report(daily, child_id, artifact_dir=None):
     if not status["available"]:
         raise ModelUnavailableError(status)
     f2, pipeline, metadata = _f2_module(), status["pipeline"], status["metadata"]
-    rows = daily[daily["child_id"].astype(str) == str(child_id)].sort_values("date")
-    rows = rows.reset_index(drop=True)
-    if rows.empty:
-        raise ValueError(f"No daily rows for child {child_id}")
+    rows = _behavioral_child_rows(daily, child_id)
 
     X = f2.feature_matrix(rows, metadata["features"])
-    scores = f2.anomaly_scores(pipeline, X)
+    scores, observed = f2.score_observed_days(pipeline, rows, X)
     threshold = float(metadata["threshold"])
-    urgent = _urgent_module().urgent_alerts(rows)
+    urgent, urgent_days, incomplete = _behavioral_urgent(rows)
+    flags = pd.array(scores > threshold, dtype="boolean")
+    flags[~observed.to_numpy()] = pd.NA
     table = pd.DataFrame({
         "date": rows["date"].to_numpy(),
         "anomaly_score": scores,
         "threshold": threshold,
         "margin": scores - threshold,
-        "unusual": scores > threshold,
-        "imputed": X.isna().any(axis=1).to_numpy(),
-        "urgent": urgent["is_urgent"].to_numpy(),
+        "unusual": flags,
+        "imputed": (observed & X.isna().any(axis=1)).to_numpy(),
+        "urgent": urgent.to_numpy(),
     })
-    table.insert(1, "label", table["unusual"].map({True: "Unusual", False: "Normal"}))
+    table.insert(1, "label", table["unusual"].map(
+        {True: "Unusual", False: "Normal"}).fillna("Insufficient data"))
 
     explanations = {table.at[i, "date"]: _day_explanation(f2, pipeline, X, i)
                     for i in table.index[table["unusual"]]}
-    is_urgent = urgent["is_urgent"].to_numpy()
-    urgent_days = pd.DataFrame({"date": rows["date"].to_numpy()[is_urgent],
-                                "reasons": urgent["reasons"].to_numpy()[is_urgent]})
     return {"child_id": str(child_id), "status": status, "threshold": threshold,
             "daily": table, "weekly": weekly_summary(table), "explanations": explanations,
-            "urgent": urgent_days, "latest": table.iloc[-1].to_dict()}
+            "urgent": urgent_days, "urgent_incomplete": incomplete, "latest": table.iloc[-1].to_dict()}
+
+
+F2_RESEARCH_SHA256 = (
+    "25634fbafabd133495bc66b9ced5921f27ddaac222902d72f38a5fe1515774b7",
+    "3f5f0fa72eb5ac1cb19644c36d9a96e063a4aa2855515028c97293b406f375a4",
+    "2b353eab1b715900458ddfb973e665c8206370b564f15f3b2fdbd307dbd32563",
+)
+
+
+def research_shap_enabled():
+    return os.environ.get("C4_F2_RESEARCH_SHAP") == "1"
+
+
+def research_shap_context(source):
+    """Verify the active files even on a rerun that would reuse a result."""
+    if not research_shap_enabled():
+        raise ValueError("The preview requires research mode and the bundled synthetic data.")
+    return _verified_shap_context(source)
+
+
+def _verified_shap_context(source):
+    if source.get("source") != "demo":
+        raise ValueError("The preview requires the bundled synthetic data.")
+    artifact_dir = f2_artifact_dir().resolve()
+    dataset = F2_DEMO_DATA.resolve()
+    files = [*(artifact_dir / name for name in F2_ARTIFACT_FILES), dataset]
+    fingerprints = tuple(sha256(file.read_bytes()).hexdigest() for file in files)
+    if fingerprints != F2_RESEARCH_SHA256:
+        raise ValueError("The active model, metadata, and synthetic dataset must match the frozen files.")
+    return artifact_dir, dataset, fingerprints
+
+
+@lru_cache(maxsize=2)
+def _research_shap_resources(artifact_dir, dataset, fingerprints):
+    raw = dataset.read_bytes()
+    if sha256(raw).hexdigest() != fingerprints[-1]:
+        raise ValueError("The bundled synthetic data changed during loading.")
+    _c4_package()
+    shap_module = importlib.import_module(f"{F2_PACKAGE}.behavioral_shap")
+    reliability = importlib.import_module(f"{F2_PACKAGE}.behavioral_shap_reliability")
+    daily = pd.read_csv(BytesIO(raw))
+    explainer = shap_module.BehavioralShap(artifact_dir)
+    if tuple(sha256((artifact_dir / name).read_bytes()).hexdigest()
+             for name in F2_ARTIFACT_FILES) != fingerprints[:2]:
+        raise ValueError("The frozen model files changed during loading.")
+    gate = reliability.ReliabilityGate(explainer, daily)
+    return gate, _clean_daily(daily, "The verified synthetic dataset")
+
+
+def _verified_shap_decision(source, child, day, context):
+    gate, daily = _research_shap_resources(*context)
+    if not daily.equals(source["daily"]):
+        raise ValueError("The preview accepts only unmodified bundled synthetic rows.")
+    row = daily.loc[daily["child_id"].eq(child) & daily["date"].eq(day)]
+    if len(row) != 1:
+        raise ValueError("Select one day from the bundled synthetic records.")
+    # review calculates exact group-aware explanations only for flagged,
+    # assessable rows. Reuse its original reference vectors for display.
+    return gate, gate.review(row)
+
+
+def research_shap_report(source, child, day):
+    """Return research diagnostics for one verified synthetic child-day."""
+    gate, decision = _verified_shap_decision(source, child, day, research_shap_context(source))
+    vectors = decision.diagnostics.get("full_groups", [])
+    references = [
+        {"size": len(background.values), "seed": background.seed, "groups": groups}
+        for background, groups in zip(gate.references[:len(vectors)], vectors, strict=True)
+    ]
+    return {
+        "score": decision.score,
+        "threshold": gate.explainer.metadata["threshold"],
+        "flag": decision.is_flagged,
+        "status": decision.status.value,
+        "reasons": decision.reasons,
+        "neutral_text": decision.text if decision.status.value == "uncertain" else None,
+        "references": references,
+    }
+
+
+def parent_xai_demo_enabled(server_address):
+    return (os.environ.get("C4_F2_PARENT_XAI_DEMO") == "1"
+            and server_address in ("127.0.0.1", "::1"))
+
+
+def parent_xai_demo_context(source, server_address):
+    if not parent_xai_demo_enabled(server_address):
+        raise ValueError("The parent demo requires explicit loopback-only opt-in.")
+    return _verified_shap_context(source)
+
+
+_PARENT_ACTIVITY_FACTORS = {
+    "screen-related recorded activity": "Your child's recorded screen-related activity",
+    "language-related recorded signals": "Your child's recorded language-related activity",
+    "weekday or weekend context": "Whether the activity was recorded on a weekday or weekend",
+}
+
+
+def parent_activity_update(source, child, day, server_address):
+    """Expose only plain-language wording from a verified synthetic decision."""
+    context = parent_xai_demo_context(source, server_address)
+    _, decision = _verified_shap_decision(source, child, day, context)
+    status = decision.status.value
+    if status == "insufficient_data":
+        return "There isn't enough recorded activity to assess today's pattern."
+    if status == "not_flagged":
+        return "No unusual activity pattern was detected in the available recorded data."
+    if status == "uncertain" and decision.is_flagged and decision.text:
+        return decision.text
+    if status == "reliable" and decision.is_flagged and not decision.reasons:
+        leader = decision.diagnostics.get("stability", {}).get("leader")
+        factor = _PARENT_ACTIVITY_FACTORS.get(leader)
+        if factor:
+            return f"We noticed an unusual activity pattern. {factor} contributed most to this pattern."
+    return None
 
 
 def explanation_table(explanation):

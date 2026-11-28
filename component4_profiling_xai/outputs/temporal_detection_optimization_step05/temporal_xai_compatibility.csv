@@ -1,0 +1,9 @@
+child,date,legacy_onset_overlap,score_pattern,score_review,score_group,score_delta_error,score_explanation_ms
+C001,2026-09-02,False,unclear,limited,,2.6645352591003757e-15,787.2198000259232
+C002,2026-09-03,False,unclear,limited,,1.3322676295501878e-15,1314.9518000136595
+C004,2026-09-23,False,isolated,supported,Language activity,2.983724378680108e-16,5007.134400017094
+C008,2026-09-18,False,unclear,limited,,2.55351295663786e-15,606.3256000052206
+C009,2026-08-27,True,sustained,supported,Language activity,1.3322676295501878e-15,1861.0974999901373
+C010,2026-09-15,False,unclear,limited,,2.0539125955565396e-15,551.3117000227794
+C015,2026-08-29,True,unclear,limited,,2.7755575615628914e-16,518.4917000005953
+C016,2026-09-25,True,sustained,supported,Language activity,4.440892098500626e-16,3950.666699995054

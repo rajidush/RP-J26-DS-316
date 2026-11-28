@@ -76,10 +76,38 @@ import json
 import math
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime, timedelta
+from numbers import Real
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+
+
+def daily_numeric(series, *, count=False, nonnegative=False, indicator=False):
+    """Validate one daily input column while retaining missing observations."""
+    label = str(series.name)
+    present = series.dropna()
+    if indicator:
+        values = present.astype(str).str.strip().str.lower().map(
+            {"true": 1.0, "false": 0.0, "1": 1.0, "0": 0.0, "1.0": 1.0, "0.0": 0.0})
+        if values.isna().any():
+            raise ValueError(f"{label} must be True/False or 1/0")
+        return values.reindex(series.index)
+
+    if not present.map(lambda value: isinstance(value, (Real, str))
+                       and not isinstance(value, bool)).all():
+        raise ValueError(f"{label} must be numeric")
+    try:
+        values = pd.to_numeric(present, errors="raise").astype(float)
+    except (ValueError, TypeError, OverflowError):
+        raise ValueError(f"{label} must be numeric") from None
+    if not values.map(math.isfinite).all():
+        raise ValueError(f"{label} must contain finite values")
+    if count and (values.lt(0) | values.mod(1).ne(0)).any():
+        raise ValueError(f"{label} must contain nonnegative whole counts")
+    if nonnegative and values.lt(0).any():
+        raise ValueError(f"{label} must contain nonnegative values")
+    return values.reindex(series.index)
 
 LOCAL_TZ = ZoneInfo("Asia/Colombo")
 NIGHT_START_HOUR = 22  # night = local hour >= 22 or < 6
@@ -697,6 +725,19 @@ if len(set(DESCRIPTIVE_NAMES.values())) != len(DESCRIPTIVE_NAMES):
 # Model input in dataset (descriptive) names: the columns of behavioral_daily.csv.
 MODEL_FEATURES = [DESCRIPTIVE_NAMES[c] for c in MODEL_SOURCE_FEATURES]
 DATASET_BASELINE_COLUMNS = [DESCRIPTIVE_NAMES[c] for c in BASELINE_COLUMNS]
+DAILY_MODEL_FEATURES = [name for name in MODEL_FEATURES if name not in DATASET_BASELINE_COLUMNS]
+SCORE_FEATURES = {"screen_max_confidence", "screen_mean_confidence", "language_max_risk", "language_mean_risk"}
+DAILY_COUNTS = set(DAILY_MODEL_FEATURES) - SCORE_FEATURES - {"screen_flagged_seconds", "is_weekend"}
+COVERAGE_COLUMNS = ("screen_monitor_observed", "language_monitor_observed")
+
+
+def daily_feature_values(daily, features):
+    """Validate and convert daily feature columns without a model dependency."""
+    return pd.DataFrame({
+        name: daily_numeric(daily[name], count=name in DAILY_COUNTS, indicator=name == "is_weekend",
+                            nonnegative=name == "screen_flagged_seconds")
+        for name in features
+    }, index=daily.index)
 
 
 def to_descriptive_names(df: pd.DataFrame) -> pd.DataFrame:

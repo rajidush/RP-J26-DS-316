@@ -1,0 +1,12 @@
+{
+  "equivalent_cases": 11,
+  "warm_latency_ratios": {
+    "temporal_review": 0.11673932613101778,
+    "end_to_end": 0.2678986498317888
+  },
+  "median_traced_peak_ratios": {
+    "temporal": 1.4755383535809834,
+    "temporal_review": 1.4325514734155975
+  },
+  "accepted": true
+}
