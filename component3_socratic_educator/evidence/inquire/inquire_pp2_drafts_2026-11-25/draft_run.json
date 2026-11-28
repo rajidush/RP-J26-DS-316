@@ -1,0 +1,956 @@
+{
+  "runs": [
+    {
+      "stage": "contexts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v2",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "b1457bbd84f4bc49cb4e856bbac326aa917c5dba4810fcdc9a497bf2f34e2d81",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:12:48+00:00",
+      "contexts_written": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "contexts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v2",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "b1457bbd84f4bc49cb4e856bbac326aa917c5dba4810fcdc9a497bf2f34e2d81",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:19:21+00:00",
+      "contexts_written": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "contexts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v2",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "b1457bbd84f4bc49cb4e856bbac326aa917c5dba4810fcdc9a497bf2f34e2d81",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:22:57+00:00",
+      "contexts_written": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "contexts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:35:58+00:00",
+      "contexts_written": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:39:05+00:00",
+      "rows": 216,
+      "left": 18,
+      "unusable": [
+        "P2R0006",
+        "P2R0078",
+        "P2R0090",
+        "P2R0092",
+        "P2R0099",
+        "P2R0102",
+        "P2R0108",
+        "P2R0110",
+        "P2R0113",
+        "P2R0116",
+        "P2R0122",
+        "P2R0128",
+        "P2R0131",
+        "P2R0132",
+        "P2R0137",
+        "P2R0138",
+        "P2R0144",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:44:52+00:00",
+      "rows": 216,
+      "left": 7,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0102",
+        "P2R0110",
+        "P2R0113",
+        "P2R0132",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:50:22+00:00",
+      "rows": 216,
+      "left": 5,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0102",
+        "P2R0110",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T14:55:36+00:00",
+      "rows": 216,
+      "left": 3,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:00:46+00:00",
+      "rows": 216,
+      "left": 3,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:05:56+00:00",
+      "rows": 216,
+      "left": 3,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:11:09+00:00",
+      "rows": 216,
+      "left": 3,
+      "unusable": [
+        "P2R0006",
+        "P2R0090",
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:16:23+00:00",
+      "rows": 216,
+      "left": 1,
+      "unusable": [
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:21:29+00:00",
+      "rows": 216,
+      "left": 1,
+      "unusable": [
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:26:34+00:00",
+      "rows": 216,
+      "left": 1,
+      "unusable": [
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:31:39+00:00",
+      "rows": 216,
+      "left": 1,
+      "unusable": [
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v3",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "e55f80f1dfa3157f2da45ef7d7975d4b608c4e3a4c6f111e9389306d4e78283b",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T15:36:46+00:00",
+      "rows": 216,
+      "left": 1,
+      "unusable": [
+        "P2R0152"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:10:11+00:00",
+      "rows": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:16:46+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0002",
+        "P2R0027",
+        "P2R0029",
+        "P2R0030",
+        "P2R0039",
+        "P2R0045",
+        "P2R0047",
+        "P2R0054",
+        "P2R0060",
+        "P2R0069",
+        "P2R0086",
+        "P2R0088",
+        "P2R0134",
+        "P2R0147",
+        "P2R0148",
+        "P2R0153",
+        "P2R0156",
+        "P2R0191"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:22:22+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0002",
+        "P2R0029",
+        "P2R0030",
+        "P2R0045",
+        "P2R0047",
+        "P2R0060",
+        "P2R0069",
+        "P2R0134",
+        "P2R0148"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:27:47+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0030",
+        "P2R0047",
+        "P2R0134",
+        "P2R0148"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:32:57+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0030",
+        "P2R0047"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:38:03+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0030",
+        "P2R0047"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:43:13+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0030",
+        "P2R0047"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:48:21+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0030",
+        "P2R0047"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v4",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "f8a2459b030ee9b301a3907097b524cbf7cd41592d119dae28674aeae1ec45fc",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T16:53:29+00:00",
+      "rows": 216,
+      "short_of_drafts": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "redo-replies",
+      "reply_type": "off_topic",
+      "reason": "the teacher repeated one reply: 32 of 48 off-topic children asked for a snack",
+      "rows_cleared": 48,
+      "prompt_version": "pp2-draft-v5",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "finished": "2026-11-25T17:47:45+00:00"
+    },
+    {
+      "stage": "rows",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": 20261125,
+      "prompt_version": "pp2-draft-v5",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T17:49:00+00:00",
+      "rows": 216,
+      "left": 0,
+      "unusable": [],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v5",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T17:50:33+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0027",
+        "P2R0054",
+        "P2R0111",
+        "P2R0138"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v5",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T17:55:46+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0054",
+        "P2R0111"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v5",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T18:00:54+00:00",
+      "rows": 216,
+      "short_of_drafts": [
+        "P2R0054"
+      ],
+      "stopped_by": null
+    },
+    {
+      "stage": "drafts",
+      "model": "meta-llama/Llama-3.3-70B-Instruct",
+      "served_models": [
+        "meta-llama/llama-3.3-70b-instruct"
+      ],
+      "backend": "hf",
+      "base_url": "https://router.huggingface.co/v1",
+      "settings": {
+        "temperature": 0.9,
+        "max_tokens": 4096
+      },
+      "teacher_seed": "not recorded (the chat endpoints take no seed)",
+      "plan_seed": "not applicable",
+      "prompt_version": "pp2-draft-v5",
+      "training_prompt_sha256": "b6268a3e3fa49de4ae70e8baba1bcf51452f276915a9153c3f2eb53efdf415a0",
+      "code_sha256": "8a9e08c6f690015aaf0472494e351fb9d32fc6726285903e502c1036622512b8",
+      "runtime": {
+        "python": "3.13.18",
+        "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+        "openai": "2.54.0"
+      },
+      "finished": "2026-11-25T18:06:03+00:00",
+      "rows": 216,
+      "short_of_drafts": [],
+      "stopped_by": null
+    }
+  ]
+}
