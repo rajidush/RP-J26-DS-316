@@ -16,10 +16,11 @@ HISTORY = "View Emotional History"
 AI_DETAILS = "Why Did the AI Identify This Pattern?"
 
 
-@pytest.fixture(autouse=True)
-def original_behavioral_view(monkeypatch):
-    # Preserve regression coverage of the original dashboard and frozen model.
-    monkeypatch.setenv("C4_F2_LEGACY_VIEW", "1")
+def run_legacy_comparison():
+    entry = services.ROOT / "ui" / "legacy_pages" / "behavioral_comparison.py"
+    at = AppTest.from_file(str(entry), default_timeout=120).run()
+    assert not at.exception, [e.value for e in at.exception]
+    return at
 
 
 SHAP_PREVIEW = "Research SHAP preview · synthetic data"
@@ -51,7 +52,7 @@ def test_research_shap_is_hidden_and_inactive_by_default(temp_db, monkeypatch):
     monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
     monkeypatch.setattr(services, "research_shap_context",
                         lambda *_: pytest.fail("Preview must be inactive"))
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
     assert not any(button.label == "Explain selected day" for button in at.button)
 
@@ -66,7 +67,7 @@ def test_research_shap_is_on_demand_and_clears_changed_selection(temp_db, monkey
         return original(*args)
 
     monkeypatch.setattr(services, "research_shap_report", record)
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert any(expander.label == SHAP_PREVIEW for expander in at.expander)
     assert not calls
     at.selectbox(key="f2_child").select("C033").run()
@@ -102,7 +103,7 @@ def test_research_shap_failure_keeps_existing_cards(temp_db, monkeypatch):
         raise RuntimeError("research-only failure")
 
     monkeypatch.setattr(services, "research_shap_report", unavailable)
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.button(key="f2_research_explain").click().run()
     assert not at.exception
     assert any("Research SHAP preview could not run" in warning.value for warning in at.warning)
@@ -125,7 +126,7 @@ def test_parent_demo_hides_without_local_opt_in(temp_db, monkeypatch, flag, addr
     parent_demo_address(monkeypatch, address)
     monkeypatch.setattr(services, "parent_xai_demo_context",
                         lambda *_: pytest.fail("Hidden demo must remain inactive"))
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert "Activity Update" not in html_of(at, at.main)
     assert not any(button.label == "Show activity update" for button in at.button)
 
@@ -134,7 +135,7 @@ def test_parent_demo_shows_plain_text_and_clears_stale_day(temp_db, monkeypatch)
     monkeypatch.setenv("C4_F2_PARENT_XAI_DEMO", "1")
     monkeypatch.delenv("C4_F2_RESEARCH_SHAP", raising=False)
     parent_demo_address(monkeypatch, "127.0.0.1")
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert "Activity Update" in html_of(at, at.main)
     assert any("SYNTHETIC DEMO PREVIEW" in item.value for item in at.caption)
     at.selectbox(key="f2_child").select("C008").run()
@@ -333,7 +334,7 @@ def test_sidebar_omits_both_routine_model_statuses(temp_db):
 
 
 def test_behavioral_anomaly_page_with_real_model(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert "Behavioral Anomaly Detection" in main
     assert "Behavioral Anomaly (Function 2)" not in main
@@ -352,7 +353,7 @@ def test_behavioral_anomaly_page_with_real_model(temp_db):
 
 
 def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     text = visible_main_text(at).lower()
     # The helper sees real visible text (so the check below is not vacuous) ...
     assert "flagged days" in text and "behavioral anomaly detection" in text
@@ -370,7 +371,7 @@ def test_main_page_is_minimal_without_demo_subtitle_or_raw_scores(temp_db):
 
 def test_status_icon_has_a_text_description(temp_db):
     import re
-    at = run_page("behavioral_anomaly")                    # C001: latest day not flagged
+    at = run_legacy_comparison()                    # C001: latest day not flagged
     main = html_of(at, at.main)
     assert re.search(r'aria-label=\\?"2026-09-28: Not flagged: the model found no unusual pattern', main)
     assert re.search(r'alt=\\?"2026-09-28: Not flagged', main)
@@ -382,7 +383,7 @@ def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
     daily = services.behavioral_daily_source()["daily"]
     flagged_last = next(c for c in services.child_ids(daily)
                         if services.behavioral_report(daily, c)["latest"]["unusual"])
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.selectbox(key="f2_child").set_value(flagged_last).run()
     assert not at.exception
     assert "Flagged: the model found an unusual pattern" in html_of(at, at.main)
@@ -390,7 +391,7 @@ def test_flagged_latest_day_uses_the_flagged_icon(temp_db):
 
 
 def test_behavioral_anomaly_page_switches_child(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     at.selectbox(key="f2_child").set_value("C009").run()
     assert not at.exception
     assert at.selectbox(key="f2_day_C009").value is not None   # C009 has flagged days
@@ -398,12 +399,12 @@ def test_behavioral_anomaly_page_switches_child(temp_db):
 
 def test_behavioral_anomaly_page_missing_model_keeps_urgent_alerts(temp_db, tmp_path, monkeypatch):
     monkeypatch.setenv("C4_F2_ARTIFACT_DIR", str(tmp_path))   # empty folder
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert [item.value for item in at.main.error] == [F2_ERROR]
     assert "behavioral_anomaly_pipeline.pkl" not in main and "scikit-learn==1.6.1" not in main
     assert str(tmp_path) not in main and str(tmp_path) not in at.main.error[0].value
-    assert any(link.proto.label == "Open Safety Notifications" for link in at.main.get("page_link"))
+    assert not at.get("page_link")  # The offline comparison has no dashboard navigation.
     assert "c4-flag" not in main
     assert not at.get("plotly_chart")
     assert at.selectbox(key="f2_child").value == "C001"
@@ -424,7 +425,7 @@ def test_behavioral_anomaly_page_missing_model_shows_only_the_error_and_safety_s
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {**source, "daily": daily, "child_ids": [child]})
 
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert [item.value for item in at.main.error] == [F2_ERROR]
     assert "behavioral_anomaly_pipeline.pkl" not in main and "scikit-learn==1.6.1" not in main
@@ -443,7 +444,7 @@ def test_behavioral_anomaly_page_shows_insufficient_data_instead_of_a_normal_sta
     daily.loc[:, "language_urgent_flags"] = 2
     monkeypatch.setattr(services, "behavioral_daily_source",
                         lambda: {"daily": daily, "child_ids": ["C001"], "source": "demo"})
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     main = html_of(at, at.main)
     assert "Insufficient recorded information to assess behavior for this period." in visible_main_text(at)
     assert "c4-flag" not in main and not at.metric
@@ -454,7 +455,7 @@ def test_behavioral_anomaly_page_shows_insufficient_data_instead_of_a_normal_sta
 def test_behavioral_parent_messages_distinguish_records_coverage_and_failure(temp_db, monkeypatch, caplog):
     source = services.behavioral_daily_source()
     monkeypatch.setattr(services, "behavioral_daily_source", lambda: dict(source, child_ids=[]))
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert [item.value for item in at.main.info] == ["No fictional monitoring records are available."]
     assert not at.main.error
 
@@ -502,7 +503,7 @@ def test_sidebar_has_no_data_and_admin_section(temp_db):
 
 def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_db):
     from datetime import timedelta
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     for child in ["C001", "C009"]:
         at.selectbox(key="f2_child").set_value(child).run()
         assert not at.exception
@@ -515,7 +516,7 @@ def test_flagged_count_uses_latest_30_calendar_days_and_changes_with_child(temp_
 
 
 def test_explanations_remain_descriptive_without_technical_expanders(temp_db):
-    at = run_page("behavioral_anomaly")
+    at = run_legacy_comparison()
     assert not at.expander
     assert not at.get("file_uploader")
     assert "not exact model attributions" in " ".join(c.value for c in at.caption)
@@ -532,4 +533,6 @@ def test_stale_upload_state_does_not_change_demo_source(temp_db):
     assert not at.error
     assert at.selectbox(key="f2_child").options == services.behavioral_daily_source()["child_ids"]
     assert "Demo Mode · Fictional data" in " ".join(c.value for c in at.main.caption)
-    assert not at.expander and not at.get("file_uploader")
+    assert at.selectbox(key="f2_activity_C001").label == "Activity date"
+    assert not any(expander.label == SHAP_PREVIEW for expander in at.expander)
+    assert not at.get("file_uploader")

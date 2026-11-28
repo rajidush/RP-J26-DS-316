@@ -1,6 +1,6 @@
 # Function 02 upgrade for PP2
 
-The parent dashboard uses the validation-selected novelty detector, shows a causal child profile and score trends, explains the selected scorer locally, and checks urgent rules independently. The original Function 02 view and saved artifacts remain available through `C4_F2_LEGACY_VIEW=1`. Function 01 keeps its original entry point and artifacts.
+The parent dashboard uses the validation-selected novelty detector, shows a causal child profile and score trends, explains the selected scorer locally, and checks urgent rules independently. For a separate offline comparison with the original Function 02 view and saved artifacts, run `python -m streamlit run ui/legacy_pages/behavioral_comparison.py --server.address 127.0.0.1` from the repository root. `C4_F2_LEGACY_VIEW` has no effect on Parent Dashboard routing. Function 01 keeps its original entry point and artifacts.
 
 ## Windows Command Prompt
 

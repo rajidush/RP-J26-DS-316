@@ -53,6 +53,8 @@ def test_demo_uses_only_bundled_fiction(config, legacy, external_csv, profiles, 
     at.toggle(key=selection.DEMO_WIDGET).set_value(True).run()
     assert not at.exception and not at.main.error
     assert "Fictional data for this assessment" in main_text(at)
+    assert "Behavior Overview" in main_text(at)
+    assert "Latest Prediction" not in main_text(at)
     assert str(LATEST) not in main_text(at)
     assert at.selectbox(key=selection.F2_DEMO_CHILD).options == services.behavioral_daily_source()["child_ids"]
     assert selection.CSV_ASSESSMENT_WIDGET not in [item.key for item in at.main.toggle]
@@ -74,6 +76,7 @@ def test_csv_assessments_are_opt_in_source_keyed_and_cut_off(
     at.toggle(key=selection.CSV_ASSESSMENT_WIDGET).set_value(True).run()
     assert not at.exception
     assert "Local CSV assessment" in main_text(at)
+    assert "Behavior Overview" in main_text(at)
     assert "Demo Mode · Fictional data" not in main_text(at)
     assert any(box.label == "CSV child identifier" and box.value == "C001" for box in at.main.selectbox)
     original = at.session_state[selection._ENHANCED_RESULT][2]
@@ -98,7 +101,9 @@ def test_csv_assessments_are_opt_in_source_keyed_and_cut_off(
     at.toggle(key=selection.DEMO_WIDGET).set_value(True).run()
     assert "Local CSV assessment" not in main_text(at)
     assert not any(str(LATEST) in w.value for w in at.warning)
-    assert selection._ENHANCED_RESULT not in at.session_state
+    demo_context, _, demo_result = at.session_state[selection._ENHANCED_RESULT]
+    assert demo_context[0] == "demo"
+    assert demo_result is not updated and LATEST not in set(demo_result.rows["date"])
     navigate_dashboard(at, "Safety Notifications")
     assert "Fictional" in main_text(at) and str(LATEST) not in main_text(at)
     navigate_dashboard(at, "Activity Summary")

@@ -22,7 +22,14 @@ def earlier_alerts(at):
 
 
 @pytest.mark.usefixtures("isolated_app_database")
-def test_historical_safety_follows_shared_cutoff(profiles, navigate_dashboard):
+@pytest.mark.parametrize("legacy_flag", [None, "1"])
+def test_historical_safety_follows_shared_cutoff(profiles, navigate_dashboard, monkeypatch, legacy_flag):
+    if legacy_flag is None:
+        monkeypatch.delenv("C4_F2_LEGACY_VIEW", raising=False)
+    else:
+        monkeypatch.setenv("C4_F2_LEGACY_VIEW", legacy_flag)
+    monkeypatch.setattr(services, "behavioral_report",
+                        lambda *args: pytest.fail("Parent route called the legacy scorer"))
     source = services.behavioral_daily_source()
     child = "C003"
     rows = source["daily"].loc[source["daily"]["child_id"].eq(child)]
@@ -36,6 +43,8 @@ def test_historical_safety_follows_shared_cutoff(profiles, navigate_dashboard):
     at.toggle(key=selection.DEMO_WIDGET).set_value(True).run()
     navigate_dashboard(at, "Behavioral Anomaly")
     at.selectbox(key=selection.F2_DEMO_CHILD).set_value(child).run()
+    assert [box.label for box in at.main.selectbox] == ["Select child", "Activity date"]
+    assert "Latest Prediction" not in main_text(at)
     for day in dates:
         at.selectbox(key=key).set_value(day).run()
         assert not at.exception
@@ -67,6 +76,15 @@ def test_historical_safety_follows_shared_cutoff(profiles, navigate_dashboard):
     assert at.selectbox(key=f"activity-assessment-date-{child}").value == day
     navigate_dashboard(at, "Behavioral Anomaly")
     assert at.selectbox(key=key).value == day and not banners(at)
+    before = main_text(at)
+    previous = at.session_state[selection._ENHANCED_RESULT][2]
+    if legacy_flag is None:
+        monkeypatch.setenv("C4_F2_LEGACY_VIEW", "1")
+    else:
+        monkeypatch.delenv("C4_F2_LEGACY_VIEW", raising=False)
+    at.run()
+    assert main_text(at) == before and at.selectbox(key=key).value == day
+    assert at.session_state[selection._ENHANCED_RESULT][2] is previous
     at.selectbox(key=selection.F2_DEMO_CHILD).set_value("C001").run()
     other_rows = source["daily"].loc[source["daily"]["child_id"].eq("C001")]
     other_rules = urgent_alerts.urgent_alerts(other_rows)

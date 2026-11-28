@@ -53,18 +53,11 @@ def _select_profile():
     st.session_state[SELECTED_PROFILE] = st.session_state[PROFILE_WIDGET]
 
 
-def clear_behavioral_dates():
-    for key in list(st.session_state.keys()):
-        if key.startswith("f2_day_"):
-            del st.session_state[key]
-
-
 def _change_mode():
     for key in (F1_DEMO_CHILD, F2_DEMO_CHILD, OVERVIEW_DEMO_RESULTS, _F2_DEMO_CONTEXT,
                 F2_SAFETY_DATE, _ENHANCED_RESULT, ACTIVITY_PERIOD, _ACTIVITY_RESULT,
-                CSV_ASSESSMENT_WIDGET, "f2_research_shap_result", "f2_parent_activity_result"):
+                CSV_ASSESSMENT_WIDGET):
         st.session_state.pop(key, None)
-    clear_behavioral_dates()
     clear_csv_assessment()
 
 
@@ -88,7 +81,6 @@ def behavioral_demo_picker(label, ids, key, *, index=None, **kwargs):
         st.session_state.pop(F2_SAFETY_DATE, None)
         st.session_state.pop(_ENHANCED_RESULT, None)
         st.session_state.pop(_ACTIVITY_RESULT, None)
-        clear_behavioral_dates()
         st.session_state.get(OVERVIEW_DEMO_RESULTS, {}).pop("behavioral", None)
 
     child = st.session_state.get(_F2_DEMO_CONTEXT)
