@@ -8,7 +8,7 @@ evidence/
 ├── inquire/     INQUIRE fine-tuning: drafts, dataset, training, blind comparison, served GGUFs
 ├── evaluate/    EVALUATE: emotional-state baseline and rule evaluation
 ├── system/      whole pipeline: end-to-end runs, latency, schema validation, readability
-├── research/    dated research notes (some are local-only, see .gitignore)
+├── research/    dated research notes (some are local-only, see .gitignore) and the PP2 analysis plan
 └── *.py         the scripts that write the runs
 ```
 
