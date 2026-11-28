@@ -221,20 +221,21 @@ def render(source, child=None):
             day = child_selection.behavioral_date_picker(
                 "Activity date", daily["date"].tolist()[::-1], f"f2_activity_{child}",
             )
-    latest = daily["date"].iloc[-1]
-    selected_rows = daily.loc[daily["date"].eq(day)]
-    selected_index = selected_rows.index[0]
-    alerts, urgent_available, urgent_complete = services.behavioral_urgent_review(daily)
-    alerts = alerts.loc[alerts["is_urgent"]]
-    selected_urgent = bool(alerts["date"].eq(day).any())
-    for alert in alerts[alerts["date"].isin({day, latest})].itertuples(index=False):
-        label = "Latest recorded day" if alert.date == latest else "Selected day"
-        st.warning(f"**Urgent safety review · {label} ({alert.date})**  \n"
-                   f"{safety_text(alert.reasons)}. Review the record promptly and seek appropriate human support.")
-
     assessment = child_selection.enhanced_demo_assessment(source, child, day)
     daily = assessment.rows
     index = daily.index[-1]
+    selected_rows = daily.loc[[index]]
+    review = assessment.urgent_review
+    selected_urgent = False
+    if review is not None:
+        alerts, urgent_available, urgent_complete = review
+        alerts = alerts.loc[alerts["is_urgent"]]
+        selected_alerts = alerts.loc[alerts["date"].eq(day)]
+        selected_urgent = not selected_alerts.empty
+        for alert in selected_alerts.itertuples(index=False):
+            st.warning(f"**Urgent safety review · Selected day ({alert.date})**  \n"
+                       f"{safety_text(alert.reasons)}. Review the record promptly and seek appropriate human support.")
+
     matrix, details, bundle = assessment.matrix, assessment.details, assessment.bundle
     config = ProfileConfig(**bundle["profile"]) if bundle is not None else ProfileConfig()
     history = assessment.history
@@ -316,20 +317,23 @@ def render(source, child=None):
 
     with theme.card("f2-safety", "Safety Alerts"):
         st.write("Safety checks use the available records and run separately from the AI assessment.")
-        if not urgent_complete.at[selected_index]:
-            st.warning("Safety monitoring was incomplete for the selected day.")
-            if not selected_urgent:
-                st.write("The available records contained no urgent alert for this day."
-                         if urgent_available.at[selected_index] else safety_summary.URGENT_INSUFFICIENT)
-        elif not selected_urgent:
-            st.write("No urgent alert was recorded for this day.")
-        if urgent_complete.at[selected_index] and not urgent_complete.all():
-            st.warning("Safety monitoring was incomplete on other recorded days.")
-        older = alerts.loc[alerts["date"].lt(day) & alerts["date"].ne(latest)]
-        if not older.empty:
-            with st.expander("Earlier safety alerts"):
-                for alert in older.sort_values("date", ascending=False).itertuples(index=False):
-                    st.write(f"**{alert.date}** · {safety_text(alert.reasons)}")
+        if review is None:
+            st.warning(safety_summary.URGENT_FAILED)
+        else:
+            if not urgent_complete.at[index]:
+                st.warning("Safety monitoring was incomplete for the selected day.")
+                if not selected_urgent:
+                    st.write("The available records contained no urgent alert for this day."
+                             if urgent_available.at[index] else safety_summary.URGENT_INSUFFICIENT)
+            elif not selected_urgent:
+                st.write("No urgent alert was recorded for this day.")
+            if urgent_complete.at[index] and not urgent_complete.all():
+                st.warning("Safety monitoring was incomplete on other recorded days.")
+            older = alerts.loc[alerts["date"].lt(day)]
+            if not older.empty:
+                with st.expander("Earlier safety alerts"):
+                    for alert in older.sort_values("date", ascending=False).itertuples(index=False):
+                        st.write(f"**{alert.date}** · {safety_text(alert.reasons)}")
     with theme.card("f2-availability", "Data Availability"):
         if matrix is None:
             st.write("Activity data availability could not be checked.")
